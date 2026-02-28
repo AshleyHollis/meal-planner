@@ -9,9 +9,16 @@ namespace: meal-planner
 resources:
   - namespace.yaml
   - configmap.yaml
+  - secretstore.yaml
+  - externalsecret-db.yaml
+  - externalsecret-storage.yaml
+  - externalsecret-llm.yaml
+  - externalsecret-auth0.yaml
+  - migration-job.yaml
   - api-deployment.yaml
   - api-service.yaml
   - api-httproute.yaml
+  - worker-deployment.yaml
 
 labels:
   - pairs:

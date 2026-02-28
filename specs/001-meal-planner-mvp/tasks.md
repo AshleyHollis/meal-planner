@@ -1164,7 +1164,7 @@ After POC validated, clean up code structure, extract utilities, add proper erro
   - **Commit**: `feat(k8s): add base API deployment manifests`
   - _Design: Kubernetes Manifests_
 
-- [ ] 4.3 Create K8s worker and secrets manifests
+- [x] 4.3 Create K8s worker and secrets manifests
   - **Do**:
     1. Create `k8s/base/worker-deployment.yaml` (sync-wave: 3)
     2. Create `k8s/base/migration-job.yaml` (Alembic migration job)
