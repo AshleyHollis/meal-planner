@@ -634,6 +634,161 @@ more meals similar to 5-star ratings, fewer similar to 1-star ratings).
 
 ---
 
+### User Story 18 - Coles Weekly Specials Awareness (Priority: P18)
+
+As a budget-conscious shopper at Coles, I want to tell the system what's on
+special this week so the AI can prioritize those ingredients when generating
+the meal plan, helping me save money.
+
+Before generating a meal plan, I can flag items that are on sale (e.g., "chicken
+thighs half price", "capsicums 3 for $5"). The AI treats sale items as preferred
+ingredients — similar to how it prioritizes expiring inventory — and builds
+meals around them where possible. This doesn't require any Coles API; I just
+enter what I see in the catalogue or app.
+
+**Why this priority**: Planning around what's cheap this week is one of the
+simplest ways to reduce grocery spend. Most meal planners ignore pricing entirely.
+Even a manual input approach (no API integration) adds significant value for
+budget-aware households.
+
+**Independent Test**: Can be tested by flagging "chicken thighs" as on special,
+generating a meal plan, and verifying chicken thigh meals appear more frequently
+than they would without the flag.
+
+**Acceptance Scenarios**:
+
+1. **Given** I flag "chicken thighs" as on special this week, **When** the AI
+   generates a meal plan, **Then** meals using chicken thighs are prioritized.
+2. **Given** I flag multiple items as on special, **When** the AI generates a
+   plan, **Then** it balances using specials with using expiring inventory (expiry
+   still takes priority over price).
+3. **Given** I have flagged specials from last week, **When** a new week starts,
+   **Then** the old specials are cleared and I can enter new ones.
+4. **Given** I don't flag any specials, **When** the AI generates a plan, **Then**
+   it plans normally without price consideration.
+
+---
+
+### User Story 19 - Offline Mode (Priority: P19)
+
+As a home cook who shops at Coles (where mobile signal is often poor) and cooks
+in my kitchen, I want the app to work fully offline so I can access my grocery
+list, recipes, and meal plan without an internet connection.
+
+The current week's meal plan, all associated recipes, the grocery list, and
+my inventory are cached locally. I can check off grocery items, view recipe
+steps, start timers, and use hands-free mode without internet. When connectivity
+returns, changes sync automatically with the server so my household member
+sees the updates.
+
+**Why this priority**: Two of the three primary use locations — the grocery store
+and the kitchen — often have unreliable internet. If the app fails when the user
+needs it most, they'll stop using it. Offline support makes the app dependable
+in real conditions.
+
+**Independent Test**: Can be tested by loading the app with a meal plan, turning
+off internet connectivity, and verifying the grocery list, recipes, and timers
+all function correctly. Then reconnect and verify changes sync.
+
+**Acceptance Scenarios**:
+
+1. **Given** I have an active meal plan, **When** I lose internet connectivity,
+   **Then** I can still view all meals, recipes, and cooking steps for the
+   current week.
+2. **Given** I am offline at Coles, **When** I check off items on the grocery
+   list, **Then** the changes are saved locally and sync when I reconnect.
+3. **Given** I am cooking offline, **When** I start a timer, **Then** the timer
+   runs and alerts me when complete (push notification may not work offline,
+   but the in-app alert does).
+4. **Given** I was offline and made changes, **When** I reconnect, **Then** my
+   changes sync to the server and my household member sees them.
+5. **Given** both household members were offline and made conflicting changes,
+   **When** both reconnect, **Then** the system merges changes sensibly (e.g.,
+   both checked off different items — both are marked done).
+
+---
+
+### User Story 20 - Full-Day Meal Planning (Priority: P20)
+
+As a home cook, I want the weekly meal plan to cover breakfast, lunch, and dinner
+— not just dinners — so I have a complete picture of what to eat and what to buy
+for the entire week.
+
+Each day in the plan has three meal slots: breakfast, lunch, and dinner. The AI
+generates meals for all three slots, but I can leave any slot blank or mark it
+as "eating out" if I don't need a plan for that meal. The grocery list accounts
+for all planned meals across all slots.
+
+**Why this priority**: Planning only dinners leaves most of the day unplanned.
+Ingredients for lunch and breakfast still need to be bought, and without planning
+them, users either overbuy or make extra trips. Full-day planning gives the
+complete picture needed for a single, efficient weekly shop at Coles.
+
+**Independent Test**: Can be tested by generating a full week plan and verifying
+each day has breakfast, lunch, and dinner slots. Verify the grocery list includes
+ingredients from all three meal types.
+
+**Acceptance Scenarios**:
+
+1. **Given** I request a weekly meal plan, **When** the AI generates it, **Then**
+   each day has slots for breakfast, lunch, and dinner with suggested meals.
+2. **Given** I don't want a planned breakfast on weekdays, **When** I configure
+   my preferences, **Then** I can set breakfast to "skip" or "repeat" (same
+   simple breakfast every day, e.g., toast and eggs) for weekdays.
+3. **Given** I am eating out for lunch on Wednesday, **When** I mark Wednesday
+   lunch as "eating out", **Then** no recipe is generated for that slot and the
+   grocery list excludes those ingredients.
+4. **Given** a full day of meals, **When** I view the grocery list, **Then**
+   ingredients from breakfast, lunch, and dinner are all consolidated.
+5. **Given** I want simple breakfasts, **When** the AI generates breakfast
+   suggestions, **Then** they are quick, low-effort meals (e.g., overnight oats,
+   toast, smoothie) unless I request otherwise.
+
+---
+
+### User Story 21 - Freezable Recipe Tagging & Freeze-Before-Expiry (Priority: P21)
+
+As a home cook, I want recipes tagged as "freezable" so I know which meals I can
+batch cook and freeze, and I want the AI to suggest moving ingredients to the
+freezer before they expire if they're not planned for use this week.
+
+Some recipes freeze well (soups, casseroles, bolognese) and others don't (salads,
+stir-fries with crispy vegetables). Knowing which recipes are freezable lets me
+deliberately cook extra and freeze portions for busy nights. Separately, if I
+have chicken in my fridge expiring in 3 days and no meal planned to use it, the
+AI should suggest "freeze the chicken now to extend its life" rather than letting
+it go to waste.
+
+**Why this priority**: This closes two gaps. First, it enables deliberate batch-
+to-freezer meal prep (cook 4 portions, eat 2, freeze 2). Second, it adds a
+fallback for the waste reduction system — when the AI can't plan a meal around
+expiring ingredients, freezing them is the next best option.
+
+**Independent Test**: Can be tested by generating a meal plan, verifying freezable
+recipes are tagged, and checking that an expiring ingredient not used in any
+planned meal triggers a "freeze it" suggestion.
+
+**Acceptance Scenarios**:
+
+1. **Given** the AI generates a recipe for bolognese, **When** I view the recipe,
+   **Then** it is tagged as "freezable" with a recommended freeze duration
+   (e.g., "freezes well for up to 3 months").
+2. **Given** I cooked 4 portions of bolognese and ate 2, **When** I record
+   leftovers, **Then** I can choose "freeze 2 portions" and they are added to my
+   freezer inventory with a freeze date and recommended use-by date.
+3. **Given** I have chicken in my fridge expiring in 3 days and no meal this week
+   uses it, **When** I view my inventory or the AI generates a plan, **Then**
+   the system suggests "Freeze the chicken now — it will keep for 3 months in the
+   freezer."
+4. **Given** I have frozen bolognese portions in my freezer, **When** the AI
+   generates a future meal plan, **Then** it can suggest using those portions
+   as a quick dinner on a busy night.
+5. **Given** a recipe is tagged as not freezable, **When** I cook extra portions,
+   **Then** the system warns me that leftovers should be consumed within the
+   fridge shelf life rather than frozen.
+
+---
+
 ### Edge Cases
 
 - What happens when the fridge/pantry is nearly empty? The AI should generate
@@ -685,6 +840,21 @@ more meals similar to 5-star ratings, fewer similar to 1-star ratings).
 - What happens when the user gives contradictory feedback? (e.g., rates the same
   type of meal 5 stars one week and 1 star the next) The AI should weight recent
   feedback more heavily and consider contextual notes rather than just the rating.
+- What happens when specials conflict with preferences? (e.g., pork is on special
+  but a household member dislikes pork) Preferences and restrictions always
+  override price considerations.
+- What happens when the user is offline and their household member makes changes
+  online? The offline user continues with their cached version and changes merge
+  when they reconnect, with a notification of what changed.
+- What happens when breakfast and lunch plans create a very long grocery list?
+  The AI should keep breakfast and lunch simple and repetitive by default to
+  minimize additional ingredients beyond what dinner requires.
+- What happens when the user marks all three meal slots as "eating out" for a
+  day? No recipes or grocery items are generated for that day.
+- What happens when the AI suggests freezing an item but the freezer is full?
+  The suggestion should note the current freezer capacity and let the user decide.
+- What happens when a recipe is frozen and later thawed for use? The item moves
+  from freezer back to fridge inventory with an updated (shorter) use-by date.
 
 ## Requirements *(mandatory)*
 
@@ -697,8 +867,9 @@ more meals similar to 5-star ratings, fewer similar to 1-star ratings).
 - **FR-003**: System MUST allow users to register and manage cooking equipment
   with names and supported cooking modes (e.g., Ninja Combi supports Air Crisp,
   Combi Cook, Slow Cook, Steam, Bake, etc.).
-- **FR-004**: System MUST generate AI-powered weekly meal plans for 2 adults
-  that prioritize ingredients closest to expiry.
+- **FR-004**: System MUST generate AI-powered weekly meal plans covering
+  breakfast, lunch, and dinner for 2 adults, prioritizing ingredients closest
+  to expiry.
 - **FR-005**: System MUST generate recipes with cooking steps organized by
   equipment, including equipment-specific settings (mode, temperature, time).
 - **FR-006**: System MUST generate consolidated grocery lists from meal plans,
@@ -765,6 +936,19 @@ more meals similar to 5-star ratings, fewer similar to 1-star ratings).
   meal plan suggestions.
 - **FR-033**: AI MUST incorporate recipe feedback to adjust equipment-specific
   settings (e.g., cooking times, temperatures) in future similar recipes.
+- **FR-034**: System MUST allow users to flag grocery items as "on special" before
+  generating a meal plan, and the AI MUST prioritize those ingredients (after
+  expiring inventory).
+- **FR-035**: System MUST cache the current week's meal plan, recipes, grocery
+  list, and inventory for full offline use, with automatic sync on reconnection.
+- **FR-036**: System MUST support three meal slots per day (breakfast, lunch,
+  dinner), with the ability to skip, repeat, or mark any slot as "eating out."
+- **FR-037**: System MUST tag recipes as "freezable" or "not freezable" with
+  recommended freeze duration.
+- **FR-038**: System MUST suggest freezing expiring ingredients that are not
+  planned for use in the current week's meals, as an alternative to waste.
+- **FR-039**: Grocery list and inventory changes made offline MUST sync
+  automatically when connectivity is restored, with sensible conflict resolution.
 
 ### Key Entities
 
@@ -779,12 +963,15 @@ more meals similar to 5-star ratings, fewer similar to 1-star ratings).
   expiry date. Frozen items have longer shelf life expectations.
 - **Cooking Equipment**: A piece of kitchen equipment (e.g., Ninja Combi, oven).
   Has a name and a list of supported cooking modes with settings.
-- **Meal Plan**: A weekly plan containing 7 days of meals. Belongs to a household.
-  Has a status (draft/active/completed).
-- **Meal**: A single meal within a plan (e.g., Monday dinner). References a recipe
-  and can be customized at plan time.
+- **Meal Plan**: A weekly plan containing 7 days of meals across three daily slots
+  (breakfast, lunch, dinner). Belongs to a household. Has a status
+  (draft/active/completed).
+- **Meal**: A single meal within a plan (e.g., Monday dinner, Tuesday breakfast).
+  Has a slot type (breakfast/lunch/dinner) and a status (planned/eating-out/skipped).
+  References a recipe and can be customized at plan time.
 - **Recipe**: A set of ingredients and equipment-specific cooking steps generated
-  by AI. Can be an AI original or a user-modified variation.
+  by AI. Can be an AI original or a user-modified variation. Has a "freezable"
+  tag (yes/no) with recommended freeze duration when applicable.
 - **Cooking Step**: A single instruction within a recipe, associated with a specific
   piece of equipment (or no equipment for prep steps). Includes settings like
   temperature, time, and mode.
@@ -807,6 +994,9 @@ more meals similar to 5-star ratings, fewer similar to 1-star ratings).
   to a specific meal in the plan. Has a trigger time, a message describing the
   action (e.g., "defrost chicken"), and a reference to the meal. Automatically
   reschedules when the meal is moved.
+- **Weekly Special**: A grocery item flagged as on sale for the current week. Has
+  a name and optional price/discount info. Cleared weekly. The AI prioritizes
+  these ingredients (after expiring inventory) when generating meal plans.
 
 ## Assumptions
 
@@ -819,8 +1009,9 @@ more meals similar to 5-star ratings, fewer similar to 1-star ratings).
   any equipment the user registers.
 - "Simple/easy meals" is a preference communicated to the AI, not a hard system
   constraint. Users can override with more complex meals if desired.
-- Meal plans cover dinners by default. Breakfast and lunch can be added as a
-  future enhancement.
+- Meal plans cover breakfast, lunch, and dinner. Snack planning is not included.
+  Users can skip or set meal slots to repeat (e.g., same breakfast every weekday)
+  to keep it simple.
 - Expiry dates are manually entered by the user. No barcode scanning or
   automatic detection for MVP.
 - The app is mobile-first but also works on desktop. No native mobile app;
@@ -839,6 +1030,15 @@ more meals similar to 5-star ratings, fewer similar to 1-star ratings).
   create meal plan entries or full recipes unless the user chooses to cook one.
 - Freezer defrost times are AI-estimated based on item type and quantity. No
   precise defrost science is needed for MVP.
+- Coles weekly specials are entered manually by the user. No Coles API or
+  catalogue scraping is needed. The user checks the Coles app/catalogue and
+  enters what's relevant.
+- Offline mode uses service worker caching (PWA pattern). The app does not need
+  to be a native mobile app; a well-configured PWA with offline support is
+  sufficient.
+- Freezable tagging is AI-determined based on recipe type. Users can override
+  the tag if they disagree (e.g., mark a recipe as freezable that the AI
+  tagged as not freezable).
 
 ## Success Criteria *(mandatory)*
 
