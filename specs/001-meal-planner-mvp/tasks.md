@@ -137,7 +137,7 @@ Focus: Scaffold the full stack, prove the core loop works end-to-end (inventory 
   - _Requirements: FR-05, FR-06, FR-07, AC-2.6_
   - _Design: Database Schema - recipe.py_
 
-- [ ] 1.11 Create MealPlan and MealSlot models
+- [x] 1.11 Create MealPlan and MealSlot models
   - **Do**:
     1. Create `services/shared/shared/db/models/meal_plan.py` with both classes
     2. MealPlan: id, household_id (FK), week_start_date, status (default="draft"), error_message (nullable)
