@@ -48,7 +48,7 @@ Focus: Scaffold the full stack, prove the core loop works end-to-end (inventory 
   - _Requirements: NFR-04_
   - _Design: Observability_
 
-- [ ] 1.4 Create DB connection module
+- [x] 1.4 Create DB connection module
   - **Do**:
     1. Create `services/shared/shared/db/__init__.py` and `services/shared/shared/db/connection.py`
     2. Implement `DatabaseConnection` class with async SQLAlchemy engine, session factory, retry logic
