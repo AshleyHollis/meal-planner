@@ -25,7 +25,7 @@ Focus: Scaffold the full stack, prove the core loop works end-to-end (inventory 
   - _Requirements: NFR-04, NFR-08_
   - _Design: Project Structure_
 
-- [ ] 1.2 Create shared config module
+- [x] 1.2 Create shared config module
   - **Do**:
     1. Create `services/shared/shared/config.py` with Pydantic Settings class
     2. Include fields: DATABASE_URL, AZURE_STORAGE_CONNECTION_STRING, LLM_API_KEY, LLM_PROVIDER, AUTH0_DOMAIN, AUTH0_CLIENT_ID, AUTH0_CLIENT_SECRET, ENVIRONMENT
