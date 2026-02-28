@@ -6,12 +6,8 @@ retries up to 3x, and persists results to the database.
 
 from __future__ import annotations
 
-import json
 from collections import defaultdict
 from typing import Any
-
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from shared.db.connection import get_db
 from shared.db.models import (
@@ -27,6 +23,8 @@ from shared.db.models import (
     RecipeStep,
 )
 from shared.logging.config import get_logger
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from .llm_client import call_llm
 from .prompts import add_error_feedback, build_prompt
@@ -72,9 +70,7 @@ async def generate_meal_plan(message_content: dict[str, Any]) -> None:
 
         # Build lookup data for validator
         inventory_names = [
-            item.ingredient.name.lower()
-            for item in inventory
-            if getattr(item, "ingredient", None)
+            item.ingredient.name.lower() for item in inventory if getattr(item, "ingredient", None)
         ]
         equipment_modes: dict[str, list[str]] = {}
         for eq in equipment:
@@ -82,9 +78,7 @@ async def generate_meal_plan(message_content: dict[str, Any]) -> None:
             equipment_modes[eq.name] = [m.name for m in modes]
 
         # 3. Call LLM with retry loop
-        plan = await _generate_with_retries(
-            prompt, inventory_names, equipment_modes
-        )
+        plan = await _generate_with_retries(prompt, inventory_names, equipment_modes)
 
         # 4. Persist to DB
         await _persist_plan(db, meal_plan_id, household_id, plan, inventory)
@@ -108,8 +102,7 @@ async def _load_context(
     async with db.session() as session:
         # Load inventory with ingredient relationship
         inv_result = await session.execute(
-            select(InventoryItem)
-            .where(InventoryItem.household_id == household_id)
+            select(InventoryItem).where(InventoryItem.household_id == household_id)
         )
         inventory = list(inv_result.scalars().all())
 
@@ -192,7 +185,7 @@ def _extract_json(text: str) -> str:
     if stripped.startswith("```"):
         # Remove opening fence (with optional language tag)
         first_newline = stripped.index("\n")
-        stripped = stripped[first_newline + 1:]
+        stripped = stripped[first_newline + 1 :]
         # Remove closing fence
         if stripped.endswith("```"):
             stripped = stripped[:-3].strip()
@@ -302,9 +295,7 @@ async def _persist_plan(
             session.add(gi)
 
         # Update meal plan status to active
-        result = await session.execute(
-            select(MealPlan).where(MealPlan.id == meal_plan_id)
-        )
+        result = await session.execute(select(MealPlan).where(MealPlan.id == meal_plan_id))
         meal_plan = result.scalar_one()
         meal_plan.status = "active"
         meal_plan.error_message = None
@@ -325,9 +316,7 @@ async def _get_or_create_ingredients(
 
     # Look up existing ingredients
     result = await session.execute(
-        select(Ingredient).where(
-            Ingredient.name.in_([n for n in all_names])
-        )
+        select(Ingredient).where(Ingredient.name.in_([n for n in all_names]))
     )
     existing = {ing.name.lower(): ing.id for ing in result.scalars().all()}
 
@@ -351,9 +340,7 @@ async def _mark_failed(db: Any, meal_plan_id: str, error_message: str) -> None:
     """Mark meal plan as failed with error message."""
     try:
         async with db.session() as session:
-            result = await session.execute(
-                select(MealPlan).where(MealPlan.id == meal_plan_id)
-            )
+            result = await session.execute(select(MealPlan).where(MealPlan.id == meal_plan_id))
             meal_plan = result.scalar_one()
             meal_plan.status = "failed"
             meal_plan.error_message = error_message

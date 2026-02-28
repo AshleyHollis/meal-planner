@@ -155,10 +155,7 @@ def add_error_feedback(prompt: str, errors: str | list[str]) -> str:
     Returns:
         Updated prompt with error feedback appended.
     """
-    if isinstance(errors, list):
-        error_text = "\n".join(f"- {e}" for e in errors)
-    else:
-        error_text = errors
+    error_text = "\n".join(f"- {e}" for e in errors) if isinstance(errors, list) else errors
 
     return f"""{prompt}
 

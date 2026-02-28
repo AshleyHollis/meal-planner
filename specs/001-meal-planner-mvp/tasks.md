@@ -590,7 +590,7 @@ Focus: Scaffold the full stack, prove the core loop works end-to-end (inventory 
   - **Commit**: `feat(workers): add multi-stage Dockerfile for meal plan worker`
   - _Design: CI/CD_
 
-- [ ] V6 [VERIFY] Quality checkpoint: worker
+- [x] V6 [VERIFY] Quality checkpoint: worker
   - **Do**: Lint entire workers codebase
   - **Verify**: `cd services/workers && uv run ruff check meal_plan_generator/ && uv run ruff format --check meal_plan_generator/ && echo "QUALITY_OK"`
   - **Done when**: Zero lint errors

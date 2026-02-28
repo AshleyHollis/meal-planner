@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
+import contextlib
 import signal
-import sys
 import threading
 import time
-from http.server import HTTPServer, BaseHTTPRequestHandler
+from http.server import BaseHTTPRequestHandler, HTTPServer
 
 from shared.config import get_settings
 from shared.logging.config import configure_logging, get_logger
@@ -66,10 +66,8 @@ def main() -> None:
 
     # Ensure queue exists
     queue_client = get_queue_client()
-    try:
+    with contextlib.suppress(Exception):
         queue_client.create_queue()
-    except Exception:
-        pass  # Queue already exists
 
     logger.info("worker_started", queue=settings.queue.meal_plan_queue)
 
