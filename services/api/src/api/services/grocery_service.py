@@ -16,50 +16,49 @@ from sqlalchemy.orm import selectinload
 class GroceryService:
     """Operations on grocery lists derived from meal plans."""
 
-    @staticmethod
+    def __init__(self, session: AsyncSession, household_id: UUID) -> None:
+        self.session = session
+        self.household_id = household_id
+
     async def get_grocery_list(
-        session: AsyncSession,
+        self,
         meal_plan_id: UUID,
     ) -> GroceryList | None:
         """Return the grocery list for a meal plan, or None."""
         stmt = select(GroceryList).where(GroceryList.meal_plan_id == meal_plan_id)
-        result = await session.execute(stmt)
+        result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
-    @staticmethod
     async def check_item(
-        session: AsyncSession,
+        self,
         item_id: UUID,
     ) -> GroceryItem | None:
         """Mark a grocery item as checked. Returns None if not found."""
         stmt = select(GroceryItem).where(GroceryItem.id == item_id)
-        result = await session.execute(stmt)
+        result = await self.session.execute(stmt)
         item = result.scalar_one_or_none()
         if item is None:
             return None
         item.is_checked = True
-        await session.flush()
+        await self.session.flush()
         return item
 
-    @staticmethod
     async def uncheck_item(
-        session: AsyncSession,
+        self,
         item_id: UUID,
     ) -> GroceryItem | None:
         """Mark a grocery item as unchecked. Returns None if not found."""
         stmt = select(GroceryItem).where(GroceryItem.id == item_id)
-        result = await session.execute(stmt)
+        result = await self.session.execute(stmt)
         item = result.scalar_one_or_none()
         if item is None:
             return None
         item.is_checked = False
-        await session.flush()
+        await self.session.flush()
         return item
 
-    @staticmethod
     async def complete_shopping(
-        session: AsyncSession,
-        household_id: UUID,
+        self,
         grocery_list_id: UUID,
         purchased_items: list[dict],
     ) -> list[InventoryItem]:
@@ -73,22 +72,20 @@ class GroceryService:
         created: list[InventoryItem] = []
         for entry in purchased_items:
             inv = InventoryItem(
-                household_id=household_id,
+                household_id=self.household_id,
                 ingredient_id=entry["ingredient_id"],
                 quantity=entry["quantity"],
                 unit=entry["unit"],
                 location=entry.get("location", "pantry"),
                 expiry_date=entry.get("expiry_date"),
             )
-            session.add(inv)
+            self.session.add(inv)
             created.append(inv)
-        await session.flush()
+        await self.session.flush()
         return created
 
-    @staticmethod
     async def regenerate_grocery_list(
-        session: AsyncSession,
-        household_id: UUID,
+        self,
         meal_plan_id: UUID,
     ) -> GroceryList:
         """Recalculate grocery list from plan recipes minus inventory.
@@ -105,10 +102,10 @@ class GroceryService:
             )
             .where(
                 MealPlan.id == meal_plan_id,
-                MealPlan.household_id == household_id,
+                MealPlan.household_id == self.household_id,
             )
         )
-        plan_result = await session.execute(plan_stmt)
+        plan_result = await self.session.execute(plan_stmt)
         plan = plan_result.scalar_one()
 
         # 2. Aggregate needed ingredients: (ingredient_id, unit) -> qty
@@ -122,8 +119,10 @@ class GroceryService:
                 needed[(ri.ingredient_id, ri.unit)] += ri.quantity
 
         # 3. Load current inventory for household
-        inv_stmt = select(InventoryItem).where(InventoryItem.household_id == household_id)
-        inv_result = await session.execute(inv_stmt)
+        inv_stmt = select(InventoryItem).where(
+            InventoryItem.household_id == self.household_id
+        )
+        inv_result = await self.session.execute(inv_stmt)
         inventory_items = inv_result.scalars().all()
 
         # Build inventory lookup: (ingredient_id, unit) -> total qty
@@ -140,11 +139,11 @@ class GroceryService:
 
         # 5. Remove existing grocery list if present
         existing_stmt = select(GroceryList).where(GroceryList.meal_plan_id == meal_plan_id)
-        existing_result = await session.execute(existing_stmt)
+        existing_result = await self.session.execute(existing_stmt)
         existing = existing_result.scalar_one_or_none()
         if existing is not None:
-            await session.delete(existing)
-            await session.flush()
+            await self.session.delete(existing)
+            await self.session.flush()
 
         # 6. Create new grocery list with items
         grocery_list = GroceryList(meal_plan_id=meal_plan_id)
@@ -156,6 +155,6 @@ class GroceryService:
             )
             for ing_id, qty, unit in grocery_entries
         ]
-        session.add(grocery_list)
-        await session.flush()
+        self.session.add(grocery_list)
+        await self.session.flush()
         return grocery_list

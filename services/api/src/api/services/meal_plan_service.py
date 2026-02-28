@@ -60,10 +60,12 @@ Adapt the recipe now."""
 class MealPlanService:
     """Household-scoped meal plan operations."""
 
-    @staticmethod
+    def __init__(self, session: AsyncSession, household_id: UUID) -> None:
+        self.session = session
+        self.household_id = household_id
+
     async def create_plan(
-        session: AsyncSession,
-        household_id: UUID,
+        self,
         data: CreateMealPlan,
     ) -> MealPlan:
         """Create a draft meal plan and enqueue generation request.
@@ -71,9 +73,9 @@ class MealPlanService:
         Raises:
             HTTPException 409: If the household already has an active or draft plan.
         """
-        existing = await session.execute(
+        existing = await self.session.execute(
             select(MealPlan).where(
-                MealPlan.household_id == household_id,
+                MealPlan.household_id == self.household_id,
                 MealPlan.status.in_(["draft", "active"]),
             )
         )
@@ -84,54 +86,46 @@ class MealPlanService:
             )
 
         plan = MealPlan(
-            household_id=household_id,
+            household_id=self.household_id,
             week_start_date=data.week_start_date,
             status="draft",
         )
-        session.add(plan)
-        await session.flush()
+        self.session.add(plan)
+        await self.session.flush()
 
         enqueue_message(
             {
                 "meal_plan_id": str(plan.id),
-                "household_id": str(household_id),
+                "household_id": str(self.household_id),
                 "week_start_date": data.week_start_date.isoformat(),
             }
         )
 
         return plan
 
-    @staticmethod
     async def get_plan(
-        session: AsyncSession,
-        household_id: UUID,
+        self,
         plan_id: UUID,
     ) -> MealPlan | None:
         """Return a single meal plan with slots, or None if not found."""
         stmt = select(MealPlan).where(
             MealPlan.id == plan_id,
-            MealPlan.household_id == household_id,
+            MealPlan.household_id == self.household_id,
         )
-        result = await session.execute(stmt)
+        result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
-    @staticmethod
-    async def get_active_plan(
-        session: AsyncSession,
-        household_id: UUID,
-    ) -> MealPlan | None:
+    async def get_active_plan(self) -> MealPlan | None:
         """Return the current active meal plan for the household."""
         stmt = select(MealPlan).where(
-            MealPlan.household_id == household_id,
+            MealPlan.household_id == self.household_id,
             MealPlan.status == "active",
         )
-        result = await session.execute(stmt)
+        result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
-    @staticmethod
     async def update_slot(
-        session: AsyncSession,
-        household_id: UUID,
+        self,
         plan_id: UUID,
         slot_id: UUID,
         data: UpdateMealSlot,
@@ -143,10 +137,10 @@ class MealPlanService:
             .where(
                 MealSlot.id == slot_id,
                 MealSlot.meal_plan_id == plan_id,
-                MealPlan.household_id == household_id,
+                MealPlan.household_id == self.household_id,
             )
         )
-        result = await session.execute(stmt)
+        result = await self.session.execute(stmt)
         slot = result.scalar_one_or_none()
         if slot is None:
             return None
@@ -154,13 +148,11 @@ class MealPlanService:
         updates = data.model_dump(exclude_unset=True)
         for field, value in updates.items():
             setattr(slot, field, value)
-        await session.flush()
+        await self.session.flush()
         return slot
 
-    @staticmethod
     async def update_slot_status(
-        session: AsyncSession,
-        household_id: UUID,
+        self,
         plan_id: UUID,
         slot_id: UUID,
         data: UpdateSlotStatus,
@@ -172,10 +164,10 @@ class MealPlanService:
             .where(
                 MealSlot.id == slot_id,
                 MealSlot.meal_plan_id == plan_id,
-                MealPlan.household_id == household_id,
+                MealPlan.household_id == self.household_id,
             )
         )
-        result = await session.execute(stmt)
+        result = await self.session.execute(stmt)
         slot = result.scalar_one_or_none()
         if slot is None:
             return None
@@ -185,28 +177,26 @@ class MealPlanService:
             slot.cooked_at = datetime.now(UTC)
         else:
             slot.cooked_at = None
-        await session.flush()
+        await self.session.flush()
         return slot
 
-    @staticmethod
     async def update_plan_status(
-        session: AsyncSession,
-        household_id: UUID,
+        self,
         plan_id: UUID,
         data: UpdatePlanStatus,
     ) -> MealPlan | None:
         """Transition plan status: draft -> active -> completed."""
         stmt = select(MealPlan).where(
             MealPlan.id == plan_id,
-            MealPlan.household_id == household_id,
+            MealPlan.household_id == self.household_id,
         )
-        result = await session.execute(stmt)
+        result = await self.session.execute(stmt)
         plan = result.scalar_one_or_none()
         if plan is None:
             return None
 
         plan.status = data.status
-        await session.flush()
+        await self.session.flush()
         return plan
 
     @staticmethod

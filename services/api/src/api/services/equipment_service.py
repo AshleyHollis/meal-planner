@@ -14,31 +14,31 @@ from ..models.equipment import CreateEquipment
 class EquipmentService:
     """Household-scoped equipment operations."""
 
-    @staticmethod
-    async def list_equipment(
-        session: AsyncSession,
-        household_id: UUID,
-    ) -> list[Equipment]:
+    def __init__(self, session: AsyncSession, household_id: UUID) -> None:
+        self.session = session
+        self.household_id = household_id
+
+    async def list_equipment(self) -> list[Equipment]:
         """Return all equipment for a household."""
         stmt = (
-            select(Equipment).where(Equipment.household_id == household_id).order_by(Equipment.name)
+            select(Equipment)
+            .where(Equipment.household_id == self.household_id)
+            .order_by(Equipment.name)
         )
-        result = await session.execute(stmt)
+        result = await self.session.execute(stmt)
         return list(result.scalars().all())
 
-    @staticmethod
     async def register_equipment(
-        session: AsyncSession,
-        household_id: UUID,
+        self,
         data: CreateEquipment,
     ) -> Equipment:
         """Register new equipment with its modes."""
         equipment = Equipment(
-            household_id=household_id,
+            household_id=self.household_id,
             name=data.name,
         )
-        session.add(equipment)
-        await session.flush()
+        self.session.add(equipment)
+        await self.session.flush()
 
         for mode_data in data.modes:
             mode = EquipmentMode(
@@ -48,8 +48,8 @@ class EquipmentService:
                 min_temp=mode_data.min_temp,
                 max_temp=mode_data.max_temp,
             )
-            session.add(mode)
+            self.session.add(mode)
 
-        await session.flush()
-        await session.refresh(equipment, attribute_names=["modes"])
+        await self.session.flush()
+        await self.session.refresh(equipment, attribute_names=["modes"])
         return equipment

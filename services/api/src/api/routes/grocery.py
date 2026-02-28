@@ -5,10 +5,8 @@ from __future__ import annotations
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from shared.db.connection import get_session
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..middleware.auth import get_current_household_id
+from ..dependencies import get_grocery_service
 from ..models.grocery import (
     CompleteShoppingRequest,
     GroceryItemResponse,
@@ -27,11 +25,10 @@ router = APIRouter(tags=["grocery"])
 )
 async def get_grocery_list(
     meal_plan_id: UUID,
-    household_id: UUID = Depends(get_current_household_id),
-    session: AsyncSession = Depends(get_session),
+    service: GroceryService = Depends(get_grocery_service),  # noqa: B008
 ) -> GroceryListResponse:
     """Return the grocery list for a meal plan."""
-    grocery_list = await GroceryService.get_grocery_list(session, meal_plan_id)
+    grocery_list = await service.get_grocery_list(meal_plan_id)
     if grocery_list is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -47,14 +44,13 @@ async def get_grocery_list(
 async def check_grocery_item(
     item_id: UUID,
     body: UpdateGroceryItem,
-    household_id: UUID = Depends(get_current_household_id),
-    session: AsyncSession = Depends(get_session),
+    service: GroceryService = Depends(get_grocery_service),  # noqa: B008
 ) -> GroceryItemResponse:
     """Check or uncheck a grocery item."""
     if body.is_checked:
-        item = await GroceryService.check_item(session, item_id)
+        item = await service.check_item(item_id)
     else:
-        item = await GroceryService.uncheck_item(session, item_id)
+        item = await service.uncheck_item(item_id)
     if item is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -71,13 +67,10 @@ async def check_grocery_item(
 async def complete_shopping(
     grocery_list_id: UUID,
     body: CompleteShoppingRequest,
-    household_id: UUID = Depends(get_current_household_id),
-    session: AsyncSession = Depends(get_session),
+    service: GroceryService = Depends(get_grocery_service),  # noqa: B008
 ) -> list[InventoryItemResponse]:
     """Mark shopping as complete and add purchased items to inventory."""
-    items = await GroceryService.complete_shopping(
-        session,
-        household_id,
+    items = await service.complete_shopping(
         grocery_list_id,
         [item.model_dump() for item in body.purchased_items],
     )

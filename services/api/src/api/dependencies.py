@@ -1,0 +1,52 @@
+"""FastAPI dependency factories for service layer injection.
+
+Each ``get_*_service`` function composes a DB session and household_id
+into a ready-to-use service instance, following the yt-summarizer
+``Depends(get_service)`` pattern.
+"""
+
+from __future__ import annotations
+
+from uuid import UUID
+
+from fastapi import Depends
+from shared.db.connection import get_session
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from .middleware.auth import get_current_household_id
+from .services.equipment_service import EquipmentService
+from .services.grocery_service import GroceryService
+from .services.inventory_service import InventoryService
+from .services.meal_plan_service import MealPlanService
+
+
+def get_inventory_service(
+    session: AsyncSession = Depends(get_session),  # noqa: B008
+    household_id: UUID = Depends(get_current_household_id),  # noqa: B008
+) -> InventoryService:
+    """Dependency: household-scoped inventory service."""
+    return InventoryService(session, household_id)
+
+
+def get_equipment_service(
+    session: AsyncSession = Depends(get_session),  # noqa: B008
+    household_id: UUID = Depends(get_current_household_id),  # noqa: B008
+) -> EquipmentService:
+    """Dependency: household-scoped equipment service."""
+    return EquipmentService(session, household_id)
+
+
+def get_meal_plan_service(
+    session: AsyncSession = Depends(get_session),  # noqa: B008
+    household_id: UUID = Depends(get_current_household_id),  # noqa: B008
+) -> MealPlanService:
+    """Dependency: household-scoped meal plan service."""
+    return MealPlanService(session, household_id)
+
+
+def get_grocery_service(
+    session: AsyncSession = Depends(get_session),  # noqa: B008
+    household_id: UUID = Depends(get_current_household_id),  # noqa: B008
+) -> GroceryService:
+    """Dependency: household-scoped grocery service."""
+    return GroceryService(session, household_id)

@@ -947,7 +947,7 @@ After POC validated, clean up code structure, extract utilities, add proper erro
   - _Requirements: FR-20, NFR-13_
   - _Design: Edge Cases_
 
-- [ ] 2.3 Refactor service layer dependency injection
+- [x] 2.3 Refactor service layer dependency injection
   - **Do**:
     1. Create `services/api/src/api/dependencies.py` with `get_service()` factory functions
     2. Move DB session and household_id injection into clean dependency chain
