@@ -286,7 +286,7 @@ Focus: Scaffold the full stack, prove the core loop works end-to-end (inventory 
   - _Requirements: NFR-03_
   - _Design: API Design - Health Checks_
 
-- [ ] 1.22 Create correlation ID middleware
+- [x] 1.22 Create correlation ID middleware
   - **Do**:
     1. Create `services/api/src/api/middleware/__init__.py` and `services/api/src/api/middleware/correlation.py`
     2. Generate X-Correlation-ID on each request, bind to structlog context
