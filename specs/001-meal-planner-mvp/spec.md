@@ -3,7 +3,7 @@
 **Feature Branch**: `001-meal-planner-mvp`
 **Created**: 2026-02-28
 **Status**: Draft
-**Input**: AI-powered weekly meal planner with pantry tracking, expiry-based waste reduction, Ninja Combi cooking steps, and plan-time/cook-time customization for 2 adults shopping at Coles
+**Input**: AI-powered weekly meal planner with pantry tracking, expiry-based waste reduction, Ninja Combi cooking steps, multi-shop product catalogue, and plan-time/cook-time customization for 2 adults
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -47,7 +47,8 @@ with expiry warnings. Delivers standalone value as a kitchen inventory tracker.
 
 As a home cook, I want AI to generate a weekly meal plan of simple, easy meals
 for 2 adults that prioritizes using ingredients close to expiry, uses my available
-cooking equipment (primarily the Ninja Combi), and sources ingredients from Coles.
+cooking equipment (primarily the Ninja Combi), and sources ingredients from my
+preferred shops.
 
 The AI considers what's in my fridge/pantry, what's expiring soon, my registered
 equipment, and my preference for simple meals. It produces a 7-day plan with
@@ -84,12 +85,13 @@ AI produces 7 days of meals that reference the available ingredients and equipme
 ### User Story 3 - Grocery List Generation (Priority: P3)
 
 As a home cook, I want a consolidated grocery list generated from my weekly meal
-plan that accounts for what I already have, so I can efficiently shop at Coles
-without buying duplicates.
+plan that accounts for what I already have, so I can efficiently shop without
+buying duplicates.
 
 The system compares what the meal plan requires against what's already in my
-fridge/pantry and produces a list of only what I need to buy. Items are grouped
-in a way that makes shopping easy.
+fridge/pantry and produces a list of only what I need to buy. Items show the
+specific product, brand, and shop, and are grouped by shop for efficient
+multi-store trips.
 
 **Why this priority**: Without a grocery list, the meal plan is just a list of
 ideas. The grocery list turns the plan into action. It depends on both the meal
@@ -634,44 +636,67 @@ more meals similar to 5-star ratings, fewer similar to 1-star ratings).
 
 ---
 
-### User Story 18 - Coles Weekly Specials Awareness (Priority: P18)
+### User Story 18 - Multi-Shop Product Catalogue & Specials (Priority: P18)
 
-As a budget-conscious shopper at Coles, I want to tell the system what's on
-special this week so the AI can prioritize those ingredients when generating
-the meal plan, helping me save money.
+As a home cook who shops at multiple stores (Coles, Woolworths, Aldi, etc.), I
+want the system to know which shops I use, what products each shop sells for
+a given ingredient (brand, size, price), and what's on special this week — so
+the grocery list tells me exactly what to buy and where, and the AI can plan
+around the best deals.
 
-Before generating a meal plan, I can flag items that are on sale (e.g., "chicken
-thighs half price", "capsicums 3 for $5"). The AI treats sale items as preferred
-ingredients — similar to how it prioritizes expiring inventory — and builds
-meals around them where possible. This doesn't require any Coles API; I just
-enter what I see in the catalogue or app.
+An abstract ingredient like "BBQ sauce" maps to concrete products: "Masterfoods
+BBQ Sauce 500ml" at Coles for $4.50, "Fountain BBQ Sauce 500ml" at Woolworths
+for $3.80. Different brands may affect cooking — a thicker sauce needs different
+quantities, a sweeter one changes the recipe balance. The AI accounts for these
+differences when generating cooking steps.
 
-**Why this priority**: Planning around what's cheap this week is one of the
-simplest ways to reduce grocery spend. Most meal planners ignore pricing entirely.
-Even a manual input approach (no API integration) adds significant value for
-budget-aware households.
+I can register my preferred shops, build up a product catalogue over time (the
+system learns what I buy), and flag specials from any shop before generating a
+meal plan.
 
-**Independent Test**: Can be tested by flagging "chicken thighs" as on special,
-generating a meal plan, and verifying chicken thigh meals appear more frequently
-than they would without the flag.
+**Why this priority**: Real households don't shop at a single store. Different
+stores have different prices, brands, and availability. A grocery list that says
+"500ml BBQ sauce" is less useful than one that says "Masterfoods BBQ Sauce 500ml
+— Coles $4.50 / Fountain BBQ Sauce 500ml — Woolworths $3.80 (on special)."
+Product-level awareness also lets the AI adjust recipes based on the actual
+product purchased.
+
+**Independent Test**: Can be tested by registering two shops, adding products
+for "BBQ sauce" at each, flagging one as on special, generating a meal plan,
+and verifying the grocery list shows the specific product and shop with the
+special highlighted.
 
 **Acceptance Scenarios**:
 
-1. **Given** I flag "chicken thighs" as on special this week, **When** the AI
-   generates a meal plan, **Then** meals using chicken thighs are prioritized.
-2. **Given** I flag multiple items as on special, **When** the AI generates a
-   plan, **Then** it balances using specials with using expiring inventory (expiry
+1. **Given** I have registered Coles and Woolworths as my shops, **When** I add
+   a product for "chicken thighs", **Then** I can specify the brand, size, and
+   price at each shop (e.g., "Coles Finest Chicken Thighs 1kg — $12" and
+   "Woolworths Free Range Chicken Thighs 800g — $10").
+2. **Given** I have products mapped at multiple shops, **When** I view the
+   grocery list, **Then** each item shows the specific product, brand, size,
+   and shop — not just the generic ingredient name.
+3. **Given** "Fountain BBQ Sauce" is on special at Woolworths, **When** the AI
+   generates a meal plan using BBQ sauce, **Then** it prioritizes that product
+   and adjusts the recipe if the brand differs from what was originally planned
+   (e.g., different quantity needed due to different bottle size).
+4. **Given** a recipe uses "BBQ sauce" and I purchased "Masterfoods Smoky BBQ
+   Sauce" (which is thicker than the default), **When** I view the cooking
+   steps, **Then** the AI notes any adjustment needed (e.g., "Masterfoods is
+   thicker — use 2 tbsp instead of 3").
+5. **Given** I flag items as on special at Woolworths and Coles, **When** the AI
+   generates a plan, **Then** it considers specials across all shops (expiry
    still takes priority over price).
-3. **Given** I have flagged specials from last week, **When** a new week starts,
-   **Then** the old specials are cleared and I can enter new ones.
-4. **Given** I don't flag any specials, **When** the AI generates a plan, **Then**
-   it plans normally without price consideration.
+6. **Given** I have built up a product catalogue over several weeks, **When** I
+   add a new ingredient to a recipe, **Then** the system suggests products I've
+   previously bought and their shop/price.
+7. **Given** I have specials from last week, **When** a new week starts, **Then**
+   the old specials are cleared and I can enter new ones for each shop.
 
 ---
 
 ### User Story 19 - Offline Mode (Priority: P19)
 
-As a home cook who shops at Coles (where mobile signal is often poor) and cooks
+As a home cook who shops at stores where mobile signal is often poor and cooks
 in my kitchen, I want the app to work fully offline so I can access my grocery
 list, recipes, and meal plan without an internet connection.
 
@@ -695,7 +720,7 @@ all function correctly. Then reconnect and verify changes sync.
 1. **Given** I have an active meal plan, **When** I lose internet connectivity,
    **Then** I can still view all meals, recipes, and cooking steps for the
    current week.
-2. **Given** I am offline at Coles, **When** I check off items on the grocery
+2. **Given** I am offline at the shop, **When** I check off items on the grocery
    list, **Then** the changes are saved locally and sync when I reconnect.
 3. **Given** I am cooking offline, **When** I start a timer, **Then** the timer
    runs and alerts me when complete (push notification may not work offline,
@@ -722,7 +747,7 @@ for all planned meals across all slots.
 **Why this priority**: Planning only dinners leaves most of the day unplanned.
 Ingredients for lunch and breakfast still need to be bought, and without planning
 them, users either overbuy or make extra trips. Full-day planning gives the
-complete picture needed for a single, efficient weekly shop at Coles.
+complete picture needed for a single, efficient weekly shop.
 
 **Independent Test**: Can be tested by generating a full week plan and verifying
 each day has breakfast, lunch, and dinner slots. Verify the grocery list includes
@@ -800,9 +825,9 @@ planned meal triggers a "freeze it" suggestion.
 - What happens when the user doesn't complete the grocery shop (only buys some
   items)? The user can mark which items were purchased, and the system adjusts
   the meal plan to only include meals that are feasible with purchased ingredients.
-- What happens when an ingredient is unavailable at Coles? The user can mark an
-  item as unavailable, and the AI suggests a substitute or replans the affected
-  meals.
+- What happens when an ingredient is unavailable at a shop? The user can mark an
+  item as unavailable, and the AI suggests a substitute, an alternative product
+  from another shop, or replans the affected meals.
 - What happens when the user skips a planned meal? The unused ingredients remain
   in inventory and the meal can be rescheduled to a later day in the week.
 - What happens when preferences conflict with expiring ingredients? (e.g., the
@@ -843,6 +868,15 @@ planned meal triggers a "freeze it" suggestion.
 - What happens when specials conflict with preferences? (e.g., pork is on special
   but a household member dislikes pork) Preferences and restrictions always
   override price considerations.
+- What happens when the same ingredient is available at multiple shops at
+  different prices? The grocery list should show both options and let the user
+  choose, or default to the cheapest / on-special option.
+- What happens when a product is mapped at one shop but not another? The grocery
+  list shows the mapped product for the shop that has it and falls back to a
+  generic ingredient name for shops without a mapping.
+- What happens when the user switches brands mid-week (bought a different BBQ
+  sauce than planned)? They can update the product used, and the AI adjusts any
+  remaining recipe steps for the new brand's characteristics.
 - What happens when the user is offline and their household member makes changes
   online? The offline user continues with their cached version and changes merge
   when they reconnect, with a notification of what changed.
@@ -936,9 +970,16 @@ planned meal triggers a "freeze it" suggestion.
   meal plan suggestions.
 - **FR-033**: AI MUST incorporate recipe feedback to adjust equipment-specific
   settings (e.g., cooking times, temperatures) in future similar recipes.
-- **FR-034**: System MUST allow users to flag grocery items as "on special" before
-  generating a meal plan, and the AI MUST prioritize those ingredients (after
-  expiring inventory).
+- **FR-034**: System MUST allow users to register multiple shops and map
+  ingredients to specific products (brand, size, price) at each shop.
+- **FR-035A**: System MUST allow users to flag products as "on special" at any
+  shop before generating a meal plan, and the AI MUST prioritize those products
+  (after expiring inventory).
+- **FR-035B**: Grocery lists MUST show specific products with brand, size, and
+  shop — not just generic ingredient names — and be groupable by shop.
+- **FR-035C**: AI MUST adjust recipe cooking steps when a different brand/product
+  is used, if the product characteristics affect cooking (e.g., quantity
+  adjustments for different sizes, technique changes for different consistencies).
 - **FR-035**: System MUST cache the current week's meal plan, recipes, grocery
   list, and inventory for full offline use, with automatic sync on reconnection.
 - **FR-036**: System MUST support three meal slots per day (breakfast, lunch,
@@ -976,7 +1017,9 @@ planned meal triggers a "freeze it" suggestion.
   piece of equipment (or no equipment for prep steps). Includes settings like
   temperature, time, and mode.
 - **Grocery List**: A consolidated shopping list derived from a meal plan. Contains
-  line items with quantities needed after subtracting inventory.
+  line items with specific products, brands, sizes, and shops — not just generic
+  ingredient names. Quantities reflect what's needed after subtracting inventory.
+  Items are groupable by shop for efficient multi-store trips.
 - **Leftover**: A record of uneaten food after cooking a meal. Has a quantity and
   estimated use-by date. Stored as an inventory item in the fridge.
 - **Food Preference**: A like, dislike, or dietary restriction associated with a
@@ -994,17 +1037,26 @@ planned meal triggers a "freeze it" suggestion.
   to a specific meal in the plan. Has a trigger time, a message describing the
   action (e.g., "defrost chicken"), and a reference to the meal. Automatically
   reschedules when the meal is moved.
-- **Weekly Special**: A grocery item flagged as on sale for the current week. Has
-  a name and optional price/discount info. Cleared weekly. The AI prioritizes
-  these ingredients (after expiring inventory) when generating meal plans.
+- **Shop**: A grocery store the household shops at (e.g., Coles, Woolworths, Aldi).
+  Has a name. A household can have multiple preferred shops.
+- **Product**: A specific purchasable item at a shop. Maps an abstract ingredient
+  to a concrete brand, size, and price at a specific shop (e.g., "Masterfoods BBQ
+  Sauce 500ml" at Coles for $4.50). Different products for the same ingredient
+  may have different cooking characteristics that the AI accounts for in recipe
+  steps.
+- **Weekly Special**: A product flagged as on sale for the current week at a
+  specific shop. Has a reference to the product and optional discount info.
+  Cleared weekly. The AI prioritizes these products (after expiring inventory)
+  when generating meal plans.
 
 ## Assumptions
 
 - The default household is 2 adults. The system supports multiple members per
   household with individual accounts. Supporting multiple households per user
   is a future enhancement.
-- Coles is the primary grocery store. No integration with Coles APIs is needed
-  for MVP; the grocery list is a simple checklist.
+- The household shops at multiple stores (e.g., Coles, Woolworths, Aldi). No
+  integration with store APIs is needed; product and price data is entered
+  manually by the user and builds up over time as a personal product catalogue.
 - The Ninja Combi is the primary cooking equipment, but the system supports
   any equipment the user registers.
 - "Simple/easy meals" is a preference communicated to the AI, not a hard system
@@ -1030,9 +1082,13 @@ planned meal triggers a "freeze it" suggestion.
   create meal plan entries or full recipes unless the user chooses to cook one.
 - Freezer defrost times are AI-estimated based on item type and quantity. No
   precise defrost science is needed for MVP.
-- Coles weekly specials are entered manually by the user. No Coles API or
-  catalogue scraping is needed. The user checks the Coles app/catalogue and
+- Weekly specials are entered manually by the user per shop. No store API or
+  catalogue scraping is needed. The user checks each store's app/catalogue and
   enters what's relevant.
+- The product catalogue is built up organically over time. The user doesn't need
+  to pre-populate every product before using the app — they add products as they
+  shop and the catalogue grows. The AI can still generate plans with generic
+  ingredients when no specific product is mapped.
 - Offline mode uses service worker caching (PWA pattern). The app does not need
   to be a native mobile app; a well-configured PWA with offline support is
   sufficient.
