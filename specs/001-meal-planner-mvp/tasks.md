@@ -194,7 +194,7 @@ Focus: Scaffold the full stack, prove the core loop works end-to-end (inventory 
   - **Commit**: `feat(shared): initialize Alembic migration configuration`
   - _Design: Project Structure_
 
-- [ ] 1.15 Create initial schema migration
+- [x] 1.15 Create initial schema migration
   - **Do**:
     1. Create `services/shared/alembic/versions/001_initial_schema.py` with all 13 tables
     2. Use `op.create_table()` for each table with all columns, constraints, indexes
