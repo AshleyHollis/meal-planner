@@ -862,6 +862,208 @@ test requesting a specific cuisine for a single meal slot.
 
 ---
 
+### User Story 23 - Ingredient Auto-Complete & Smart Defaults (Priority: P23)
+
+As a home cook adding items to my inventory, I want the system to auto-suggest
+item details as I type — storage location, typical shelf life, common units,
+and category — so I can add items quickly without filling in every field manually.
+
+When I type "chicken breast", the system auto-suggests: storage location (fridge),
+typical shelf life (3-5 days from today), unit (grams), and category (poultry).
+I can accept the defaults with one tap or adjust any field. The system learns
+from my past entries — if I always buy chicken breast in 1kg packs, it suggests
+1kg next time.
+
+**Why this priority**: Manual data entry is the #1 reason people abandon
+inventory-tracking apps. Every tap saved during item entry reduces friction.
+Smart defaults based on a common grocery database plus the user's own history
+make inventory management fast enough to actually sustain.
+
+**Independent Test**: Can be tested by typing "chicken" in the add-item field,
+verifying auto-complete suggests "chicken breast", "chicken thighs", etc., and
+checking that selecting one pre-fills storage, shelf life, and unit fields.
+
+**Acceptance Scenarios**:
+
+1. **Given** I start typing "chick" in the add-item field, **When** suggestions
+   appear, **Then** I see common items like "chicken breast", "chicken thighs",
+   "chicken drumsticks" with pre-filled defaults for each.
+2. **Given** I select "chicken breast" from suggestions, **When** the item form
+   loads, **Then** storage is pre-set to "fridge", expiry is pre-set to 3-5 days
+   from today, and unit is pre-set to "grams".
+3. **Given** I always buy chicken breast in 1kg packs from Coles, **When** I add
+   "chicken breast" again, **Then** the system suggests 1kg as the quantity and
+   Coles as the shop based on my purchase history.
+4. **Given** I add an item that isn't in the common database, **When** I type a
+   new item name, **Then** I can still add it manually with all fields, and it
+   becomes available for future auto-complete.
+5. **Given** I am adding items after a grocery shop, **When** I add multiple
+   items quickly, **Then** I can accept defaults and move to the next item with
+   minimal taps.
+
+---
+
+### User Story 24 - Per-Trip Shopping Mode (Priority: P24)
+
+As a home cook heading to one specific shop, I want to filter the grocery list
+to show only that shop's items so I have a focused, relevant checklist while
+shopping.
+
+When I tap "I'm shopping at Woolworths", the grocery list filters to show only
+Woolworths products. Items from Coles, Aldi, or other shops are hidden. I can
+still see a count of remaining items at other shops. When I'm done at Woolworths,
+I can switch to "I'm shopping at Coles" for the next trip, or return to the
+full list view.
+
+**Why this priority**: Seeing items from three shops while standing in Woolworths
+is confusing and leads to accidentally skipping items. Per-trip mode makes the
+shopping experience clean and focused — especially important on mobile where
+screen space is limited.
+
+**Independent Test**: Can be tested by generating a grocery list with items from
+two shops, activating per-trip mode for one shop, and verifying only that shop's
+items are shown.
+
+**Acceptance Scenarios**:
+
+1. **Given** my grocery list has items from Coles and Woolworths, **When** I tap
+   "I'm shopping at Woolworths", **Then** only Woolworths items are shown.
+2. **Given** I am in per-trip mode for Woolworths, **When** I view the list,
+   **Then** I can see a summary badge like "12 items remaining at other shops"
+   without seeing those items in the list.
+3. **Given** I have checked off all Woolworths items, **When** I finish at
+   Woolworths, **Then** I can switch to per-trip mode for Coles or return to
+   the full list view.
+4. **Given** I am in per-trip mode, **When** I check off an item, **Then** it
+   is checked off in the full list too (visible to my household member).
+
+---
+
+### User Story 25 - Recurring Meal Slots (Priority: P25)
+
+As a home cook with consistent routines, I want to set recurring meals for
+specific slots — like "Taco Tuesday dinner every week" or "overnight oats for
+weekday breakfasts" — so the AI fills those in automatically and I only need
+to plan the exceptions.
+
+I can set any meal slot to recur weekly. Recurring slots are pre-filled when
+the AI generates a new plan, and the AI plans the remaining slots around them.
+I can override any recurring slot for a specific week without changing the
+recurring rule.
+
+**Why this priority**: Most households have some consistent meals (same breakfast
+every workday, a regular mid-week favourite). Forcing the AI to re-plan these
+every week creates unnecessary friction. Recurring slots let users "set and
+forget" their routines and focus planning energy on the meals that actually
+vary.
+
+**Independent Test**: Can be tested by setting "overnight oats" as a recurring
+weekday breakfast, generating a new plan, and verifying those slots are pre-filled
+while other slots are AI-generated.
+
+**Acceptance Scenarios**:
+
+1. **Given** I set "overnight oats" as my recurring Monday-Friday breakfast,
+   **When** the AI generates a new weekly plan, **Then** weekday breakfast slots
+   are pre-filled with "overnight oats" and the AI plans everything else.
+2. **Given** I have a recurring "Taco Tuesday" dinner, **When** the AI generates
+   a plan, **Then** Tuesday dinner is pre-filled with tacos and the grocery list
+   includes taco ingredients.
+3. **Given** I have a recurring weekday breakfast, **When** I want something
+   different on Wednesday, **Then** I can override just Wednesday's breakfast
+   without changing the recurring rule.
+4. **Given** I have recurring slots and a recurring slot's recipe uses chicken,
+   **When** the AI plans the rest of the week, **Then** it accounts for the
+   recurring recipe's ingredients in its inventory and grocery calculations.
+5. **Given** I want to stop a recurring meal, **When** I remove the recurrence
+   rule, **Then** that slot returns to AI-planned for future weeks.
+
+---
+
+### User Story 26 - Cooking Mode (Priority: P26)
+
+As a home cook actively cooking a meal, I want a dedicated cooking mode that
+transforms the recipe view into a focused, step-by-step interface optimized for
+the kitchen — large text, prominent timers, minimal distractions, and voice
+assistant automatically activated.
+
+When I tap "Start Cooking" on a meal, the interface switches from a readable
+recipe to an active cooking interface. Each step is shown one at a time in large
+text. Timer buttons are prominent. The voice assistant activates automatically.
+Swipe or voice to advance steps. All other app navigation is minimized to avoid
+accidental taps with messy hands.
+
+**Why this priority**: Reading a recipe and cooking from a recipe are fundamentally
+different activities. The planning/browsing UI has navigation, small text, and
+multiple sections visible. The cooking UI needs to be stripped down, large,
+hands-free-ready, and timer-integrated. Without this mode, users switch to a
+printed recipe or a different app while actually cooking.
+
+**Independent Test**: Can be tested by opening a recipe and tapping "Start
+Cooking", verifying the UI changes to step-by-step mode with large text, timers,
+and voice activation.
+
+**Acceptance Scenarios**:
+
+1. **Given** I am viewing a recipe, **When** I tap "Start Cooking", **Then** the
+   interface switches to cooking mode: one step at a time, large text, prominent
+   timer buttons, and the voice assistant activates.
+2. **Given** I am in cooking mode, **When** I swipe right, **Then** I advance to
+   the next step (same as saying "next step" via voice).
+3. **Given** the current step has a duration, **When** I view it in cooking mode,
+   **Then** a large "Start Timer" button is immediately visible without scrolling.
+4. **Given** I am in cooking mode with messy hands, **When** I accidentally tap
+   the screen, **Then** a brief touch does not navigate away — only deliberate
+   swipes or voice commands advance steps.
+5. **Given** I want to exit cooking mode, **When** I tap a small "Exit" button
+   or say "stop cooking", **Then** the recipe returns to the standard view and
+   I am prompted to mark the meal as cooked and record leftovers.
+6. **Given** I have multiple timers running in cooking mode, **When** I view the
+   cooking screen, **Then** all active timers are visible in a compact strip at
+   the top or bottom of the screen.
+
+---
+
+### User Story 27 - Plan Deviation / "I Ate Something Else" (Priority: P27)
+
+As a home cook who sometimes deviates from the plan — ordered pizza, ate out
+spontaneously, or just wasn't in the mood — I want to tell the system I didn't
+cook the planned meal so that inventory isn't wrongly deducted and the unused
+ingredients remain available for future meals.
+
+When I skip a planned meal, I can mark it as "didn't cook" with an optional
+reason (ate out, ordered in, not hungry, etc.). The system does NOT deduct
+ingredients for that meal. The skipped meal can be rescheduled to a later day
+in the week or removed entirely. If ingredients were already purchased, they
+remain in inventory and are available for other meals or next week's plan.
+
+**Why this priority**: No meal plan survives the week perfectly. If the system
+assumes every planned meal was cooked and deducts ingredients accordingly,
+inventory becomes inaccurate within days. Explicit deviation tracking keeps the
+system honest and accurate.
+
+**Independent Test**: Can be tested by marking a planned meal as "didn't cook",
+verifying ingredients are NOT deducted, and checking that the ingredients remain
+available in inventory for other meals.
+
+**Acceptance Scenarios**:
+
+1. **Given** I have a planned dinner for tonight, **When** I mark it as "didn't
+   cook — ordered pizza", **Then** the ingredients for that meal are NOT deducted
+   from my inventory.
+2. **Given** I skipped Monday's dinner, **When** I view the week's plan, **Then**
+   I can reschedule that meal to Wednesday (swapping with the current Wednesday
+   plan) or remove it entirely.
+3. **Given** I skipped a meal that used chicken expiring soon, **When** I view
+   my inventory, **Then** the chicken is still there with its expiry warning,
+   and the AI may suggest using it in another meal or freezing it.
+4. **Given** I mark a meal as "ate out", **When** the AI reviews the week's
+   actual vs planned meals, **Then** it factors this into future planning (e.g.,
+   if I frequently skip Friday dinner, it might suggest lighter/cheaper meals
+   for Fridays).
+
+---
+
 ### Edge Cases
 
 - What happens when the fridge/pantry is nearly empty? The AI should generate
@@ -944,6 +1146,21 @@ test requesting a specific cuisine for a single meal slot.
 - What happens when a user requests a cuisine every week and variety suffers?
   The AI should gently suggest alternatives after 3+ weeks of the same cuisine
   unless the user has it set as a strong preference.
+- What happens when the auto-complete database doesn't recognize an ingredient?
+  The user can add it manually and it becomes available for future auto-complete
+  for their household.
+- What happens when the user is in per-trip mode at one shop and their household
+  member checks off an item at a different shop? The item is marked done in the
+  full list and the per-trip view updates accordingly on reconnect.
+- What happens when recurring slots fill most of the week and the AI has very
+  few slots to plan? The AI plans the remaining slots normally and does not
+  modify recurring slots unless the user asks.
+- What happens when the user frequently skips the same meal slot? The AI should
+  learn this pattern and suggest lighter or optional meals for that slot, or
+  suggest making it a recurring "eating out" slot.
+- What happens when the user enters cooking mode but realizes they're missing
+  an ingredient? They can exit cooking mode, substitute the ingredient (P8),
+  and re-enter cooking mode with updated steps.
 
 ## Requirements *(mandatory)*
 
@@ -1042,6 +1259,20 @@ test requesting a specific cuisine for a single meal slot.
   mode.
 - **FR-042**: AI MUST track cuisine variety within a week and across recent weeks,
   avoiding excessive repetition of the same cuisine unless requested.
+- **FR-043**: System MUST provide auto-complete when adding inventory items, with
+  smart defaults for storage location, typical shelf life, common units, and
+  category, based on a common grocery database and the user's purchase history.
+- **FR-044**: Grocery list MUST support per-trip shopping mode that filters to
+  a single shop's items while showing a count of remaining items at other shops.
+- **FR-045**: System MUST allow users to set recurring meals for any specific
+  meal slot (e.g., "every weekday breakfast" or "every Tuesday dinner") that
+  the AI pre-fills when generating new plans.
+- **FR-046**: System MUST provide a dedicated cooking mode with step-by-step
+  display, large text, prominent timers, automatic voice assistant activation,
+  and accidental-tap protection.
+- **FR-047**: System MUST allow users to mark a planned meal as "didn't cook"
+  with an optional reason, preventing inventory deduction and allowing the meal
+  to be rescheduled or removed.
 - **FR-035**: System MUST cache the current week's meal plan, recipes, grocery
   list, and inventory for full offline use, with automatic sync on reconnection.
 - **FR-036**: System MUST support three meal slots per day (breakfast, lunch,
@@ -1070,8 +1301,12 @@ test requesting a specific cuisine for a single meal slot.
   (breakfast, lunch, dinner). Belongs to a household. Has a status
   (draft/active/completed).
 - **Meal**: A single meal within a plan (e.g., Monday dinner, Tuesday breakfast).
-  Has a slot type (breakfast/lunch/dinner) and a status (planned/eating-out/skipped).
-  References a recipe and can be customized at plan time.
+  Has a slot type (breakfast/lunch/dinner) and a status (planned/eating-out/
+  skipped/cooked/didnt-cook). Can be a one-off or a recurring slot. References
+  a recipe and can be customized at plan time.
+- **Recurring Meal Rule**: A rule that pre-fills a specific meal slot each week.
+  Has a slot type, day(s) of the week, and a reference to a recipe. Can be
+  overridden for individual weeks without changing the rule.
 - **Recipe**: A set of ingredients and equipment-specific cooking steps generated
   by AI. Can be an AI original or a user-modified variation. Has a "freezable"
   tag (yes/no) with recommended freeze duration when applicable. Tagged with
