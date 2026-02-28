@@ -190,6 +190,72 @@ the next meal plan request.
 
 ---
 
+### User Story 6 - Food Preferences & Dislikes (Priority: P6)
+
+As a home cook, I want to set food preferences and dislikes for my household so
+the AI never suggests meals with ingredients or cuisines we don't enjoy.
+
+I can specify things we love (e.g., "Thai food", "pasta"), things we dislike
+(e.g., "coriander", "liver"), and any dietary restrictions (e.g., "no shellfish").
+The AI respects these preferences in every meal plan it generates.
+
+**Why this priority**: Without preferences, the AI will generate meals that get
+rejected and swapped frequently, undermining trust in the system. Preferences
+reduce friction and make the AI feel personalized from day one.
+
+**Independent Test**: Can be tested by setting a dislike (e.g., "coriander"),
+generating a meal plan, and verifying no recipes include that ingredient.
+
+**Acceptance Scenarios**:
+
+1. **Given** I have set "coriander" as a dislike, **When** the AI generates a
+   meal plan, **Then** no recipe includes coriander as an ingredient.
+2. **Given** I have set "Thai food" as a preference, **When** the AI generates
+   a meal plan, **Then** Thai-inspired meals appear more frequently than they
+   would by default.
+3. **Given** I have set "no shellfish" as a dietary restriction, **When** the AI
+   generates a recipe, **Then** shellfish is never included, even as an optional
+   or substitute ingredient.
+4. **Given** I want to update my preferences, **When** I add or remove a
+   preference, **Then** future meal plans reflect the change immediately.
+
+---
+
+### User Story 7 - Meal History & Favorites (Priority: P7)
+
+As a home cook, I want the system to remember what I've cooked before so the AI
+avoids repeating recent meals, and I can mark meals as favorites to request them
+again easily.
+
+The system tracks every meal I cook (date, recipe, any cook-time modifications).
+When generating new plans, the AI avoids meals cooked in the last 2-3 weeks
+unless I've favorited them. I can browse my history and re-add any past meal
+to a future plan.
+
+**Why this priority**: Repetition is a top reason people abandon meal planners.
+History tracking keeps variety high, and favorites let users build a personal
+cookbook of proven winners over time.
+
+**Independent Test**: Can be tested by cooking several meals over multiple weeks,
+verifying the AI avoids recent meals in new plans, and marking a meal as favorite
+to confirm it can be re-requested.
+
+**Acceptance Scenarios**:
+
+1. **Given** I cooked "chicken stir-fry" last week, **When** the AI generates
+   this week's plan, **Then** "chicken stir-fry" does not appear unless I have
+   explicitly favorited it and requested repeats.
+2. **Given** I have cooked 20+ meals over several weeks, **When** I view my meal
+   history, **Then** I can see a chronological list of past meals with dates.
+3. **Given** I mark a meal as a favorite, **When** I request a new meal plan,
+   **Then** I can optionally ask the AI to include one or more favorites in the
+   plan.
+4. **Given** I am browsing my meal history, **When** I select a past meal,
+   **Then** I can add it directly to a future meal plan (with the original or
+   modified recipe).
+
+---
+
 ### Edge Cases
 
 - What happens when the fridge/pantry is nearly empty? The AI should generate
@@ -206,6 +272,13 @@ the next meal plan request.
   meals.
 - What happens when the user skips a planned meal? The unused ingredients remain
   in inventory and the meal can be rescheduled to a later day in the week.
+- What happens when preferences conflict with expiring ingredients? (e.g., the
+  only expiring item is something the user dislikes) The AI should note the
+  conflict and suggest alternatives that still minimize waste, or flag the item
+  for the user to decide.
+- What happens when the user has cooked every meal in their favorites and history
+  recently? The AI generates new meal suggestions while noting it has exhausted
+  the user's recent repertoire.
 
 ## Requirements *(mandatory)*
 
@@ -240,6 +313,17 @@ the next meal plan request.
   household size (default: 2 adults).
 - **FR-014**: System MUST authenticate users via Auth0 to persist their data
   across sessions.
+- **FR-015**: System MUST allow users to set food preferences (likes), dislikes,
+  and dietary restrictions that the AI respects in all meal plan generation.
+- **FR-016**: System MUST track meal cooking history with dates and recipes used.
+- **FR-017**: System MUST allow users to mark meals as favorites for easy
+  re-selection in future plans.
+- **FR-018**: AI MUST avoid suggesting meals cooked in the last 2-3 weeks unless
+  the user explicitly requests a favorite.
+- **FR-019**: System MUST be designed mobile-first, optimized for use while
+  shopping at the store and cooking in the kitchen.
+- **FR-020**: System MUST display in-app alerts for items approaching expiry,
+  with contextual recipe suggestions that use those items.
 
 ### Key Entities
 
@@ -262,6 +346,11 @@ the next meal plan request.
   line items with quantities needed after subtracting inventory.
 - **Leftover**: A record of uneaten food after cooking a meal. Has a quantity and
   estimated use-by date. Stored as an inventory item in the fridge.
+- **Food Preference**: A like, dislike, or dietary restriction associated with the
+  household. Has a type (like/dislike/restriction), a value (ingredient name,
+  cuisine type, or category), and applies to all AI-generated plans.
+- **Meal History Entry**: A record of a meal that was cooked. Has a date, reference
+  to the recipe used (including any cook-time modifications), and a favorite flag.
 
 ## Assumptions
 
@@ -277,6 +366,12 @@ the next meal plan request.
   future enhancement.
 - Expiry dates are manually entered by the user. No barcode scanning or
   automatic detection for MVP.
+- The app is mobile-first but also works on desktop. No native mobile app;
+  it is a responsive web application accessed via mobile browser.
+- Expiry alerts are in-app only (no push notifications for MVP). Alerts appear
+  when the user opens the app.
+- "Last 2-3 weeks" for meal repetition avoidance is a soft guideline for the
+  AI, not a hard constraint. Users can override by requesting favorites.
 
 ## Success Criteria *(mandatory)*
 
