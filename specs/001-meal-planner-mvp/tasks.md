@@ -1027,13 +1027,13 @@ After POC validated, clean up code structure, extract utilities, add proper erro
   - _Requirements: AC-1.1, AC-1.4, AC-1.5_
   - _Design: Test Strategy - Integration Tests_
 
-- [ ] V12 [VERIFY] Quality checkpoint: inventory tests
+- [x] V12 [VERIFY] Quality checkpoint: inventory tests
   - **Do**: Run all tests
   - **Verify**: `cd services/api && uv run pytest tests/ -v 2>&1 | tail -10 && echo "TESTS_OK"`
   - **Done when**: All tests pass
   - **Commit**: `chore(api): pass quality checkpoint` (if fixes needed)
 
-- [ ] 3.4 Unit tests: grocery service
+- [x] 3.4 Unit tests: grocery service
   - **Do**:
     1. Create `services/api/tests/test_grocery_service.py`
     2. Test: grocery list = plan needs minus inventory (subtraction math)
@@ -1047,7 +1047,7 @@ After POC validated, clean up code structure, extract utilities, add proper erro
   - _Requirements: AC-3.1, AC-3.2, AC-3.3, AC-3.4, AC-3.5_
   - _Design: Test Strategy - Unit Tests_
 
-- [ ] 3.5 Unit tests: meal plan service
+- [x] 3.5 Unit tests: meal plan service
   - **Do**:
     1. Create `services/api/tests/test_meal_plan_service.py`
     2. Test: plan status lifecycle (draft -> active -> completed)
