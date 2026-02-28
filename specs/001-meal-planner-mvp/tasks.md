@@ -371,7 +371,7 @@ Focus: Scaffold the full stack, prove the core loop works end-to-end (inventory 
   - _Requirements: FR-01, AC-1.1, AC-1.4, AC-1.5, AC-1.6, AC-1.8_
   - _Design: API Design - Endpoints 1-4_
 
-- [ ] 1.28 Create equipment Pydantic models, service, and routes
+- [x] 1.28 Create equipment Pydantic models, service, and routes
   - **Do**:
     1. Create `services/api/src/api/models/equipment.py` with CreateEquipment, EquipmentResponse, EquipmentModeResponse
     2. Create `services/api/src/api/services/equipment_service.py` with list_equipment, register_equipment
