@@ -447,7 +447,7 @@ Focus: Scaffold the full stack, prove the core loop works end-to-end (inventory 
   - _Requirements: FR-05, AC-2.1, AC-2.6, AC-2.8_
   - _Design: API Design - Pydantic Models_
 
-- [ ] 1.34 Create meal plan service layer
+- [x] 1.34 Create meal plan service layer
   - **Do**:
     1. Create `services/api/src/api/services/meal_plan_service.py`
     2. Implement: create_plan (enqueue to Azure Queue, return draft), get_plan, get_active_plan
