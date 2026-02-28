@@ -44,7 +44,9 @@ async def get_active_meal_plan(
     """Get the currently active meal plan for the household."""
     plan = await MealPlanService.get_active_plan(session, household_id)
     if plan is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No active meal plan found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="No active meal plan found"
+        )
     return MealPlanDetailResponse.model_validate(plan)
 
 
@@ -118,7 +120,11 @@ async def update_slot_status(
 ) -> MealSlotResponse:
     """Mark a meal slot as cooked or skipped."""
     slot = await MealPlanService.update_slot_status(
-        session, household_id, plan_id, slot_id, body,
+        session,
+        household_id,
+        plan_id,
+        slot_id,
+        body,
     )
     if slot is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Meal slot not found")
