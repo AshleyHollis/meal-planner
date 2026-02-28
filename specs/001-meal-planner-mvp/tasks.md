@@ -731,7 +731,7 @@ Focus: Scaffold the full stack, prove the core loop works end-to-end (inventory 
   - _Requirements: FR-19, NFR-11_
   - _Design: Frontend Architecture - Components_
 
-- [ ] 1.55 Create ExpiryBadge component
+- [x] 1.55 Create ExpiryBadge component
   - **Do**:
     1. Create `apps/web/src/components/inventory/ExpiryBadge.tsx`
     2. Compute status from expiry date: safe (default), expiring within 2 days (amber), expired (red)
