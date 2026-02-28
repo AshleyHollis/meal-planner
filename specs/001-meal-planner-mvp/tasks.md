@@ -688,7 +688,7 @@ Focus: Scaffold the full stack, prove the core loop works end-to-end (inventory 
   - **Commit**: `feat(web): add TypeScript interfaces matching API models`
   - _Design: Frontend Architecture_
 
-- [ ] 1.52 Create API client service
+- [x] 1.52 Create API client service
   - **Do**:
     1. Create `apps/web/src/services/api.ts` with `fetchApi<T>()` wrapper
     2. Implement all API methods: inventory CRUD, equipment, meal plan operations, grocery operations, ingredient search
