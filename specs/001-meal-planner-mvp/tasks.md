@@ -658,7 +658,7 @@ Focus: Scaffold the full stack, prove the core loop works end-to-end (inventory 
   - **Commit**: `feat(api): register all API routers (20 endpoints)`
   - _Design: API Design_
 
-- [ ] V7 [VERIFY] Quality checkpoint: full API
+- [x] V7 [VERIFY] Quality checkpoint: full API
   - **Do**: Lint entire API and worker codebase
   - **Verify**: `cd services/api && uv run ruff check src/ && uv run ruff format --check src/ && cd ../../services/workers && uv run ruff check meal_plan_generator/ && echo "QUALITY_OK"`
   - **Done when**: Zero lint errors across both services
@@ -666,7 +666,7 @@ Focus: Scaffold the full stack, prove the core loop works end-to-end (inventory 
 
 ### Phase 1H: Next.js Frontend
 
-- [ ] 1.50 Scaffold Next.js project
+- [x] 1.50 Scaffold Next.js project
   - **Do**:
     1. Run `npx create-next-app@latest apps/web` with TypeScript, Tailwind CSS v4, App Router, src/ directory
     2. Configure `next.config.ts` with NEXT_PUBLIC_API_URL env
