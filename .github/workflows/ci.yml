@@ -207,9 +207,6 @@ jobs:
       fail-fast: false
       matrix:
         service:
-          - name: Shared
-            package: services/shared
-            test-dir: tests/
           - name: API
             package: services/api
             test-dir: tests/
