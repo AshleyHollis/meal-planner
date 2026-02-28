@@ -743,7 +743,7 @@ Focus: Scaffold the full stack, prove the core loop works end-to-end (inventory 
   - _Requirements: FR-02, AC-1.2_
   - _Design: Frontend Architecture - Components_
 
-- [ ] 1.56 Create AddItemForm component
+- [x] 1.56 Create AddItemForm component
   - **Do**:
     1. Create `apps/web/src/components/inventory/AddItemForm.tsx`
     2. Ingredient autocomplete using GET /api/v1/ingredients
