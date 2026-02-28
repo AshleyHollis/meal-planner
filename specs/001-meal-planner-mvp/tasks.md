@@ -877,7 +877,7 @@ Focus: Scaffold the full stack, prove the core loop works end-to-end (inventory 
   - _Requirements: US-3_
   - _Design: Frontend Architecture - Pages_
 
-- [ ] 1.66 Create dashboard page
+- [x] 1.66 Create dashboard page
   - **Do**:
     1. Update `apps/web/src/app/page.tsx` as dashboard
     2. Show: active plan summary, expiring items count, quick links to inventory/plan/grocery
