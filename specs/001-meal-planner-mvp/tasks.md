@@ -852,7 +852,7 @@ Focus: Scaffold the full stack, prove the core loop works end-to-end (inventory 
   - _Requirements: FR-11, AC-3.4, AC-3.6_
   - _Design: Frontend Architecture - Components_
 
-- [ ] 1.64 Create CompleteShoppingDialog component
+- [x] 1.64 Create CompleteShoppingDialog component
   - **Do**:
     1. Create `apps/web/src/components/grocery/CompleteShoppingDialog.tsx`
     2. Show list of checked items with expiry date input for each
