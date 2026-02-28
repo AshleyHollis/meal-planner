@@ -435,7 +435,7 @@ Focus: Scaffold the full stack, prove the core loop works end-to-end (inventory 
 
 ### Phase 1F: Meal Plan API + Worker (Core AI Loop)
 
-- [ ] 1.33 Create meal plan Pydantic models
+- [x] 1.33 Create meal plan Pydantic models
   - **Do**:
     1. Create `services/api/src/api/models/meal_plan.py`
     2. Define: CreateMealPlan, MealPlanResponse, MealPlanDetailResponse, MealSlotResponse, RecipeResponse, RecipeIngredientResponse, RecipeStepResponse
