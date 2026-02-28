@@ -344,7 +344,7 @@ Focus: Scaffold the full stack, prove the core loop works end-to-end (inventory 
   - _Requirements: AC-1.1_
   - _Design: API Design - Endpoints 18_
 
-- [ ] 1.26 Create inventory service layer
+- [x] 1.26 Create inventory service layer
   - **Do**:
     1. Create `services/api/src/api/services/inventory_service.py`
     2. Implement: list_items (filter by household, optional location), add_item, update_item, remove_item
