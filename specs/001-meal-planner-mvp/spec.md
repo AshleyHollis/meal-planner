@@ -480,6 +480,160 @@ suggestions only use available ingredients and are achievable in 15 minutes.
 
 ---
 
+### User Story 14 - Inventory Auto-Deduction After Cooking (Priority: P14)
+
+As a home cook, I want the system to automatically deduct the ingredients I used
+when I cook a meal, so my inventory stays accurate without me manually updating
+every item.
+
+When I mark a meal as "cooked", the system knows the recipe's ingredient list and
+quantities. It deducts those amounts from my fridge, pantry, or freezer inventory.
+If I made any substitutions (P8) or cook-time modifications (P4), the deduction
+reflects the actual ingredients used, not the original recipe.
+
+**Why this priority**: Without auto-deduction, inventory drifts out of sync within
+a single week. The user would have to manually update every ingredient after every
+meal, which is tedious and error-prone. Inaccurate inventory undermines the AI's
+ability to plan future meals and generate correct grocery lists.
+
+**Independent Test**: Can be tested by adding known quantities to inventory, cooking
+a meal with a known recipe, and verifying the inventory quantities decrease by the
+correct amounts.
+
+**Acceptance Scenarios**:
+
+1. **Given** I have 1kg of chicken in my fridge and a recipe uses 500g, **When** I
+   mark the meal as cooked, **Then** my fridge shows 500g of chicken remaining.
+2. **Given** I substituted beef for chicken at cook time, **When** I mark the meal
+   as cooked, **Then** beef is deducted (not chicken) from my inventory.
+3. **Given** a recipe uses 2 tablespoons of olive oil from my pantry, **When** I
+   mark the meal as cooked, **Then** the olive oil quantity in my pantry is reduced
+   accordingly.
+4. **Given** the recipe calls for an ingredient I don't have tracked in inventory
+   (e.g., salt), **When** I mark the meal as cooked, **Then** the system skips
+   that ingredient without error and does not create a negative inventory entry.
+5. **Given** I scaled the recipe up for guests, **When** I mark the meal as cooked,
+   **Then** the deducted quantities reflect the scaled amounts, not the default
+   serving size.
+
+---
+
+### User Story 15 - Staples & Always-Have Items (Priority: P15)
+
+As a home cook, I want to mark certain items as "staples" — things I always want
+to have on hand (salt, olive oil, butter, bread, milk, eggs) — so the grocery
+list reminds me to restock them when they're running low, even if no recipe this
+week specifically calls for them.
+
+I set a minimum threshold for each staple (e.g., "always have at least 1L of
+milk"). When my inventory drops below that threshold, the item automatically
+appears on my grocery list. This prevents extra trips to the store for basics
+I forgot to buy.
+
+**Why this priority**: Forgetting staples is one of the most common reasons for
+unplanned grocery runs. A meal planner that only tracks recipe-specific
+ingredients misses the essentials that make a kitchen functional day-to-day.
+
+**Independent Test**: Can be tested by marking "milk" as a staple with a minimum
+of 1L, reducing inventory to 500ml, and verifying milk appears on the grocery
+list even without a recipe requiring it.
+
+**Acceptance Scenarios**:
+
+1. **Given** I have marked "milk" as a staple with a minimum of 1L, **When** my
+   milk inventory drops below 1L, **Then** milk appears on my grocery list with
+   the quantity needed to reach 1L.
+2. **Given** I have 10 staples configured, **When** I generate a grocery list
+   from a meal plan, **Then** low staples are included alongside the meal plan
+   ingredients, clearly labelled as "Staples to restock."
+3. **Given** I buy milk and update my inventory to 2L, **When** I view my grocery
+   list, **Then** milk no longer appears (it's above the minimum threshold).
+4. **Given** I want to add a new staple, **When** I mark an existing inventory
+   item as a staple and set a minimum quantity, **Then** it is monitored going
+   forward.
+
+---
+
+### User Story 16 - Prep & Defrost Reminders (Priority: P16)
+
+As a home cook, I want the system to send me push notifications for things I need
+to do ahead of time — like defrosting meat the night before or starting a
+marinade in the morning — so I don't forget and end up unable to cook the planned
+meal.
+
+The AI knows when a recipe requires advance preparation (defrosting, marinating,
+soaking, slow-cooking start times) and schedules push notifications at the right
+time. For example, if Wednesday's dinner uses frozen chicken, I get a notification
+Tuesday evening: "Take the chicken out of the freezer for tomorrow's Honey Garlic
+Chicken."
+
+**Why this priority**: Forgetting to defrost or prep is a top reason planned meals
+fall apart. The meal plan already contains this information (P11 defrost notes,
+P4 recipe steps) — it just needs to proactively remind the user at the right
+moment rather than relying on them to check the plan.
+
+**Independent Test**: Can be tested by creating a meal plan with a recipe that
+uses a frozen ingredient, and verifying a push notification is scheduled for the
+evening before with the correct defrost instruction.
+
+**Acceptance Scenarios**:
+
+1. **Given** Wednesday's dinner uses frozen chicken, **When** Tuesday at 7pm
+   arrives, **Then** I receive a push notification: "Take the chicken out of the
+   freezer for tomorrow's Honey Garlic Chicken."
+2. **Given** a recipe requires marinating for 4 hours, **When** the day of that
+   meal arrives, **Then** I receive a notification at the right time (e.g., 2pm
+   for a 6pm dinner): "Start marinating the chicken for tonight's dinner."
+3. **Given** I have multiple prep tasks for different days, **When** I view my
+   upcoming reminders, **Then** I can see all scheduled prep notifications in
+   a list.
+4. **Given** I swap a meal to a different day (P4), **When** the plan updates,
+   **Then** the prep reminders automatically reschedule to match the new day.
+5. **Given** I dismiss or snooze a reminder, **When** I snooze it, **Then** it
+   re-notifies me after the snooze period.
+
+---
+
+### User Story 17 - Recipe Feedback & AI Learning (Priority: P17)
+
+As a home cook, I want to rate meals after cooking them and provide feedback on
+what worked and what didn't, so the AI learns my household's tastes and improves
+its suggestions over time.
+
+After cooking, I can give a quick rating (thumbs up/down or 1-5 stars) and
+optionally leave a note (e.g., "Ninja Combi timing was 5 min too long", "needed
+more garlic", "kids loved this one"). The AI uses this feedback to adjust future
+meal plans — suggesting more meals similar to highly-rated ones, avoiding
+patterns from poorly-rated ones, and correcting equipment-specific settings.
+
+**Why this priority**: The AI's suggestions are only as good as the feedback loop.
+Favorites (P7) capture "I want this again" but not "this was mediocre" or "the
+cooking time was wrong." Feedback turns the AI from a static recipe generator
+into a system that genuinely learns your household's preferences over time.
+
+**Independent Test**: Can be tested by cooking several meals, rating them
+differently, and verifying the AI's next meal plan reflects the feedback (e.g.,
+more meals similar to 5-star ratings, fewer similar to 1-star ratings).
+
+**Acceptance Scenarios**:
+
+1. **Given** I have just cooked a meal, **When** I am prompted for feedback,
+   **Then** I can give a quick rating (thumbs up/down) with a single tap.
+2. **Given** I want to provide detailed feedback, **When** I tap "add notes",
+   **Then** I can write a free-text note about what to change (e.g., "reduce
+   Ninja Combi time by 5 min").
+3. **Given** I rated a meal poorly and noted "too spicy", **When** the AI
+   generates future plans, **Then** it reduces the spice level in similar
+   recipes or avoids that flavour profile.
+4. **Given** I noted "Ninja Combi Air Crisp was 5 min too long" on a recipe,
+   **When** the AI generates a similar recipe in the future, **Then** it adjusts
+   the Air Crisp time accordingly.
+5. **Given** I have rated 20+ meals over several weeks, **When** I view my
+   feedback history, **Then** I can see my ratings and notes alongside the meal
+   history (P7).
+
+---
+
 ### Edge Cases
 
 - What happens when the fridge/pantry is nearly empty? The AI should generate
@@ -519,6 +673,18 @@ suggestions only use available ingredients and are achievable in 15 minutes.
 - What happens when the user asks "what can I make?" but the inventory is nearly
   empty? The system should honestly say there aren't enough ingredients and
   suggest adding items or doing a grocery run.
+- What happens when auto-deduction would make an inventory item go negative?
+  (e.g., recipe says 500g chicken but only 400g tracked) The system deducts
+  what's available, sets the item to zero, and does not create a negative balance.
+- What happens when a staple's minimum threshold is unreasonably high? The system
+  should cap the grocery list suggestion at a reasonable purchase quantity and
+  note the threshold may need adjusting.
+- What happens when a prep reminder fires but the user has already swapped that
+  meal for a different one? The reminder should check the current plan state
+  before firing and suppress itself if the meal has changed.
+- What happens when the user gives contradictory feedback? (e.g., rates the same
+  type of meal 5 stars one week and 1 star the next) The AI should weight recent
+  feedback more heavily and consider contextual notes rather than just the rating.
 
 ## Requirements *(mandatory)*
 
@@ -585,6 +751,20 @@ suggestions only use available ingredients and are achievable in 15 minutes.
   time, without affecting the weekly meal plan.
 - **FR-028**: Dietary restrictions MUST always take priority over preferences
   when household members have conflicting food opinions.
+- **FR-029**: System MUST automatically deduct recipe ingredient quantities from
+  inventory when a meal is marked as cooked, reflecting any substitutions or
+  modifications made.
+- **FR-030**: System MUST allow users to mark inventory items as "staples" with
+  a minimum threshold quantity, and automatically add them to the grocery list
+  when inventory falls below the threshold.
+- **FR-031**: System MUST send push notifications for advance preparation tasks
+  (defrosting, marinating, soaking) at the appropriate time before the meal,
+  and reschedule them automatically when meals are moved.
+- **FR-032**: System MUST allow users to rate meals after cooking (quick rating
+  plus optional free-text notes) and use this feedback to improve future AI
+  meal plan suggestions.
+- **FR-033**: AI MUST incorporate recipe feedback to adjust equipment-specific
+  settings (e.g., cooking times, temperatures) in future similar recipes.
 
 ### Key Entities
 
@@ -618,7 +798,15 @@ suggestions only use available ingredients and are achievable in 15 minutes.
   category). The AI considers all members' preferences when generating plans,
   with restrictions always overriding preferences.
 - **Meal History Entry**: A record of a meal that was cooked. Has a date, reference
-  to the recipe used (including any cook-time modifications), and a favorite flag.
+  to the recipe used (including any cook-time modifications), a favorite flag,
+  a rating (thumbs up/down or 1-5 stars), and optional free-text feedback notes.
+- **Staple Item**: An inventory item marked as always-needed. Has a reference to
+  the inventory item and a minimum threshold quantity. When inventory drops below
+  the threshold, the item is automatically added to the grocery list.
+- **Prep Reminder**: A scheduled notification for advance preparation tasks tied
+  to a specific meal in the plan. Has a trigger time, a message describing the
+  action (e.g., "defrost chicken"), and a reference to the meal. Automatically
+  reschedules when the meal is moved.
 
 ## Assumptions
 
