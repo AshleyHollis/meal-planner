@@ -164,7 +164,7 @@ Focus: Scaffold the full stack, prove the core loop works end-to-end (inventory 
   - _Requirements: FR-09, FR-10, FR-11, AC-3.1_
   - _Design: Database Schema - grocery.py_
 
-- [ ] 1.13 Create models __init__.py with all exports
+- [x] 1.13 Create models __init__.py with all exports
   - **Do**:
     1. Update `services/shared/shared/db/models/__init__.py` to import and re-export all 13 model classes
     2. Define `__all__` list matching design
