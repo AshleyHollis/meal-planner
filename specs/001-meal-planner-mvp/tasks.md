@@ -901,7 +901,7 @@ Focus: Scaffold the full stack, prove the core loop works end-to-end (inventory 
   - _Requirements: FR-19, NFR-11_
   - _Design: Frontend Architecture_
 
-- [ ] V10 [VERIFY] Quality checkpoint: full frontend
+- [x] V10 [VERIFY] Quality checkpoint: full frontend
   - **Do**: TypeScript, lint, and build check
   - **Verify**: `cd apps/web && npx tsc --noEmit && npm run lint && npm run build 2>&1 | tail -5 && echo "QUALITY_OK"`
   - **Done when**: Build succeeds, zero type/lint errors
@@ -909,7 +909,7 @@ Focus: Scaffold the full stack, prove the core loop works end-to-end (inventory 
 
 ### Phase 1I: POC Validation
 
-- [ ] 1.68 POC Checkpoint: end-to-end stack validation
+- [x] 1.68 POC Checkpoint: end-to-end stack validation
   - **Do**:
     1. Verify API starts: `cd services/api && uv run uvicorn src.api.main:app --port 8000`
     2. Verify health endpoint: `curl http://localhost:8000/health/live`
