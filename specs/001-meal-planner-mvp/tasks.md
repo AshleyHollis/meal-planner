@@ -1106,7 +1106,7 @@ After POC validated, clean up code structure, extract utilities, add proper erro
   - **Commit**: `test(web): add ExpiryBadge component tests`
   - _Requirements: FR-02, AC-1.2_
 
-- [ ] 3.9 Frontend unit tests: API client
+- [x] 3.9 Frontend unit tests: API client
   - **Do**:
     1. Create `apps/web/src/__tests__/api.test.ts`
     2. Test: fetch wrapper adds headers, handles errors
