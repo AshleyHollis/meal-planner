@@ -34,12 +34,16 @@ async def engine():
     """Create an async SQLite engine and provision all tables."""
     eng = create_async_engine("sqlite+aiosqlite://", echo=False)
 
-    # SQLite FK enforcement
+    # SQLite FK enforcement + MSSQL function shims
     @event.listens_for(eng.sync_engine, "connect")
     def _set_sqlite_pragma(dbapi_conn, _connection_record):
         cursor = dbapi_conn.cursor()
         cursor.execute("PRAGMA foreign_keys=ON")
         cursor.close()
+        # Shim MSSQL sysutcdatetime() so TimestampMixin server defaults work
+        dbapi_conn.create_function(
+            "sysutcdatetime", 0, lambda: datetime.now(UTC).isoformat()
+        )
 
     async with eng.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)

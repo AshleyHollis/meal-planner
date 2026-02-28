@@ -1002,7 +1002,7 @@ After POC validated, clean up code structure, extract utilities, add proper erro
   - **Commit**: `test(api): add test infrastructure with fixtures`
   - _Design: Test Strategy_
 
-- [ ] 3.2 Unit tests: inventory service
+- [x] 3.2 Unit tests: inventory service
   - **Do**:
     1. Create `services/api/tests/test_inventory_service.py`
     2. Test: list items (grouped by location, expiring first), add item, update quantity, remove item
