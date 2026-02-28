@@ -145,12 +145,14 @@ def receive_messages(
         except (json.JSONDecodeError, TypeError):
             parsed = content
 
-        results.append({
-            "id": msg.id,
-            "pop_receipt": msg.pop_receipt,
-            "content": parsed,
-            "dequeue_count": msg.dequeue_count,
-            "insertion_time": str(msg.insertion_time) if msg.insertion_time else "",
-        })
+        results.append(
+            {
+                "id": msg.id,
+                "pop_receipt": msg.pop_receipt,
+                "content": parsed,
+                "dequeue_count": msg.dequeue_count,
+                "insertion_time": str(msg.insertion_time) if msg.insertion_time else "",
+            }
+        )
 
     return results
