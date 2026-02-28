@@ -958,7 +958,7 @@ After POC validated, clean up code structure, extract utilities, add proper erro
   - **Commit**: `refactor(api): extract service dependency injection`
   - _Design: Proven Patterns - Route structure_
 
-- [ ] 2.4 Add retry logic to LLM client
+- [x] 2.4 Add retry logic to LLM client
   - **Do**:
     1. Add tenacity retry decorator to `call_llm()` with 3 retries, exponential backoff
     2. Add timeout handling per NFR-01 (25s for generation) and NFR-02 (8s for adaptation)
