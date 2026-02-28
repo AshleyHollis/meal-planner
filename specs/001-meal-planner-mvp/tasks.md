@@ -802,7 +802,7 @@ Focus: Scaffold the full stack, prove the core loop works end-to-end (inventory 
   - _Requirements: AC-2.1_
   - _Design: Frontend Architecture - Components_
 
-- [ ] 1.60 Create MealSlotCard component
+- [x] 1.60 Create MealSlotCard component
   - **Do**:
     1. Create `apps/web/src/components/meal-plan/MealSlotCard.tsx`
     2. Show recipe title, time info, equipment mode badges
