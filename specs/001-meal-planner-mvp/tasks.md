@@ -319,7 +319,7 @@ Focus: Scaffold the full stack, prove the core loop works end-to-end (inventory 
 
 ### Phase 1D: Inventory API (P1 - First Vertical Slice)
 
-- [ ] 1.24 Create inventory Pydantic models
+- [x] 1.24 Create inventory Pydantic models
   - **Do**:
     1. Create `services/api/src/api/models/__init__.py` and `services/api/src/api/models/inventory.py`
     2. Define CreateInventoryItem, UpdateInventoryItem, InventoryItemResponse per design
