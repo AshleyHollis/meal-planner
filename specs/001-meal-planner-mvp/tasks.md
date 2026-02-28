@@ -97,7 +97,7 @@ Focus: Scaffold the full stack, prove the core loop works end-to-end (inventory 
   - _Requirements: FR-01_
   - _Design: Database Schema - ingredient.py_
 
-- [ ] 1.8 Create InventoryItem model
+- [x] 1.8 Create InventoryItem model
   - **Do**:
     1. Create `services/shared/shared/db/models/inventory.py` with InventoryItem class
     2. Fields: id, household_id (FK), ingredient_id (FK), quantity, unit, location, expiry_date (nullable)
