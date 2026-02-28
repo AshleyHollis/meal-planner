@@ -1088,13 +1088,13 @@ After POC validated, clean up code structure, extract utilities, add proper erro
   - **Commit**: `test(workers): add prompt builder unit tests`
   - _Design: Test Strategy - Unit Tests_
 
-- [ ] V13 [VERIFY] Quality checkpoint: all unit tests
+- [x] V13 [VERIFY] Quality checkpoint: all unit tests
   - **Do**: Run complete test suite
   - **Verify**: `cd services/api && uv run pytest tests/ -v && cd ../../services/workers && uv run pytest tests/ -v && echo "ALL_TESTS_OK"`
   - **Done when**: All tests pass across both services
   - **Commit**: `chore: pass quality checkpoint - all unit tests green` (if fixes needed)
 
-- [ ] 3.8 Frontend unit tests: ExpiryBadge
+- [x] 3.8 Frontend unit tests: ExpiryBadge
   - **Do**:
     1. Create `apps/web/src/__tests__/ExpiryBadge.test.tsx`
     2. Test: safe items render default style
