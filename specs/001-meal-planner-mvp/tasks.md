@@ -865,7 +865,7 @@ Focus: Scaffold the full stack, prove the core loop works end-to-end (inventory 
   - _Requirements: FR-12, AC-3.5_
   - _Design: Frontend Architecture - Components_
 
-- [ ] 1.65 Create grocery list page
+- [x] 1.65 Create grocery list page
   - **Do**:
     1. Create `apps/web/src/app/grocery-list/[id]/page.tsx`
     2. Compose GroceryList + CompleteShoppingDialog
