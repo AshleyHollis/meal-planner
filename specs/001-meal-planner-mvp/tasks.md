@@ -840,7 +840,7 @@ Focus: Scaffold the full stack, prove the core loop works end-to-end (inventory 
   - _Requirements: US-2, AC-2.1_
   - _Design: Frontend Architecture - Pages, Polling_
 
-- [ ] 1.63 Create GroceryList and GroceryItem components
+- [x] 1.63 Create GroceryList and GroceryItem components
   - **Do**:
     1. Create `apps/web/src/components/grocery/GroceryList.tsx` grouped by preferred_store
     2. Create `apps/web/src/components/grocery/GroceryItem.tsx` with checkbox, name, quantity
