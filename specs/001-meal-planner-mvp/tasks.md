@@ -677,7 +677,7 @@ Focus: Scaffold the full stack, prove the core loop works end-to-end (inventory 
   - **Commit**: `feat(web): scaffold Next.js 16 project with TypeScript and Tailwind`
   - _Design: Frontend Architecture_
 
-- [ ] 1.51 Create TypeScript interfaces
+- [x] 1.51 Create TypeScript interfaces
   - **Do**:
     1. Create `apps/web/src/types/` directory with `index.ts`
     2. Define TypeScript interfaces matching all Pydantic models: InventoryItem, Ingredient, Equipment, EquipmentMode, MealPlan, MealSlot, Recipe, RecipeIngredient, RecipeStep, GroceryList, GroceryItem
