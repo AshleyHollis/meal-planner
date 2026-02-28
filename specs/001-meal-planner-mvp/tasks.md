@@ -542,7 +542,7 @@ Focus: Scaffold the full stack, prove the core loop works end-to-end (inventory 
   - _Requirements: AC-2.2, AC-2.3, AC-2.4_
   - _Design: Prompt Engineering_
 
-- [ ] 1.41 Create Pydantic schemas for LLM structured output
+- [x] 1.41 Create Pydantic schemas for LLM structured output
   - **Do**:
     1. Create `services/workers/meal_plan_generator/schemas.py`
     2. Define GeneratedRecipe, RecipeIngredientSchema, RecipeStepSchema, GeneratedMealPlan per design
