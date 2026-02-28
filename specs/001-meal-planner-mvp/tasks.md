@@ -622,7 +622,7 @@ Focus: Scaffold the full stack, prove the core loop works end-to-end (inventory 
   - _Requirements: FR-09, FR-10, FR-11, FR-12, AC-3.1 through AC-3.7_
   - _Design: API Design_
 
-- [ ] 1.47 Create grocery API routes
+- [x] 1.47 Create grocery API routes
   - **Do**:
     1. Create `services/api/src/api/routes/grocery.py`
     2. GET /api/v1/meal-plans/{id}/grocery-list
