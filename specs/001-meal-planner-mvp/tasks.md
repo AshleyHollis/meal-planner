@@ -473,7 +473,7 @@ Focus: Scaffold the full stack, prove the core loop works end-to-end (inventory 
   - _Requirements: FR-05, AC-2.1_
   - _Design: API Design - Endpoints 7-10_
 
-- [ ] 1.36 Create meal slot operation routes
+- [x] 1.36 Create meal slot operation routes
   - **Do**:
     1. Add to `services/api/src/api/routes/meal_plans.py`:
     2. PATCH /api/v1/meal-plans/{id}/slots/{slot_id} (swap/modify)
