@@ -1,0 +1,10 @@
+# =============================================================================
+# Namespace
+# =============================================================================
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: meal-planner
+  labels:
+    app.kubernetes.io/name: meal-planner
+    app.kubernetes.io/part-of: meal-planner

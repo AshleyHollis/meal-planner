@@ -1152,7 +1152,7 @@ After POC validated, clean up code structure, extract utilities, add proper erro
   - _Requirements: NFR-07_
   - _Design: Infrastructure_
 
-- [ ] 4.2 Create K8s base manifests
+- [x] 4.2 Create K8s base manifests
   - **Do**:
     1. Create `k8s/base/namespace.yaml` (meal-planner namespace)
     2. Create `k8s/base/configmap.yaml` (environment config)
