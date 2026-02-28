@@ -383,7 +383,7 @@ Focus: Scaffold the full stack, prove the core loop works end-to-end (inventory 
   - _Requirements: FR-03, AC-1.3_
   - _Design: API Design - Endpoints 5-6_
 
-- [ ] 1.29 Register all routers in app factory
+- [x] 1.29 Register all routers in app factory
   - **Do**:
     1. Update `services/api/src/api/main.py` to include inventory, equipment, ingredients, health routers
     2. Set up proper route prefixes (/api/v1/*)

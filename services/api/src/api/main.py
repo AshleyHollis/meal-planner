@@ -8,7 +8,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from shared.config import get_settings
 from shared.logging import configure_logging, get_logger
 
+from .routes.equipment import router as equipment_router
 from .routes.health import router as health_router
+from .routes.ingredients import router as ingredients_router
+from .routes.inventory import router as inventory_router
 
 
 @asynccontextmanager
@@ -71,5 +74,8 @@ def create_app() -> FastAPI:
 
     # Register routers
     app.include_router(health_router)
+    app.include_router(inventory_router)
+    app.include_router(equipment_router)
+    app.include_router(ingredients_router)
 
     return app
