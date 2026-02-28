@@ -756,7 +756,7 @@ Focus: Scaffold the full stack, prove the core loop works end-to-end (inventory 
   - _Requirements: FR-01, AC-1.1_
   - _Design: Frontend Architecture - Components_
 
-- [ ] 1.57 Create InventoryList component
+- [x] 1.57 Create InventoryList component
   - **Do**:
     1. Create `apps/web/src/components/inventory/InventoryList.tsx`
     2. Group items by location (fridge, pantry)
