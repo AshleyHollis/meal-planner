@@ -924,7 +924,7 @@ Focus: Scaffold the full stack, prove the core loop works end-to-end (inventory 
 
 After POC validated, clean up code structure, extract utilities, add proper error handling.
 
-- [ ] 2.1 Extract common API error handling
+- [x] 2.1 Extract common API error handling
   - **Do**:
     1. Create `services/api/src/api/errors.py` with structured error response format
     2. Add exception handlers for 404, 422, 409, 500 with correlation ID

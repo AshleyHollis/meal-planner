@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from shared.config import get_settings
 from shared.logging import configure_logging, get_logger
 
+from .errors import register_error_handlers
 from .routes.equipment import router as equipment_router
 from .routes.grocery import router as grocery_router
 from .routes.health import router as health_router
@@ -74,6 +75,9 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    # Error handlers
+    register_error_handlers(app)
 
     # Register routers
     app.include_router(health_router)
