@@ -206,7 +206,7 @@ Focus: Scaffold the full stack, prove the core loop works end-to-end (inventory 
   - _Requirements: All data model requirements_
   - _Design: Database Schema_
 
-- [ ] 1.16 Create Ninja Combi seed data module
+- [x] 1.16 Create Ninja Combi seed data module
   - **Do**:
     1. Create `services/shared/seed/ninja_combi_modes.py` with `NINJA_COMBI_MODES` list
     2. Include all 14 modes with name, category, min_temp, max_temp per design
