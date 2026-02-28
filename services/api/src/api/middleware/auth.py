@@ -6,12 +6,11 @@ import httpx
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
-
 from shared.config import get_settings
 from shared.db.connection import get_session
 from shared.db.models.household import Household, HouseholdMember
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 _bearer = HTTPBearer()
 

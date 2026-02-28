@@ -311,7 +311,7 @@ Focus: Scaffold the full stack, prove the core loop works end-to-end (inventory 
   - _Requirements: FR-18, AC-1.8, NFR-13_
   - _Design: Auth Middleware_
 
-- [ ] V3 [VERIFY] Quality checkpoint: API scaffold
+- [x] V3 [VERIFY] Quality checkpoint: API scaffold
   - **Do**: Lint API source code
   - **Verify**: `cd services/api && uv run ruff check src/ && uv run ruff format --check src/ && echo "QUALITY_OK"`
   - **Done when**: Zero lint errors
