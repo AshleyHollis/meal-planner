@@ -598,7 +598,7 @@ Focus: Scaffold the full stack, prove the core loop works end-to-end (inventory 
 
 ### Phase 1G: Grocery List API
 
-- [ ] 1.45 Create grocery Pydantic models
+- [x] 1.45 Create grocery Pydantic models
   - **Do**:
     1. Create `services/api/src/api/models/grocery.py`
     2. Define: GroceryListResponse, GroceryItemResponse, UpdateGroceryItem (is_checked), CompleteShoppingRequest, PurchasedItem
