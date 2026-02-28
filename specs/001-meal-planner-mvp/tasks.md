@@ -174,7 +174,7 @@ Focus: Scaffold the full stack, prove the core loop works end-to-end (inventory 
   - **Commit**: `feat(shared): export all SQLAlchemy models from models package`
   - _Design: models/__init__.py_
 
-- [ ] V1 [VERIFY] Quality checkpoint: shared package
+- [x] V1 [VERIFY] Quality checkpoint: shared package
   - **Do**: Run ruff linter and verify all imports resolve
   - **Verify**: `cd services/shared && uv run ruff check shared/ && uv run ruff format --check shared/ && echo "QUALITY_OK"`
   - **Done when**: Zero lint errors, zero format errors

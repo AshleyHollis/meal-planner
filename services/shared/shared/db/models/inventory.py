@@ -1,6 +1,9 @@
 """InventoryItem model."""
 
+from __future__ import annotations
+
 from datetime import datetime
+from typing import TYPE_CHECKING
 from uuid import UUID
 
 from sqlalchemy import (
@@ -14,6 +17,9 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base, TimestampMixin, generate_uuid
+
+if TYPE_CHECKING:
+    from .ingredient import Ingredient
 
 
 class InventoryItem(Base, TimestampMixin):
@@ -48,7 +54,7 @@ class InventoryItem(Base, TimestampMixin):
         nullable=True,
     )
 
-    ingredient: Mapped["Ingredient"] = relationship(
+    ingredient: Mapped[Ingredient] = relationship(
         "Ingredient",
         lazy="selectin",
     )

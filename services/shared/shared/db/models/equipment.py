@@ -35,9 +35,7 @@ class Equipment(Base, TimestampMixin):
         lazy="selectin",
     )
 
-    __table_args__ = (
-        Index("ix_equipment_household", "household_id"),
-    )
+    __table_args__ = (Index("ix_equipment_household", "household_id"),)
 
 
 class EquipmentMode(Base):
@@ -73,6 +71,4 @@ class EquipmentMode(Base):
         back_populates="modes",
     )
 
-    __table_args__ = (
-        Index("ix_modes_equipment", "equipment_id"),
-    )
+    __table_args__ = (Index("ix_modes_equipment", "equipment_id"),)

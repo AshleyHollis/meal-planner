@@ -1,11 +1,18 @@
 """Recipe, RecipeIngredient, and RecipeStep models."""
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 from uuid import UUID
 
 from sqlalchemy import Boolean, Float, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base, TimestampMixin, generate_uuid
+
+if TYPE_CHECKING:
+    from .equipment import EquipmentMode
+    from .ingredient import Ingredient
 
 
 class Recipe(Base, TimestampMixin):
@@ -50,27 +57,25 @@ class Recipe(Base, TimestampMixin):
         nullable=True,
     )
 
-    ingredients: Mapped[list["RecipeIngredient"]] = relationship(
+    ingredients: Mapped[list[RecipeIngredient]] = relationship(
         "RecipeIngredient",
         back_populates="recipe",
         lazy="selectin",
         cascade="all, delete-orphan",
     )
-    steps: Mapped[list["RecipeStep"]] = relationship(
+    steps: Mapped[list[RecipeStep]] = relationship(
         "RecipeStep",
         back_populates="recipe",
         lazy="selectin",
         cascade="all, delete-orphan",
     )
-    source_recipe: Mapped["Recipe | None"] = relationship(
+    source_recipe: Mapped[Recipe | None] = relationship(
         "Recipe",
         remote_side="Recipe.id",
         lazy="selectin",
     )
 
-    __table_args__ = (
-        Index("ix_recipes_household", "household_id"),
-    )
+    __table_args__ = (Index("ix_recipes_household", "household_id"),)
 
 
 class RecipeIngredient(Base):
@@ -102,11 +107,11 @@ class RecipeIngredient(Base):
         nullable=False,
     )
 
-    recipe: Mapped["Recipe"] = relationship(
+    recipe: Mapped[Recipe] = relationship(
         "Recipe",
         back_populates="ingredients",
     )
-    ingredient: Mapped["Ingredient"] = relationship(
+    ingredient: Mapped[Ingredient] = relationship(
         "Ingredient",
         lazy="selectin",
     )
@@ -149,15 +154,13 @@ class RecipeStep(Base):
         nullable=True,
     )
 
-    recipe: Mapped["Recipe"] = relationship(
+    recipe: Mapped[Recipe] = relationship(
         "Recipe",
         back_populates="steps",
     )
-    equipment_mode: Mapped["EquipmentMode | None"] = relationship(
+    equipment_mode: Mapped[EquipmentMode | None] = relationship(
         "EquipmentMode",
         lazy="selectin",
     )
 
-    __table_args__ = (
-        Index("ix_recipe_steps_recipe", "recipe_id"),
-    )
+    __table_args__ = (Index("ix_recipe_steps_recipe", "recipe_id"),)

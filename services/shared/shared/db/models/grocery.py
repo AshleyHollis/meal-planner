@@ -1,11 +1,17 @@
 """GroceryList and GroceryItem models."""
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 from uuid import UUID
 
 from sqlalchemy import Boolean, ForeignKey, Index, Numeric, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base, TimestampMixin, generate_uuid
+
+if TYPE_CHECKING:
+    from .ingredient import Ingredient
 
 
 class GroceryList(Base, TimestampMixin):
@@ -21,7 +27,7 @@ class GroceryList(Base, TimestampMixin):
         nullable=False,
     )
 
-    items: Mapped[list["GroceryItem"]] = relationship(
+    items: Mapped[list[GroceryItem]] = relationship(
         "GroceryItem",
         back_populates="grocery_list",
         lazy="selectin",
@@ -62,11 +68,11 @@ class GroceryItem(Base, TimestampMixin):
         nullable=True,
     )
 
-    grocery_list: Mapped["GroceryList"] = relationship(
+    grocery_list: Mapped[GroceryList] = relationship(
         "GroceryList",
         back_populates="items",
     )
-    ingredient: Mapped["Ingredient"] = relationship(
+    ingredient: Mapped[Ingredient] = relationship(
         "Ingredient",
         lazy="selectin",
     )

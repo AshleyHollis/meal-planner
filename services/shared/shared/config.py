@@ -59,8 +59,8 @@ class DatabaseSettings(BaseSettings):
             return self.url
 
         aspire_conn = (
-            os.environ.get("ConnectionStrings__mealplanner")
-            or os.environ.get("ConnectionStrings__sql")
+            os.environ.get("ConnectionStrings__mealplanner")  # noqa: SIM112 - .NET Aspire convention
+            or os.environ.get("ConnectionStrings__sql")  # noqa: SIM112 - .NET Aspire convention
             or ""
         )
 
@@ -90,7 +90,7 @@ class AzureStorageSettings(BaseSettings):
         """Get the effective connection string, checking Aspire env vars if needed."""
         if self.connection_string:
             return self.connection_string
-        return os.environ.get("ConnectionStrings__storage") or ""
+        return os.environ.get("ConnectionStrings__storage") or ""  # noqa: SIM112 - .NET Aspire convention
 
 
 class LLMSettings(BaseSettings):

@@ -1,12 +1,18 @@
 """MealPlan and MealSlot models."""
 
+from __future__ import annotations
+
 from datetime import datetime
+from typing import TYPE_CHECKING
 from uuid import UUID
 
 from sqlalchemy import DateTime, ForeignKey, Index, Integer, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base, TimestampMixin, generate_uuid
+
+if TYPE_CHECKING:
+    from .recipe import Recipe
 
 
 class MealPlan(Base, TimestampMixin):
@@ -34,16 +40,14 @@ class MealPlan(Base, TimestampMixin):
         nullable=True,
     )
 
-    slots: Mapped[list["MealSlot"]] = relationship(
+    slots: Mapped[list[MealSlot]] = relationship(
         "MealSlot",
         back_populates="meal_plan",
         lazy="selectin",
         cascade="all, delete-orphan",
     )
 
-    __table_args__ = (
-        Index("ix_meal_plans_household", "household_id"),
-    )
+    __table_args__ = (Index("ix_meal_plans_household", "household_id"),)
 
 
 class MealSlot(Base, TimestampMixin):
@@ -79,11 +83,11 @@ class MealSlot(Base, TimestampMixin):
         nullable=True,
     )
 
-    meal_plan: Mapped["MealPlan"] = relationship(
+    meal_plan: Mapped[MealPlan] = relationship(
         "MealPlan",
         back_populates="slots",
     )
-    recipe: Mapped["Recipe | None"] = relationship(
+    recipe: Mapped[Recipe | None] = relationship(
         "Recipe",
         lazy="selectin",
     )
