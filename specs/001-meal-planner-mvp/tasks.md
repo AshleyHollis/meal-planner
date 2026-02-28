@@ -1076,7 +1076,7 @@ After POC validated, clean up code structure, extract utilities, add proper erro
   - _Requirements: FR-08, AC-2.5_
   - _Design: Test Strategy - Unit Tests_
 
-- [ ] 3.7 Unit tests: prompt builder
+- [x] 3.7 Unit tests: prompt builder
   - **Do**:
     1. Create `services/workers/tests/test_prompts.py`
     2. Test: prompt includes inventory, equipment, expiring items
