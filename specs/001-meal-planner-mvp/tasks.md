@@ -460,7 +460,7 @@ Focus: Scaffold the full stack, prove the core loop works end-to-end (inventory 
   - _Requirements: FR-05, FR-13, FR-17, FR-20, AC-2.8, AC-4.1, AC-4.7_
   - _Design: API Design, Async Workflow_
 
-- [ ] 1.35 Create meal plan API routes
+- [x] 1.35 Create meal plan API routes
   - **Do**:
     1. Create `services/api/src/api/routes/meal_plans.py`
     2. POST /api/v1/meal-plans (202 Accepted)
