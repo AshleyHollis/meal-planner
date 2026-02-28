@@ -252,7 +252,7 @@ Focus: Scaffold the full stack, prove the core loop works end-to-end (inventory 
   - **Commit**: `feat(shared): add Azure Queue Storage client wrapper`
   - _Design: Worker Design_
 
-- [ ] V2 [VERIFY] Quality checkpoint: shared package complete
+- [x] V2 [VERIFY] Quality checkpoint: shared package complete
   - **Do**: Lint and format check entire shared package
   - **Verify**: `cd services/shared && uv run ruff check shared/ seed/ && uv run ruff format --check shared/ seed/ && echo "QUALITY_OK"`
   - **Done when**: Zero lint and format errors
@@ -260,7 +260,7 @@ Focus: Scaffold the full stack, prove the core loop works end-to-end (inventory 
 
 ### Phase 1C: FastAPI API Scaffolding
 
-- [ ] 1.20 Scaffold FastAPI API project
+- [x] 1.20 Scaffold FastAPI API project
   - **Do**:
     1. Create `services/api/` with `pyproject.toml`, `src/__init__.py`, `src/api/__init__.py`
     2. pyproject.toml: dependencies on fastapi, uvicorn, pydantic, python-jose, httpx + dev deps (pytest, httpx, ruff)
