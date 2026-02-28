@@ -1186,7 +1186,7 @@ After POC validated, clean up code structure, extract utilities, add proper erro
   - **Commit**: `feat(k8s): add prod and preview Kustomize overlays`
   - _Design: Kubernetes Manifests_
 
-- [ ] V15 [VERIFY] Quality checkpoint: infrastructure
+- [x] V15 [VERIFY] Quality checkpoint: infrastructure
   - **Do**: Validate Terraform and Kustomize
   - **Verify**: `cd infra/terraform && terraform init -backend=false && terraform validate && cd ../../k8s && kustomize build base/ > /dev/null && echo "INFRA_OK"`
   - **Done when**: Both validate without errors
@@ -1204,7 +1204,7 @@ After POC validated, clean up code structure, extract utilities, add proper erro
   - _Requirements: NFR-05, NFR-08_
   - _Design: CI/CD_
 
-- [ ] 4.6 Create pre-commit configuration
+- [x] 4.6 Create pre-commit configuration
   - **Do**:
     1. Create `.pre-commit-config.yaml` with hooks: ruff, prettier, yamllint, gitleaks, actionlint
     2. Create `services/ruff.toml` (shared ruff config for 100-char line-length)
