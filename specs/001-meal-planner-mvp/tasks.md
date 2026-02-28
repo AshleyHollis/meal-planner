@@ -1192,7 +1192,7 @@ After POC validated, clean up code structure, extract utilities, add proper erro
   - **Done when**: Both validate without errors
   - **Commit**: `chore(infra): pass quality checkpoint` (if fixes needed)
 
-- [ ] 4.5 Create CI/CD workflow
+- [x] 4.5 Create CI/CD workflow
   - **Do**:
     1. Create `.github/workflows/ci.yml` adapted from yt-summarizer
     2. Jobs: python-lint (ruff), frontend-quality (eslint, tsc, build), security-scan (bandit, pip-audit), python-tests (pytest), k8s-validation (kustomize + kubeval), docker-build (ACR push), swa-deploy
