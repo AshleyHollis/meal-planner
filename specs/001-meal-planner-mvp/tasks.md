@@ -487,13 +487,13 @@ Focus: Scaffold the full stack, prove the core loop works end-to-end (inventory 
   - _Requirements: FR-13, FR-14, FR-15, FR-16, FR-17, AC-4.1 through AC-4.7_
   - _Design: API Design - Endpoints 11-14_
 
-- [ ] V5 [VERIFY] Quality checkpoint: meal plan API
+- [x] V5 [VERIFY] Quality checkpoint: meal plan API
   - **Do**: Lint entire API
   - **Verify**: `cd services/api && uv run ruff check src/ && uv run ruff format --check src/ && echo "QUALITY_OK"`
   - **Done when**: Zero lint errors
   - **Commit**: `chore(api): pass quality checkpoint` (if fixes needed)
 
-- [ ] 1.37 Scaffold worker project
+- [x] 1.37 Scaffold worker project
   - **Do**:
     1. Create `services/workers/pyproject.toml` with dependencies: anthropic, openai, shared (path dep)
     2. Create `services/workers/meal_plan_generator/` with `__init__.py`
