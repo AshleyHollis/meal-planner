@@ -229,7 +229,7 @@ Focus: Scaffold the full stack, prove the core loop works end-to-end (inventory 
   - _Requirements: AC-1.7_
   - _Design: Seed Data - Ingredients_
 
-- [ ] 1.18 Add seed data to migration
+- [x] 1.18 Add seed data to migration
   - **Do**:
     1. Create `services/shared/alembic/versions/002_seed_data.py` data migration
     2. Insert seed ingredients into Ingredients table using `op.bulk_insert()`
