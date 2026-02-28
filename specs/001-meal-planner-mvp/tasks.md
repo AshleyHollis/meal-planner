@@ -828,7 +828,7 @@ Focus: Scaffold the full stack, prove the core loop works end-to-end (inventory 
   - _Requirements: AC-4.1, AC-4.3, AC-4.4_
   - _Design: Frontend Architecture - Components_
 
-- [ ] 1.62 Create meal plan pages
+- [x] 1.62 Create meal plan pages
   - **Do**:
     1. Create `apps/web/src/app/meal-plan/page.tsx` - plan list, "Generate New Plan" button
     2. Create `apps/web/src/app/meal-plan/[id]/page.tsx` - plan detail with WeeklyPlanView

@@ -198,6 +198,10 @@ export async function searchIngredients(
 // Meal Plans
 // ---------------------------------------------------------------------------
 
+export async function listMealPlans(): Promise<MealPlan[]> {
+  return fetchApi<MealPlan[]>("/api/v1/meal-plans");
+}
+
 export async function createMealPlan(
   body: CreateMealPlanBody,
 ): Promise<MealPlan> {
