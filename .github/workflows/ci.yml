@@ -53,7 +53,7 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Install shared dependencies
-        run: cd services/shared && uv sync
+        run: cd services/shared && uv sync --extra dev
 
       - name: Lint shared
         working-directory: services/shared
@@ -64,7 +64,7 @@ jobs:
         run: uv run ruff format --check shared/
 
       - name: Install API dependencies
-        run: cd services/api && uv sync
+        run: cd services/api && uv sync --extra dev
 
       - name: Lint API
         working-directory: services/api
@@ -75,7 +75,7 @@ jobs:
         run: uv run ruff format --check src/
 
       - name: Install workers dependencies
-        run: cd services/workers && uv sync
+        run: cd services/workers && uv sync --extra dev
 
       - name: Lint workers
         working-directory: services/workers
@@ -227,7 +227,7 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Install dependencies
-        run: cd ${{ matrix.service.package }} && uv sync
+        run: cd ${{ matrix.service.package }} && uv sync --extra dev
 
       - name: Run ${{ matrix.service.name }} tests
         working-directory: ${{ matrix.service.package }}
@@ -379,19 +379,9 @@ jobs:
   terraform-validate:
     name: Validate Terraform
     runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: read
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Azure login (OIDC)
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
