@@ -217,7 +217,7 @@ Focus: Scaffold the full stack, prove the core loop works end-to-end (inventory 
   - _Requirements: FR-04, AC-1.7_
   - _Design: Seed Data - Ninja Combi_
 
-- [ ] 1.17 Create common ingredients seed data module
+- [x] 1.17 Create common ingredients seed data module
   - **Do**:
     1. Create `services/shared/seed/common_ingredients.py` with `SEED_INGREDIENTS` list
     2. Include ~100 common Australian grocery items across categories: meat, seafood, produce, dairy, pantry, spices, condiments, grains
