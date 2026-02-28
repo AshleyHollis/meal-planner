@@ -554,7 +554,7 @@ Focus: Scaffold the full stack, prove the core loop works end-to-end (inventory 
   - _Requirements: AC-2.6_
   - _Design: Worker Design - Generator_
 
-- [ ] 1.42 Create constraint validator
+- [x] 1.42 Create constraint validator
   - **Do**:
     1. Create `services/workers/meal_plan_generator/validator.py`
     2. Implement `validate_constraints(plan, inventory, equipment)` returning list of error strings
