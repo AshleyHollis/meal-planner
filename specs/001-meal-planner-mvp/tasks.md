@@ -1139,7 +1139,7 @@ After POC validated, clean up code structure, extract utilities, add proper erro
 
 ## Phase 4: Infrastructure and Deployment
 
-- [ ] 4.1 Create Terraform configuration
+- [x] 4.1 Create Terraform configuration
   - **Do**:
     1. Create `infra/terraform/` with backend.tf (Azure Blob backend), providers.tf, variables.tf
     2. Create sql.tf (Azure SQL serverless), storage.tf (storage account + queue), swa.tf (Static Web App)
