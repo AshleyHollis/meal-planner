@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from datetime import datetime
 from uuid import UUID
 
 from shared.db.models.grocery import GroceryItem, GroceryList
@@ -23,10 +22,7 @@ class GroceryService:
         meal_plan_id: UUID,
     ) -> GroceryList | None:
         """Return the grocery list for a meal plan, or None."""
-        stmt = (
-            select(GroceryList)
-            .where(GroceryList.meal_plan_id == meal_plan_id)
-        )
+        stmt = select(GroceryList).where(GroceryList.meal_plan_id == meal_plan_id)
         result = await session.execute(stmt)
         return result.scalar_one_or_none()
 
@@ -126,10 +122,7 @@ class GroceryService:
                 needed[(ri.ingredient_id, ri.unit)] += ri.quantity
 
         # 3. Load current inventory for household
-        inv_stmt = (
-            select(InventoryItem)
-            .where(InventoryItem.household_id == household_id)
-        )
+        inv_stmt = select(InventoryItem).where(InventoryItem.household_id == household_id)
         inv_result = await session.execute(inv_stmt)
         inventory_items = inv_result.scalars().all()
 
@@ -146,10 +139,7 @@ class GroceryService:
                 grocery_entries.append((ing_id, remaining, unit))
 
         # 5. Remove existing grocery list if present
-        existing_stmt = (
-            select(GroceryList)
-            .where(GroceryList.meal_plan_id == meal_plan_id)
-        )
+        existing_stmt = select(GroceryList).where(GroceryList.meal_plan_id == meal_plan_id)
         existing_result = await session.execute(existing_stmt)
         existing = existing_result.scalar_one_or_none()
         if existing is not None:
