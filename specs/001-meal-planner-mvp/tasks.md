@@ -713,13 +713,13 @@ Focus: Scaffold the full stack, prove the core loop works end-to-end (inventory 
   - _Requirements: FR-18_
   - _Design: Auth Flow_
 
-- [ ] V8 [VERIFY] Quality checkpoint: frontend scaffold
+- [x] V8 [VERIFY] Quality checkpoint: frontend scaffold
   - **Do**: TypeScript check and lint
   - **Verify**: `cd apps/web && npx tsc --noEmit && npm run lint && echo "QUALITY_OK"`
   - **Done when**: Zero type errors, zero lint errors
   - **Commit**: `chore(web): pass quality checkpoint` (if fixes needed)
 
-- [ ] 1.54 Create shared UI components
+- [x] 1.54 Create shared UI components
   - **Do**:
     1. Create `apps/web/src/components/ui/` with Button.tsx, Input.tsx, Dialog.tsx, Badge.tsx, Spinner.tsx
     2. Use Tailwind CSS classes, mobile-first (min-width 375px)
