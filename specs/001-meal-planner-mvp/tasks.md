@@ -332,7 +332,7 @@ Focus: Scaffold the full stack, prove the core loop works end-to-end (inventory 
   - _Requirements: FR-01, FR-02, AC-1.1_
   - _Design: API Design - Pydantic Models_
 
-- [ ] 1.25 Create ingredient Pydantic models and route
+- [x] 1.25 Create ingredient Pydantic models and route
   - **Do**:
     1. Create `services/api/src/api/models/ingredient.py` with IngredientResponse model
     2. Create `services/api/src/api/services/__init__.py` and `services/api/src/api/services/ingredient_service.py` with search/autocomplete logic
