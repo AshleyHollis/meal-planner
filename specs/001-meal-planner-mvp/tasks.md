@@ -529,7 +529,7 @@ Focus: Scaffold the full stack, prove the core loop works end-to-end (inventory 
   - _Requirements: AC-2.5_
   - _Design: LLM Integration_
 
-- [ ] 1.40 Create prompt templates
+- [x] 1.40 Create prompt templates
   - **Do**:
     1. Create `services/workers/meal_plan_generator/prompts.py`
     2. Define SYSTEM_PROMPT with rules: prioritize expiring ingredients, 2 servings, equipment-specific steps, JSON output schema
