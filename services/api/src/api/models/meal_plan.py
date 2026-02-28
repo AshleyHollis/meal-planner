@@ -6,7 +6,7 @@ from datetime import datetime
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 # --- Request models ---
 
@@ -15,6 +15,15 @@ class CreateMealPlan(BaseModel):
     """Request body for generating a new meal plan."""
 
     week_start_date: datetime
+
+    @field_validator("week_start_date")
+    @classmethod
+    def must_be_monday(cls, v: datetime) -> datetime:
+        """Ensure week_start_date falls on a Monday (weekday 0)."""
+        if v.weekday() != 0:
+            msg = "week_start_date must be a Monday"
+            raise ValueError(msg)
+        return v
 
 
 class AdaptRequest(BaseModel):

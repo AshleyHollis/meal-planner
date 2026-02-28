@@ -935,7 +935,7 @@ After POC validated, clean up code structure, extract utilities, add proper erro
   - **Commit**: `refactor(api): extract structured error handling with correlation ID`
   - _Design: Error Handling_
 
-- [ ] 2.2 Add input validation to API routes
+- [x] 2.2 Add input validation to API routes
   - **Do**:
     1. Add week_start_date validation (must be Monday) to CreateMealPlan
     2. Add active plan check before creating new plan (409 Conflict)

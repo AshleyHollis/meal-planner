@@ -6,6 +6,7 @@ import json
 from datetime import UTC, datetime
 from uuid import UUID
 
+from fastapi import HTTPException, status
 from shared.config import get_settings
 from shared.db.models.meal_plan import MealPlan, MealSlot
 from shared.logging.config import get_logger
@@ -65,7 +66,23 @@ class MealPlanService:
         household_id: UUID,
         data: CreateMealPlan,
     ) -> MealPlan:
-        """Create a draft meal plan and enqueue generation request."""
+        """Create a draft meal plan and enqueue generation request.
+
+        Raises:
+            HTTPException 409: If the household already has an active or draft plan.
+        """
+        existing = await session.execute(
+            select(MealPlan).where(
+                MealPlan.household_id == household_id,
+                MealPlan.status.in_(["draft", "active"]),
+            )
+        )
+        if existing.scalar_one_or_none() is not None:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Household already has an active or in-progress meal plan",
+            )
+
         plan = MealPlan(
             household_id=household_id,
             week_start_date=data.week_start_date,
