@@ -240,7 +240,7 @@ Focus: Scaffold the full stack, prove the core loop works end-to-end (inventory 
   - **Commit**: `feat(shared): add seed data migration for ingredients`
   - _Design: Seed Data_
 
-- [ ] 1.19 Create Azure Queue client wrapper
+- [x] 1.19 Create Azure Queue client wrapper
   - **Do**:
     1. Create `services/shared/shared/queue/` with `__init__.py` and `client.py`
     2. Implement `get_queue_client()` returning Azure Queue Storage client
