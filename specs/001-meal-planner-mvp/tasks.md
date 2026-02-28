@@ -1061,7 +1061,7 @@ After POC validated, clean up code structure, extract utilities, add proper erro
   - _Requirements: AC-2.8, FR-20, AC-4.1, AC-4.7_
   - _Design: Test Strategy - Unit Tests_
 
-- [ ] 3.6 Unit tests: constraint validator
+- [x] 3.6 Unit tests: constraint validator
   - **Do**:
     1. Create `services/workers/tests/__init__.py` and `services/workers/tests/conftest.py`
     2. Create `services/workers/tests/test_validator.py`
