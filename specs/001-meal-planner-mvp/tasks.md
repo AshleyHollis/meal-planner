@@ -123,7 +123,7 @@ Focus: Scaffold the full stack, prove the core loop works end-to-end (inventory 
   - _Requirements: FR-03, FR-04, AC-1.3_
   - _Design: Database Schema - equipment.py_
 
-- [ ] 1.10 Create Recipe, RecipeIngredient, RecipeStep models
+- [x] 1.10 Create Recipe, RecipeIngredient, RecipeStep models
   - **Do**:
     1. Create `services/shared/shared/db/models/recipe.py` with all three classes
     2. Recipe: id, household_id (nullable FK), title, description, servings (default=2), prep_time_min, cook_time_min, is_ai_generated, source_recipe_id (self-ref FK)
