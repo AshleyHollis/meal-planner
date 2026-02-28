@@ -251,7 +251,7 @@ jobs:
     with:
       environment: preview
       terraform-version: ${{ vars.TERRAFORM_VERSION || '1.5.7' }}
-      working-directory: infra/terraform/environments/prod
+      working-directory: infra/terraform
       run-plan: true
       run-apply: ${{ github.event_name == 'workflow_dispatch' && inputs.apply_terraform == true }}
       require-changes: false

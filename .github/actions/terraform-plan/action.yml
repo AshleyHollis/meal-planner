@@ -10,12 +10,10 @@ inputs:
   sql-admin-password:
     description: 'SQL admin password'
     required: true
-  openai-api-key:
-    description: 'OpenAI API key'
-    required: true
-  cloudflare-api-token:
-    description: 'Cloudflare API token'
-    required: true
+  llm-api-key:
+    description: 'LLM API key (optional)'
+    required: false
+    default: ''
 outputs:
   plan_output:
     description: 'Raw terraform plan output'
@@ -44,9 +42,7 @@ runs:
       env:
         SUBSCRIPTION_ID: ${{ inputs.subscription-id }}
         SQL_ADMIN_PASSWORD: ${{ inputs.sql-admin-password }}
-        OPENAI_API_KEY: ${{ inputs.openai-api-key }}
-        CLOUDFLARE_API_TOKEN: ${{ inputs.cloudflare-api-token }}
-        AUTH0_DOMAIN: ${{ env.AUTH0_DOMAIN }}
+        LLM_API_KEY: ${{ inputs.llm-api-key }}
       run: ${{ github.action_path }}/run-terraform-plan.sh
 
     - name: Get JSON plan
@@ -54,7 +50,5 @@ runs:
       if: always()
       shell: bash
       working-directory: ${{ inputs.working-directory }}
-      # Always run to provide output even if plan failed
-      # Returns empty summary with error flag if tfplan doesn't exist
       run: ${{ github.action_path }}/parse-terraform-plan.sh
       continue-on-error: true

@@ -1,0 +1,40 @@
+# =============================================================================
+# Terraform Apply - Manual infrastructure deployment
+# =============================================================================
+# Use this workflow to apply Terraform changes manually.
+# Trigger via GitHub Actions UI with workflow_dispatch.
+
+name: Terraform Apply
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_apply:
+        description: 'Type "apply" to confirm terraform apply'
+        required: true
+        type: string
+
+jobs:
+  validate-input:
+    name: Validate Confirmation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check confirmation
+        run: |
+          if [ "${{ inputs.confirm_apply }}" != "apply" ]; then
+            echo "::error::You must type 'apply' to confirm. Got: '${{ inputs.confirm_apply }}'"
+            exit 1
+          fi
+
+  deploy:
+    name: Deploy Infrastructure
+    needs: validate-input
+    uses: ./.github/workflows/terraform-deploy.yml
+    with:
+      environment: prod
+      working-directory: infra/terraform
+      run-plan: true
+      run-apply: true
+      require-changes: false
+      post-to-pr: false
+    secrets: inherit
