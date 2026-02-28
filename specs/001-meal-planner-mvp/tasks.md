@@ -298,7 +298,7 @@ Focus: Scaffold the full stack, prove the core loop works end-to-end (inventory 
   - _Requirements: NFR-04_
   - _Design: Error Handling_
 
-- [ ] 1.23 Create auth middleware (JWT validation + household resolution)
+- [x] 1.23 Create auth middleware (JWT validation + household resolution)
   - **Do**:
     1. Create `services/api/src/api/middleware/auth.py`
     2. Implement `get_current_user()` dependency: extract Bearer token, validate against Auth0 JWKS
