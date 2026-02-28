@@ -412,7 +412,7 @@ Focus: Scaffold the full stack, prove the core loop works end-to-end (inventory 
   - **Commit**: `feat(aspire): add .NET Aspire AppHost for local orchestration`
   - _Design: .NET Aspire Setup_
 
-- [ ] 1.31 Create API Dockerfile
+- [x] 1.31 Create API Dockerfile
   - **Do**:
     1. Create `services/api/Dockerfile` with multi-stage build
     2. Stage 1: uv install deps. Stage 2: copy source, set entrypoint uvicorn
