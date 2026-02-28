@@ -579,7 +579,7 @@ Focus: Scaffold the full stack, prove the core loop works end-to-end (inventory 
   - _Requirements: FR-05, FR-08, AC-2.1, AC-2.2, AC-2.5, AC-2.7_
   - _Design: Worker Design - Generator, Constraint Validation_
 
-- [ ] 1.44 Create worker Dockerfile
+- [x] 1.44 Create worker Dockerfile
   - **Do**:
     1. Create `services/workers/Dockerfile` with multi-stage build
     2. Follow yt-summarizer worker Dockerfile pattern
