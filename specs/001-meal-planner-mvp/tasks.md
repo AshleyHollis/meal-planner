@@ -770,7 +770,7 @@ Focus: Scaffold the full stack, prove the core loop works end-to-end (inventory 
   - _Requirements: AC-1.2, AC-1.4, AC-1.5, AC-1.6_
   - _Design: Frontend Architecture - Components_
 
-- [ ] 1.58 Create inventory page
+- [x] 1.58 Create inventory page
   - **Do**:
     1. Create `apps/web/src/app/inventory/page.tsx`
     2. Compose InventoryList + AddItemForm
