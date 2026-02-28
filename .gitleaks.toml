@@ -1,7 +1,7 @@
 [extend]
 useDefault = true
 
-[[allowlist]]
+[allowlist]
 description = "Azurite storage emulator default key (well-known, non-secret)"
 fingerprints = [
   "e347d8459b827a9d3dd3904882053961d1ed0f92:services/shared/shared/queue/client.py:generic-api-key:18",
