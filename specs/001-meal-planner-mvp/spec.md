@@ -814,6 +814,54 @@ planned meal triggers a "freeze it" suggestion.
 
 ---
 
+### User Story 22 - Meal Categories & Cuisine Requests (Priority: P22)
+
+As a home cook, I want every meal tagged with categories (cuisine type, meal
+style, protein type, etc.) so I can request specific cuisines when planning
+the week, for a specific meal slot, or in the "what can I make right now?" mode.
+
+I might say "I feel like Mexican this week", "make Thursday dinner Italian",
+or "what Mexican can I make right now with what I have?" The AI uses these
+requests alongside all other inputs (inventory, expiry, preferences, equipment)
+to generate appropriate meals. I can also set cuisine preferences at the
+household level (e.g., "we love Thai and Mexican, less interested in French").
+
+Categories include but are not limited to: cuisine (Mexican, Thai, Italian,
+Indian, Japanese, Australian, Mediterranean, etc.), meal style (comfort food,
+light & fresh, hearty, quick & easy), protein type (chicken, beef, vegetarian,
+seafood, pork), and cooking method (stir-fry, roast, slow cook, one-pot).
+
+**Why this priority**: Without categories, every request to the AI is generic.
+Categories let users express what they're in the mood for and give the AI a
+vocabulary for variety. "We've had Italian twice this week — how about Thai
+tonight?" only works if meals are categorised.
+
+**Independent Test**: Can be tested by requesting "Mexican meals this week",
+generating a plan, and verifying the meals are tagged as Mexican cuisine. Then
+test requesting a specific cuisine for a single meal slot.
+
+**Acceptance Scenarios**:
+
+1. **Given** I request "Mexican meals for this week", **When** the AI generates
+   a meal plan, **Then** the majority of dinners are Mexican-cuisine meals, while
+   breakfast and lunch remain varied unless I specify otherwise.
+2. **Given** I want Italian for Thursday dinner, **When** I set Thursday dinner's
+   cuisine to "Italian", **Then** the AI generates an Italian recipe for that
+   slot and plans the rest of the week normally.
+3. **Given** I ask "what Mexican can I make right now?", **When** the AI suggests
+   meals, **Then** only Mexican-tagged recipes using my available ingredients
+   are shown.
+4. **Given** a generated meal plan, **When** I view any meal, **Then** it displays
+   category tags (e.g., "Mexican · Chicken · Quick & Easy · One-pot").
+5. **Given** we've had Italian meals 3 times this week, **When** the AI generates
+   the remaining days, **Then** it suggests other cuisines for variety unless I
+   explicitly request more Italian.
+6. **Given** I set a household cuisine preference of "love Thai, less French",
+   **When** the AI generates plans over multiple weeks, **Then** Thai meals
+   appear more frequently and French meals appear rarely.
+
+---
+
 ### Edge Cases
 
 - What happens when the fridge/pantry is nearly empty? The AI should generate
@@ -889,6 +937,13 @@ planned meal triggers a "freeze it" suggestion.
   The suggestion should note the current freezer capacity and let the user decide.
 - What happens when a recipe is frozen and later thawed for use? The item moves
   from freezer back to fridge inventory with an updated (shorter) use-by date.
+- What happens when a cuisine request conflicts with available inventory? (e.g.,
+  "I want Japanese but I only have pasta and mince") The AI should suggest the
+  closest match it can make with available ingredients, or note that a grocery
+  run is needed for an authentic version.
+- What happens when a user requests a cuisine every week and variety suffers?
+  The AI should gently suggest alternatives after 3+ weeks of the same cuisine
+  unless the user has it set as a strong preference.
 
 ## Requirements *(mandatory)*
 
@@ -980,6 +1035,13 @@ planned meal triggers a "freeze it" suggestion.
 - **FR-035C**: AI MUST adjust recipe cooking steps when a different brand/product
   is used, if the product characteristics affect cooking (e.g., quantity
   adjustments for different sizes, technique changes for different consistencies).
+- **FR-040**: Every recipe MUST be tagged with categories including cuisine type,
+  meal style, protein type, and cooking method.
+- **FR-041**: System MUST allow users to request a specific cuisine or category
+  for the whole week, a specific day/slot, or in "what can I make right now?"
+  mode.
+- **FR-042**: AI MUST track cuisine variety within a week and across recent weeks,
+  avoiding excessive repetition of the same cuisine unless requested.
 - **FR-035**: System MUST cache the current week's meal plan, recipes, grocery
   list, and inventory for full offline use, with automatic sync on reconnection.
 - **FR-036**: System MUST support three meal slots per day (breakfast, lunch,
@@ -1012,7 +1074,10 @@ planned meal triggers a "freeze it" suggestion.
   References a recipe and can be customized at plan time.
 - **Recipe**: A set of ingredients and equipment-specific cooking steps generated
   by AI. Can be an AI original or a user-modified variation. Has a "freezable"
-  tag (yes/no) with recommended freeze duration when applicable.
+  tag (yes/no) with recommended freeze duration when applicable. Tagged with
+  categories: cuisine type (e.g., Mexican, Thai, Italian), meal style (e.g.,
+  comfort food, light & fresh), protein type (e.g., chicken, beef, vegetarian),
+  and cooking method (e.g., stir-fry, roast, one-pot).
 - **Cooking Step**: A single instruction within a recipe, associated with a specific
   piece of equipment (or no equipment for prep steps). Includes settings like
   temperature, time, and mode.
