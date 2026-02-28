@@ -888,7 +888,7 @@ Focus: Scaffold the full stack, prove the core loop works end-to-end (inventory 
   - **Commit**: `feat(web): add dashboard page with active plan summary`
   - _Design: Frontend Architecture - Pages_
 
-- [ ] 1.67 Create navigation layout
+- [x] 1.67 Create navigation layout
   - **Do**:
     1. Update `apps/web/src/app/layout.tsx` with mobile-first navigation
     2. Bottom tab bar: Home, Inventory, Meal Plan, Grocery List
