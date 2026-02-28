@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Literal
 from uuid import UUID
 
@@ -58,11 +58,11 @@ class InventoryItemResponse(BaseModel):
         """Compute expiry status based on expiry_date vs current date."""
         if self.expiry_date is None:
             return "safe"
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         expiry = (
             self.expiry_date
             if self.expiry_date.tzinfo is not None
-            else self.expiry_date.replace(tzinfo=timezone.utc)
+            else self.expiry_date.replace(tzinfo=UTC)
         )
         if expiry < now:
             return "expired"

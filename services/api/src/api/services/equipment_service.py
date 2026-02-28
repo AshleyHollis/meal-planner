@@ -21,9 +21,7 @@ class EquipmentService:
     ) -> list[Equipment]:
         """Return all equipment for a household."""
         stmt = (
-            select(Equipment)
-            .where(Equipment.household_id == household_id)
-            .order_by(Equipment.name)
+            select(Equipment).where(Equipment.household_id == household_id).order_by(Equipment.name)
         )
         result = await session.execute(stmt)
         return list(result.scalars().all())
