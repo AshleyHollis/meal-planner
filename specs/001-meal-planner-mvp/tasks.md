@@ -700,7 +700,7 @@ Focus: Scaffold the full stack, prove the core loop works end-to-end (inventory 
   - **Commit**: `feat(web): add API client with all endpoint methods`
   - _Design: Frontend Architecture - API Client_
 
-- [ ] 1.53 Set up Auth0 BFF authentication
+- [x] 1.53 Set up Auth0 BFF authentication
   - **Do**:
     1. Install `@auth0/nextjs-auth0` 4.x
     2. Create `apps/web/src/app/api/auth/[auth0]/route.ts` for Auth0 BFF handler
