@@ -60,7 +60,7 @@ Focus: Scaffold the full stack, prove the core loop works end-to-end (inventory 
   - **Commit**: `feat(shared): add async SQLAlchemy DB connection with Aspire support`
   - _Design: DB connection pattern_
 
-- [ ] 1.5 Create SQLAlchemy Base and TimestampMixin
+- [x] 1.5 Create SQLAlchemy Base and TimestampMixin
   - **Do**:
     1. Create `services/shared/shared/db/models/` with `__init__.py` and `base.py`
     2. Implement `Base(DeclarativeBase)` with `type_annotation_map = {UUID: UNIQUEIDENTIFIER}`
