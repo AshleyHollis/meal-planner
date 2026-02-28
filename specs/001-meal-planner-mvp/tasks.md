@@ -110,7 +110,7 @@ Focus: Scaffold the full stack, prove the core loop works end-to-end (inventory 
   - _Requirements: FR-01, AC-1.1_
   - _Design: Database Schema - inventory.py_
 
-- [ ] 1.9 Create Equipment and EquipmentMode models
+- [x] 1.9 Create Equipment and EquipmentMode models
   - **Do**:
     1. Create `services/shared/shared/db/models/equipment.py` with Equipment and EquipmentMode classes
     2. Equipment: id, household_id (FK), name, is_active (default=True)
