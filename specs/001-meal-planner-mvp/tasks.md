@@ -72,7 +72,7 @@ Focus: Scaffold the full stack, prove the core loop works end-to-end (inventory 
   - **Commit**: `feat(shared): add SQLAlchemy Base with UNIQUEIDENTIFIER and TimestampMixin`
   - _Design: Database Schema - base.py_
 
-- [ ] 1.6 Create Household and HouseholdMember models
+- [x] 1.6 Create Household and HouseholdMember models
   - **Do**:
     1. Create `services/shared/shared/db/models/household.py` with Household and HouseholdMember classes
     2. Household: id, name, default_servings (default=2), relationships to members
