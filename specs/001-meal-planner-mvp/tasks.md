@@ -982,7 +982,7 @@ After POC validated, clean up code structure, extract utilities, add proper erro
   - _Requirements: FR-18_
   - _Design: Frontend Architecture_
 
-- [ ] V11 [VERIFY] Quality checkpoint: post-refactoring
+- [x] V11 [VERIFY] Quality checkpoint: post-refactoring
   - **Do**: Full lint pass on all services
   - **Verify**: `cd services/api && uv run ruff check src/ && uv run ruff format --check src/ && cd ../../services/workers && uv run ruff check meal_plan_generator/ && cd ../../apps/web && npx tsc --noEmit && npm run lint && echo "QUALITY_OK"`
   - **Done when**: All quality checks pass
@@ -990,7 +990,7 @@ After POC validated, clean up code structure, extract utilities, add proper erro
 
 ## Phase 3: Testing
 
-- [ ] 3.1 Create API test infrastructure
+- [x] 3.1 Create API test infrastructure
   - **Do**:
     1. Create `services/api/tests/conftest.py` with async test fixtures
     2. Set up in-memory or SQLite database for unit tests
