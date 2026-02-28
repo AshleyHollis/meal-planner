@@ -566,7 +566,7 @@ Focus: Scaffold the full stack, prove the core loop works end-to-end (inventory 
   - _Requirements: FR-08, AC-2.5_
   - _Design: Constraint Validation_
 
-- [ ] 1.43 Create meal plan generator orchestrator
+- [x] 1.43 Create meal plan generator orchestrator
   - **Do**:
     1. Create `services/workers/meal_plan_generator/generator.py`
     2. Implement `generate_meal_plan(message_content)`: load context from DB, build prompt, call LLM, validate, retry up to 3x, persist to DB
