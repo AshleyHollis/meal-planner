@@ -609,7 +609,7 @@ Focus: Scaffold the full stack, prove the core loop works end-to-end (inventory 
   - _Requirements: FR-09, FR-11, FR-12_
   - _Design: API Design - Pydantic Models_
 
-- [ ] 1.46 Create grocery service layer
+- [x] 1.46 Create grocery service layer
   - **Do**:
     1. Create `services/api/src/api/services/grocery_service.py`
     2. Implement: get_grocery_list (by meal_plan_id), check_item, uncheck_item
