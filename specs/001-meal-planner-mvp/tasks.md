@@ -783,13 +783,13 @@ Focus: Scaffold the full stack, prove the core loop works end-to-end (inventory 
   - _Requirements: US-1_
   - _Design: Frontend Architecture - Pages_
 
-- [ ] V9 [VERIFY] Quality checkpoint: inventory UI
+- [x] V9 [VERIFY] Quality checkpoint: inventory UI
   - **Do**: TypeScript and lint check
   - **Verify**: `cd apps/web && npx tsc --noEmit && npm run lint && echo "QUALITY_OK"`
   - **Done when**: Zero errors
   - **Commit**: `chore(web): pass quality checkpoint` (if fixes needed)
 
-- [ ] 1.59 Create WeeklyPlanView component
+- [x] 1.59 Create WeeklyPlanView component
   - **Do**:
     1. Create `apps/web/src/components/meal-plan/WeeklyPlanView.tsx`
     2. List-based layout (not calendar grid) per research
