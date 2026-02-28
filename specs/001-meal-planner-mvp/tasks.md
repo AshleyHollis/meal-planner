@@ -516,7 +516,7 @@ Focus: Scaffold the full stack, prove the core loop works end-to-end (inventory 
   - **Commit**: `feat(workers): add queue poller entry point for meal plan worker`
   - _Design: Worker Design - Entry Point_
 
-- [ ] 1.39 Create LLM client abstraction
+- [x] 1.39 Create LLM client abstraction
   - **Do**:
     1. Create `services/workers/meal_plan_generator/llm_client.py`
     2. Implement `call_llm(prompt, timeout)` supporting both Anthropic and OpenAI
