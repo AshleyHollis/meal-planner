@@ -1015,7 +1015,7 @@ After POC validated, clean up code structure, extract utilities, add proper erro
   - _Requirements: AC-1.1, AC-1.2, AC-1.4, AC-1.5, AC-1.6, AC-1.8_
   - _Design: Test Strategy - Unit Tests_
 
-- [ ] 3.3 Unit tests: inventory API routes
+- [x] 3.3 Unit tests: inventory API routes
   - **Do**:
     1. Create `services/api/tests/test_inventory_routes.py`
     2. Test all 4 CRUD endpoints with httpx test client
