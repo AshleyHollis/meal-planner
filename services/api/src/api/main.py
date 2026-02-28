@@ -9,9 +9,12 @@ from shared.config import get_settings
 from shared.logging import configure_logging, get_logger
 
 from .routes.equipment import router as equipment_router
+from .routes.grocery import router as grocery_router
 from .routes.health import router as health_router
 from .routes.ingredients import router as ingredients_router
 from .routes.inventory import router as inventory_router
+from .routes.meal_plans import recipes_router
+from .routes.meal_plans import router as meal_plans_router
 
 
 @asynccontextmanager
@@ -77,5 +80,8 @@ def create_app() -> FastAPI:
     app.include_router(inventory_router)
     app.include_router(equipment_router)
     app.include_router(ingredients_router)
+    app.include_router(meal_plans_router)
+    app.include_router(recipes_router)
+    app.include_router(grocery_router)
 
     return app

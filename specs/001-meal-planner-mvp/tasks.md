@@ -648,7 +648,7 @@ Focus: Scaffold the full stack, prove the core loop works end-to-end (inventory 
   - _Requirements: FR-15, AC-4.3, AC-4.4, AC-4.5, NFR-02_
   - _Design: Cook-Time Adaptation_
 
-- [ ] 1.49 Register grocery router and finalize all API routes
+- [x] 1.49 Register grocery router and finalize all API routes
   - **Do**:
     1. Update `services/api/src/api/main.py` to include grocery router
     2. Verify all 20 endpoints are accessible
