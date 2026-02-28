@@ -151,7 +151,7 @@ Focus: Scaffold the full stack, prove the core loop works end-to-end (inventory 
   - _Requirements: FR-05, FR-20, AC-2.8_
   - _Design: Database Schema - meal_plan.py_
 
-- [ ] 1.12 Create GroceryList and GroceryItem models
+- [x] 1.12 Create GroceryList and GroceryItem models
   - **Do**:
     1. Create `services/shared/shared/db/models/grocery.py` with both classes
     2. GroceryList: id, meal_plan_id (FK, unique)
