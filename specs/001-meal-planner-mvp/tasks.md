@@ -815,7 +815,7 @@ Focus: Scaffold the full stack, prove the core loop works end-to-end (inventory 
   - _Requirements: AC-4.1, AC-4.3, AC-4.4, AC-4.7_
   - _Design: Frontend Architecture - Components_
 
-- [ ] 1.61 Create SwapDialog and AdaptControls components
+- [x] 1.61 Create SwapDialog and AdaptControls components
   - **Do**:
     1. Create `apps/web/src/components/meal-plan/SwapDialog.tsx` for swapping meals between days
     2. Create `apps/web/src/components/meal-plan/AdaptControls.tsx` with quick/standard/elaborate buttons
