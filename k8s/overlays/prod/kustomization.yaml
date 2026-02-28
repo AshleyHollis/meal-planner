@@ -1,0 +1,61 @@
+# =============================================================================
+# Production Overlay
+# =============================================================================
+# Image tags updated by deploy-prod workflow on merge to main
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: meal-planner
+
+resources:
+  - ../../base
+
+images:
+  - name: meal-planner-api
+    newName: acrytsummprd.azurecr.io/meal-planner-api
+    newTag: latest
+  - name: meal-planner-worker
+    newName: acrytsummprd.azurecr.io/meal-planner-worker
+    newTag: latest
+
+patches:
+  # ConfigMap patch - production environment
+  - target:
+      version: v1
+      kind: ConfigMap
+      name: meal-planner-config
+    patch: |-
+      apiVersion: v1
+      kind: ConfigMap
+      metadata:
+        name: meal-planner-config
+      data:
+        ENVIRONMENT: "production"
+        LOG_LEVEL: "INFO"
+
+  # HTTPRoute patch - production hostname
+  - target:
+      group: gateway.networking.k8s.io
+      version: v1
+      kind: HTTPRoute
+      name: api-httproute
+    patch: |-
+      apiVersion: gateway.networking.k8s.io/v1
+      kind: HTTPRoute
+      metadata:
+        name: api-httproute
+        labels:
+          app.kubernetes.io/environment: production
+        annotations:
+          external-dns.alpha.kubernetes.io/hostname: api.meal-planner.apps.ashleyhollis.com
+      spec:
+        hostnames:
+        - "api.meal-planner.apps.ashleyhollis.com"
+
+labels:
+  - pairs:
+      environment: production
+      app.kubernetes.io/part-of: meal-planner
+
+commonAnnotations:
+  deployment.kubernetes.io/environment: production

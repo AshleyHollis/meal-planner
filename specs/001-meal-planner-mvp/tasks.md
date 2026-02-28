@@ -1176,7 +1176,7 @@ After POC validated, clean up code structure, extract utilities, add proper erro
   - **Commit**: `feat(k8s): add worker, migration job, and external secrets manifests`
   - _Design: Kubernetes Manifests_
 
-- [ ] 4.4 Create K8s overlays (prod + preview)
+- [x] 4.4 Create K8s overlays (prod + preview)
   - **Do**:
     1. Create `k8s/overlays/prod/kustomization.yaml` with image references to ACR
     2. Create `k8s/overlays/preview/kustomization.yaml` with PR-specific patches
