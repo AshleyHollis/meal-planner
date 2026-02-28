@@ -1118,13 +1118,13 @@ After POC validated, clean up code structure, extract utilities, add proper erro
   - **Commit**: `test(web): add API client unit tests`
   - _Design: Test Strategy_
 
-- [ ] V14 [VERIFY] Quality checkpoint: frontend tests
+- [x] V14 [VERIFY] Quality checkpoint: frontend tests
   - **Do**: Run frontend test suite
   - **Verify**: `cd apps/web && npm test -- --run 2>&1 | tail -10 && echo "FRONTEND_TESTS_OK"`
   - **Done when**: All frontend tests pass
   - **Commit**: `chore(web): pass quality checkpoint` (if fixes needed)
 
-- [ ] 3.10 Integration test: full API lifecycle (mock LLM)
+- [x] 3.10 Integration test: full API lifecycle (mock LLM)
   - **Do**:
     1. Create `services/api/tests/test_integration.py`
     2. Test full flow: add inventory -> generate plan (mock LLM) -> view grocery list -> check items -> complete shopping -> verify inventory updated

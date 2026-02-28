@@ -82,6 +82,9 @@ class GroceryService:
             self.session.add(inv)
             created.append(inv)
         await self.session.flush()
+        # Reload ingredient relationship for response serialization
+        for inv in created:
+            await self.session.refresh(inv, attribute_names=["ingredient"])
         return created
 
     async def regenerate_grocery_list(
@@ -119,9 +122,7 @@ class GroceryService:
                 needed[(ri.ingredient_id, ri.unit)] += ri.quantity
 
         # 3. Load current inventory for household
-        inv_stmt = select(InventoryItem).where(
-            InventoryItem.household_id == self.household_id
-        )
+        inv_stmt = select(InventoryItem).where(InventoryItem.household_id == self.household_id)
         inv_result = await self.session.execute(inv_stmt)
         inventory_items = inv_result.scalars().all()
 
