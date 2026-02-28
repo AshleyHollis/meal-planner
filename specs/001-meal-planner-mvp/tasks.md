@@ -357,7 +357,7 @@ Focus: Scaffold the full stack, prove the core loop works end-to-end (inventory 
   - _Requirements: FR-01, AC-1.1, AC-1.4, AC-1.5, AC-1.6_
   - _Design: API Design_
 
-- [ ] 1.27 Create inventory API routes
+- [x] 1.27 Create inventory API routes
   - **Do**:
     1. Create `services/api/src/api/routes/inventory.py`
     2. GET /api/v1/inventory - list items (query: location?)
