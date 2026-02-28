@@ -36,7 +36,7 @@ class _HealthHandler(BaseHTTPRequestHandler):
 
 def _start_health_server(port: int = 8091) -> HTTPServer:
     """Start HTTP health endpoint in a daemon thread."""
-    server = HTTPServer(("0.0.0.0", port), _HealthHandler)
+    server = HTTPServer(("0.0.0.0", port), _HealthHandler)  # nosec B104
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
     logger.info("health_server_started", port=port)
