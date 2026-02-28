@@ -504,7 +504,7 @@ Focus: Scaffold the full stack, prove the core loop works end-to-end (inventory 
   - **Commit**: `feat(workers): scaffold meal plan generator worker project`
   - _Design: Project Structure_
 
-- [ ] 1.38 Create worker entry point (queue poller)
+- [x] 1.38 Create worker entry point (queue poller)
   - **Do**:
     1. Create `services/workers/meal_plan_generator/__main__.py` per design
     2. Implement: configure_logging, get_queue_client, poll loop with 10s interval
