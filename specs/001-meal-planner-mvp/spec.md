@@ -302,7 +302,8 @@ a timer, so I don't have to set separate timers on my phone or equipment.
 When a recipe step says "Ninja Combi: Air Crisp at 200C for 15 min", I can tap
 it to start a 15-minute countdown. Multiple timers can run simultaneously for
 steps happening in parallel (e.g., Ninja Combi and stove top at the same time).
-Timers alert me with a sound when complete.
+Timers send push notifications when complete — even if I've left the app — so
+I know when to come back and do the next step, or when the meal is ready to eat.
 
 **Why this priority**: Timers remove the cognitive load of tracking multiple
 cooking steps. Since many meals involve parallel equipment use, built-in timers
@@ -319,8 +320,17 @@ simultaneous timers.
 2. **Given** I have two cooking steps running in parallel on different equipment,
    **When** I start timers for both, **Then** both timers are visible simultaneously
    and count down independently.
-3. **Given** a timer is running, **When** it reaches zero, **Then** the app plays
-   an audible alert and shows a notification (even if the app is in the background).
+3. **Given** a timer is running, **When** it reaches zero, **Then** the app sends
+   a push notification with the step name and what to do next (e.g., "Chicken is
+   done — remove from Ninja Combi and let rest for 5 min"), even if the app is
+   in the background or the screen is off.
+4. **Given** a meal has multiple timed steps in sequence, **When** one timer
+   completes, **Then** the push notification tells me what the next action is
+   (e.g., "Flip the chicken and cook for another 8 min") so I know exactly what
+   to do without opening the app.
+5. **Given** the final timer in a recipe completes, **When** the notification
+   fires, **Then** it says the meal is ready to eat (e.g., "Dinner is ready!
+   Honey Garlic Chicken — serve and enjoy").
 4. **Given** a timer is running, **When** I navigate to another part of the app,
    **Then** the timer continues running and remains accessible.
 
@@ -558,7 +568,8 @@ suggestions only use available ingredients and are achievable in 15 minutes.
   workflow (planning, shopping, cooking) and automatically update recipe steps,
   grocery lists, and inventory calculations.
 - **FR-022**: System MUST provide tappable cooking timers on any recipe step that
-  involves a duration, supporting multiple simultaneous timers with audible alerts.
+  involves a duration, supporting multiple simultaneous timers with push
+  notifications that tell the user what to do next or that the meal is ready.
 - **FR-023**: System MUST provide a hands-free voice assistant mode for recipe
   navigation during cooking, supporting commands for step navigation, timer
   control, and ingredient read-back.
@@ -626,8 +637,10 @@ suggestions only use available ingredients and are achievable in 15 minutes.
   automatic detection for MVP.
 - The app is mobile-first but also works on desktop. No native mobile app;
   it is a responsive web application accessed via mobile browser.
-- Expiry alerts are in-app only (no push notifications for MVP). Alerts appear
-  when the user opens the app.
+- Expiry alerts are in-app only (no push notifications). Alerts appear when the
+  user opens the app. Cooking timers are the exception — they use push
+  notifications via the Web Push API (service worker) so they work even when
+  the app is in the background or the screen is off.
 - "Last 2-3 weeks" for meal repetition avoidance is a soft guideline for the
   AI, not a hard constraint. Users can override by requesting favorites.
 - Voice assistant uses the Web Speech API (browser-native) for MVP. No
