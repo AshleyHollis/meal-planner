@@ -635,7 +635,7 @@ Focus: Scaffold the full stack, prove the core loop works end-to-end (inventory 
   - _Requirements: FR-09, FR-11, FR-12, AC-3.1, AC-3.4, AC-3.5_
   - _Design: API Design - Endpoints 15-17_
 
-- [ ] 1.48 Create cook-time adaptation service
+- [x] 1.48 Create cook-time adaptation service
   - **Do**:
     1. Add `adapt_recipe()` method to `services/api/src/api/services/meal_plan_service.py`
     2. Implement direct LLM call (synchronous, not via worker queue) per design
