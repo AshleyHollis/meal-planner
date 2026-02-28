@@ -272,7 +272,7 @@ Focus: Scaffold the full stack, prove the core loop works end-to-end (inventory 
   - **Commit**: `feat(api): scaffold FastAPI API project`
   - _Design: Project Structure_
 
-- [ ] 1.21 Create FastAPI app factory with health endpoints
+- [x] 1.21 Create FastAPI app factory with health endpoints
   - **Do**:
     1. Create `services/api/src/api/main.py` with `create_app()` factory
     2. Add lifespan handler for DB init with retry logic
