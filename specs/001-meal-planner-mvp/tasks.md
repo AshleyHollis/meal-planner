@@ -85,7 +85,7 @@ Focus: Scaffold the full stack, prove the core loop works end-to-end (inventory 
   - _Requirements: FR-18, NFR-13_
   - _Design: Database Schema - household.py_
 
-- [ ] 1.7 Create Ingredient model
+- [x] 1.7 Create Ingredient model
   - **Do**:
     1. Create `services/shared/shared/db/models/ingredient.py` with Ingredient class
     2. Fields: id, name (unique), category, default_unit, default_storage, typical_shelf_life_days (nullable)
