@@ -423,7 +423,7 @@ Focus: Scaffold the full stack, prove the core loop works end-to-end (inventory 
   - **Commit**: `feat(api): add multi-stage Dockerfile`
   - _Design: CI/CD_
 
-- [ ] 1.32 Verify Aspire builds
+- [x] 1.32 Verify Aspire builds
   - **Do**:
     1. Run `dotnet build` on Aspire project to verify it compiles
     2. Fix any reference issues
