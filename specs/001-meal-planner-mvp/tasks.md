@@ -970,7 +970,7 @@ After POC validated, clean up code structure, extract utilities, add proper erro
   - _Requirements: NFR-01, NFR-02, NFR-10_
   - _Design: LLM Integration_
 
-- [ ] 2.5 Refactor frontend API client with error boundaries
+- [x] 2.5 Refactor frontend API client with error boundaries
   - **Do**:
     1. Add React error boundary component
     2. Add loading/error state handling in API client

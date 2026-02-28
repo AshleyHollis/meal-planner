@@ -33,6 +33,58 @@ export class ApiError extends Error {
     super(`API ${status}: ${statusText}`);
     this.name = "ApiError";
   }
+
+  /** True for 401/403 responses. */
+  get isAuthError(): boolean {
+    return this.status === 401 || this.status === 403;
+  }
+
+  /** True for 5xx responses. */
+  get isServerError(): boolean {
+    return this.status >= 500;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Auth token helper
+// ---------------------------------------------------------------------------
+
+let _cachedToken: string | null = null;
+let _tokenExpiresAt = 0;
+
+/**
+ * Retrieves a JWT access token from the Auth0 BFF endpoint.
+ * Caches the token until 60 seconds before expiry.
+ */
+async function getAccessToken(): Promise<string | null> {
+  const now = Date.now();
+  if (_cachedToken && now < _tokenExpiresAt) {
+    return _cachedToken;
+  }
+
+  try {
+    const res = await fetch("/auth/access-token");
+    if (!res.ok) {
+      _cachedToken = null;
+      _tokenExpiresAt = 0;
+      return null;
+    }
+    const data = (await res.json()) as {
+      token: string;
+      expires_at?: number;
+    };
+    _cachedToken = data.token;
+    // Expire cache 60 seconds before real expiry, or after 5 minutes by default
+    const expiresIn = data.expires_at
+      ? data.expires_at * 1000 - now - 60_000
+      : 5 * 60 * 1000;
+    _tokenExpiresAt = now + Math.max(expiresIn, 0);
+    return _cachedToken;
+  } catch {
+    _cachedToken = null;
+    _tokenExpiresAt = 0;
+    return null;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -43,12 +95,20 @@ async function fetchApi<T>(
   path: string,
   init?: RequestInit,
 ): Promise<T> {
+  const token = await getAccessToken();
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...(init?.headers as Record<string, string> | undefined),
+  };
+
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
   const res = await fetch(`${API_URL}${path}`, {
     ...init,
-    headers: {
-      "Content-Type": "application/json",
-      ...init?.headers,
-    },
+    headers,
   });
 
   if (!res.ok) {
