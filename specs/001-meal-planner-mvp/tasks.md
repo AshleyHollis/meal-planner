@@ -182,7 +182,7 @@ Focus: Scaffold the full stack, prove the core loop works end-to-end (inventory 
 
 ### Phase 1B: Database Migrations and Seed Data
 
-- [ ] 1.14 Initialize Alembic configuration
+- [x] 1.14 Initialize Alembic configuration
   - **Do**:
     1. Create `services/shared/alembic.ini` pointing to `alembic/` directory
     2. Create `services/shared/alembic/env.py` with async SQLAlchemy engine, import all models from `shared.db.models`
