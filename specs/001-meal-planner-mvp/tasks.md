@@ -393,7 +393,7 @@ Focus: Scaffold the full stack, prove the core loop works end-to-end (inventory 
   - **Commit**: `feat(api): register inventory, equipment, ingredient routers`
   - _Design: API Design_
 
-- [ ] V4 [VERIFY] Quality checkpoint: inventory API
+- [x] V4 [VERIFY] Quality checkpoint: inventory API
   - **Do**: Lint entire API codebase
   - **Verify**: `cd services/api && uv run ruff check src/ && uv run ruff format --check src/ && echo "QUALITY_OK"`
   - **Done when**: Zero lint errors
@@ -401,7 +401,7 @@ Focus: Scaffold the full stack, prove the core loop works end-to-end (inventory 
 
 ### Phase 1E: Aspire Local Dev Setup
 
-- [ ] 1.30 Create .NET Aspire AppHost project
+- [x] 1.30 Create .NET Aspire AppHost project
   - **Do**:
     1. Create `services/aspire/AppHost/AppHost.csproj` with Aspire hosting packages (match yt-summarizer versions)
     2. Create `services/aspire/AppHost/AppHost.cs` per design: SQL Server 2025, Azurite, FastAPI, Next.js, worker
