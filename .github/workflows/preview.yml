@@ -456,12 +456,12 @@ jobs:
       (github.event_name != 'workflow_dispatch' || inputs.run_preview == true) &&
       needs.check-concurrency.result == 'success' &&
       needs.check-concurrency.outputs.can_deploy == 'true' &&
-      needs.get-ingress.result == 'success'
+      (needs.get-ingress.result == 'success' || needs.get-ingress.result == 'skipped')
     needs: [get-ingress, detect-changes, check-concurrency, wait-for-ci]
     with:
       environment: preview
       ci-run-id: ${{ needs.wait-for-ci.outputs.ci_run_id }}
-      api-url: ${{ needs.get-ingress.outputs.preview_url }}
+      api-url: ${{ needs.get-ingress.outputs.preview_url || 'https://meal-planner.apps.ashleyhollis.com' }}
       deployment-environment: pr-${{ needs.detect-changes.outputs.pr_number }}
       pr-number: ${{ needs.detect-changes.outputs.pr_number }}
       pr-head-sha: ${{ needs.detect-changes.outputs.pr_head_sha }}
@@ -483,7 +483,7 @@ jobs:
       (github.event_name != 'workflow_dispatch' || inputs.run_preview == true) &&
       needs.check-concurrency.result == 'success' &&
       needs.check-concurrency.outputs.can_deploy == 'true' &&
-      needs.verify-deployment.result == 'success' &&
+      (needs.verify-deployment.result == 'success' || needs.verify-deployment.result == 'skipped') &&
       needs.deploy-frontend-preview.result == 'success'
     needs:
       - update-overlay
