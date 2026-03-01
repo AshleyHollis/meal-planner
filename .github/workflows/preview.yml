@@ -377,7 +377,7 @@ jobs:
       - name: Sync ArgoCD manifests
         uses: AshleyHollis/shared-infra/.github/actions/sync-argocd-manifests@v1
         with:
-          mode: all
+          mode: apps
           namespace: ${{ env.NAMESPACE_ARGOCD }}
           verbose: 'true'
 
