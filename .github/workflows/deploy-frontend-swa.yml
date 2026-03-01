@@ -149,8 +149,23 @@ jobs:
           echo "✅ Cleaned up ${{ steps.cleanup-stale.outputs.deleted-count }} stale SWA environment(s)"
           echo "💡 Deleted environments for PRs: ${{ steps.cleanup-stale.outputs.stale-prs }}"
 
-      # Production and Preview: Azure login to configure SWA app settings before deploy
-      # Auth0 env vars must be present BEFORE warmup (server reads them on startup)
+      - name: Deploy frontend with CI artifact
+        id: deploy-frontend
+        uses: AshleyHollis/shared-infra/.github/actions/deploy-frontend-swa@v1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          ci-run-id: ${{ inputs.ci-run-id }}
+          api-url: ${{ inputs.api-url }}
+          swa-token: ${{ secrets.SWA_DEPLOYMENT_TOKEN }}
+          app-location: apps/web
+          runtime-config-path: apps/web/public/runtime-config.js
+          output_location: ""
+          production-branch: master
+          deployment-environment: ${{ inputs.deployment-environment }}
+          verbose: ${{ inputs.environment == 'preview' && 'true' || 'false' }}
+
+      # Configure Auth0 AFTER deploy (cleanup may delete the preview environment,
+      # and the deploy step recreates it). SWA restarts the server when settings change.
       - name: Azure Login (SWA app settings)
         uses: azure/login@v2
         with:
@@ -168,27 +183,22 @@ jobs:
           # SWA CLI normalizes environment names by removing hyphens (pr-1 → pr1)
           DEPLOY_ENV=$(echo "${{ inputs.deployment-environment }}" | tr -d '-')
 
-          echo "::group::Fetching Auth0 credentials from Key Vault"
           if [[ "${{ inputs.environment }}" == "prod" ]]; then
-            AUTH0_SECRET=$(az keyvault secret show --vault-name "$KV_NAME" --name "auth0-session-secret" --query value -o tsv) && echo "✓ auth0-session-secret"
-            AUTH0_DOMAIN=$(az keyvault secret show --vault-name "$KV_NAME" --name "auth0-domain" --query value -o tsv) && echo "✓ auth0-domain"
-            AUTH0_CLIENT_ID=$(az keyvault secret show --vault-name "$KV_NAME" --name "auth0-client-id" --query value -o tsv) && echo "✓ auth0-client-id"
-            AUTH0_CLIENT_SECRET=$(az keyvault secret show --vault-name "$KV_NAME" --name "auth0-client-secret" --query value -o tsv) && echo "✓ auth0-client-secret"
+            AUTH0_SECRET=$(az keyvault secret show --vault-name "$KV_NAME" --name "auth0-session-secret" --query value -o tsv)
+            AUTH0_DOMAIN=$(az keyvault secret show --vault-name "$KV_NAME" --name "auth0-domain" --query value -o tsv)
+            AUTH0_CLIENT_ID=$(az keyvault secret show --vault-name "$KV_NAME" --name "auth0-client-id" --query value -o tsv)
+            AUTH0_CLIENT_SECRET=$(az keyvault secret show --vault-name "$KV_NAME" --name "auth0-client-secret" --query value -o tsv)
             ENV_FLAG=""
           else
-            AUTH0_SECRET=$(az keyvault secret show --vault-name "$KV_NAME" --name "auth0-preview-session-secret" --query value -o tsv) && echo "✓ auth0-preview-session-secret"
-            AUTH0_DOMAIN=$(az keyvault secret show --vault-name "$KV_NAME" --name "auth0-preview-domain" --query value -o tsv) && echo "✓ auth0-preview-domain"
-            AUTH0_CLIENT_ID=$(az keyvault secret show --vault-name "$KV_NAME" --name "auth0-preview-client-id" --query value -o tsv) && echo "✓ auth0-preview-client-id"
-            AUTH0_CLIENT_SECRET=$(az keyvault secret show --vault-name "$KV_NAME" --name "auth0-preview-client-secret" --query value -o tsv) && echo "✓ auth0-preview-client-secret"
+            AUTH0_SECRET=$(az keyvault secret show --vault-name "$KV_NAME" --name "auth0-preview-session-secret" --query value -o tsv)
+            AUTH0_DOMAIN=$(az keyvault secret show --vault-name "$KV_NAME" --name "auth0-preview-domain" --query value -o tsv)
+            AUTH0_CLIENT_ID=$(az keyvault secret show --vault-name "$KV_NAME" --name "auth0-preview-client-id" --query value -o tsv)
+            AUTH0_CLIENT_SECRET=$(az keyvault secret show --vault-name "$KV_NAME" --name "auth0-preview-client-secret" --query value -o tsv)
             ENV_FLAG="--environment-name ${DEPLOY_ENV}"
           fi
-          echo "::endgroup::"
 
-          echo "Fetching SWA hostname (name=${SWA_NAME}, rg=${RG})..."
           SWA_HOSTNAME=$(az staticwebapp show --name "$SWA_NAME" --resource-group "$RG" --query defaultHostname -o tsv)
-          echo "✓ SWA hostname: ${SWA_HOSTNAME}"
 
-          echo "Setting app settings (env: ${DEPLOY_ENV})..."
           az staticwebapp appsettings set \
             --name "$SWA_NAME" \
             --resource-group "$RG" \
@@ -201,21 +211,6 @@ jobs:
               "AUTH0_CLIENT_SECRET=${AUTH0_CLIENT_SECRET}"
 
           echo "✅ SWA app settings configured for ${{ inputs.environment }} (env: ${DEPLOY_ENV})"
-
-      - name: Deploy frontend with CI artifact
-        id: deploy-frontend
-        uses: AshleyHollis/shared-infra/.github/actions/deploy-frontend-swa@v1
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          ci-run-id: ${{ inputs.ci-run-id }}
-          api-url: ${{ inputs.api-url }}
-          swa-token: ${{ secrets.SWA_DEPLOYMENT_TOKEN }}
-          app-location: apps/web
-          runtime-config-path: apps/web/public/runtime-config.js
-          output_location: ""
-          production-branch: master
-          deployment-environment: ${{ inputs.deployment-environment }}
-          verbose: ${{ inputs.environment == 'preview' && 'true' || 'false' }}
 
       - name: Resolve SWA URL
         id: swa-url
