@@ -254,7 +254,7 @@ jobs:
       terraform-version: ${{ vars.TERRAFORM_VERSION || '1.12.1' }}
       working-directory: infra/terraform
       run-plan: true
-      run-apply: ${{ github.event_name == 'workflow_dispatch' && inputs.apply_terraform == true }}
+      run-apply: ${{ (github.event_name == 'workflow_dispatch' && inputs.apply_terraform == true) || (github.event_name != 'workflow_dispatch' && needs.detect-changes.outputs.infra_changed == 'true') }}
       require-changes: false
       post-to-pr: true
     secrets: inherit
