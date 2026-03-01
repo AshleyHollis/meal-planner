@@ -165,7 +165,7 @@ jobs:
           KV_NAME="${{ vars.KEY_VAULT_NAME || 'kv-ytsumm-prd' }}"
           SWA_NAME="${{ vars.SWA_NAME || 'swa-ytsumm-prd' }}"
           RG="${{ vars.AZURE_RESOURCE_GROUP || 'rg-ytsumm-prd' }}"
-          ENV="${{ inputs.pr-number }}"  # empty for prod (default env), pr-N for preview
+          DEPLOY_ENV="${{ inputs.deployment-environment }}"
 
           if [[ "${{ inputs.environment }}" == "prod" ]]; then
             AUTH0_SECRET=$(az keyvault secret show --vault-name "$KV_NAME" --name "auth0-session-secret" --query value -o tsv)
@@ -178,7 +178,7 @@ jobs:
             AUTH0_DOMAIN=$(az keyvault secret show --vault-name "$KV_NAME" --name "auth0-preview-domain" --query value -o tsv)
             AUTH0_CLIENT_ID=$(az keyvault secret show --vault-name "$KV_NAME" --name "auth0-preview-client-id" --query value -o tsv)
             AUTH0_CLIENT_SECRET=$(az keyvault secret show --vault-name "$KV_NAME" --name "auth0-preview-client-secret" --query value -o tsv)
-            ENV_FLAG="--environment-name ${ENV}"
+            ENV_FLAG="--environment-name ${DEPLOY_ENV}"
           fi
 
           SWA_HOSTNAME=$(az staticwebapp show --name "$SWA_NAME" --resource-group "$RG" --query defaultHostname -o tsv)
@@ -194,7 +194,7 @@ jobs:
               "AUTH0_CLIENT_ID=${AUTH0_CLIENT_ID}" \
               "AUTH0_CLIENT_SECRET=${AUTH0_CLIENT_SECRET}"
 
-          echo "✅ SWA app settings configured for ${{ inputs.environment }} environment"
+          echo "✅ SWA app settings configured for ${{ inputs.environment }} (env: ${DEPLOY_ENV})"
 
       - name: Deploy frontend with CI artifact
         id: deploy-frontend
