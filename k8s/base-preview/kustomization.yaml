@@ -8,6 +8,7 @@ namespace: meal-planner
 
 resources:
   - namespace.yaml
+  - serviceaccount.yaml
   - configmap.yaml
   - externalsecret-db.yaml
   - externalsecret-storage.yaml
