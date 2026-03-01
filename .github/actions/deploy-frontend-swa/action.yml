@@ -72,7 +72,9 @@ runs:
         fi
         rm -rf "$app_dir/.next" "$app_dir/public"
         cp -R "$source_dir/.next" "$app_dir/.next"
-        cp -R "$source_dir/public" "$app_dir/public"
+        if [[ -d "$source_dir/public" ]]; then
+          cp -R "$source_dir/public" "$app_dir/public"
+        fi
         if [[ -f "$source_dir/staticwebapp.config.json" ]]; then
           cp "$source_dir/staticwebapp.config.json" "$app_dir/staticwebapp.config.json"
         fi
