@@ -18,22 +18,6 @@ variable "location" {
 }
 
 # -----------------------------------------------------------------------------
-# Shared Infrastructure References
-# -----------------------------------------------------------------------------
-
-variable "shared_resource_group_name" {
-  description = "Resource group containing shared infra (AKS, ACR, Key Vault)"
-  type        = string
-  default     = "rg-ytsumm-prd"
-}
-
-variable "shared_key_vault_name" {
-  description = "Name of the shared Key Vault"
-  type        = string
-  default     = "kv-ytsumm-prd"
-}
-
-# -----------------------------------------------------------------------------
 # SQL Database
 # -----------------------------------------------------------------------------
 
