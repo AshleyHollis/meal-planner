@@ -159,6 +159,7 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Configure SWA app settings from Key Vault
+        continue-on-error: true
         shell: bash
         run: |
           KV_NAME="${{ vars.KEY_VAULT_NAME || 'kv-ytsumm-prd' }}"
