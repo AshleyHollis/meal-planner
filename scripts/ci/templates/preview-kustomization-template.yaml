@@ -13,20 +13,18 @@ metadata:
 namespace: preview-pr-${PR_NUMBER}
 
 resources:
-  - ../../base-preview
-  - resource-quota.yaml
-  - limit-range.yaml
+  - ../../base
 
 images:
   - name: meal-planner-api
     newName: ${ACR_SERVER}/meal-planner-api
     newTag: ${IMAGE_TAG}
-  - name: meal-planner-workers
-    newName: ${ACR_SERVER}/meal-planner-workers
+  - name: meal-planner-worker
+    newName: ${ACR_SERVER}/meal-planner-worker
     newTag: ${IMAGE_TAG}
 
 patches:
-  # ExternalSecret patches - reference ClusterSecretStore
+  # ExternalSecret patches - reference ClusterSecretStore for preview namespaces
   - patch: |-
       apiVersion: external-secrets.io/v1beta1
       kind: ExternalSecret
@@ -44,19 +42,6 @@ patches:
       apiVersion: external-secrets.io/v1beta1
       kind: ExternalSecret
       metadata:
-        name: openai-credentials
-      spec:
-        secretStoreRef:
-          kind: ClusterSecretStore
-          name: azure-keyvault-cluster
-    target:
-      kind: ExternalSecret
-      name: openai-credentials
-
-  - patch: |-
-      apiVersion: external-secrets.io/v1beta1
-      kind: ExternalSecret
-      metadata:
         name: storage-credentials
       spec:
         secretStoreRef:
@@ -66,17 +51,44 @@ patches:
       kind: ExternalSecret
       name: storage-credentials
 
+  - patch: |-
+      apiVersion: external-secrets.io/v1beta1
+      kind: ExternalSecret
+      metadata:
+        name: llm-credentials
+      spec:
+        secretStoreRef:
+          kind: ClusterSecretStore
+          name: azure-keyvault-cluster
+    target:
+      kind: ExternalSecret
+      name: llm-credentials
+
+  - patch: |-
+      apiVersion: external-secrets.io/v1beta1
+      kind: ExternalSecret
+      metadata:
+        name: auth0-credentials
+      spec:
+        secretStoreRef:
+          kind: ClusterSecretStore
+          name: azure-keyvault-cluster
+    target:
+      kind: ExternalSecret
+      name: auth0-credentials
+
   # ConfigMap patch - CORS origins with SWA URL
   - patch: |-
       apiVersion: v1
       kind: ConfigMap
       metadata:
-        name: shared-config
+        name: meal-planner-config
       data:
-        CORS_ORIGINS: "${SWA_URL}"
+        ENVIRONMENT: "preview"
+        LOG_LEVEL: "DEBUG"
     target:
       kind: ConfigMap
-      name: shared-config
+      name: meal-planner-config
 
   # API Deployment patch - CORS origins env var
   - patch: |-

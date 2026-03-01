@@ -10,16 +10,14 @@ namespace: meal-planner
 
 resources:
   - ../../base
-  - priority-class.yaml
 
 # Image tags - updated by deploy-prod.yml workflow on merge
-# Using digest pinning for immutable deployments
 images:
   - name: meal-planner-api
     newName: acrytsummprd.azurecr.io/meal-planner-api
     newTag: ${IMAGE_TAG}
-  - name: meal-planner-workers
-    newName: acrytsummprd.azurecr.io/meal-planner-workers
+  - name: meal-planner-worker
+    newName: acrytsummprd.azurecr.io/meal-planner-worker
     newTag: ${IMAGE_TAG}
 
 # Production-specific patches (all inline for consistency)
@@ -56,7 +54,7 @@ patches:
       spec:
         hostnames:
         - "api.meal-planner.apps.ashleyhollis.com"
-  # Production resource requests/limits per deployment
+  # Production resource requests/limits - API
   - target:
       group: apps
       version: v1
@@ -79,82 +77,17 @@ patches:
                   limits:
                     cpu: 500m
                     memory: 512Mi
+  # Production resource requests/limits - Worker
   - target:
       group: apps
       version: v1
       kind: Deployment
-      name: transcribe-worker
+      name: meal-plan-worker
     patch: |-
       apiVersion: apps/v1
       kind: Deployment
       metadata:
-        name: transcribe-worker
-      spec:
-        template:
-          spec:
-            containers:
-              - name: worker
-                resources:
-                  requests:
-                    cpu: 25m
-                    memory: 128Mi
-                  limits:
-                    cpu: 500m
-                    memory: 512Mi
-  - target:
-      group: apps
-      version: v1
-      kind: Deployment
-      name: summarize-worker
-    patch: |-
-      apiVersion: apps/v1
-      kind: Deployment
-      metadata:
-        name: summarize-worker
-      spec:
-        template:
-          spec:
-            containers:
-              - name: worker
-                resources:
-                  requests:
-                    cpu: 25m
-                    memory: 128Mi
-                  limits:
-                    cpu: 500m
-                    memory: 512Mi
-  - target:
-      group: apps
-      version: v1
-      kind: Deployment
-      name: embed-worker
-    patch: |-
-      apiVersion: apps/v1
-      kind: Deployment
-      metadata:
-        name: embed-worker
-      spec:
-        template:
-          spec:
-            containers:
-              - name: worker
-                resources:
-                  requests:
-                    cpu: 25m
-                    memory: 128Mi
-                  limits:
-                    cpu: 500m
-                    memory: 512Mi
-  - target:
-      group: apps
-      version: v1
-      kind: Deployment
-      name: relationships-worker
-    patch: |-
-      apiVersion: apps/v1
-      kind: Deployment
-      metadata:
-        name: relationships-worker
+        name: meal-plan-worker
       spec:
         template:
           spec:
