@@ -542,9 +542,7 @@ jobs:
       - check-concurrency
     if: >-
       always() && !cancelled() &&
-      github.event_name == 'workflow_dispatch' &&
-      inputs.run_preview == true &&
-      inputs.run_e2e == true &&
+      (github.event_name == 'pull_request' || (inputs.run_preview == true && inputs.run_e2e != false)) &&
       needs.check-concurrency.result == 'success' &&
       needs.check-concurrency.outputs.can_deploy == 'true' &&
       needs.verify-deployment.result == 'success' &&
