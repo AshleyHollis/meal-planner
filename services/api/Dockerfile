@@ -14,13 +14,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN pip install uv
 
 # Copy shared package first (for layer caching)
-COPY shared/pyproject.toml /app/shared/
+COPY shared/pyproject.toml /app/shared/pyproject.toml
 COPY shared/shared/ /app/shared/shared/
 
-# Copy API dependency files
-COPY api/pyproject.toml ./
+# Copy API dependency files into api/ subdirectory
+# so ../shared resolves to /app/shared (matching [tool.uv.sources])
+COPY api/pyproject.toml /app/api/pyproject.toml
 
 # Install shared package and API dependencies
+WORKDIR /app/api
 RUN uv pip install --system --prerelease=allow -e /app/shared
 RUN uv pip install --system --prerelease=allow -e .
 
