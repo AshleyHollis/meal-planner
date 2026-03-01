@@ -573,8 +573,8 @@ jobs:
         uses: azure/CLI@v2
         with:
           inlineScript: |
-            AUTH0_USER_EMAIL=$(az keyvault secret show --vault-name "kv-ytsumm-prd" --name "auth0-user-test-email" --query "value" -o tsv)
-            AUTH0_USER_PASSWORD=$(az keyvault secret show --vault-name "kv-ytsumm-prd" --name "auth0-user-test-password" --query "value" -o tsv)
+            AUTH0_USER_EMAIL=$(az keyvault secret show --vault-name "kv-ytsumm-prd" --name "meal-planner-auth0-user-test-email" --query "value" -o tsv)
+            AUTH0_USER_PASSWORD=$(az keyvault secret show --vault-name "kv-ytsumm-prd" --name "meal-planner-auth0-user-test-password" --query "value" -o tsv)
 
             echo "AUTH0_USER_TEST_EMAIL=$AUTH0_USER_EMAIL" >> $GITHUB_ENV
             echo "::add-mask::$AUTH0_USER_PASSWORD"

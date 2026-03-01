@@ -24,36 +24,3 @@ resource "azurerm_key_vault_secret" "llm_api_key" {
   value        = var.llm_api_key
   key_vault_id = module.shared.key_vault_id
 }
-
-# =============================================================================
-# Auth0 Secrets
-# =============================================================================
-# Required by k8s/base/externalsecret-auth0.yaml (ExternalSecret → K8s Secret)
-
-resource "azurerm_key_vault_secret" "auth0_domain" {
-  count        = var.auth0_domain != "" ? 1 : 0
-  name         = "auth0-domain"
-  value        = var.auth0_domain
-  key_vault_id = module.shared.key_vault_id
-}
-
-resource "azurerm_key_vault_secret" "auth0_client_id" {
-  count        = var.auth0_client_id != "" ? 1 : 0
-  name         = "auth0-client-id"
-  value        = var.auth0_client_id
-  key_vault_id = module.shared.key_vault_id
-}
-
-resource "azurerm_key_vault_secret" "auth0_client_secret" {
-  count        = var.auth0_client_secret != "" ? 1 : 0
-  name         = "auth0-client-secret"
-  value        = var.auth0_client_secret
-  key_vault_id = module.shared.key_vault_id
-}
-
-resource "azurerm_key_vault_secret" "auth0_session_secret" {
-  count        = var.auth0_session_secret != "" ? 1 : 0
-  name         = "auth0-session-secret"
-  value        = var.auth0_session_secret
-  key_vault_id = module.shared.key_vault_id
-}

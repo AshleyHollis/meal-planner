@@ -184,16 +184,16 @@ jobs:
           DEPLOY_ENV=$(echo "${{ inputs.deployment-environment }}" | tr -d '-')
 
           if [[ "${{ inputs.environment }}" == "prod" ]]; then
-            AUTH0_SECRET=$(az keyvault secret show --vault-name "$KV_NAME" --name "auth0-session-secret" --query value -o tsv)
-            AUTH0_DOMAIN=$(az keyvault secret show --vault-name "$KV_NAME" --name "auth0-domain" --query value -o tsv)
-            AUTH0_CLIENT_ID=$(az keyvault secret show --vault-name "$KV_NAME" --name "auth0-client-id" --query value -o tsv)
-            AUTH0_CLIENT_SECRET=$(az keyvault secret show --vault-name "$KV_NAME" --name "auth0-client-secret" --query value -o tsv)
+            AUTH0_SECRET=$(az keyvault secret show --vault-name "$KV_NAME" --name "meal-planner-auth0-session-secret" --query value -o tsv)
+            AUTH0_DOMAIN=$(az keyvault secret show --vault-name "$KV_NAME" --name "meal-planner-auth0-domain" --query value -o tsv)
+            AUTH0_CLIENT_ID=$(az keyvault secret show --vault-name "$KV_NAME" --name "meal-planner-auth0-client-id" --query value -o tsv)
+            AUTH0_CLIENT_SECRET=$(az keyvault secret show --vault-name "$KV_NAME" --name "meal-planner-auth0-client-secret" --query value -o tsv)
             ENV_FLAG=""
           else
-            AUTH0_SECRET=$(az keyvault secret show --vault-name "$KV_NAME" --name "auth0-preview-session-secret" --query value -o tsv)
-            AUTH0_DOMAIN=$(az keyvault secret show --vault-name "$KV_NAME" --name "auth0-preview-domain" --query value -o tsv)
-            AUTH0_CLIENT_ID=$(az keyvault secret show --vault-name "$KV_NAME" --name "auth0-preview-client-id" --query value -o tsv)
-            AUTH0_CLIENT_SECRET=$(az keyvault secret show --vault-name "$KV_NAME" --name "auth0-preview-client-secret" --query value -o tsv)
+            AUTH0_SECRET=$(az keyvault secret show --vault-name "$KV_NAME" --name "meal-planner-auth0-preview-session-secret" --query value -o tsv)
+            AUTH0_DOMAIN=$(az keyvault secret show --vault-name "$KV_NAME" --name "meal-planner-auth0-preview-domain" --query value -o tsv)
+            AUTH0_CLIENT_ID=$(az keyvault secret show --vault-name "$KV_NAME" --name "meal-planner-auth0-preview-client-id" --query value -o tsv)
+            AUTH0_CLIENT_SECRET=$(az keyvault secret show --vault-name "$KV_NAME" --name "meal-planner-auth0-preview-client-secret" --query value -o tsv)
             ENV_FLAG="--environment-name ${DEPLOY_ENV}"
           fi
 
