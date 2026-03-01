@@ -169,7 +169,7 @@ class Settings(BaseSettings):
         default="meal-planner",
         description="Service name for logging",
     )
-    environment: Literal["development", "staging", "production"] = Field(
+    environment: Literal["development", "staging", "preview", "production"] = Field(
         default="development",
         description="Deployment environment",
     )
