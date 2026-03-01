@@ -23,6 +23,8 @@ const userAuthFile = path.join(__dirname, '../playwright/.auth/user.json');
  *
  * Navigates to /api/auth/login (which redirects to Auth0), fills the
  * username/password on Auth0's login page, and waits for redirect back.
+ *
+ * Handles both single-page and identifier-first (email then password) flows.
  */
 setup('authenticate as test user', async ({ page }) => {
   const email = process.env.AUTH0_USER_TEST_EMAIL;
@@ -46,7 +48,17 @@ setup('authenticate as test user', async ({ page }) => {
 
     // Wait for redirect to Auth0's login page
     await page.waitForURL((url) => url.hostname.includes('auth0.com'), { timeout: 20_000 });
-    console.log('[auth-setup] Reached Auth0 login page');
+    console.log(`[auth-setup] Reached Auth0 login page: ${page.url()}`);
+
+    // Check if Auth0 is showing an error page
+    const errorElement = page.locator('.error-page, [class*="error"], #error-message').first();
+    try {
+      await errorElement.waitFor({ timeout: 2_000 });
+      const errorText = await errorElement.textContent();
+      console.error(`[auth-setup] Auth0 error page detected: ${errorText}`);
+    } catch {
+      // No error page — good, continue with login
+    }
 
     // Auth0 Universal Login — email may already be pre-filled via login_hint
     const emailInput = page
@@ -58,20 +70,53 @@ setup('authenticate as test user', async ({ page }) => {
       if (!currentEmail) {
         await emailInput.fill(email);
       }
+      console.log('[auth-setup] Email field handled');
     } catch {
-      // email field not present or already filled — continue
+      console.log('[auth-setup] Email field not found (may be pre-filled or identifier-first)');
     }
 
-    // Fill password on Auth0's page
-    const passwordInput = page
+    // Check if password is already visible (single-page login form)
+    let passwordInput = page
       .locator('input[name="password"], input[id="password"], input[type="password"]')
       .first();
-    await passwordInput.waitFor({ timeout: 15_000 });
+    let passwordVisible = await passwordInput.isVisible().catch(() => false);
+
+    // Identifier-first flow: click Continue/Submit to reveal password field
+    if (!passwordVisible) {
+      console.log('[auth-setup] Password not visible — trying identifier-first flow');
+      const continueBtn = page
+        .locator('button[name="action"], button[type="submit"], button[data-action-button-primary]')
+        .first();
+      try {
+        await continueBtn.waitFor({ timeout: 5_000 });
+        await continueBtn.click();
+        console.log('[auth-setup] Clicked Continue button');
+        // Wait for password field to appear after transition
+        await passwordInput.waitFor({ timeout: 10_000 });
+        passwordVisible = true;
+      } catch {
+        console.log('[auth-setup] Continue button not found or password still not visible');
+      }
+    }
+
+    if (!passwordVisible) {
+      // Last resort: log page content for debugging
+      const pageContent = await page.content();
+      const title = await page.title();
+      console.error(`[auth-setup] Page title: ${title}`);
+      console.error(`[auth-setup] Page URL: ${page.url()}`);
+      console.error(`[auth-setup] Page content (first 2000 chars): ${pageContent.substring(0, 2000)}`);
+      throw new Error('Password field not found on Auth0 login page');
+    }
+
+    // Fill password
     await passwordInput.fill(password);
+    console.log('[auth-setup] Password filled');
 
     // Submit Auth0 login form
     const submitBtn = page.locator('button[name="action"], button[type="submit"]').first();
     await submitBtn.click();
+    console.log('[auth-setup] Login form submitted');
 
     // Wait for redirect back to the app (away from auth0.com)
     await page.waitForURL((url) => !url.hostname.includes('auth0.com'), { timeout: 30_000 });
