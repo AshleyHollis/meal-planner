@@ -1,7 +1,7 @@
 # =============================================================================
 # Terraform Backend Configuration
 # =============================================================================
-# Stores Terraform state in Azure Blob Storage (same account as yt-summarizer)
+# Stores Terraform state in Azure Blob Storage (shared state account)
 # Authentication:
 # - Local: uses Azure CLI credentials (az login)
 # - CI/CD: uses OIDC via ARM_USE_OIDC=true environment variable
