@@ -5,8 +5,8 @@
 
 resource "azurerm_mssql_server" "sql" {
   name                         = "sql-${local.name_prefix}"
-  resource_group_name          = data.azurerm_resource_group.shared.name
-  location                     = data.azurerm_resource_group.shared.location
+  resource_group_name          = module.shared.resource_group_name
+  location                     = module.shared.resource_group_location
   version                      = "12.0"
   administrator_login          = var.sql_admin_username
   administrator_login_password = var.sql_admin_password

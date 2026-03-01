@@ -5,8 +5,8 @@
 
 resource "azurerm_static_web_app" "swa" {
   name                = "swa-${local.name_prefix}"
-  resource_group_name = data.azurerm_resource_group.shared.name
-  location            = data.azurerm_resource_group.shared.location
+  resource_group_name = module.shared.resource_group_name
+  location            = module.shared.resource_group_location
   sku_tier            = "Free"
   sku_size            = "Free"
 
