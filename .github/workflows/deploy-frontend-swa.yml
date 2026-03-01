@@ -168,22 +168,27 @@ jobs:
           # SWA CLI normalizes environment names by removing hyphens (pr-1 → pr1)
           DEPLOY_ENV=$(echo "${{ inputs.deployment-environment }}" | tr -d '-')
 
+          echo "::group::Fetching Auth0 credentials from Key Vault"
           if [[ "${{ inputs.environment }}" == "prod" ]]; then
-            AUTH0_SECRET=$(az keyvault secret show --vault-name "$KV_NAME" --name "auth0-session-secret" --query value -o tsv)
-            AUTH0_DOMAIN=$(az keyvault secret show --vault-name "$KV_NAME" --name "auth0-domain" --query value -o tsv)
-            AUTH0_CLIENT_ID=$(az keyvault secret show --vault-name "$KV_NAME" --name "auth0-client-id" --query value -o tsv)
-            AUTH0_CLIENT_SECRET=$(az keyvault secret show --vault-name "$KV_NAME" --name "auth0-client-secret" --query value -o tsv)
+            AUTH0_SECRET=$(az keyvault secret show --vault-name "$KV_NAME" --name "auth0-session-secret" --query value -o tsv) && echo "✓ auth0-session-secret"
+            AUTH0_DOMAIN=$(az keyvault secret show --vault-name "$KV_NAME" --name "auth0-domain" --query value -o tsv) && echo "✓ auth0-domain"
+            AUTH0_CLIENT_ID=$(az keyvault secret show --vault-name "$KV_NAME" --name "auth0-client-id" --query value -o tsv) && echo "✓ auth0-client-id"
+            AUTH0_CLIENT_SECRET=$(az keyvault secret show --vault-name "$KV_NAME" --name "auth0-client-secret" --query value -o tsv) && echo "✓ auth0-client-secret"
             ENV_FLAG=""
           else
-            AUTH0_SECRET=$(az keyvault secret show --vault-name "$KV_NAME" --name "auth0-preview-session-secret" --query value -o tsv)
-            AUTH0_DOMAIN=$(az keyvault secret show --vault-name "$KV_NAME" --name "auth0-preview-domain" --query value -o tsv)
-            AUTH0_CLIENT_ID=$(az keyvault secret show --vault-name "$KV_NAME" --name "auth0-preview-client-id" --query value -o tsv)
-            AUTH0_CLIENT_SECRET=$(az keyvault secret show --vault-name "$KV_NAME" --name "auth0-preview-client-secret" --query value -o tsv)
+            AUTH0_SECRET=$(az keyvault secret show --vault-name "$KV_NAME" --name "auth0-preview-session-secret" --query value -o tsv) && echo "✓ auth0-preview-session-secret"
+            AUTH0_DOMAIN=$(az keyvault secret show --vault-name "$KV_NAME" --name "auth0-preview-domain" --query value -o tsv) && echo "✓ auth0-preview-domain"
+            AUTH0_CLIENT_ID=$(az keyvault secret show --vault-name "$KV_NAME" --name "auth0-preview-client-id" --query value -o tsv) && echo "✓ auth0-preview-client-id"
+            AUTH0_CLIENT_SECRET=$(az keyvault secret show --vault-name "$KV_NAME" --name "auth0-preview-client-secret" --query value -o tsv) && echo "✓ auth0-preview-client-secret"
             ENV_FLAG="--environment-name ${DEPLOY_ENV}"
           fi
+          echo "::endgroup::"
 
+          echo "Fetching SWA hostname (name=${SWA_NAME}, rg=${RG})..."
           SWA_HOSTNAME=$(az staticwebapp show --name "$SWA_NAME" --resource-group "$RG" --query defaultHostname -o tsv)
+          echo "✓ SWA hostname: ${SWA_HOSTNAME}"
 
+          echo "Setting app settings (env: ${DEPLOY_ENV})..."
           az staticwebapp appsettings set \
             --name "$SWA_NAME" \
             --resource-group "$RG" \
