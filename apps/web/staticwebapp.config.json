@@ -2,17 +2,12 @@
   "platform": {
     "apiRuntime": "node:22"
   },
-  "navigationFallback": {
-    "rewrite": "/index.html",
-    "exclude": ["/_next/*", "/api/*", "/*.ico", "/*.png", "/*.svg"]
-  },
-  "globalHeaders": {
-    "X-Content-Type-Options": "nosniff",
-    "X-Frame-Options": "DENY",
-    "Referrer-Policy": "strict-origin-when-cross-origin",
-    "Permissions-Policy": "camera=(), microphone=(), geolocation=()"
-  },
-  "mimeTypes": {
-    ".json": "application/json"
-  }
+  "routes": [
+    {
+      "route": "/.swa/*",
+      "headers": {
+        "Cache-Control": "no-cache"
+      }
+    }
+  ]
 }

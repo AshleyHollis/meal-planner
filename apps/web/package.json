@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build && node -e \"const fs=require('fs');const path=require('path');function cpR(s,d){if(!fs.existsSync(d))fs.mkdirSync(d,{recursive:true});fs.readdirSync(s).forEach(f=>{const sp=path.join(s,f),dp=path.join(d,f);fs.statSync(sp).isDirectory()?cpR(sp,dp):fs.copyFileSync(sp,dp)})};cpR('.next/static','.next/standalone/.next/static');cpR('public','.next/standalone/public');if(fs.existsSync('staticwebapp.config.json'))fs.copyFileSync('staticwebapp.config.json','.next/standalone/staticwebapp.config.json')\"",
     "start": "next start",
     "lint": "eslint src/",
     "test": "vitest",
