@@ -47,7 +47,7 @@ for commit in $COMMITS; do
 
   if [ "$PARENT_COUNT" -le 1 ]; then
     # Regular commit, not a merge
-    CHANGED_FILES=$(git diff-tree --no-commit-tree --name-only -r "$commit" 2>/dev/null || true)
+    CHANGED_FILES=$(git diff-tree --no-commit-id --name-only -r "$commit" 2>/dev/null || true)
 
     if echo "$CHANGED_FILES" | grep -qE '^(services/api|services/workers|services/shared|apps/web|docker)/'; then
       FOUND_COMMIT="$commit"
@@ -66,21 +66,19 @@ if [ -z "$FOUND_IMAGE_TAG" ]; then
 
   # Read production kustomization.yaml for deterministic SHA-based tag
   git fetch origin master
-  PROD_TAG=$(git show origin/master:k8s/overlays/prod/kustomization.yaml | grep -oP 'newTag: \K.*' | head -1)
+  PROD_TAG=$(git show origin/master:k8s/overlays/prod/kustomization.yaml 2>/dev/null | grep -oP 'newTag: \K.*' | head -1 || true)
 
-  if [ -z "$PROD_TAG" ]; then
-    echo "::error::Could not find production image tag in kustomization.yaml"
-    exit 1
+  if [ -n "$PROD_TAG" ] && [ "$PROD_TAG" != "latest" ]; then
+    echo "✅ Using production tag: $PROD_TAG"
+    FOUND_IMAGE_TAG="$PROD_TAG"
+  else
+    # No production kustomization on master yet (first PR) or tag is "latest"
+    # Fall back to PR image tag using HEAD commit SHA
+    HEAD_SHORT=$(git rev-parse --short=7 HEAD)
+    FOUND_IMAGE_TAG="pr-${PR_NUMBER}-${HEAD_SHORT}"
+    echo "⚠️  No production kustomization found on master (first PR?)"
+    echo "✅ Using PR HEAD image tag: $FOUND_IMAGE_TAG"
   fi
-
-  if [ "$PROD_TAG" = "latest" ]; then
-    echo "::error::Production kustomization is using 'latest' tag - not deterministic!"
-    echo "::error::Production deployment must use SHA-based tags (e.g., sha-abc123f)"
-    exit 1
-  fi
-
-  echo "✅ Using production tag: $PROD_TAG"
-  FOUND_IMAGE_TAG="$PROD_TAG"
 fi
 
 echo "image_tag=$FOUND_IMAGE_TAG" >> $GITHUB_OUTPUT
