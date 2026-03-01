@@ -505,8 +505,8 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           pr-number: ${{ needs.detect-changes.outputs.pr_number }}
-          preview-url: ${{ needs.get-ingress.outputs.preview_url }}
-          image-tag: ${{ needs.wait-for-ci.outputs.image_tag }}
+          preview-url: ${{ needs.get-ingress.outputs.preview_url || needs.deploy-frontend-preview.outputs.static_web_app_url }}
+          image-tag: ${{ needs.wait-for-ci.outputs.image_tag || needs.check-concurrency.outputs.final_image_tag }}
           commit-sha: ${{ needs.detect-changes.outputs.pr_head_sha || github.sha }}
           frontend-url: ${{ needs.deploy-frontend-preview.outputs.static_web_app_url }}
           run-id: ${{ github.run_id }}
