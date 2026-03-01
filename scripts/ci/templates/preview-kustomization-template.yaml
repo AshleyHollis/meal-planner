@@ -13,7 +13,7 @@ metadata:
 namespace: preview-pr-${PR_NUMBER}
 
 resources:
-  - ../../base
+  - ../../base-preview
 
 images:
   - name: meal-planner-api

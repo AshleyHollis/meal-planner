@@ -1,0 +1,16 @@
+# =============================================================================
+# ConfigMap for shared configuration
+# =============================================================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: meal-planner-config
+  namespace: meal-planner
+  labels:
+    app.kubernetes.io/name: meal-planner
+    app.kubernetes.io/part-of: meal-planner
+data:
+  ENVIRONMENT: "staging"
+  LOG_LEVEL: "INFO"
+  API_HOST: "0.0.0.0"
+  API_PORT: "8000"
