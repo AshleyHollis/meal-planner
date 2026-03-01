@@ -5,8 +5,8 @@
 
 resource "azurerm_storage_account" "storage" {
   name                     = replace("st${local.name_prefix}", "-", "")
-  resource_group_name      = data.azurerm_resource_group.shared.name
-  location                 = data.azurerm_resource_group.shared.location
+  resource_group_name      = module.shared.resource_group_name
+  location                 = module.shared.resource_group_location
   account_tier             = "Standard"
   account_replication_type = "LRS"
 
