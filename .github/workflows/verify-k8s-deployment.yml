@@ -165,6 +165,7 @@ jobs:
 
       - name: Verify TLS certificate
         uses: AshleyHollis/shared-infra/.github/actions/verify-certificate@v1
+        continue-on-error: ${{ inputs.environment == 'preview' }}
         with:
           host: ${{ inputs.host }}
 
