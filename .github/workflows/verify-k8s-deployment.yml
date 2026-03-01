@@ -148,7 +148,7 @@ jobs:
         uses: AshleyHollis/shared-infra/.github/actions/verify-k8s-deployment@v1
         with:
           namespace: ${{ inputs.namespace }}
-          deployments: api,transcribe-worker,summarize-worker
+          deployments: api,meal-plan-worker
           expected-tag: ${{ inputs.expected-image-tag }}
           registry: ${{ vars.ACR_LOGIN_SERVER || 'acrytsummprd.azurecr.io' }}
           image-name: meal-planner

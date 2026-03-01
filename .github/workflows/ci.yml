@@ -300,7 +300,7 @@ jobs:
             image: meal-planner-api
           - service: workers
             dockerfile: services/workers/Dockerfile
-            image: meal-planner-workers
+            image: meal-planner-worker
     permissions:
       id-token: write
       contents: read
