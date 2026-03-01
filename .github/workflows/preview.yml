@@ -203,6 +203,7 @@ jobs:
        github.event_name == 'workflow_dispatch')
     outputs:
       image_tag: ${{ steps.find-tag.outputs.image_tag }}
+      image_commit_sha: ${{ steps.find-tag.outputs.image_commit_sha }}
     steps:
       - name: Checkout PR branch with full history
         uses: actions/checkout@v4
@@ -278,6 +279,10 @@ jobs:
         ${{ needs.wait-for-ci.outputs.image_tag != '' &&
             needs.wait-for-ci.outputs.image_tag ||
             needs.get-production-tag.outputs.image_tag }}
+      final_commit_sha: >-
+        ${{ needs.wait-for-ci.outputs.image_tag != '' &&
+            needs.detect-changes.outputs.pr_head_sha ||
+            needs.get-production-tag.outputs.image_commit_sha }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -402,7 +407,7 @@ jobs:
       # PR-specific overlay path - each PR gets its own directory
       overlay-path: k8s/overlays/preview-pr-${{ needs.detect-changes.outputs.pr_number }}
       image-tag: ${{ needs.check-concurrency.outputs.final_image_tag }}
-      commit-sha: ${{ needs.detect-changes.outputs.pr_head_sha }}
+      commit-sha: ${{ needs.check-concurrency.outputs.final_commit_sha }}
       pr-number: ${{ needs.detect-changes.outputs.pr_number }}
       pr-branch: ${{ github.head_ref }}
       pr-head-sha: ${{ needs.detect-changes.outputs.pr_head_sha }}

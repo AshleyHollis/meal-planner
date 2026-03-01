@@ -82,4 +82,14 @@ if [ -z "$FOUND_IMAGE_TAG" ]; then
 fi
 
 echo "image_tag=$FOUND_IMAGE_TAG" >> $GITHUB_OUTPUT
-echo "🎯 Final image tag for K8s-only preview: $FOUND_IMAGE_TAG"
+
+# Output the commit SHA that corresponds to the image tag
+# This may differ from HEAD when only k8s/CI files changed
+if [ -n "$FOUND_COMMIT" ]; then
+  echo "image_commit_sha=$FOUND_COMMIT" >> $GITHUB_OUTPUT
+  echo "🎯 Final image tag for K8s-only preview: $FOUND_IMAGE_TAG (from $(git rev-parse --short=7 "$FOUND_COMMIT"))"
+else
+  # Fallback: use HEAD commit (production tag or first-PR fallback)
+  echo "image_commit_sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+  echo "🎯 Final image tag for K8s-only preview: $FOUND_IMAGE_TAG (from HEAD)"
+fi
