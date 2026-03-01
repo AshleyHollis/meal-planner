@@ -82,18 +82,20 @@ test.describe('Smoke Tests @smoke', () => {
 
     test('shows quick link cards', async ({ page }) => {
       // Dashboard should have Inventory and Meal Plans quick links
-      await expect(page.getByText('Inventory')).toBeVisible();
-      await expect(page.getByText('Meal Plans')).toBeVisible();
+      // Use role-based locators to avoid matching nav links
+      await expect(page.getByRole('link', { name: /Inventory/i }).first()).toBeVisible();
+      await expect(page.getByRole('link', { name: /Meal Plans/i }).first()).toBeVisible();
     });
 
     test('shows active plan section or generate button', async ({ page }) => {
       // Dashboard shows either an active plan summary or a "Generate Plan" button
+      // Use .first() since .or() can match multiple visible elements
       const activePlanHeading = page.getByRole('heading', { name: 'Active Plan' });
       const generateButton = page.getByRole('button', { name: 'Generate Plan' });
       const noActivePlanText = page.getByText('No active meal plan');
 
       await expect(
-        activePlanHeading.or(generateButton).or(noActivePlanText)
+        activePlanHeading.or(generateButton).or(noActivePlanText).first()
       ).toBeVisible({ timeout: 10_000 });
     });
   });
