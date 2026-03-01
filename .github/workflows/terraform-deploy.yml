@@ -95,7 +95,7 @@ jobs:
           working-directory: ${{ inputs.working-directory }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
           sql-admin-password: ${{ secrets.SQL_ADMIN_PASSWORD }}
-        continue-on-error: ${{ inputs.post-to-pr }}
+        continue-on-error: ${{ inputs.post-to-pr == true }}
 
       - name: Post Plan to PR and Summary
         if: inputs.post-to-pr && github.event_name == 'pull_request'
