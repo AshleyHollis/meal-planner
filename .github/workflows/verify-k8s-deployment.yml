@@ -106,17 +106,17 @@ jobs:
       # Fail-fast if PR has been closed to avoid false failures and wasted resources
       - name: Check if PR is still open
         if: inputs.environment == 'preview' && inputs.pr-number != '0'
-        uses: ./.github/actions/check-pr-open
+        uses: AshleyHollis/shared-infra/.github/actions/check-pr-open@v1
         with:
           pr-number: ${{ inputs.pr-number }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: false
 
       - name: Load shared environment
-        uses: ./.github/actions/load-shared-env
+        uses: AshleyHollis/shared-infra/.github/actions/load-shared-env@v1
 
       - name: Setup Azure and AKS
-        uses: ./.github/actions/setup-azure-aks
+        uses: AshleyHollis/shared-infra/.github/actions/setup-azure-aks@v1
         with:
           azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
           azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
@@ -125,12 +125,12 @@ jobs:
           cluster-name: ${{ vars.AKS_CLUSTER_NAME || 'aks-ytsumm-prd' }}
 
       - name: Setup Kustomize
-        uses: ./.github/actions/setup-kustomize
+        uses: AshleyHollis/shared-infra/.github/actions/setup-kustomize@v1
         with:
           kustomize-version: ${{ env.KUSTOMIZE_VERSION }}
 
       - name: Wait for Argo CD sync
-        uses: ./.github/actions/argocd-wait
+        uses: AshleyHollis/shared-infra/.github/actions/argocd-wait@v1
         with:
           app-name: ${{ inputs.argocd-app-name }}
           namespace: ${{ inputs.namespace }}
@@ -145,7 +145,7 @@ jobs:
           expected-image-tag: ${{ inputs.expected-image-tag }}
 
       - name: Verify deployments are using correct image tag
-        uses: ./.github/actions/verify-k8s-deployment
+        uses: AshleyHollis/shared-infra/.github/actions/verify-k8s-deployment@v1
         with:
           namespace: ${{ inputs.namespace }}
           deployments: api,transcribe-worker,summarize-worker
@@ -158,20 +158,20 @@ jobs:
 
       - name: Collect and upload diagnostics on failure
         if: failure()
-        uses: ./.github/actions/collect-deployment-diagnostics
+        uses: AshleyHollis/shared-infra/.github/actions/collect-deployment-diagnostics@v1
         with:
           app-name: ${{ inputs.argocd-app-name }}
           artifact-name: deployment-diagnostics-${{ inputs.environment }}-${{ inputs.pr-number != '0' && format('pr-{0}', inputs.pr-number) || 'prod' }}
 
       - name: Verify TLS certificate
-        uses: ./.github/actions/verify-certificate
+        uses: AshleyHollis/shared-infra/.github/actions/verify-certificate@v1
         with:
           host: ${{ inputs.host }}
 
       # Preview-specific health checks with DNS/Gateway verification
       - name: Run preview health checks
         if: inputs.run-preview-health-check
-        uses: ./.github/actions/health-check-preview
+        uses: AshleyHollis/shared-infra/.github/actions/health-check-preview@v1
         with:
           namespace: ${{ inputs.namespace }}
           external-url: ${{ inputs.api-url }}
@@ -181,7 +181,7 @@ jobs:
       # Standard health checks for production
       - name: Run API health check (liveness)
         if: ${{ !inputs.run-preview-health-check }}
-        uses: ./.github/actions/health-check
+        uses: AshleyHollis/shared-infra/.github/actions/health-check@v1
         with:
           url: ${{ inputs.api-url }}${{ env.HEALTH_CHECK_PATH }}
           max-attempts: '20'
@@ -192,7 +192,7 @@ jobs:
 
       - name: Run API health check (readiness)
         if: ${{ !inputs.run-preview-health-check }}
-        uses: ./.github/actions/health-check
+        uses: AshleyHollis/shared-infra/.github/actions/health-check@v1
         with:
           url: ${{ inputs.api-url }}/health
           max-attempts: ${{ env.HEALTH_CHECK_MAX_ATTEMPTS }}

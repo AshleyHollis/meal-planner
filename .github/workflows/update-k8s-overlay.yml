@@ -153,24 +153,24 @@ jobs:
       # Fail-fast if PR has been closed to avoid false failures and wasted resources
       - name: Check if PR is still open
         if: inputs.environment == 'preview' && inputs.pr-number != ''
-        uses: ./.github/actions/check-pr-open
+        uses: AshleyHollis/shared-infra/.github/actions/check-pr-open@v1
         with:
           pr-number: ${{ inputs.pr-number }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: false
 
       - name: Load shared environment
-        uses: ./.github/actions/load-shared-env
+        uses: AshleyHollis/shared-infra/.github/actions/load-shared-env@v1
 
       - name: Setup Kustomize with Python
-        uses: ./.github/actions/setup-kustomize
+        uses: AshleyHollis/shared-infra/.github/actions/setup-kustomize@v1
         with:
           install-python: 'true'
 
       # Baseline validation only for prod (preview overlays don't exist yet in PR branch)
       - name: Validate current overlay (baseline)
         if: inputs.environment == 'prod'
-        uses: ./.github/actions/validate
+        uses: AshleyHollis/shared-infra/.github/actions/validate@v1
         with:
           validators: kustomize-build
           overlay-paths: ${{ inputs.overlay-path }}
@@ -178,7 +178,7 @@ jobs:
           timeout-seconds: '30'
 
       - name: Azure ACR Login
-        uses: ./.github/actions/azure-acr-login
+        uses: AshleyHollis/shared-infra/.github/actions/azure-acr-login@v1
         with:
           azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
           azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
@@ -186,7 +186,7 @@ jobs:
           acr-name: ${{ env.ACR_NAME }}
 
       - name: Validate image exists in ACR
-        uses: ./.github/actions/validate-docker-image
+        uses: AshleyHollis/shared-infra/.github/actions/validate-docker-image@v1
         with:
           validation-type: acr-exists
           image-tag: ${{ inputs.image-tag }}
@@ -197,7 +197,7 @@ jobs:
       # Production overlay update
       - name: Update production kustomization
         if: inputs.environment == 'prod'
-        uses: ./.github/actions/manage-kustomization
+        uses: AshleyHollis/shared-infra/.github/actions/manage-kustomization@v1
         with:
           operation: update-prod
           image-tag: ${{ inputs.image-tag }}
@@ -209,7 +209,7 @@ jobs:
       # Preview overlay update
       - name: Update preview kustomization
         if: inputs.environment == 'preview'
-        uses: ./.github/actions/manage-kustomization
+        uses: AshleyHollis/shared-infra/.github/actions/manage-kustomization@v1
         with:
           operation: update-preview
           pr-number: ${{ inputs.pr-number }}
@@ -228,7 +228,7 @@ jobs:
       # For prod, we also validate here as a double-check after the update
       - name: Validate updated overlay
         if: inputs.environment == 'prod'
-        uses: ./.github/actions/validate
+        uses: AshleyHollis/shared-infra/.github/actions/validate@v1
         with:
           validators: kustomize-build
           overlay-paths: ${{ inputs.overlay-path }}
@@ -244,7 +244,7 @@ jobs:
 
       - name: Verify cluster can pull image
         if: inputs.run-k8s-pull-test
-        uses: ./.github/actions/validate-docker-image
+        uses: AshleyHollis/shared-infra/.github/actions/validate-docker-image@v1
         with:
           validation-type: acr-exists
           image-tag: ${{ inputs.image-tag }}
@@ -253,7 +253,7 @@ jobs:
           run-k8s-pull-test: 'true'
 
       - name: Validate image tag format
-        uses: ./.github/actions/validate-docker-image
+        uses: AshleyHollis/shared-infra/.github/actions/validate-docker-image@v1
         with:
           validation-type: tag-format
           image-tag: ${{ inputs.image-tag }}

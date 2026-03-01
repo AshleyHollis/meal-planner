@@ -81,7 +81,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup Terraform with Azure
-        uses: ./.github/actions/setup-terraform-azure
+        uses: AshleyHollis/shared-infra/.github/actions/setup-terraform-azure@v1
         with:
           terraform-version: ${{ inputs.terraform-version }}
           azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
@@ -90,7 +90,7 @@ jobs:
 
       - name: Terraform Plan
         id: plan
-        uses: ./.github/actions/terraform-plan
+        uses: AshleyHollis/shared-infra/.github/actions/terraform-plan@v1
         with:
           working-directory: ${{ inputs.working-directory }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
@@ -99,7 +99,7 @@ jobs:
 
       - name: Post Plan to PR and Summary
         if: inputs.post-to-pr && github.event_name == 'pull_request'
-        uses: ./.github/actions/post-terraform-plan
+        uses: AshleyHollis/shared-infra/.github/actions/post-terraform-plan@v1
         with:
           plan-summary: ${{ steps.plan.outputs.plan_summary }}
           plan-json-path: ${{ steps.plan.outputs.plan_json_path }}
@@ -145,7 +145,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup Terraform with Azure
-        uses: ./.github/actions/setup-terraform-azure
+        uses: AshleyHollis/shared-infra/.github/actions/setup-terraform-azure@v1
         with:
           terraform-version: ${{ inputs.terraform-version }}
           azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
