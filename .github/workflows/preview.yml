@@ -547,7 +547,7 @@ jobs:
       inputs.run_e2e == true &&
       needs.check-concurrency.result == 'success' &&
       needs.check-concurrency.outputs.can_deploy == 'true' &&
-      needs.post-preview-comment.result == 'success' &&
+      needs.verify-deployment.result == 'success' &&
       needs.get-ingress.outputs.preview_url != ''
     outputs:
       result: ${{ steps.run-tests.outcome }}

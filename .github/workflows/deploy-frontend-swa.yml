@@ -206,7 +206,7 @@ jobs:
           swa-token: ${{ secrets.SWA_DEPLOYMENT_TOKEN }}
           app-location: apps/web
           runtime-config-path: apps/web/public/runtime-config.js
-          output_location: ".next"
+          output_location: ""
           production-branch: master
           deployment-environment: ${{ inputs.deployment-environment }}
           verbose: ${{ inputs.environment == 'preview' && 'true' || 'false' }}
