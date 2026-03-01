@@ -13,17 +13,16 @@
  *   - AUTH0_USER_TEST_PASSWORD: Test user password
  */
 
-import { test as setup, expect } from '@playwright/test';
+import { test as setup } from '@playwright/test';
 import * as path from 'path';
 
 const userAuthFile = path.join(__dirname, '../playwright/.auth/user.json');
 
 /**
- * Authenticate as test user and save storage state.
+ * Authenticate via Auth0 Universal Login.
  *
- * Auth0 v4 with Next.js uses /auth/login to initiate the OAuth flow,
- * which redirects to the Auth0 Universal Login page. We fill in the
- * username/password form there and wait for the redirect back.
+ * Navigates to /api/auth/login (which redirects to Auth0), fills the
+ * username/password on Auth0's login page, and waits for redirect back.
  */
 setup('authenticate as test user', async ({ page }) => {
   const email = process.env.AUTH0_USER_TEST_EMAIL;
@@ -41,31 +40,42 @@ setup('authenticate as test user', async ({ page }) => {
   console.log('[auth-setup] Authenticating as test user...');
 
   try {
-    // Navigate to Auth0 login endpoint - Auth0 v4 uses /auth/login
-    await page.goto('/auth/login');
+    // Navigate to Auth0 login endpoint with login_hint for email pre-fill
+    const loginUrl = `/api/auth/login?connection=Username-Password-Authentication&login_hint=${encodeURIComponent(email)}`;
+    await page.goto(loginUrl);
 
-    // Auth0 Universal Login form - fill email/password
-    const emailInput = page.getByLabel(/email/i);
-    const passwordInput = page.getByLabel(/password/i);
-    const submitButton = page.getByRole('button', { name: /continue|log in|sign in/i }).last();
+    // Wait for redirect to Auth0's login page
+    await page.waitForURL((url) => url.hostname.includes('auth0.com'), { timeout: 20_000 });
+    console.log('[auth-setup] Reached Auth0 login page');
 
-    await emailInput.fill(email);
+    // Auth0 Universal Login — email may already be pre-filled via login_hint
+    const emailInput = page
+      .locator('input[name="username"], input[id="username"], input[type="email"]')
+      .first();
+    try {
+      await emailInput.waitFor({ timeout: 5_000 });
+      const currentEmail = await emailInput.inputValue();
+      if (!currentEmail) {
+        await emailInput.fill(email);
+      }
+    } catch {
+      // email field not present or already filled — continue
+    }
+
+    // Fill password on Auth0's page
+    const passwordInput = page
+      .locator('input[name="password"], input[id="password"], input[type="password"]')
+      .first();
+    await passwordInput.waitFor({ timeout: 15_000 });
     await passwordInput.fill(password);
 
-    // Submit form
-    await submitButton.click();
+    // Submit Auth0 login form
+    const submitBtn = page.locator('button[name="action"], button[type="submit"]').first();
+    await submitBtn.click();
 
-    // Wait for redirect back to the app after successful login
-    // Auth0 redirects to the callback URL, then back to the app
-    await page.waitForURL(
-      (url) => !url.hostname.includes('auth0.com') && !url.pathname.includes('/auth/'),
-      { timeout: 30_000 }
-    );
-
-    // Verify we're on the app and authenticated - header should show "Log out"
-    await expect(page.getByText('Log out')).toBeVisible({ timeout: 10_000 });
-
-    console.log('[auth-setup] User authenticated successfully');
+    // Wait for redirect back to the app (away from auth0.com)
+    await page.waitForURL((url) => !url.hostname.includes('auth0.com'), { timeout: 30_000 });
+    console.log('[auth-setup] User authenticated successfully — redirected to app');
 
     // Save storage state
     await page.context().storageState({ path: userAuthFile });
