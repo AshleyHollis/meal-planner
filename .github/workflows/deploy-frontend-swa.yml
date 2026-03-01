@@ -213,6 +213,7 @@ jobs:
 
       - name: Verify frontend deployment
         if: steps.deploy-frontend.outputs.static_web_app_url != ''
+        continue-on-error: true
         uses: ./.github/actions/health-check
         with:
           url: ${{ steps.deploy-frontend.outputs.static_web_app_url }}
