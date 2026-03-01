@@ -564,6 +564,24 @@ jobs:
           node-version: '22'
           working-directory: apps/web
 
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Retrieve Auth0 test credentials from Key Vault
+        uses: azure/CLI@v2
+        with:
+          inlineScript: |
+            AUTH0_USER_EMAIL=$(az keyvault secret show --vault-name "kv-ytsumm-prd" --name "auth0-user-test-email" --query "value" -o tsv)
+            AUTH0_USER_PASSWORD=$(az keyvault secret show --vault-name "kv-ytsumm-prd" --name "auth0-user-test-password" --query "value" -o tsv)
+
+            echo "AUTH0_USER_TEST_EMAIL=$AUTH0_USER_EMAIL" >> $GITHUB_ENV
+            echo "::add-mask::$AUTH0_USER_PASSWORD"
+            echo "AUTH0_USER_TEST_PASSWORD=$AUTH0_USER_PASSWORD" >> $GITHUB_ENV
+
       - name: Wait for API to be ready
         uses: AshleyHollis/shared-infra/.github/actions/health-check@v1
         with:
@@ -592,6 +610,8 @@ jobs:
           BASE_URL: ${{ steps.base-url.outputs.base_url }}
           NEXT_PUBLIC_API_URL: ${{ needs.get-ingress.outputs.preview_url }}
           API_URL: ${{ needs.get-ingress.outputs.preview_url }}
+          AUTH0_USER_TEST_EMAIL: ${{ env.AUTH0_USER_TEST_EMAIL }}
+          AUTH0_USER_TEST_PASSWORD: ${{ env.AUTH0_USER_TEST_PASSWORD }}
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@v4
