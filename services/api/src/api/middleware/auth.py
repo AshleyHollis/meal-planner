@@ -22,7 +22,7 @@ async def _fetch_jwks(domain: str) -> dict:
     """Fetch JSON Web Key Set from Auth0."""
     global _jwks
     url = f"https://{domain}/.well-known/jwks.json"
-    resp = httpx.get(url, timeout=10)
+    resp = httpx.get(url)
     resp.raise_for_status()
     _jwks = resp.json()
     return _jwks
