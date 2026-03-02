@@ -73,6 +73,11 @@ spec:
                 secretKeyRef:
                   name: auth0-credentials
                   key: client-secret
+            - name: AUTH0_AUDIENCE
+              valueFrom:
+                secretKeyRef:
+                  name: auth0-credentials
+                  key: audience
           resources:
             requests:
               cpu: 100m
