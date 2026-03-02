@@ -3,7 +3,7 @@
 // --- Enums / Union types ---
 
 export type UnitType = "g" | "ml" | "units";
-export type StorageLocation = "fridge" | "pantry";
+export type StorageLocation = "fridge" | "pantry" | "freezer";
 export type ExpiryStatus = "safe" | "expiring" | "expired";
 export type MealSlotStatus = "planned" | "cooked" | "skipped";
 export type MealPlanStatus = "draft" | "active" | "completed" | "failed";
@@ -31,6 +31,7 @@ export interface InventoryItem {
   expiry_date: string | null;
   created_at: string;
   expiry_status: ExpiryStatus;
+  defrost_hours: number | null;
 }
 
 // --- Equipment ---
@@ -85,6 +86,16 @@ export interface Recipe {
 
 // --- Meal Plan ---
 
+export interface DeductionItem {
+  ingredient_id: string;
+  ingredient_name: string;
+  requested: number;
+  deducted: number;
+  remaining: number;
+  unit: string;
+  unit_mismatch: boolean;
+}
+
 export interface MealSlot {
   id: string;
   day: number;
@@ -92,6 +103,7 @@ export interface MealSlot {
   status: string;
   cooked_at: string | null;
   recipe: Recipe | null;
+  deductions?: DeductionItem[] | null;
 }
 
 export interface MealPlan {
@@ -122,4 +134,48 @@ export interface GroceryList {
   meal_plan_id: string;
   created_at: string;
   items: GroceryItem[];
+}
+
+// --- Leftovers ---
+
+export interface Leftover {
+  id: string;
+  meal_slot_id: string;
+  recipe_id: string;
+  household_id: string;
+  portions: number;
+  storage_location: string;
+  expiry_date: string;
+  used_at: string | null;
+  created_at: string;
+  is_expired: boolean;
+}
+
+// --- Staples ---
+
+export interface StapleIngredient {
+  id: string;
+  household_id: string;
+  ingredient_id: string;
+  min_threshold: number;
+  unit: string;
+}
+
+export interface StapleSuggestion {
+  ingredient_id: string;
+  ingredient_name: string;
+  current_qty: number;
+  min_threshold: number;
+  quantity_needed: number;
+  unit: string;
+}
+
+// --- Defrost ---
+
+export interface DefrostReminder {
+  ingredient_name: string;
+  defrost_hours: number;
+  meal_day: number;
+  meal_type: string;
+  recipe_title: string;
 }
