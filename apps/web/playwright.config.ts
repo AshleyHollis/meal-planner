@@ -47,10 +47,19 @@ export default defineConfig({
 
   // Configure projects
   projects: [
-    // Setup project runs first - authenticates with Auth0 and saves storage state
+    // Auth setup - authenticates with Auth0 and saves storage state
     {
-      name: 'setup',
-      testMatch: /.*\.setup\.ts/,
+      name: 'auth-setup',
+      testMatch: /auth\.setup\.ts/,
+    },
+    // Data seeding - seeds inventory, meal plan, grocery data via API
+    {
+      name: 'seed-data',
+      testMatch: /seed-data\.setup\.ts/,
+      use: {
+        storageState: 'playwright/.auth/user.json',
+      },
+      dependencies: ['auth-setup'],
     },
     // Chromium tests - use authenticated storage state
     {
@@ -60,8 +69,8 @@ export default defineConfig({
         // Use authenticated storage state for tests that require auth
         storageState: 'playwright/.auth/user.json',
       },
-      // Run setup before chromium tests
-      dependencies: ['setup'],
+      // Run after auth and data seeding
+      dependencies: ['seed-data'],
     },
   ],
 
