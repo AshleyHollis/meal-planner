@@ -34,8 +34,12 @@ spec:
             - /bin/sh
             - -c
             - |
+              set -e
               echo "Starting database migrations..."
               cd /app/shared
+              echo "Checking alembic.ini exists..."
+              ls -la alembic.ini
+              echo "Running alembic upgrade head..."
               alembic upgrade head
               echo "Migrations completed successfully!"
           env:
