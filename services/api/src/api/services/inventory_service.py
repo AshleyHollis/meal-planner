@@ -5,7 +5,7 @@ from __future__ import annotations
 from uuid import UUID
 
 from shared.db.models.inventory import InventoryItem
-from sqlalchemy import select
+from sqlalchemy import case, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -32,7 +32,11 @@ class InventoryService:
         if location is not None:
             stmt = stmt.where(InventoryItem.location == location)
         # Nulls last so items with expiry dates sort before those without
-        stmt = stmt.order_by(InventoryItem.expiry_date.asc().nullslast())
+        # SQL Server doesn't support NULLS LAST, use CASE expression instead
+        stmt = stmt.order_by(
+            case((InventoryItem.expiry_date.is_(None), 1), else_=0),
+            InventoryItem.expiry_date.asc(),
+        )
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
 

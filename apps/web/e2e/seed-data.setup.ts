@@ -139,15 +139,6 @@ setup('seed test data', async ({ request, baseURL }) => {
   }
   console.log(`[seed-data] Inventory seeded: ${inventoryAdded}/${ingredients.length} items`);
 
-  // Verify inventory GET returns data (same endpoint the frontend uses)
-  const verifyResp = await request.get(`${API_URL}/api/v1/inventory`, { headers });
-  if (verifyResp.ok()) {
-    const items = (await verifyResp.json()) as Array<{ ingredient_name?: string }>;
-    console.log(`[seed-data] Inventory GET check: ${items.length} items returned`);
-  } else {
-    console.log(`[seed-data] Inventory GET check: ${verifyResp.status()} ${await verifyResp.text().catch(() => '')}`);
-  }
-
   // ── Step 4: Create a meal plan ────────────────────────────────────────
   console.log('[seed-data] Creating meal plan...');
   const weekStart = getNextMonday();
