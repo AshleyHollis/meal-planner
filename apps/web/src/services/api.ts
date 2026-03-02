@@ -18,7 +18,15 @@ import type {
 // Config
 // ---------------------------------------------------------------------------
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+// IMPORTANT: Do NOT cache this at module init time. The runtime-config.js may not have
+// executed yet when this module first loads. Instead, getApiBaseUrl() is called lazily
+// inside buildUrl() on each request so that window.__RUNTIME_CONFIG__ is read after
+// the page has fully initialized.
+import { getApiBaseUrl } from "./runtimeConfig";
+
+function buildUrl(path: string): string {
+  return `${getApiBaseUrl()}${path}`;
+}
 
 // ---------------------------------------------------------------------------
 // Error handling
@@ -106,7 +114,7 @@ async function fetchApi<T>(
     headers["Authorization"] = `Bearer ${token}`;
   }
 
-  const res = await fetch(`${API_URL}${path}`, {
+  const res = await fetch(buildUrl(path), {
     ...init,
     headers,
   });

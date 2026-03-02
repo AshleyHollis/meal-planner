@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import Link from "next/link";
+import Script from "next/script";
 import { Auth0Provider, useUser } from "@auth0/nextjs-auth0/client";
 import "./globals.css";
 
@@ -56,14 +57,14 @@ function Header() {
         <div>
           {isLoading ? null : user ? (
             <a
-              href="/auth/logout"
+              href="/api/auth/logout"
               className="inline-flex min-h-[44px] items-center rounded-lg px-3 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900"
             >
               Log out
             </a>
           ) : (
             <a
-              href="/auth/login"
+              href="/api/auth/login"
               className="inline-flex min-h-[44px] items-center rounded-lg px-3 text-sm font-medium text-blue-600 hover:bg-blue-50"
             >
               Log in
@@ -114,6 +115,7 @@ export default function RootLayout({
         <title>Meal Planner</title>
         <meta name="description" content="AI-powered meal planning with inventory tracking" />
         <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, viewport-fit=cover" />
+        <Script src="/runtime-config.js" strategy="beforeInteractive" />
       </head>
       <body className="min-w-[375px] bg-gray-50">
         <Auth0Provider>
