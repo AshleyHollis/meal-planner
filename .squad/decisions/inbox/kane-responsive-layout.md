@@ -13,10 +13,12 @@ The app was built mobile-first (375px min-width). On desktop it appeared as a na
 Implement a single responsive codebase using Tailwind breakpoint classes (`lg:` at 1024px+). No separate desktop components, no custom CSS, no new dependencies.
 
 ### Layout strategy:
+
 - **Mobile (default):** Sticky top header, bottom navigation bar, single-column content — all unchanged.
 - **Desktop (`lg:` and above):** Fixed left sidebar (w-64), hidden top header, hidden bottom nav, content offset by `lg:pl-64`.
 
 ### Sidebar implementation:
+
 - Added `DesktopSidebar` component in `layout.tsx` (`hidden lg:flex`).
 - Reuses same `navItems` array as `BottomNav` — single source of truth.
 - Uses `usePathname()` for active route highlighting (same logic as `BottomNav`).
@@ -24,9 +26,11 @@ Implement a single responsive codebase using Tailwind breakpoint classes (`lg:` 
 - App title/logo at the top of the sidebar replaces the mobile header on desktop.
 
 ### Content width:
+
 - All `<main>` containers: `max-w-2xl lg:max-w-7xl mx-auto` — narrow on mobile, full-width on desktop.
 
 ### Page-level grid upgrades:
+
 - Dashboard quick links: `grid-cols-1 sm:grid-cols-2 lg:grid-cols-3`
 - Meal plan list: `lg:grid-cols-2` card grid
 - Inventory: `lg:grid-cols-2` with form left, list right

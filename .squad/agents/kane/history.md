@@ -22,6 +22,7 @@
 - **Container width:** All `<main>` elements updated to `max-w-2xl lg:max-w-7xl` for wider desktop canvas.
 - **Build result:** ✅ Clean — 7 routes, 102kB shared JS, 0 errors. Only pre-existing `<a>` auth link warnings (not related to this work).
 - **Inventory page:** Restructured to `lg:grid lg:grid-cols-2 lg:gap-8` with form on left and list on right — logic/state unchanged.
+
 ### Phase 2 & 3 — Meal Images + Store Branding
 
 - **What changed:** 2 new lib files (`meal-images.ts`, `store-branding.ts`) + 5 component files updated (`MealSlotCard.tsx`, `WeeklyPlanView.tsx`, `GroceryList.tsx`, `page.tsx`) + `next.config.ts`.

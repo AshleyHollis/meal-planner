@@ -94,7 +94,10 @@ export default function MealPlanListPage() {
       {!loading && !error && plans.length > 0 && (
         <ul className="divide-y divide-gray-200 rounded-lg border border-gray-200 lg:grid lg:grid-cols-2 lg:divide-y-0 lg:gap-px">
           {plans.map((plan) => (
-            <li key={plan.id} className="lg:border lg:border-gray-200 lg:first:rounded-tl-lg lg:first:rounded-bl-lg lg:[&:nth-child(2)]:rounded-tr-lg lg:last:rounded-br-lg">
+            <li
+              key={plan.id}
+              className="lg:border lg:border-gray-200 lg:first:rounded-tl-lg lg:first:rounded-bl-lg lg:[&:nth-child(2)]:rounded-tr-lg lg:last:rounded-br-lg"
+            >
               <Link
                 href={`/meal-plan/${plan.id}`}
                 className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 lg:rounded-lg lg:p-6"

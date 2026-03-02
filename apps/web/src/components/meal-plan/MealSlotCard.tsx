@@ -4,7 +4,11 @@ import Image from "next/image";
 import type { MealSlot, EquipmentMode, EffortLevel } from "@/types";
 import { Badge } from "../ui/Badge";
 import { Button } from "../ui/Button";
-import { getMealImageUrl, getMealCategory, getCategoryColor } from "@/lib/meal-images";
+import {
+  getMealImageUrl,
+  getMealCategory,
+  getCategoryColor,
+} from "@/lib/meal-images";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -78,9 +82,13 @@ function MealSlotCard({
             className="object-cover"
             placeholder="empty"
           />
-          <div className={`absolute inset-0 bg-gradient-to-t ${gradientColor} opacity-40`} />
+          <div
+            className={`absolute inset-0 bg-gradient-to-t ${gradientColor} opacity-40`}
+          />
           <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent px-3 pb-2 pt-6">
-            <p className="truncate text-sm font-semibold text-white drop-shadow">{recipe.title}</p>
+            <p className="truncate text-sm font-semibold text-white drop-shadow">
+              {recipe.title}
+            </p>
           </div>
         </div>
       )}
@@ -94,7 +102,9 @@ function MealSlotCard({
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0 flex-1">
             {recipe ? (
-              <p className="truncate font-medium text-gray-900">{recipe.title}</p>
+              <p className="truncate font-medium text-gray-900">
+                {recipe.title}
+              </p>
             ) : (
               <p className="text-sm text-gray-400">No recipe assigned</p>
             )}
@@ -103,78 +113,78 @@ function MealSlotCard({
           <Badge variant={statusCfg.variant}>{statusCfg.label}</Badge>
         </div>
 
-      {/* Time info */}
-      {recipe &&
-        (recipe.prep_time_min !== null || recipe.cook_time_min !== null) && (
-          <div className="mt-2 flex items-center gap-3 text-sm text-gray-600">
-            {recipe.prep_time_min !== null && (
-              <span>Prep: {formatTime(recipe.prep_time_min)}</span>
-            )}
-            {recipe.cook_time_min !== null && (
-              <span>Cook: {formatTime(recipe.cook_time_min)}</span>
-            )}
+        {/* Time info */}
+        {recipe &&
+          (recipe.prep_time_min !== null || recipe.cook_time_min !== null) && (
+            <div className="mt-2 flex items-center gap-3 text-sm text-gray-600">
+              {recipe.prep_time_min !== null && (
+                <span>Prep: {formatTime(recipe.prep_time_min)}</span>
+              )}
+              {recipe.cook_time_min !== null && (
+                <span>Cook: {formatTime(recipe.cook_time_min)}</span>
+              )}
+            </div>
+          )}
+
+        {/* Equipment mode badges */}
+        {equipmentModes.length > 0 && (
+          <div className="mt-2 flex flex-wrap gap-1">
+            {equipmentModes.map((mode) => (
+              <Badge key={mode.id} variant="info">
+                {mode.name}
+              </Badge>
+            ))}
           </div>
         )}
 
-      {/* Equipment mode badges */}
-      {equipmentModes.length > 0 && (
-        <div className="mt-2 flex flex-wrap gap-1">
-          {equipmentModes.map((mode) => (
-            <Badge key={mode.id} variant="info">
-              {mode.name}
-            </Badge>
-          ))}
-        </div>
-      )}
-
-      {/* Actions */}
-      {!isDone && recipe && (
-        <div className="mt-3 flex flex-wrap gap-2">
-          {/* Swap */}
-          {onSwap && (
-            <Button variant="ghost" size="sm" onClick={() => onSwap(slot.id)}>
-              Swap
-            </Button>
-          )}
-
-          {/* Adapt effort levels */}
-          {onAdapt &&
-            (["quick", "standard", "elaborate"] as EffortLevel[]).map(
-              (effort) => (
-                <Button
-                  key={effort}
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => onAdapt(slot.id, effort)}
-                >
-                  {EFFORT_LABELS[effort]}
-                </Button>
-              ),
+        {/* Actions */}
+        {!isDone && recipe && (
+          <div className="mt-3 flex flex-wrap gap-2">
+            {/* Swap */}
+            {onSwap && (
+              <Button variant="ghost" size="sm" onClick={() => onSwap(slot.id)}>
+                Swap
+              </Button>
             )}
 
-          {/* Mark cooked */}
-          {onMarkCooked && (
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={() => onMarkCooked(slot.id)}
-            >
-              Cooked
-            </Button>
-          )}
+            {/* Adapt effort levels */}
+            {onAdapt &&
+              (["quick", "standard", "elaborate"] as EffortLevel[]).map(
+                (effort) => (
+                  <Button
+                    key={effort}
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => onAdapt(slot.id, effort)}
+                  >
+                    {EFFORT_LABELS[effort]}
+                  </Button>
+                ),
+              )}
 
-          {/* Mark skipped */}
-          {onMarkSkipped && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onMarkSkipped(slot.id)}
-            >
-              Skip
-            </Button>
-          )}
-        </div>
-      )}
+            {/* Mark cooked */}
+            {onMarkCooked && (
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => onMarkCooked(slot.id)}
+              >
+                Cooked
+              </Button>
+            )}
+
+            {/* Mark skipped */}
+            {onMarkSkipped && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onMarkSkipped(slot.id)}
+              >
+                Skip
+              </Button>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

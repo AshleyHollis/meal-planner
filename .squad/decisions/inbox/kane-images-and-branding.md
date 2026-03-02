@@ -1,7 +1,7 @@
 # Decision: Meal Images & Store Branding (Phase 2 & 3)
 
 **Author:** Kane (Frontend Dev)  
-**Date:** Phase 2 & 3 implementation  
+**Date:** Phase 2 & 3 implementation
 
 ---
 

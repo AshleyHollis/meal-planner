@@ -114,9 +114,13 @@ export default function DashboardPage() {
     <main className="mx-auto max-w-2xl px-4 py-8 lg:max-w-7xl">
       <div className="mb-6 hidden lg:block">
         <h1 className="text-3xl font-bold text-gray-900">Welcome back</h1>
-        <p className="mt-1 text-gray-500">Here&apos;s your meal planning overview</p>
+        <p className="mt-1 text-gray-500">
+          Here&apos;s your meal planning overview
+        </p>
       </div>
-      <h1 className="mb-6 text-2xl font-bold text-gray-900 lg:hidden">Dashboard</h1>
+      <h1 className="mb-6 text-2xl font-bold text-gray-900 lg:hidden">
+        Dashboard
+      </h1>
 
       {error && (
         <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
@@ -146,24 +150,26 @@ export default function DashboardPage() {
             </div>
           )}
           <div className="p-4 lg:p-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900">Active Plan</h2>
-            <Badge variant="success">{plan.status}</Badge>
-          </div>
-          <p className="mt-1 text-sm text-gray-600">
-            Week of {plan.week_start_date}
-          </p>
-          <p className="mt-1 text-sm text-gray-600">
-            {cookedCount} of {totalSlots} meals cooked
-          </p>
-          <div className="mt-3">
-            <Link
-              href={`/meal-plan/${plan.id}`}
-              className="text-sm font-medium text-blue-600 hover:text-blue-700"
-            >
-              View Plan &rarr;
-            </Link>
-          </div>
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-gray-900">
+                Active Plan
+              </h2>
+              <Badge variant="success">{plan.status}</Badge>
+            </div>
+            <p className="mt-1 text-sm text-gray-600">
+              Week of {plan.week_start_date}
+            </p>
+            <p className="mt-1 text-sm text-gray-600">
+              {cookedCount} of {totalSlots} meals cooked
+            </p>
+            <div className="mt-3">
+              <Link
+                href={`/meal-plan/${plan.id}`}
+                className="text-sm font-medium text-blue-600 hover:text-blue-700"
+              >
+                View Plan &rarr;
+              </Link>
+            </div>
           </div>
         </section>
       ) : (

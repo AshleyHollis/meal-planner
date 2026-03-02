@@ -56,19 +56,21 @@ function GroceryList({ groceryList, onChanged }: GroceryListProps) {
       {storeNames.map((store) => {
         const brand = getStoreBrand(store);
         return (
-        <section key={store}>
-          <div className="mb-2 flex items-center gap-3">
-            <span className={`${brand.color} ${brand.textColor} flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold`}>
-              {brand.abbreviation}
-            </span>
-            <h3 className="text-lg font-semibold text-gray-900">{store}</h3>
-          </div>
-          <ul className="divide-y divide-gray-200 rounded-lg border border-gray-200 lg:grid lg:grid-cols-2 lg:divide-y-0">
-            {grouped[store].map((item) => (
-              <GroceryItem key={item.id} item={item} onChanged={onChanged} />
-            ))}
-          </ul>
-        </section>
+          <section key={store}>
+            <div className="mb-2 flex items-center gap-3">
+              <span
+                className={`${brand.color} ${brand.textColor} flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold`}
+              >
+                {brand.abbreviation}
+              </span>
+              <h3 className="text-lg font-semibold text-gray-900">{store}</h3>
+            </div>
+            <ul className="divide-y divide-gray-200 rounded-lg border border-gray-200 lg:grid lg:grid-cols-2 lg:divide-y-0">
+              {grouped[store].map((item) => (
+                <GroceryItem key={item.id} item={item} onChanged={onChanged} />
+              ))}
+            </ul>
+          </section>
         );
       })}
     </div>

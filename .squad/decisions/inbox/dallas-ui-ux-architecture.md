@@ -40,6 +40,7 @@ The current frontend is locked at `max-w-2xl` (672px) on every page — it rende
 | ≥ 1280px | `xl:` | Wider spacing only (no structural changes) |
 
 **Key changes to `layout.tsx`:**
+
 - Sidebar nav component: visible `lg:` and above, ~240px fixed left.
 - Bottom nav: add `lg:hidden` to hide on desktop.
 - Header: expand from `max-w-2xl` to full-width on `lg:`, integrate user menu.
@@ -51,12 +52,14 @@ The current frontend is locked at `max-w-2xl` (672px) on every page — it rende
 **Decision:** Hardcoded map of food category → Unsplash photo IDs. `next/image` for optimization. CSS gradient fallback.
 
 **Rationale:** Ashley specifically asked for "food photos from shops." Real photos beat generated art or emoji for appetite appeal. Hardcoded photo IDs (not API calls) means:
+
 - Zero runtime API calls, zero rate limits, zero API key management
 - Deterministic — same category always shows same image
 - Unsplash CDN is highly available and fast
 - Unsplash license permits free use (must include attribution link)
 
 **Architecture:**
+
 ```
 src/lib/meal-images.ts
 ├── CATEGORY_PHOTOS: Record<string, string>  // ~20 categories → photo IDs
@@ -68,6 +71,7 @@ src/lib/meal-images.ts
 ```
 
 **`next.config.ts` change:**
+
 ```ts
 images: {
   remotePatterns: [
@@ -77,6 +81,7 @@ images: {
 ```
 
 **Component integration:**
+
 - `MealSlotCard`: Add 160px image area above title. `next/image` with `fill` + `object-cover`. Falls back to gradient + meal initial.
 - `WeeklyPlanView`: 64px thumbnail on each day row (desktop), hidden on mobile to save space.
 - Dashboard hero: featured meal image if active plan exists.
@@ -90,6 +95,7 @@ images: {
 **Rationale:** Store logos require licensing agreements with each retailer. Colored initials are distinctive enough for quick visual scanning and cost nothing legally.
 
 **Architecture:**
+
 ```
 src/lib/store-branding.ts
 ├── STORE_BRANDS: Record<string, { color: string; bg: string; abbr: string }>
@@ -104,24 +110,29 @@ src/lib/store-branding.ts
 ```
 
 **Component integration:**
+
 - `GroceryList`: Replace plain `<h3>` store headers with branded header bars — colored left border, store avatar circle, store name.
 - `GroceryItem`: Optional small store dot indicator on individual items.
 
 ### 4. Page-Level Layout Changes
 
 **Dashboard (`page.tsx`):**
+
 - Mobile: Current single-column (keep as-is).
 - Desktop `lg:`: Hero section with active plan + featured meal image. Quick links become a 3-column card grid with larger cards showing more detail (item counts, progress bars).
 
 **Meal Plan (`WeeklyPlanView`):**
+
 - Mobile: Current vertical day list (keep as-is).
 - Desktop `lg:`: 7-column calendar grid — all days visible at once. Each cell shows meal image thumbnail + title + status. This is more natural than a 2-column Mon-Wed/Thu-Sun split because users think in terms of a weekly calendar.
 
 **Grocery List (`GroceryList`):**
+
 - Mobile: Current single-column store sections (keep as-is).
 - Desktop `lg:`: Store sections with branded headers. Items in 2-column grid within each store section. Checked-off items collapse to bottom with reduced opacity.
 
 **Inventory (`InventoryList`):**
+
 - Mobile: Current list (keep as-is).
 - Desktop `lg:`: Card grid, 3 columns. Each card shows ingredient name, quantity, expiry badge with more breathing room.
 
@@ -129,12 +140,12 @@ src/lib/store-branding.ts
 
 ## Implementation Order
 
-| Phase | Scope | Effort | Dependencies |
-|-------|-------|--------|-------------|
-| **P1** | Responsive layout (sidebar nav, content widths, page grids) | 1 day | None |
-| **P2** | Meal images (`meal-images.ts`, `next.config.ts`, MealSlotCard, WeeklyPlanView) | 1 day | P1 |
-| **P3** | Store branding (`store-branding.ts`, GroceryList headers) | 0.5 day | P1 |
-| **P4** | Polish (spacing, hover states, transitions, dark mode prep) | 0.5 day | P1-P3 |
+| Phase  | Scope                                                                          | Effort  | Dependencies |
+| ------ | ------------------------------------------------------------------------------ | ------- | ------------ |
+| **P1** | Responsive layout (sidebar nav, content widths, page grids)                    | 1 day   | None         |
+| **P2** | Meal images (`meal-images.ts`, `next.config.ts`, MealSlotCard, WeeklyPlanView) | 1 day   | P1           |
+| **P3** | Store branding (`store-branding.ts`, GroceryList headers)                      | 0.5 day | P1           |
+| **P4** | Polish (spacing, hover states, transitions, dark mode prep)                    | 0.5 day | P1-P3        |
 
 **Total estimate:** 3 days of focused frontend work.
 
@@ -153,18 +164,19 @@ src/lib/store-branding.ts
 
 ## Risks & Mitigations
 
-| Risk | Likelihood | Impact | Mitigation |
-|------|-----------|--------|------------|
-| Unsplash photo IDs become invalid | Low | Medium | Fallback gradient always renders. Audit IDs quarterly. |
-| Desktop layout breaks existing mobile | Medium | High | Mobile-first approach: all new classes use `lg:` prefix. Existing classes untouched. E2E tests run at 375px viewport. |
-| Store branding colors clash with app theme | Low | Low | Use muted brand colors (pastel backgrounds, not full-saturation). |
-| `next/image` layout shift | Medium | Medium | Set explicit `width`/`height` or use `fill` with aspect-ratio containers. |
+| Risk                                       | Likelihood | Impact | Mitigation                                                                                                            |
+| ------------------------------------------ | ---------- | ------ | --------------------------------------------------------------------------------------------------------------------- |
+| Unsplash photo IDs become invalid          | Low        | Medium | Fallback gradient always renders. Audit IDs quarterly.                                                                |
+| Desktop layout breaks existing mobile      | Medium     | High   | Mobile-first approach: all new classes use `lg:` prefix. Existing classes untouched. E2E tests run at 375px viewport. |
+| Store branding colors clash with app theme | Low        | Low    | Use muted brand colors (pastel backgrounds, not full-saturation).                                                     |
+| `next/image` layout shift                  | Medium     | Medium | Set explicit `width`/`height` or use `fill` with aspect-ratio containers.                                             |
 
 ---
 
 ## Validation Criteria
 
 Before merging responsive layout work:
+
 1. Desktop (1280px): Sidebar visible, bottom nav hidden, multi-column grids render.
 2. Mobile (375px): No visual regression from current state. Bottom nav visible.
 3. Tablet (768px): Falls back to mobile layout (no awkward in-between state).

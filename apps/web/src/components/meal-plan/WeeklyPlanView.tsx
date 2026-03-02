@@ -8,7 +8,11 @@ import type {
   EquipmentMode,
 } from "@/types";
 import { Badge } from "../ui/Badge";
-import { getMealImageUrl, getMealCategory, getCategoryColor } from "@/lib/meal-images";
+import {
+  getMealImageUrl,
+  getMealCategory,
+  getCategoryColor,
+} from "@/lib/meal-images";
 
 const DAY_LABELS = [
   "Monday",
@@ -89,68 +93,80 @@ function WeeklyPlanView({ plan, equipment = [] }: WeeklyPlanViewProps) {
           const equipmentTags = slot ? getEquipmentTags(slot, modeLookup) : [];
 
           return (
-            <li key={dayIndex} className="overflow-hidden px-0 py-0 lg:border-b lg:border-r lg:border-gray-200">
+            <li
+              key={dayIndex}
+              className="overflow-hidden px-0 py-0 lg:border-b lg:border-r lg:border-gray-200"
+            >
               {/* Thumbnail image (desktop: taller, mobile: shorter) */}
-              {recipe && (() => {
-                const imgUrl = getMealImageUrl(recipe.title, 400, 200);
-                const cat = getMealCategory(recipe.title);
-                const grad = getCategoryColor(cat);
-                return imgUrl ? (
-                  <div className="relative h-24 w-full lg:h-36">
-                    <Image
-                      src={imgUrl}
-                      alt={recipe.title}
-                      fill
-                      className="object-cover"
-                      placeholder="empty"
-                    />
-                    <div className={`absolute inset-0 bg-gradient-to-t ${grad} opacity-30`} />
-                  </div>
-                ) : (
-                  <div className={`h-1 w-full bg-gradient-to-r ${grad}`} />
-                );
-              })()}
+              {recipe &&
+                (() => {
+                  const imgUrl = getMealImageUrl(recipe.title, 400, 200);
+                  const cat = getMealCategory(recipe.title);
+                  const grad = getCategoryColor(cat);
+                  return imgUrl ? (
+                    <div className="relative h-24 w-full lg:h-36">
+                      <Image
+                        src={imgUrl}
+                        alt={recipe.title}
+                        fill
+                        className="object-cover"
+                        placeholder="empty"
+                      />
+                      <div
+                        className={`absolute inset-0 bg-gradient-to-t ${grad} opacity-30`}
+                      />
+                    </div>
+                  ) : (
+                    <div className={`h-1 w-full bg-gradient-to-r ${grad}`} />
+                  );
+                })()}
 
               <div className="px-4 py-3">
-              <div className="flex items-start justify-between gap-3">
-                {/* Left: day + recipe info */}
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold text-gray-500">{label}</p>
-
-                  {recipe ? (
-                    <>
-                      <p className="mt-1 truncate font-medium text-gray-900">
-                        {recipe.title}
-                      </p>
-
-                      {/* Times */}
-                      <div className="mt-1 flex items-center gap-3 text-sm text-gray-600">
-                        {recipe.prep_time_min !== null && (
-                          <span>Prep: {formatTime(recipe.prep_time_min)}</span>
-                        )}
-                        {recipe.cook_time_min !== null && (
-                          <span>Cook: {formatTime(recipe.cook_time_min)}</span>
-                        )}
-                      </div>
-
-                      {/* Equipment tags */}
-                      {equipmentTags.length > 0 && (
-                        <div className="mt-1.5 flex flex-wrap gap-1">
-                          {equipmentTags.map((mode) => (
-                            <Badge key={mode.id} variant="info">
-                              {mode.name}
-                            </Badge>
-                          ))}
-                        </div>
-                      )}
-                    </>
-                  ) : (
-                    <p className="mt-1 text-sm text-gray-400">
-                      No dinner planned
+                <div className="flex items-start justify-between gap-3">
+                  {/* Left: day + recipe info */}
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-gray-500">
+                      {label}
                     </p>
-                  )}
+
+                    {recipe ? (
+                      <>
+                        <p className="mt-1 truncate font-medium text-gray-900">
+                          {recipe.title}
+                        </p>
+
+                        {/* Times */}
+                        <div className="mt-1 flex items-center gap-3 text-sm text-gray-600">
+                          {recipe.prep_time_min !== null && (
+                            <span>
+                              Prep: {formatTime(recipe.prep_time_min)}
+                            </span>
+                          )}
+                          {recipe.cook_time_min !== null && (
+                            <span>
+                              Cook: {formatTime(recipe.cook_time_min)}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Equipment tags */}
+                        {equipmentTags.length > 0 && (
+                          <div className="mt-1.5 flex flex-wrap gap-1">
+                            {equipmentTags.map((mode) => (
+                              <Badge key={mode.id} variant="info">
+                                {mode.name}
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <p className="mt-1 text-sm text-gray-400">
+                        No dinner planned
+                      </p>
+                    )}
+                  </div>
                 </div>
-              </div>
               </div>
             </li>
           );
