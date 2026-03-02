@@ -218,10 +218,13 @@ class InventoryService:
             return []
 
         # Get upcoming slots with recipes
+        from shared.db.models.recipe import Recipe, RecipeIngredient
+        from shared.db.models.ingredient import Ingredient
+        
         slot_stmt = (
             select(MealSlot)
             .options(
-                sl(MealSlot.recipe).selectinload(sl("ingredients").selectinload(sl("ingredient")))
+                sl(MealSlot.recipe).selectinload(Recipe.ingredients).selectinload(RecipeIngredient.ingredient)
             )
             .where(
                 MealSlot.meal_plan_id == plan.id,
