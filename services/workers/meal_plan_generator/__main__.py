@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import contextlib
 import signal
 import threading
@@ -11,6 +12,8 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from shared.config import get_settings
 from shared.logging.config import configure_logging, get_logger
 from shared.queue.client import get_queue_client, receive_messages
+
+from .generator import generate_meal_plan
 
 logger = get_logger(__name__)
 
@@ -76,8 +79,8 @@ def main() -> None:
             messages = receive_messages(max_messages=1, visibility_timeout=120)
             for msg in messages:
                 try:
-                    # TODO: wire up generate_meal_plan in a later task
                     logger.info("message_received", message_id=msg["id"])
+                    asyncio.run(generate_meal_plan(msg["content"]))
                     # Delete message on success
                     queue_client.delete_message(msg["id"], msg["pop_receipt"])
                     logger.info("plan_generated", message_id=msg["id"])
