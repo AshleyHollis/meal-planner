@@ -156,6 +156,74 @@ jobs:
           timeout-seconds: '300'
           fail-on-mismatch: 'true'
 
+      - name: Check database migration status
+        if: always()
+        continue-on-error: true
+        shell: bash
+        run: |
+          NAMESPACE="${{ inputs.namespace }}"
+          echo "=== Database Migration Diagnostics ==="
+
+          # Try to get migration job logs (may be deleted by HookSucceeded policy)
+          echo "--- Migration Job Pods ---"
+          kubectl get pods -n "$NAMESPACE" -l app.kubernetes.io/name=db-migration 2>&1 || echo "(no migration pods found)"
+
+          echo ""
+          echo "--- Migration Pod Logs (if available) ---"
+          for POD in $(kubectl get pods -n "$NAMESPACE" -l app.kubernetes.io/name=db-migration -o jsonpath='{.items[*].metadata.name}' 2>/dev/null); do
+            echo "=== Pod: $POD ==="
+            kubectl logs -n "$NAMESPACE" "$POD" 2>&1 || echo "(could not retrieve logs)"
+          done
+
+          echo ""
+          echo "--- Database State Check (via API pod) ---"
+          API_POD=$(kubectl get pods -n "$NAMESPACE" -l app.kubernetes.io/name=api --field-selector status.phase=Running -o jsonpath='{.items[0].metadata.name}' 2>/dev/null)
+          if [ -z "$API_POD" ]; then
+            echo "WARNING: No running API pod found"
+          else
+            echo "Using API pod: $API_POD"
+            kubectl exec -n "$NAMESPACE" "$API_POD" -- python -c "
+          import sys
+          sys.path.insert(0, '/app/shared')
+          sys.path.insert(0, '/app/src')
+          try:
+              from shared.config import get_settings
+              settings = get_settings()
+              url = settings.database.effective_url
+              print(f'DB URL configured: {bool(url)}')
+              if not url:
+                  print('ERROR: No database URL configured')
+                  sys.exit(0)
+              # Mask password in URL for logging
+              import re
+              safe_url = re.sub(r'://[^:]+:[^@]+@', '://***:***@', url)
+              print(f'DB URL format: {safe_url}')
+
+              from sqlalchemy import create_engine, text
+              if 'aioodbc' in url:
+                  url = url.replace('mssql+aioodbc://', 'mssql+pyodbc://')
+              engine = create_engine(url)
+              with engine.connect() as conn:
+                  result = conn.execute(text(\"SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'dbo' ORDER BY TABLE_NAME\"))
+                  tables = [r[0] for r in result]
+                  print(f'Tables ({len(tables)}): {tables}')
+
+                  if 'alembic_version' in tables:
+                      ver = conn.execute(text('SELECT version_num FROM alembic_version')).scalar()
+                      print(f'Alembic version: {ver}')
+                  else:
+                      print('WARNING: alembic_version table not found - migrations may not have run')
+
+                  if 'ingredients' in tables:
+                      count = conn.execute(text('SELECT COUNT(*) FROM ingredients')).scalar()
+                      print(f'Ingredient count: {count}')
+                  else:
+                      print('WARNING: ingredients table not found')
+          except Exception as e:
+              print(f'ERROR: {type(e).__name__}: {e}')
+          " 2>&1 || echo "(kubectl exec failed)"
+          fi
+
       - name: Collect and upload diagnostics on failure
         if: failure()
         uses: AshleyHollis/shared-infra/.github/actions/collect-deployment-diagnostics@v1
