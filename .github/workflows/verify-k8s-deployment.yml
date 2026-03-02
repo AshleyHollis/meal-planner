@@ -164,61 +164,70 @@ jobs:
           NAMESPACE="${{ inputs.namespace }}"
           echo "=== Database Migration Diagnostics ==="
 
-          echo "--- Database State Check (via API pod) ---"
           API_POD=$(kubectl get pods -n "$NAMESPACE" -l app.kubernetes.io/name=api --field-selector status.phase=Running -o jsonpath='{.items[0].metadata.name}' 2>/dev/null)
           if [ -z "$API_POD" ]; then
             echo "WARNING: No running API pod found"
-          else
-            echo "Using API pod: $API_POD"
+            exit 0
+          fi
+          echo "Using API pod: $API_POD"
 
-            # Check DB state
-            kubectl exec -n "$NAMESPACE" "$API_POD" -- python -c "
-          import sys
+          # Check DB state and ingredient count
+          kubectl exec -n "$NAMESPACE" "$API_POD" -- python -c "
+          import sys, re
           sys.path.insert(0, '/app/shared')
           sys.path.insert(0, '/app/src')
           try:
               from shared.config import get_settings
               from sqlalchemy import create_engine, text
               url = get_settings().database.effective_url
-              print(f'DB URL configured: {bool(url)}')
               if not url:
-                  print('ERROR: No database URL configured')
-                  sys.exit(0)
-              import re
+                  print('ERROR: No database URL configured'); sys.exit(0)
               safe_url = re.sub(r'://[^:]+:[^@]+@', '://***:***@', url)
-              print(f'DB URL format: {safe_url}')
+              print(f'DB URL: {safe_url}')
               if 'aioodbc' in url:
                   url = url.replace('mssql+aioodbc://', 'mssql+pyodbc://')
               engine = create_engine(url)
               with engine.connect() as conn:
-                  result = conn.execute(text(\"SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'dbo' ORDER BY TABLE_NAME\"))
-                  tables = [r[0] for r in result]
+                  tables = [r[0] for r in conn.execute(text(\"SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'dbo'\"))]
                   print(f'Tables ({len(tables)}): {tables}')
                   if 'alembic_version' in tables:
-                      ver = conn.execute(text('SELECT version_num FROM alembic_version')).scalar()
-                      print(f'Alembic version: {ver}')
-                  if 'ingredients' in tables:
-                      count = conn.execute(text('SELECT COUNT(*) FROM ingredients')).scalar()
-                      print(f'Ingredient count: {count}')
+                      print(f'Alembic version: {conn.execute(text(\"SELECT version_num FROM alembic_version\")).scalar()}')
+                  if 'Ingredients' in tables:
+                      print(f'Ingredient count: {conn.execute(text(\"SELECT COUNT(*) FROM Ingredients\")).scalar()}')
           except Exception as e:
               print(f'ERROR: {type(e).__name__}: {e}')
-          " 2>&1 || echo "(kubectl exec failed)"
+          " 2>&1 || true
 
-            # Run alembic directly from API pod to see what happens
-            echo ""
-            echo "--- Running Alembic Migration from API pod ---"
-            kubectl exec -n "$NAMESPACE" "$API_POD" -- /bin/sh -c '
-              cd /app/shared || { echo "FATAL: /app/shared not found"; exit 1; }
-              echo "Working dir: $(pwd)"
-              echo "alembic.ini exists: $([ -f alembic.ini ] && echo yes || echo NO)"
-              echo "alembic/env.py exists: $([ -f alembic/env.py ] && echo yes || echo NO)"
-              ls -la alembic/versions/ 2>/dev/null || echo "No versions dir"
-              echo "PYTHONPATH=$PYTHONPATH"
-              echo "Running: python -m alembic upgrade head"
-              python -m alembic upgrade head 2>&1
-              echo "Exit code: $?"
-            ' 2>&1 || echo "(kubectl exec failed)"
-          fi
+          # Test async query (same path as API endpoint)
+          echo ""
+          echo "--- Testing async ingredient query ---"
+          kubectl exec -n "$NAMESPACE" "$API_POD" -- python -c "
+          import sys, asyncio
+          sys.path.insert(0, '/app/shared')
+          sys.path.insert(0, '/app/src')
+          async def test():
+              try:
+                  from shared.db.connection import get_db
+                  from shared.db.models import Ingredient
+                  from sqlalchemy import select
+                  db = get_db()
+                  async with db.session() as session:
+                      result = await session.execute(select(Ingredient).limit(3))
+                      rows = list(result.scalars().all())
+                      print(f'Async query returned {len(rows)} ingredients')
+                      for r in rows:
+                          print(f'  - {r.name} ({r.category})')
+              except Exception as e:
+                  import traceback
+                  print(f'ASYNC ERROR: {type(e).__name__}: {e}')
+                  traceback.print_exc()
+          asyncio.run(test())
+          " 2>&1 || true
+
+          # Capture recent API pod logs
+          echo ""
+          echo "--- API Pod Logs (last 50 lines) ---"
+          kubectl logs -n "$NAMESPACE" "$API_POD" --tail=50 2>&1 || true
 
       - name: Collect and upload diagnostics on failure
         if: failure()
