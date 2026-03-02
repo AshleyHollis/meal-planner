@@ -12,9 +12,13 @@
   },
   "Parameters": {
     "llm-api-key": "not-configured",
+    "azure-openai-endpoint": "not-configured",
+    "azure-openai-api-key": "not-configured",
+    "azure-openai-deployment": "gpt-4o-mini",
     "auth0-domain": "not-configured",
     "auth0-client-id": "not-configured",
     "auth0-client-secret": "not-configured",
-    "auth0-session-secret": "not-configured"
+    "auth0-session-secret": "not-configured",
+    "auth0-audience": "not-configured"
   }
 }
