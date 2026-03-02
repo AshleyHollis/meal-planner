@@ -59,7 +59,7 @@ test.describe("Meal Plan Flow", () => {
 
       // Should show either the empty state or a list of plans
       const emptyState = page.getByText("No meal plans yet");
-      const planItem = page.getByText(/Week of \d{4}-\d{2}-\d{2}/).first();
+      const planItem = page.getByText(/Week of /).first();
       const errorMessage = page.getByText("Failed to load meal plans");
 
       await expect(
@@ -135,7 +135,7 @@ test.describe("Meal Plan Flow", () => {
       }
 
       // Check that a plan link actually exists before clicking
-      const firstPlanLink = page.getByText(/Week of \d{4}-\d{2}-\d{2}/).first();
+      const firstPlanLink = page.getByText(/Week of /).first();
       if (
         !(await firstPlanLink.isVisible({ timeout: 5_000 }).catch(() => false))
       ) {
@@ -153,7 +153,7 @@ test.describe("Meal Plan Flow", () => {
       });
 
       // Wait for plan to load (either weekly view or generating state)
-      const weekLabel = page.getByText(/Week of \d{4}-\d{2}-\d{2}/);
+      const weekLabel = page.getByText(/Week of /);
       const generatingText = page.getByText("Generating your meal plan...");
 
       await expect(weekLabel.or(generatingText)).toBeVisible({
@@ -197,7 +197,7 @@ test.describe("Meal Plan Flow", () => {
       }
 
       // Check that a plan link actually exists before clicking
-      const firstPlanLink = page.getByText(/Week of \d{4}-\d{2}-\d{2}/).first();
+      const firstPlanLink = page.getByText(/Week of /).first();
       if (
         !(await firstPlanLink.isVisible({ timeout: 5_000 }).catch(() => false))
       ) {

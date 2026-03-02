@@ -34,7 +34,11 @@ function getNextMonday(): string {
   const monday = new Date(now);
   monday.setDate(now.getDate() + daysUntil);
   monday.setHours(0, 0, 0, 0);
-  return monday.toISOString();
+  // Return date-only string to avoid timezone issues (UTC vs local)
+  const yyyy = monday.getFullYear();
+  const mm = String(monday.getMonth() + 1).padStart(2, "0");
+  const dd = String(monday.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
 }
 
 setup("seed test data", async ({ request, baseURL }) => {

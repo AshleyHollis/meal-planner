@@ -18,9 +18,11 @@ test.describe("Smoke Tests @smoke", () => {
 
       await page.goto("/", { timeout: 60_000 });
 
-      // Dashboard page should render with heading
+      // Desktop shows "Welcome back", mobile shows "Dashboard"
       await expect(
-        page.getByRole("heading", { name: "Dashboard" }),
+        page
+          .getByRole("heading", { name: "Welcome back" })
+          .or(page.getByRole("heading", { name: "Dashboard" })),
       ).toBeVisible({
         timeout: 30_000,
       });
@@ -39,10 +41,11 @@ test.describe("Smoke Tests @smoke", () => {
       await expect(appLink).toBeVisible();
     });
 
-    test("bottom nav has all navigation links", async ({ page }) => {
+    test("navigation has all links", async ({ page }) => {
       await page.goto("/");
 
-      const nav = page.locator("nav");
+      // On desktop, sidebar nav is visible; on mobile, bottom nav is visible
+      const nav = page.locator("nav").first();
       await expect(nav).toBeVisible();
 
       // Verify all four navigation items exist
@@ -57,8 +60,8 @@ test.describe("Smoke Tests @smoke", () => {
     }) => {
       await page.goto("/");
 
-      const nav = page.locator("nav");
-      await nav.getByText("Inventory").click();
+      // Use whichever nav is visible (sidebar on desktop, bottom on mobile)
+      await page.getByRole("link", { name: "Inventory" }).first().click();
 
       await expect(page).toHaveURL(/\/inventory/);
       await expect(
@@ -71,8 +74,10 @@ test.describe("Smoke Tests @smoke", () => {
     }) => {
       await page.goto("/");
 
-      const nav = page.locator("nav");
-      await nav.getByText("Meal Plan").click();
+      await page
+        .getByRole("link", { name: "Meal Plan", exact: true })
+        .first()
+        .click();
 
       await expect(page).toHaveURL(/\/meal-plan/);
       await expect(
@@ -84,9 +89,11 @@ test.describe("Smoke Tests @smoke", () => {
   test.describe("Dashboard Content", () => {
     test.beforeEach(async ({ page }) => {
       await page.goto("/");
-      // Wait for loading to complete
+      // Wait for loading to complete — desktop shows "Welcome back", mobile shows "Dashboard"
       await expect(
-        page.getByRole("heading", { name: "Dashboard" }),
+        page
+          .getByRole("heading", { name: "Welcome back" })
+          .or(page.getByRole("heading", { name: "Dashboard" })),
       ).toBeVisible({
         timeout: 30_000,
       });
@@ -124,15 +131,15 @@ test.describe("Smoke Tests @smoke", () => {
     test("authenticated user sees Log out link", async ({ page }) => {
       await page.goto("/");
 
-      // Header should show "Log out" for authenticated users
-      await expect(page.getByText("Log out")).toBeVisible({ timeout: 10_000 });
+      // On desktop sidebar or mobile header, "Log out" should be visible
+      await expect(page.getByRole("link", { name: "Log out" }).first()).toBeVisible({ timeout: 10_000 });
     });
 
     test("authenticated user does not see Log in link", async ({ page }) => {
       await page.goto("/");
 
       // Wait for auth state to load (isLoading = false)
-      await expect(page.getByText("Log out")).toBeVisible({ timeout: 10_000 });
+      await expect(page.getByRole("link", { name: "Log out" }).first()).toBeVisible({ timeout: 10_000 });
 
       // "Log in" should NOT be visible for authenticated users
       await expect(page.getByText("Log in")).not.toBeVisible();

@@ -29,7 +29,7 @@ test.describe("Grocery List Flow", () => {
       // Navigate via the dashboard to find the grocery list link
       await page.goto("/");
       await expect(
-        page.getByRole("heading", { name: "Dashboard" }),
+        page.getByRole("heading", { name: "Welcome back" }).or(page.getByRole("heading", { name: "Dashboard" })),
       ).toBeVisible({
         timeout: 30_000,
       });
@@ -60,7 +60,7 @@ test.describe("Grocery List Flow", () => {
     test("grocery list shows back to meal plan link", async ({ page }) => {
       await page.goto("/");
       await expect(
-        page.getByRole("heading", { name: "Dashboard" }),
+        page.getByRole("heading", { name: "Welcome back" }).or(page.getByRole("heading", { name: "Dashboard" })),
       ).toBeVisible({
         timeout: 30_000,
       });
@@ -86,7 +86,7 @@ test.describe("Grocery List Flow", () => {
     test("grocery list shows items or empty state", async ({ page }) => {
       await page.goto("/");
       await expect(
-        page.getByRole("heading", { name: "Dashboard" }),
+        page.getByRole("heading", { name: "Welcome back" }).or(page.getByRole("heading", { name: "Dashboard" })),
       ).toBeVisible({
         timeout: 30_000,
       });
@@ -132,7 +132,7 @@ test.describe("Grocery List Flow", () => {
     test("can check and uncheck a grocery item", async ({ page }) => {
       await page.goto("/");
       await expect(
-        page.getByRole("heading", { name: "Dashboard" }),
+        page.getByRole("heading", { name: "Welcome back" }).or(page.getByRole("heading", { name: "Dashboard" })),
       ).toBeVisible({
         timeout: 30_000,
       });
@@ -188,7 +188,7 @@ test.describe("Grocery List Flow", () => {
     }) => {
       await page.goto("/");
       await expect(
-        page.getByRole("heading", { name: "Dashboard" }),
+        page.getByRole("heading", { name: "Welcome back" }).or(page.getByRole("heading", { name: "Dashboard" })),
       ).toBeVisible({
         timeout: 30_000,
       });
@@ -242,7 +242,7 @@ test.describe("Grocery List Flow", () => {
     test("clicking complete shopping opens dialog", async ({ page }) => {
       await page.goto("/");
       await expect(
-        page.getByRole("heading", { name: "Dashboard" }),
+        page.getByRole("heading", { name: "Welcome back" }).or(page.getByRole("heading", { name: "Dashboard" })),
       ).toBeVisible({
         timeout: 30_000,
       });
