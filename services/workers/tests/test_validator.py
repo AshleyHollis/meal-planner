@@ -8,25 +8,25 @@ from meal_plan_generator.validator import validate_constraints
 from .conftest import _make_plan, _make_recipe
 
 # ---------------------------------------------------------------------------
-# 1. Exactly 7 recipes required
+# 1. At least 5 recipes required
 # ---------------------------------------------------------------------------
 
 
 class TestRecipeCount:
     def test_too_few_recipes(self, default_inventory, default_equipment):
-        plan = _make_plan(recipes=[_make_recipe() for _ in range(5)])
+        plan = _make_plan(recipes=[_make_recipe() for _ in range(4)])
         errors = validate_constraints(plan, default_inventory, default_equipment)
-        assert any("Expected 7 recipes, got 5" in e for e in errors)
+        assert any("Expected at least 5 recipes, got 4" in e for e in errors)
 
     def test_too_many_recipes(self, default_inventory, default_equipment):
         plan = _make_plan(recipes=[_make_recipe() for _ in range(9)])
         errors = validate_constraints(plan, default_inventory, default_equipment)
-        assert any("Expected 7 recipes, got 9" in e for e in errors)
+        assert not any("Expected" in e and "recipes" in e for e in errors)
 
     def test_zero_recipes(self, default_inventory, default_equipment):
         plan = _make_plan(recipes=[])
         errors = validate_constraints(plan, default_inventory, default_equipment)
-        assert any("Expected 7 recipes, got 0" in e for e in errors)
+        assert any("Expected at least 5 recipes, got 0" in e for e in errors)
 
 
 # ---------------------------------------------------------------------------
