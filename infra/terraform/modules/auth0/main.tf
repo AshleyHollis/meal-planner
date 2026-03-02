@@ -242,10 +242,11 @@ resource "auth0_client_credentials" "bff" {
 resource "auth0_resource_server" "api" {
   count = var.api_identifier != "" ? 1 : 0
 
-  name                 = var.api_name
-  identifier           = var.api_identifier
-  signing_alg          = "RS256"
-  allow_offline_access = true
+  name                                            = var.api_name
+  identifier                                      = var.api_identifier
+  signing_alg                                     = "RS256"
+  allow_offline_access                            = true
+  skip_consent_for_verifiable_first_party_clients = true
 }
 
 # T010: Test users
