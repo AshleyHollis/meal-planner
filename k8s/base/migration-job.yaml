@@ -34,38 +34,12 @@ spec:
             - /bin/sh
             - -c
             - |
+              set -e
               echo "=== Database Migration ==="
-              echo "PYTHONPATH=$PYTHONPATH"
-              echo "DATABASE_URL is set: $([ -n "$DATABASE_URL" ] && echo yes || echo NO)"
-
-              cd /app/shared || { echo "FATAL: /app/shared does not exist"; exit 1; }
-              echo "Working directory: $(pwd)"
-
-              if [ ! -f alembic.ini ]; then
-                echo "FATAL: alembic.ini not found in $(pwd)"
-                ls -la
-                exit 1
-              fi
-              echo "alembic.ini found"
-
-              echo "Alembic version: $(python -m alembic --version 2>&1 || echo 'NOT INSTALLED')"
-              echo "Files in alembic/versions/:"
-              ls -la alembic/versions/ 2>/dev/null || echo "  (directory not found)"
-
+              cd /app/shared
               echo "Running: alembic upgrade head"
-              if python -m alembic upgrade head 2>&1; then
-                echo "=== Migrations completed successfully ==="
-              else
-                EXIT_CODE=$?
-                echo "=== Migration FAILED (exit code: $EXIT_CODE) ==="
-                echo "Attempting alembic current to check state:"
-                python -m alembic current 2>&1 || true
-                echo "Python version: $(python --version)"
-                echo "Installed packages:"
-                pip list 2>/dev/null | grep -iE "alembic|sqlalchemy|pyodbc|aioodbc" || true
-                # Exit 0 to not block ArgoCD sync — migration failure is logged above
-                echo "WARNING: Continuing despite migration failure"
-              fi
+              python -m alembic upgrade head
+              echo "=== Migrations completed successfully ==="
           env:
             - name: DATABASE_URL
               valueFrom:

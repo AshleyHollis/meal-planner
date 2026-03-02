@@ -21,7 +21,7 @@ def upgrade() -> None:
 
     op.create_table(
         "Households",
-        sa.Column("id", UNIQUEIDENTIFIER(), nullable=False),
+        sa.Column("id", UNIQUEIDENTIFIER(), nullable=False, server_default=sa.text("NEWID()")),
         sa.Column("name", sa.String(200), nullable=False),
         sa.Column("default_servings", sa.Integer(), nullable=False, server_default="2"),
         sa.Column("created_at", sa.DateTime(), nullable=False, server_default=sa.text("SYSUTCDATETIME()")),
@@ -31,7 +31,7 @@ def upgrade() -> None:
 
     op.create_table(
         "Ingredients",
-        sa.Column("id", UNIQUEIDENTIFIER(), nullable=False),
+        sa.Column("id", UNIQUEIDENTIFIER(), nullable=False, server_default=sa.text("NEWID()")),
         sa.Column("name", sa.String(200), nullable=False),
         sa.Column("category", sa.String(100), nullable=False),
         sa.Column("default_unit", sa.String(10), nullable=False),
@@ -49,7 +49,7 @@ def upgrade() -> None:
 
     op.create_table(
         "HouseholdMembers",
-        sa.Column("id", UNIQUEIDENTIFIER(), nullable=False),
+        sa.Column("id", UNIQUEIDENTIFIER(), nullable=False, server_default=sa.text("NEWID()")),
         sa.Column("household_id", UNIQUEIDENTIFIER(), nullable=False),
         sa.Column("auth0_user_id", sa.String(100), nullable=False),
         sa.Column("display_name", sa.String(200), nullable=False),
@@ -65,7 +65,7 @@ def upgrade() -> None:
 
     op.create_table(
         "InventoryItems",
-        sa.Column("id", UNIQUEIDENTIFIER(), nullable=False),
+        sa.Column("id", UNIQUEIDENTIFIER(), nullable=False, server_default=sa.text("NEWID()")),
         sa.Column("household_id", UNIQUEIDENTIFIER(), nullable=False),
         sa.Column("ingredient_id", UNIQUEIDENTIFIER(), nullable=False),
         sa.Column("quantity", sa.Float(), nullable=False),
@@ -85,7 +85,7 @@ def upgrade() -> None:
 
     op.create_table(
         "Equipment",
-        sa.Column("id", UNIQUEIDENTIFIER(), nullable=False),
+        sa.Column("id", UNIQUEIDENTIFIER(), nullable=False, server_default=sa.text("NEWID()")),
         sa.Column("household_id", UNIQUEIDENTIFIER(), nullable=False),
         sa.Column("name", sa.String(200), nullable=False),
         sa.Column("is_active", sa.Boolean(), nullable=False, server_default="1"),
@@ -100,7 +100,7 @@ def upgrade() -> None:
 
     op.create_table(
         "EquipmentModes",
-        sa.Column("id", UNIQUEIDENTIFIER(), nullable=False),
+        sa.Column("id", UNIQUEIDENTIFIER(), nullable=False, server_default=sa.text("NEWID()")),
         sa.Column("equipment_id", UNIQUEIDENTIFIER(), nullable=False),
         sa.Column("name", sa.String(100), nullable=False),
         sa.Column("category", sa.String(50), nullable=False),
@@ -115,7 +115,7 @@ def upgrade() -> None:
 
     op.create_table(
         "Recipes",
-        sa.Column("id", UNIQUEIDENTIFIER(), nullable=False),
+        sa.Column("id", UNIQUEIDENTIFIER(), nullable=False, server_default=sa.text("NEWID()")),
         sa.Column("household_id", UNIQUEIDENTIFIER(), nullable=True),
         sa.Column("title", sa.String(300), nullable=False),
         sa.Column("description", sa.Text(), nullable=True),
@@ -136,7 +136,7 @@ def upgrade() -> None:
 
     op.create_table(
         "RecipeIngredients",
-        sa.Column("id", UNIQUEIDENTIFIER(), nullable=False),
+        sa.Column("id", UNIQUEIDENTIFIER(), nullable=False, server_default=sa.text("NEWID()")),
         sa.Column("recipe_id", UNIQUEIDENTIFIER(), nullable=False),
         sa.Column("ingredient_id", UNIQUEIDENTIFIER(), nullable=False),
         sa.Column("quantity", sa.Float(), nullable=False),
@@ -151,7 +151,7 @@ def upgrade() -> None:
 
     op.create_table(
         "RecipeSteps",
-        sa.Column("id", UNIQUEIDENTIFIER(), nullable=False),
+        sa.Column("id", UNIQUEIDENTIFIER(), nullable=False, server_default=sa.text("NEWID()")),
         sa.Column("recipe_id", UNIQUEIDENTIFIER(), nullable=False),
         sa.Column("step_order", sa.Integer(), nullable=False),
         sa.Column("instruction", sa.Text(), nullable=False),
@@ -168,7 +168,7 @@ def upgrade() -> None:
 
     op.create_table(
         "MealPlans",
-        sa.Column("id", UNIQUEIDENTIFIER(), nullable=False),
+        sa.Column("id", UNIQUEIDENTIFIER(), nullable=False, server_default=sa.text("NEWID()")),
         sa.Column("household_id", UNIQUEIDENTIFIER(), nullable=False),
         sa.Column("week_start_date", sa.DateTime(), nullable=False),
         sa.Column("status", sa.String(20), nullable=False, server_default="draft"),
@@ -184,7 +184,7 @@ def upgrade() -> None:
 
     op.create_table(
         "MealSlots",
-        sa.Column("id", UNIQUEIDENTIFIER(), nullable=False),
+        sa.Column("id", UNIQUEIDENTIFIER(), nullable=False, server_default=sa.text("NEWID()")),
         sa.Column("meal_plan_id", UNIQUEIDENTIFIER(), nullable=False),
         sa.Column("recipe_id", UNIQUEIDENTIFIER(), nullable=True),
         sa.Column("day", sa.Integer(), nullable=False),
@@ -204,7 +204,7 @@ def upgrade() -> None:
 
     op.create_table(
         "GroceryLists",
-        sa.Column("id", UNIQUEIDENTIFIER(), nullable=False),
+        sa.Column("id", UNIQUEIDENTIFIER(), nullable=False, server_default=sa.text("NEWID()")),
         sa.Column("meal_plan_id", UNIQUEIDENTIFIER(), nullable=False),
         sa.Column("created_at", sa.DateTime(), nullable=False, server_default=sa.text("SYSUTCDATETIME()")),
         sa.Column("updated_at", sa.DateTime(), nullable=False, server_default=sa.text("SYSUTCDATETIME()")),
@@ -217,7 +217,7 @@ def upgrade() -> None:
 
     op.create_table(
         "GroceryItems",
-        sa.Column("id", UNIQUEIDENTIFIER(), nullable=False),
+        sa.Column("id", UNIQUEIDENTIFIER(), nullable=False, server_default=sa.text("NEWID()")),
         sa.Column("grocery_list_id", UNIQUEIDENTIFIER(), nullable=False),
         sa.Column("ingredient_id", UNIQUEIDENTIFIER(), nullable=False),
         sa.Column("quantity_needed", sa.Numeric(10, 2), nullable=False),
