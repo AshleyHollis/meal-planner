@@ -70,7 +70,9 @@ async def generate_meal_plan(message_content: dict[str, Any]) -> None:
             result = await session.execute(select(MealPlan).where(MealPlan.id == meal_plan_id))
             meal_plan_row = result.scalar_one_or_none()
             if meal_plan_row is None:
-                logger.warning("generate_meal_plan_skipped", meal_plan_id=meal_plan_id, reason="not_found")
+                logger.warning(
+                    "generate_meal_plan_skipped", meal_plan_id=meal_plan_id, reason="not_found"
+                )
                 return
 
         # 2. Build prompt

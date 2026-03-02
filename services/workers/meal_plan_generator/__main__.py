@@ -21,7 +21,6 @@ import asyncio
 import contextlib
 import signal
 import threading
-import time
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 from shared.config import get_settings

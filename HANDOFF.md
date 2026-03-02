@@ -1,16 +1,19 @@
 # Agent Handoff: Meal Planner MVP - E2E Test Seeding
 
 ## Branch & PR
+
 - **Branch**: `001-meal-planner-mvp`
 - **PR**: #1 (against `master`)
 - **Repo**: `AshleyHollis/meal-planner`
 
 ## Current Task
+
 **Get all 36 E2E tests passing** (currently 24 passed, 12 skipped, 0 failed).
 
 The last pipeline run was `22566812328` — check `gh run view 22566812328` for details.
 
 ## What's Working
+
 - Auth0 login flow (auth.setup.ts gets storage state)
 - Seed-data setup: gets access token, finds 5 ingredients, adds 5 inventory items via API
 - Database migrations: 14 tables created, 107 seeded ingredients (alembic version 002)
@@ -20,6 +23,7 @@ The last pipeline run was `22566812328` — check `gh run view 22566812328` for 
 ## What's Still Broken (12 Skipped Tests)
 
 ### Problem 1: Inventory GET returns data via API but browser gets CORS error (5 tests)
+
 **Files**: `apps/web/e2e/inventory.spec.ts` — Edit, Remove, Expiry Badge, Autocomplete, Add Item tests
 
 The `nullslast()` fix (`eddc914`) fixed the 500 on `GET /api/v1/inventory`. But the browser still can't reach the API due to CORS. The diagnostic output from run `22566414169` showed:
@@ -35,16 +39,19 @@ No 'Access-Control-Allow-Origin' header is present on the requested resource.
 **Theory**: The 500 error from `nullslast()` was preventing the CORS middleware from adding headers (the error may have been raised in a way that bypassed middleware). Now that the 500 is fixed, CORS may work on the next run. **CHECK THE LATEST PIPELINE RUN FIRST** — the `nullslast()` fix (`eddc914`) was just deployed and may have fixed both the 500 AND the CORS issue.
 
 If CORS is still broken after the 500 fix, investigate:
+
 - Whether the API pod has the latest image (check the verify-k8s-deployment logs for the image tag)
 - Whether Starlette's CORSMiddleware adds headers on error responses
 - Check API pod logs during E2E tests for the actual request/response
 
 ### Problem 2: Meal plan stays in draft — worker not processing (7 tests)
+
 **Files**: `apps/web/e2e/meal-plan.spec.ts` (4 tests), `apps/web/e2e/grocery.spec.ts` (6 tests — but some overlap)
 
 The seed-data creates a meal plan but it stays in `draft` status because the worker pod doesn't process it. The worker needs Azure OpenAI to generate recipes. The 409 "already has an active or in-progress meal plan" on subsequent runs is expected (previous run's plan persists in DB).
 
 **Options**:
+
 1. Configure Azure OpenAI for the preview environment (check `k8s/overlays/preview/` and Key Vault secrets)
 2. Pre-seed a completed meal plan with slots directly via SQL/API (skip the worker)
 3. Accept that meal-plan and grocery tests skip in preview (worker requires LLM)
@@ -55,35 +62,35 @@ Also check if the worker deployment exists in preview: `kubectl get deployments 
 
 ## Key Files
 
-| File | Purpose |
-|------|---------|
-| `services/api/src/api/middleware/auth.py` | JWT auth — uses urllib for JWKS fetch, catch-all exception handler |
-| `services/api/src/api/services/inventory_service.py` | Inventory CRUD — fixed nullslast() to CASE expression |
-| `services/api/src/api/main.py:67-75` | CORS middleware configuration |
-| `services/api/src/api/errors.py` | Error handlers (500 returns generic JSON, no detail) |
-| `apps/web/e2e/seed-data.setup.ts` | E2E data seeding (ingredients, inventory, meal plan) |
-| `apps/web/e2e/inventory.spec.ts` | Inventory E2E tests (5 skip on empty/error state) |
-| `apps/web/e2e/meal-plan.spec.ts` | Meal plan E2E tests (4 skip on empty/error state) |
-| `apps/web/e2e/grocery.spec.ts` | Grocery E2E tests (6 skip — all need active meal plan) |
-| `apps/web/e2e/smoke.spec.ts` | Smoke tests (10 tests, all pass, no skip conditions) |
-| `apps/web/playwright.config.ts` | 3-project chain: auth-setup → seed-data → chromium |
-| `apps/web/src/services/runtimeConfig.ts` | API URL resolution (runtime-config.js → NEXT_PUBLIC_API_URL → localhost:8000) |
-| `apps/web/src/services/api.ts` | Frontend API client — getAccessToken() + fetchApi() with Bearer |
-| `services/shared/alembic/versions/001_initial_schema.py` | Migration with NEWID() defaults on all UUID PKs |
-| `services/shared/alembic/versions/002_seed_data.py` | Seeds 107 ingredients |
-| `.github/workflows/verify-k8s-deployment.yml` | Has DB diagnostic step (kubectl exec for table check, async query test) |
-| `k8s/base/migration-job.yaml` | Alembic migration job (ArgoCD Sync hook) |
+| File                                                     | Purpose                                                                       |
+| -------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| `services/api/src/api/middleware/auth.py`                | JWT auth — uses urllib for JWKS fetch, catch-all exception handler            |
+| `services/api/src/api/services/inventory_service.py`     | Inventory CRUD — fixed nullslast() to CASE expression                         |
+| `services/api/src/api/main.py:67-75`                     | CORS middleware configuration                                                 |
+| `services/api/src/api/errors.py`                         | Error handlers (500 returns generic JSON, no detail)                          |
+| `apps/web/e2e/seed-data.setup.ts`                        | E2E data seeding (ingredients, inventory, meal plan)                          |
+| `apps/web/e2e/inventory.spec.ts`                         | Inventory E2E tests (5 skip on empty/error state)                             |
+| `apps/web/e2e/meal-plan.spec.ts`                         | Meal plan E2E tests (4 skip on empty/error state)                             |
+| `apps/web/e2e/grocery.spec.ts`                           | Grocery E2E tests (6 skip — all need active meal plan)                        |
+| `apps/web/e2e/smoke.spec.ts`                             | Smoke tests (10 tests, all pass, no skip conditions)                          |
+| `apps/web/playwright.config.ts`                          | 3-project chain: auth-setup → seed-data → chromium                            |
+| `apps/web/src/services/runtimeConfig.ts`                 | API URL resolution (runtime-config.js → NEXT_PUBLIC_API_URL → localhost:8000) |
+| `apps/web/src/services/api.ts`                           | Frontend API client — getAccessToken() + fetchApi() with Bearer               |
+| `services/shared/alembic/versions/001_initial_schema.py` | Migration with NEWID() defaults on all UUID PKs                               |
+| `services/shared/alembic/versions/002_seed_data.py`      | Seeds 107 ingredients                                                         |
+| `.github/workflows/verify-k8s-deployment.yml`            | Has DB diagnostic step (kubectl exec for table check, async query test)       |
+| `k8s/base/migration-job.yaml`                            | Alembic migration job (ArgoCD Sync hook)                                      |
 
 ## Test Count Breakdown (36 total)
 
-| File | Total | Always Pass | May Skip |
-|------|-------|-------------|----------|
-| smoke.spec.ts | 10 | 10 | 0 |
-| inventory.spec.ts | 11 | 6 | 5 (need working API from browser) |
-| meal-plan.spec.ts | 7 | 3 | 4 (need existing meal plan data) |
-| grocery.spec.ts | 6 | 0 | 6 (all need active meal plan w/ grocery list) |
-| auth.setup.ts | 1 | 1 | 0 |
-| seed-data.setup.ts | 1 | 1 | 0 |
+| File               | Total | Always Pass | May Skip                                      |
+| ------------------ | ----- | ----------- | --------------------------------------------- |
+| smoke.spec.ts      | 10    | 10          | 0                                             |
+| inventory.spec.ts  | 11    | 6           | 5 (need working API from browser)             |
+| meal-plan.spec.ts  | 7     | 3           | 4 (need existing meal plan data)              |
+| grocery.spec.ts    | 6     | 0           | 6 (all need active meal plan w/ grocery list) |
+| auth.setup.ts      | 1     | 1           | 0                                             |
+| seed-data.setup.ts | 1     | 1           | 0                                             |
 
 ## Architecture Notes
 

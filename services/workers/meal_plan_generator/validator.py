@@ -40,7 +40,9 @@ def validate_constraints(
                     eq_name = step.equipment_name
                     mode = step.equipment_mode
                     if eq_name not in equipment:
-                        errors.append(f"{label} step {step.step_order}: unknown equipment '{eq_name}'")
+                        errors.append(
+                            f"{label} step {step.step_order}: unknown equipment '{eq_name}'"
+                        )
                     elif mode not in equipment[eq_name]:
                         errors.append(
                             f"{label} step {step.step_order}: unknown mode '{mode}' for '{eq_name}'"

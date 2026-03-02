@@ -132,14 +132,18 @@ test.describe("Smoke Tests @smoke", () => {
       await page.goto("/");
 
       // On desktop sidebar or mobile header, "Log out" should be visible
-      await expect(page.getByRole("link", { name: "Log out" }).first()).toBeVisible({ timeout: 10_000 });
+      await expect(
+        page.getByRole("link", { name: "Log out" }).first(),
+      ).toBeVisible({ timeout: 10_000 });
     });
 
     test("authenticated user does not see Log in link", async ({ page }) => {
       await page.goto("/");
 
       // Wait for auth state to load (isLoading = false)
-      await expect(page.getByRole("link", { name: "Log out" }).first()).toBeVisible({ timeout: 10_000 });
+      await expect(
+        page.getByRole("link", { name: "Log out" }).first(),
+      ).toBeVisible({ timeout: 10_000 });
 
       // "Log in" should NOT be visible for authenticated users
       await expect(page.getByText("Log in")).not.toBeVisible();
