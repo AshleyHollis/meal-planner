@@ -87,7 +87,7 @@ async def get_current_user(
             token,
             rsa_key,
             algorithms=["RS256"],
-            audience=settings.auth.client_id,
+            audience=settings.auth.audience or settings.auth.client_id,
             issuer=f"https://{domain}/",
         )
         return payload  # noqa: TRY300

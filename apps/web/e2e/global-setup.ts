@@ -84,7 +84,7 @@ async function waitForApi(): Promise<void> {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 10_000);
 
-      const response = await fetch(`${API_URL}/api/v1/ingredients?limit=1`, {
+      const response = await fetch(`${API_URL}/health/live`, {
         signal: controller.signal,
       });
       clearTimeout(timeout);

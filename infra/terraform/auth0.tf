@@ -46,6 +46,8 @@ module "auth0" {
 
   auth0_domain          = var.auth0_domain
   application_name      = var.auth0_application_name
+  api_name              = "Meal Planner API"
+  api_identifier        = "https://api.meal-planner.apps.ashleyhollis.com"
   allowed_callback_urls = var.auth0_allowed_callback_urls
   allowed_logout_urls   = var.auth0_allowed_logout_urls
   allowed_web_origins   = var.auth0_allowed_web_origins
@@ -181,6 +183,13 @@ resource "azurerm_key_vault_secret" "auth0_session_secret" {
   count        = var.enable_auth0 ? 1 : 0
   name         = "meal-planner-auth0-session-secret"
   value        = random_password.auth0_session_secret.result
+  key_vault_id = module.shared.key_vault_id
+}
+
+resource "azurerm_key_vault_secret" "auth0_audience" {
+  count        = var.enable_auth0 ? 1 : 0
+  name         = "meal-planner-auth0-audience"
+  value        = "https://api.meal-planner.apps.ashleyhollis.com"
   key_vault_id = module.shared.key_vault_id
 }
 

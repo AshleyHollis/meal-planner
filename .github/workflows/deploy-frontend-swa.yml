@@ -188,12 +188,14 @@ jobs:
             AUTH0_DOMAIN=$(az keyvault secret show --vault-name "$KV_NAME" --name "meal-planner-auth0-domain" --query value -o tsv)
             AUTH0_CLIENT_ID=$(az keyvault secret show --vault-name "$KV_NAME" --name "meal-planner-auth0-client-id" --query value -o tsv)
             AUTH0_CLIENT_SECRET=$(az keyvault secret show --vault-name "$KV_NAME" --name "meal-planner-auth0-client-secret" --query value -o tsv)
+            AUTH0_AUDIENCE=$(az keyvault secret show --vault-name "$KV_NAME" --name "meal-planner-auth0-audience" --query value -o tsv)
             ENV_FLAG=""
           else
             AUTH0_SECRET=$(az keyvault secret show --vault-name "$KV_NAME" --name "meal-planner-auth0-preview-session-secret" --query value -o tsv)
             AUTH0_DOMAIN=$(az keyvault secret show --vault-name "$KV_NAME" --name "meal-planner-auth0-preview-domain" --query value -o tsv)
             AUTH0_CLIENT_ID=$(az keyvault secret show --vault-name "$KV_NAME" --name "meal-planner-auth0-preview-client-id" --query value -o tsv)
             AUTH0_CLIENT_SECRET=$(az keyvault secret show --vault-name "$KV_NAME" --name "meal-planner-auth0-preview-client-secret" --query value -o tsv)
+            AUTH0_AUDIENCE=$(az keyvault secret show --vault-name "$KV_NAME" --name "meal-planner-auth0-audience" --query value -o tsv)
             ENV_FLAG="--environment-name ${DEPLOY_ENV}"
           fi
 
@@ -217,7 +219,8 @@ jobs:
               "APP_BASE_URL=${APP_URL}" \
               "AUTH0_DOMAIN=${AUTH0_DOMAIN}" \
               "AUTH0_CLIENT_ID=${AUTH0_CLIENT_ID}" \
-              "AUTH0_CLIENT_SECRET=${AUTH0_CLIENT_SECRET}"
+              "AUTH0_CLIENT_SECRET=${AUTH0_CLIENT_SECRET}" \
+              "AUTH0_AUDIENCE=${AUTH0_AUDIENCE}"
 
           echo "✅ SWA app settings configured for ${{ inputs.environment }} (env: ${DEPLOY_ENV})"
 

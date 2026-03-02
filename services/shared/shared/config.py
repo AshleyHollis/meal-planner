@@ -155,6 +155,10 @@ class AuthSettings(BaseSettings):
         default="",
         description="Auth0 application client secret",
     )
+    audience: str = Field(
+        default="",
+        description="Auth0 API audience (resource server identifier)",
+    )
 
 
 class QueueSettings(BaseSettings):
