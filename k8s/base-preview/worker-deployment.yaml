@@ -49,6 +49,21 @@ spec:
                 secretKeyRef:
                   name: llm-credentials
                   key: api-key
+            - name: AZURE_OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: llm-credentials
+                  key: azure-api-key
+            - name: AZURE_OPENAI_ENDPOINT
+              valueFrom:
+                secretKeyRef:
+                  name: llm-credentials
+                  key: azure-endpoint
+            - name: AZURE_OPENAI_DEPLOYMENT
+              valueFrom:
+                secretKeyRef:
+                  name: llm-credentials
+                  key: azure-deployment
             - name: ENVIRONMENT
               valueFrom:
                 configMapKeyRef:
