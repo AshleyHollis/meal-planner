@@ -219,7 +219,6 @@ class InventoryService:
 
         # Get upcoming slots with recipes
         from shared.db.models.recipe import Recipe, RecipeIngredient
-        from shared.db.models.ingredient import Ingredient
         
         slot_stmt = (
             select(MealSlot)
