@@ -96,7 +96,9 @@ class AzureStorageSettings(BaseSettings):
 class LLMSettings(BaseSettings):
     """LLM provider settings.
 
-    Supports both Anthropic and OpenAI via LLM_PROVIDER toggle.
+    Supports Anthropic, OpenAI, and Azure OpenAI via LLM_PROVIDER toggle.
+    For Azure OpenAI, set AZURE_OPENAI_ENDPOINT, AZURE_OPENAI_API_KEY,
+    and AZURE_OPENAI_DEPLOYMENT environment variables.
     """
 
     model_config = SettingsConfigDict(env_prefix="LLM_")
@@ -109,6 +111,31 @@ class LLMSettings(BaseSettings):
         default="anthropic",
         description="LLM provider to use",
     )
+
+    @property
+    def azure_endpoint(self) -> str | None:
+        """Get Azure OpenAI endpoint if configured."""
+        return os.environ.get("AZURE_OPENAI_ENDPOINT") or None
+
+    @property
+    def azure_api_key(self) -> str | None:
+        """Get Azure OpenAI API key if configured."""
+        return os.environ.get("AZURE_OPENAI_API_KEY") or None
+
+    @property
+    def azure_deployment(self) -> str | None:
+        """Get Azure OpenAI deployment name if configured."""
+        return os.environ.get("AZURE_OPENAI_DEPLOYMENT") or None
+
+    @property
+    def azure_api_version(self) -> str:
+        """Get Azure OpenAI API version."""
+        return os.environ.get("AZURE_OPENAI_API_VERSION", "2024-05-01-preview")
+
+    @property
+    def is_azure_configured(self) -> bool:
+        """Check if Azure OpenAI is fully configured."""
+        return bool(self.azure_endpoint and self.azure_api_key)
 
 
 class AuthSettings(BaseSettings):

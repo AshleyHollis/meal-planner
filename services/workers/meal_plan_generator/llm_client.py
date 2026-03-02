@@ -62,7 +62,10 @@ def call_llm(prompt: str, timeout: int = GENERATION_TIMEOUT) -> str:
     logger.info("llm_call_start", provider=provider, timeout_s=timeout)
 
     try:
-        if provider == "anthropic":
+        # Prefer Azure OpenAI when configured, regardless of provider setting
+        if settings.llm.is_azure_configured:
+            result = _call_azure_openai(prompt, settings, timeout)
+        elif provider == "anthropic":
             result = _call_anthropic(prompt, api_key, timeout)
         elif provider == "openai":
             result = _call_openai(prompt, api_key, timeout)
@@ -129,6 +132,41 @@ def _call_openai(prompt: str, api_key: str, timeout: int) -> str:
         "llm_usage",
         provider="openai",
         model=_MODELS["openai"],
+        input_tokens=input_tokens,
+        output_tokens=output_tokens,
+        cost_usd=round(cost, 6),
+    )
+    return text
+
+
+def _call_azure_openai(prompt: str, settings: object, timeout: int) -> str:
+    """Call Azure OpenAI API."""
+    import openai
+
+    llm = settings.llm  # type: ignore[attr-defined]
+    deployment = llm.azure_deployment or _MODELS["openai"]
+
+    client = openai.AzureOpenAI(
+        api_key=llm.azure_api_key,
+        azure_endpoint=llm.azure_endpoint,
+        api_version=llm.azure_api_version,
+        timeout=timeout,
+    )
+    response = client.chat.completions.create(
+        model=deployment,
+        max_tokens=_MAX_TOKENS,
+        messages=[{"role": "user", "content": prompt}],
+    )
+    text = response.choices[0].message.content or ""
+
+    usage = response.usage
+    input_tokens = usage.prompt_tokens if usage else 0
+    output_tokens = usage.completion_tokens if usage else 0
+    cost = _estimate_cost("openai", input_tokens, output_tokens)
+    logger.info(
+        "llm_usage",
+        provider="azure_openai",
+        model=deployment,
         input_tokens=input_tokens,
         output_tokens=output_tokens,
         cost_usd=round(cost, 6),
