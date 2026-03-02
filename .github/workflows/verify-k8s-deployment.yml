@@ -1,0 +1,275 @@
+# =============================================================================
+# Verify Kubernetes Deployment (Reusable Workflow)
+# =============================================================================
+# Unified deployment verification for both production and preview environments.
+# Extracts common patterns from deploy-prod.yml and preview.yml to reduce
+# duplication and ensure consistent verification across environments.
+#
+# VERIFICATION STEPS:
+#   1. Setup Azure and AKS context
+#   2. Setup Kustomize tooling
+#   3. Wait for Argo CD to sync (with optional auto-recovery for preview)
+#   4. Verify deployed images match expected tag
+#   5. Collect diagnostics on failure
+#   6. Verify TLS certificate
+#   7. Run health checks
+#
+# USAGE:
+#   Production:
+#     uses: ./.github/workflows/verify-k8s-deployment.yml
+#     with:
+#       environment: prod
+#       namespace: meal-planner
+#       argocd-app-name: meal-planner-prod
+#       expected-image-tag: sha-abc1234
+#       api-url: https://api.meal-planner.example.com
+#       host: api.meal-planner.apps.ashleyhollis.com
+#
+#   Preview:
+#     uses: ./.github/workflows/verify-k8s-deployment.yml
+#     with:
+#       environment: preview
+#       namespace: preview-pr-42
+#       argocd-app-name: preview-pr-42
+#       expected-image-tag: pr-42-abc1234
+#       api-url: https://pr-42.meal-planner.apps.ashleyhollis.com
+#       host: pr-42.meal-planner.apps.ashleyhollis.com
+#       pr-number: '42'
+# =============================================================================
+
+name: Verify Kubernetes Deployment
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: "Environment type: prod or preview"
+        required: true
+        type: string
+      namespace:
+        description: "Kubernetes namespace for the deployment"
+        required: true
+        type: string
+      argocd-app-name:
+        description: "Argo CD application name"
+        required: true
+        type: string
+      expected-image-tag:
+        description: "Expected image tag to verify"
+        required: true
+        type: string
+      api-url:
+        description: "API URL for health checks"
+        required: true
+        type: string
+      host:
+        description: "Hostname for TLS certificate verification"
+        required: true
+        type: string
+      pr-number:
+        description: "PR number (required for preview, ignored for prod)"
+        required: false
+        type: string
+        default: "0"
+      max-wait-seconds:
+        description: "Max seconds to wait for ArgoCD sync"
+        required: false
+        type: string
+        default: "300"
+      auto-recovery:
+        description: "Enable auto-recovery for stuck deployments (preview only)"
+        required: false
+        type: boolean
+        default: false
+      run-preview-health-check:
+        description: "Run preview-specific health checks with DNS/Gateway verification"
+        required: false
+        type: boolean
+        default: false
+
+    secrets:
+      AZURE_CLIENT_ID:
+        required: true
+      AZURE_TENANT_ID:
+        required: true
+      AZURE_SUBSCRIPTION_ID:
+        required: true
+
+jobs:
+  verify:
+    name: Verify ${{ inputs.environment }} Deployment
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Fail-fast if PR has been closed to avoid false failures and wasted resources
+      - name: Check if PR is still open
+        if: inputs.environment == 'preview' && inputs.pr-number != '0'
+        uses: AshleyHollis/shared-infra/.github/actions/check-pr-open@v1
+        with:
+          pr-number: ${{ inputs.pr-number }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: false
+
+      - name: Load shared environment
+        uses: AshleyHollis/shared-infra/.github/actions/load-shared-env@v1
+
+      - name: Setup Azure and AKS
+        uses: AshleyHollis/shared-infra/.github/actions/setup-azure-aks@v1
+        with:
+          azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          azure-subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          resource-group: ${{ vars.AZURE_RESOURCE_GROUP || 'rg-ytsumm-prd' }}
+          cluster-name: ${{ vars.AKS_CLUSTER_NAME || 'aks-ytsumm-prd' }}
+
+      - name: Setup Kustomize
+        uses: AshleyHollis/shared-infra/.github/actions/setup-kustomize@v1
+        with:
+          kustomize-version: ${{ env.KUSTOMIZE_VERSION }}
+
+      - name: Wait for Argo CD sync
+        uses: AshleyHollis/shared-infra/.github/actions/argocd-wait@v1
+        with:
+          app-name: ${{ inputs.argocd-app-name }}
+          namespace: ${{ inputs.namespace }}
+          argocd-namespace: ${{ env.NAMESPACE_ARGOCD }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          cleanup-stuck-operations: "true"
+          auto-recovery: ${{ inputs.auto-recovery && 'true' || 'false' }}
+          max-wait-seconds: ${{ inputs.max-wait-seconds }}
+          poll-interval-seconds: ${{ inputs.environment == 'prod' && '5' || '10' }}
+          pr-number: ${{ inputs.pr-number }}
+          max-recovery-attempts: "3"
+          expected-image-tag: ${{ inputs.expected-image-tag }}
+
+      - name: Verify deployments are using correct image tag
+        uses: AshleyHollis/shared-infra/.github/actions/verify-k8s-deployment@v1
+        with:
+          namespace: ${{ inputs.namespace }}
+          deployments: api,meal-plan-worker
+          expected-tag: ${{ inputs.expected-image-tag }}
+          registry: ${{ vars.ACR_LOGIN_SERVER || 'acrytsummprd.azurecr.io' }}
+          image-name: meal-planner
+          wait-for-ready: "true"
+          timeout-seconds: "300"
+          fail-on-mismatch: "true"
+
+      - name: Check database migration status
+        if: always()
+        continue-on-error: true
+        shell: bash
+        run: |
+          NAMESPACE="${{ inputs.namespace }}"
+          echo "=== Database Migration Diagnostics ==="
+
+          API_POD=$(kubectl get pods -n "$NAMESPACE" -l app.kubernetes.io/name=api --field-selector status.phase=Running -o jsonpath='{.items[0].metadata.name}' 2>/dev/null)
+          if [ -z "$API_POD" ]; then
+            echo "WARNING: No running API pod found"
+            exit 0
+          fi
+          echo "Using API pod: $API_POD"
+
+          # Check DB state and ingredient count
+          kubectl exec -n "$NAMESPACE" "$API_POD" -- python -c "
+          import sys, re
+          sys.path.insert(0, '/app/shared')
+          sys.path.insert(0, '/app/src')
+          try:
+              from shared.config import get_settings
+              from sqlalchemy import create_engine, text
+              url = get_settings().database.effective_url
+              if not url:
+                  print('ERROR: No database URL configured'); sys.exit(0)
+              safe_url = re.sub(r'://[^:]+:[^@]+@', '://***:***@', url)
+              print(f'DB URL: {safe_url}')
+              if 'aioodbc' in url:
+                  url = url.replace('mssql+aioodbc://', 'mssql+pyodbc://')
+              engine = create_engine(url)
+              with engine.connect() as conn:
+                  tables = [r[0] for r in conn.execute(text(\"SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'dbo'\"))]
+                  print(f'Tables ({len(tables)}): {tables}')
+                  if 'alembic_version' in tables:
+                      print(f'Alembic version: {conn.execute(text(\"SELECT version_num FROM alembic_version\")).scalar()}')
+                  if 'Ingredients' in tables:
+                      print(f'Ingredient count: {conn.execute(text(\"SELECT COUNT(*) FROM Ingredients\")).scalar()}')
+          except Exception as e:
+              print(f'ERROR: {type(e).__name__}: {e}')
+          " 2>&1 || true
+
+          # Test async query (same path as API endpoint)
+          echo ""
+          echo "--- Testing async ingredient query ---"
+          kubectl exec -n "$NAMESPACE" "$API_POD" -- python -c "
+          import sys, asyncio
+          sys.path.insert(0, '/app/shared')
+          sys.path.insert(0, '/app/src')
+          async def test():
+              try:
+                  from shared.db.connection import get_db
+                  from shared.db.models import Ingredient
+                  from sqlalchemy import select
+                  db = get_db()
+                  async with db.session() as session:
+                      result = await session.execute(select(Ingredient).limit(3))
+                      rows = list(result.scalars().all())
+                      print(f'Async query returned {len(rows)} ingredients')
+                      for r in rows:
+                          print(f'  - {r.name} ({r.category})')
+              except Exception as e:
+                  import traceback
+                  print(f'ASYNC ERROR: {type(e).__name__}: {e}')
+                  traceback.print_exc()
+          asyncio.run(test())
+          " 2>&1 || true
+
+          # Capture recent API pod logs
+          echo ""
+          echo "--- API Pod Logs (last 50 lines) ---"
+          kubectl logs -n "$NAMESPACE" "$API_POD" --tail=50 2>&1 || true
+
+      - name: Collect and upload diagnostics on failure
+        if: failure()
+        uses: AshleyHollis/shared-infra/.github/actions/collect-deployment-diagnostics@v1
+        with:
+          app-name: ${{ inputs.argocd-app-name }}
+          artifact-name: deployment-diagnostics-${{ inputs.environment }}-${{ inputs.pr-number != '0' && format('pr-{0}', inputs.pr-number) || 'prod' }}
+
+      - name: Verify TLS certificate
+        uses: AshleyHollis/shared-infra/.github/actions/verify-certificate@v1
+        with:
+          host: ${{ inputs.host }}
+
+      # Preview-specific health checks with DNS/Gateway verification
+      - name: Run preview health checks
+        if: inputs.run-preview-health-check
+        uses: AshleyHollis/shared-infra/.github/actions/health-check-preview@v1
+        with:
+          namespace: ${{ inputs.namespace }}
+          external-url: ${{ inputs.api-url }}
+          max-attempts: "10"
+          interval-seconds: "10"
+
+      # Standard health checks for production
+      - name: Run API health check (liveness)
+        if: ${{ !inputs.run-preview-health-check }}
+        uses: AshleyHollis/shared-infra/.github/actions/health-check@v1
+        with:
+          url: ${{ inputs.api-url }}${{ env.HEALTH_CHECK_PATH }}
+          max-attempts: "20"
+          interval-seconds: "10"
+          timeout-seconds: "5"
+          expected-status: "200"
+          service-name: "${{ inputs.environment == 'prod' && 'Production' || 'Preview' }} API (External)"
+
+      - name: Run API health check (readiness)
+        if: ${{ !inputs.run-preview-health-check }}
+        uses: AshleyHollis/shared-infra/.github/actions/health-check@v1
+        with:
+          url: ${{ inputs.api-url }}/health
+          max-attempts: ${{ env.HEALTH_CHECK_MAX_ATTEMPTS }}
+          interval-seconds: ${{ env.HEALTH_CHECK_INTERVAL }}
+          timeout-seconds: ${{ env.HEALTH_CHECK_TIMEOUT }}
+          expected-status: "200"
+          service-name: "${{ inputs.environment == 'prod' && 'Production' || 'Preview' }} API"

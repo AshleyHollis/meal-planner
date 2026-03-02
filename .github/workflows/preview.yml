@@ -1,0 +1,713 @@
+# =============================================================================
+# Preview Deployment Workflow
+# =============================================================================
+# TRIGGERS: PR opened/updated, manual dispatch
+#
+# EXECUTION FLOWS:
+# 1. Code Changes → Wait for CI images → Deploy to AKS + SWA → Run E2E
+# 2. K8s Only Changes → Use existing images → Deploy k8s updates only
+# 3. No Changes → Skip (unless force_deploy=true)
+# 4. Max Previews Reached → Queue (wait for slot)
+#
+# ARCHITECTURE:
+# - Backend: AKS deployment via Argo CD (auto-syncs from k8s/overlays/preview/)
+# - Frontend: Azure Static Web Apps (ephemeral preview per PR)
+# - DNS: Cloudflare with Gateway API + TLS certificates
+#
+# REUSABLE WORKFLOWS:
+# - update-k8s-overlay.yml: Updates and validates kustomization
+# - verify-k8s-deployment.yml: ArgoCD sync + health checks
+# - deploy-frontend-swa.yml: SWA deployment with health verification
+#
+# IMAGE TAG FORMAT:
+#   - Preview: pr-{number}-{7-char-sha} (PR-scoped, deterministic)
+#   - Fallback: sha-{commit} (production tag, if no PR code changes)
+#
+# See also: deploy-prod.yml for production image strategy
+# =============================================================================
+
+name: Preview Deployment
+
+on:
+  pull_request:
+    branches: [master]
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: "PR number to deploy preview for (optional)"
+        required: false
+        type: string
+      force_deploy:
+        description: "Force deployment even without code changes"
+        required: false
+        type: boolean
+        default: false
+      run_preview:
+        description: "Run preview deployment jobs"
+        required: false
+        type: boolean
+        default: true
+      run_terraform:
+        description: "Run terraform plan"
+        required: false
+        type: boolean
+        default: true
+      apply_terraform:
+        description: "Apply terraform changes"
+        required: false
+        type: boolean
+        default: true
+      run_e2e:
+        description: "Run E2E tests"
+        required: false
+        type: boolean
+        default: true
+
+concurrency:
+  group: preview-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
+
+env:
+  ACR_NAME: ${{ vars.ACR_NAME || 'acrytsummprd' }}
+  ACR_LOGIN_SERVER: ${{ vars.ACR_LOGIN_SERVER || 'acrytsummprd.azurecr.io' }}
+  PREVIEW_NAMESPACE_PREFIX: "preview-pr-"
+  APPS_BASE_DOMAIN: "meal-planner.apps.ashleyhollis.com"
+  ARGOCD_SYNC_TIMEOUT: "180"
+  KUSTOMIZE_OVERLAY_PREVIEW: "k8s/overlays/preview"
+  MAX_PREVIEWS: 3
+
+permissions:
+  id-token: write
+  contents: write
+  pull-requests: write
+  checks: write
+
+jobs:
+  # ===========================================================================
+  # PHASE 1: CHANGE DETECTION & PR METADATA
+  # ===========================================================================
+  detect-changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
+    outputs:
+      needs_image_build: ${{ steps.finalize.outputs.needs_image_build }}
+      needs_deployment: ${{ steps.finalize.outputs.needs_deployment }}
+      needs_backend_deployment: ${{ steps.check.outputs.needs_backend_deployment }}
+      infra_changed: ${{ steps.infra.outputs.infra_changed }}
+      pr_number: ${{ steps.set-pr.outputs.pr_number }}
+      pr_head_ref: ${{ steps.set-pr.outputs.pr_head_ref }}
+      pr_head_sha: ${{ steps.set-pr.outputs.pr_head_sha }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get PR metadata
+        id: set-pr
+        uses: AshleyHollis/shared-infra/.github/actions/get-pr-metadata@v1
+        with:
+          event-name: ${{ github.event_name }}
+          pr-number-input: ${{ github.event.inputs.pr_number }}
+          pr-number-context: ${{ github.event.pull_request.number }}
+          pr-head-ref-context: ${{ github.event.pull_request.head.ref }}
+          pr-head-sha-context: ${{ github.event.pull_request.head.sha }}
+          pr-base-sha-context: ${{ github.event.pull_request.base.sha }}
+          current-ref: ${{ github.ref_name }}
+          current-sha: ${{ github.sha }}
+
+      - name: Check if commit has code changes
+        id: check
+        uses: AshleyHollis/shared-infra/.github/actions/detect-pr-code-changes@v1
+        with:
+          base-sha: ${{ steps.set-pr.outputs.base_sha }}
+          head-sha: ${{ steps.set-pr.outputs.pr_head_sha }}
+          pr-number: ${{ steps.set-pr.outputs.pr_number }}
+          force-deploy: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.force_deploy }}
+
+      - name: Finalize deployment flags
+        id: finalize
+        shell: bash
+        env:
+          INITIAL_NEEDS_IMAGE_BUILD: ${{ steps.check.outputs.needs_image_build }}
+          INITIAL_NEEDS_DEPLOYMENT: ${{ steps.check.outputs.needs_deployment }}
+          EVENT_NAME: ${{ github.event_name }}
+          RUN_PREVIEW: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.run_preview || 'true' }}
+        run: scripts/workflows/preview-finalize-flags.sh
+
+      - name: Detect infra changes
+        id: infra
+        shell: bash
+        run: scripts/workflows/preview-detect-infra.sh "${{ steps.set-pr.outputs.base_sha }}" "${{ steps.set-pr.outputs.pr_head_sha }}"
+
+  # ===========================================================================
+  # PHASE 2B: WAIT FOR CI
+  # ===========================================================================
+  wait-for-ci:
+    name: Wait for CI
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: needs.detect-changes.outputs.needs_deployment == 'true'
+    outputs:
+      image_tag: ${{ steps.wait.outputs.image_tag }}
+      ci_run_id: ${{ steps.wait.outputs.ci_run_id }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Load shared environment
+        uses: AshleyHollis/shared-infra/.github/actions/load-shared-env@v1
+
+      - name: Wait for CI workflow to complete
+        id: wait
+        uses: AshleyHollis/shared-infra/.github/actions/wait-for-ci@v1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          commit-sha: ${{ needs.detect-changes.outputs.pr_head_sha || github.sha }}
+          pr-number: ${{ needs.detect-changes.outputs.pr_number }}
+          timeout-seconds: "1800"
+          workflow-event: pull_request
+
+      - name: Azure Login and ACR authentication
+        if: steps.wait.outputs.image_tag != ''
+        uses: AshleyHollis/shared-infra/.github/actions/azure-acr-login@v1
+        with:
+          azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          azure-subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          acr-name: ${{ env.ACR_NAME }}
+
+      - name: Validate image exists in ACR
+        if: steps.wait.outputs.image_tag != ''
+        uses: AshleyHollis/shared-infra/.github/actions/validate-docker-image@v1
+        with:
+          validation-type: acr-exists
+          image-tag: ${{ steps.wait.outputs.image_tag }}
+          registry: ${{ env.ACR_NAME }}
+          repository: ${{ env.API_IMAGE_NAME }}
+          fail-if-missing: "true"
+
+  # ===========================================================================
+  # PHASE 2C: FIND PR IMAGE TAG FOR K8S-ONLY CHANGES
+  # ===========================================================================
+  get-production-tag:
+    name: Find PR Image Tag
+    runs-on: ubuntu-latest
+    needs: [detect-changes, wait-for-ci]
+    if: |
+      needs.detect-changes.outputs.needs_deployment == 'true' &&
+      (needs.detect-changes.outputs.needs_image_build == 'false' ||
+       needs.wait-for-ci.outputs.image_tag == '' ||
+       github.event_name == 'workflow_dispatch')
+    outputs:
+      image_tag: ${{ steps.find-tag.outputs.image_tag }}
+      image_commit_sha: ${{ steps.find-tag.outputs.image_commit_sha }}
+    steps:
+      - name: Checkout PR branch with full history
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.detect-changes.outputs.pr_head_sha || github.sha }}
+          fetch-depth: 0
+
+      - name: Load shared environment
+        uses: AshleyHollis/shared-infra/.github/actions/load-shared-env@v1
+
+      - name: Find most recent image-building commit in PR
+        id: find-tag
+        shell: bash
+        run: |
+          scripts/workflows/preview-find-pr-image-tag.sh \
+            "${{ needs.detect-changes.outputs.pr_number }}"
+
+      - name: Azure Login and ACR authentication
+        uses: AshleyHollis/shared-infra/.github/actions/azure-acr-login@v1
+        with:
+          azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          azure-subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          acr-name: ${{ env.ACR_NAME }}
+
+      - name: Validate image exists in ACR
+        uses: AshleyHollis/shared-infra/.github/actions/validate-docker-image@v1
+        with:
+          validation-type: acr-exists
+          image-tag: ${{ steps.find-tag.outputs.image_tag }}
+          registry: ${{ env.ACR_NAME }}
+          repository: ${{ env.API_IMAGE_NAME }}
+          fail-if-missing: "true"
+
+  # ===========================================================================
+  # PHASE 2D: TERRAFORM (INFRASTRUCTURE CHANGES ONLY)
+  # ===========================================================================
+  terraform:
+    name: Terraform
+    uses: ./.github/workflows/terraform-deploy.yml
+    needs: [detect-changes]
+    if: |
+      !cancelled() &&
+      ((github.event_name == 'workflow_dispatch' && inputs.run_terraform == true) ||
+       (github.event_name != 'workflow_dispatch' && needs.detect-changes.outputs.infra_changed == 'true'))
+    with:
+      environment: preview
+      terraform-version: ${{ vars.TERRAFORM_VERSION || '1.12.1' }}
+      working-directory: infra/terraform
+      run-plan: true
+      run-apply: ${{ (github.event_name == 'workflow_dispatch' && inputs.apply_terraform == true) || (github.event_name != 'workflow_dispatch' && needs.detect-changes.outputs.infra_changed == 'true') }}
+      require-changes: false
+      post-to-pr: true
+    secrets: inherit
+
+  # ===========================================================================
+  # PHASE 3: CONCURRENCY LIMIT CHECK
+  # ===========================================================================
+  check-concurrency:
+    name: Check Preview Limit
+    runs-on: ubuntu-latest
+    if: |
+      always() && !cancelled() &&
+      (github.event_name != 'workflow_dispatch' || inputs.run_preview == true) &&
+      needs.detect-changes.result == 'success' &&
+      needs.detect-changes.outputs.needs_deployment == 'true' &&
+      needs.wait-for-ci.result == 'success' &&
+      (needs.get-production-tag.result == 'success' || needs.get-production-tag.result == 'skipped')
+    needs: [detect-changes, wait-for-ci, get-production-tag]
+    outputs:
+      can_deploy: ${{ steps.check.outputs.can_deploy }}
+      final_image_tag: >-
+        ${{ needs.wait-for-ci.outputs.image_tag != '' &&
+            needs.wait-for-ci.outputs.image_tag ||
+            needs.get-production-tag.outputs.image_tag }}
+      final_commit_sha: >-
+        ${{ needs.wait-for-ci.outputs.image_tag != '' &&
+            needs.detect-changes.outputs.pr_head_sha ||
+            needs.get-production-tag.outputs.image_commit_sha }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Load shared environment
+        uses: AshleyHollis/shared-infra/.github/actions/load-shared-env@v1
+
+      - name: Check preview concurrency limit
+        id: check
+        uses: AshleyHollis/shared-infra/.github/actions/check-preview-concurrency@v1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-previews: ${{ env.MAX_PREVIEWS }}
+
+      - name: Post queue status
+        if: steps.check.outputs.can_deploy == 'false'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const reasonLines = [
+              `Maximum concurrent previews (${{ env.MAX_PREVIEWS }}) reached.`,
+              'Your preview will deploy when a slot becomes available.',
+              'Close another PR or wait for an existing preview to be cleaned up.'
+            ];
+            const reason = reasonLines.join('\n\n');
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `⏳ **Preview Queued**\n\n${reason}`
+            })
+
+  # ===========================================================================
+  # PHASE 4: COMPUTE PREVIEW URLS
+  # ===========================================================================
+  get-ingress:
+    name: Prepare Preview URLs
+    runs-on: ubuntu-latest
+    if: |
+      always() && !cancelled() &&
+      (github.event_name != 'workflow_dispatch' || inputs.run_preview == true) &&
+      needs.detect-changes.outputs.needs_backend_deployment == 'true' &&
+      needs.check-concurrency.result == 'success' &&
+      needs.check-concurrency.outputs.can_deploy == 'true'
+    needs: [check-concurrency, detect-changes]
+    outputs:
+      preview_url: ${{ steps.compute.outputs.preview-url }}
+      preview_host: ${{ steps.compute.outputs.preview-host }}
+      tls_secret: ${{ steps.compute.outputs.tls-secret }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Load shared environment
+        uses: AshleyHollis/shared-infra/.github/actions/load-shared-env@v1
+
+      - name: Compute Preview URLs
+        id: compute
+        uses: AshleyHollis/shared-infra/.github/actions/compute-preview-urls@v1
+        with:
+          pr-number: ${{ needs.detect-changes.outputs.pr_number }}
+          app-name: ${{ env.APP_NAME }}
+          base-domain: ${{ env.APPS_BASE_DOMAIN }}
+
+  # ===========================================================================
+  # PHASE 4B: SYNC ARGOCD MANIFESTS
+  # ===========================================================================
+  # Apply preview-appset.yaml to ensure ArgoCD Git Generator detects overlay updates
+  # This is critical: changing the YAML in repo doesn't update the cluster automatically
+  sync-argocd-manifests:
+    name: Sync ArgoCD Manifests
+    runs-on: ubuntu-latest
+    needs: [check-concurrency, terraform]
+    if: |
+      always() && !cancelled() &&
+      (github.event_name != 'workflow_dispatch' || inputs.run_preview == true) &&
+      needs.check-concurrency.result == 'success' &&
+      needs.check-concurrency.outputs.can_deploy == 'true' &&
+      (needs.terraform.result != 'failure')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Load shared environment
+        uses: AshleyHollis/shared-infra/.github/actions/load-shared-env@v1
+
+      - name: Setup Azure and AKS
+        uses: AshleyHollis/shared-infra/.github/actions/setup-azure-aks@v1
+        with:
+          azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          azure-subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          resource-group: ${{ vars.AZURE_RESOURCE_GROUP || 'rg-ytsumm-prd' }}
+          cluster-name: ${{ vars.AKS_CLUSTER_NAME || 'aks-ytsumm-prd' }}
+
+      - name: Sync ArgoCD manifests
+        uses: AshleyHollis/shared-infra/.github/actions/sync-argocd-manifests@v1
+        with:
+          mode: apps
+          namespace: ${{ env.NAMESPACE_ARGOCD }}
+          verbose: "true"
+
+  # ===========================================================================
+  # PHASE 5: UPDATE KUBERNETES OVERLAY (Reusable Workflow)
+  # ===========================================================================
+  update-overlay:
+    name: Update Preview Overlay
+    uses: ./.github/workflows/update-k8s-overlay.yml
+    if: |
+      always() && !cancelled() &&
+      (github.event_name != 'workflow_dispatch' || inputs.run_preview == true) &&
+      needs.detect-changes.outputs.needs_backend_deployment == 'true' &&
+      needs.check-concurrency.result == 'success' &&
+      needs.check-concurrency.outputs.can_deploy == 'true' &&
+      needs.get-ingress.result == 'success' &&
+      (needs.terraform.result != 'failure') &&
+      needs.sync-argocd-manifests.result == 'success'
+    needs:
+      [
+        check-concurrency,
+        wait-for-ci,
+        get-ingress,
+        detect-changes,
+        terraform,
+        sync-argocd-manifests,
+      ]
+    with:
+      environment: preview
+      # PR-specific overlay path - each PR gets its own directory
+      overlay-path: k8s/overlays/preview-pr-${{ needs.detect-changes.outputs.pr_number }}
+      image-tag: ${{ needs.check-concurrency.outputs.final_image_tag }}
+      commit-sha: ${{ needs.check-concurrency.outputs.final_commit_sha }}
+      pr-number: ${{ needs.detect-changes.outputs.pr_number }}
+      pr-branch: ${{ github.head_ref }}
+      pr-head-sha: ${{ needs.detect-changes.outputs.pr_head_sha }}
+      preview-host: ${{ needs.get-ingress.outputs.preview_host }}
+      preview-url: ${{ needs.get-ingress.outputs.preview_url }}
+      tls-secret: ${{ needs.get-ingress.outputs.tls_secret }}
+      run-k8s-pull-test: true
+    secrets:
+      AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+      AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+      AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+  # ===========================================================================
+  # PHASE 6: VERIFY DEPLOYMENT (Reusable Workflow)
+  # ===========================================================================
+  verify-deployment:
+    name: Verify Deployment
+    uses: ./.github/workflows/verify-k8s-deployment.yml
+    if: |
+      always() && !cancelled() &&
+      (github.event_name != 'workflow_dispatch' || inputs.run_preview == true) &&
+      needs.detect-changes.outputs.needs_backend_deployment == 'true' &&
+      needs.check-concurrency.result == 'success' &&
+      needs.check-concurrency.outputs.can_deploy == 'true' &&
+      needs.update-overlay.result == 'success'
+    needs: [update-overlay, check-concurrency, get-ingress, detect-changes]
+    with:
+      environment: preview
+      namespace: preview-pr-${{ needs.detect-changes.outputs.pr_number }}
+      argocd-app-name: preview-pr-${{ needs.detect-changes.outputs.pr_number }}
+      expected-image-tag: ${{ needs.check-concurrency.outputs.final_image_tag }}
+      api-url: ${{ needs.get-ingress.outputs.preview_url }}
+      host: ${{ needs.get-ingress.outputs.preview_host }}
+      pr-number: ${{ needs.detect-changes.outputs.pr_number }}
+      max-wait-seconds: "300"
+      auto-recovery: true
+      run-preview-health-check: true
+    secrets:
+      AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+      AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+      AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+  # ===========================================================================
+  # PHASE 7: DEPLOY FRONTEND (Reusable Workflow)
+  # ===========================================================================
+  deploy-frontend-preview:
+    name: Deploy Frontend Preview
+    uses: ./.github/workflows/deploy-frontend-swa.yml
+    if: |
+      always() && !cancelled() &&
+      (github.event_name != 'workflow_dispatch' || inputs.run_preview == true) &&
+      needs.check-concurrency.result == 'success' &&
+      needs.check-concurrency.outputs.can_deploy == 'true' &&
+      (needs.get-ingress.result == 'success' || needs.get-ingress.result == 'skipped')
+    needs: [get-ingress, detect-changes, check-concurrency, wait-for-ci]
+    with:
+      environment: preview
+      ci-run-id: ${{ needs.wait-for-ci.outputs.ci_run_id }}
+      api-url: ${{ needs.get-ingress.outputs.preview_url || 'https://meal-planner.apps.ashleyhollis.com' }}
+      deployment-environment: pr-${{ needs.detect-changes.outputs.pr_number }}
+      pr-number: ${{ needs.detect-changes.outputs.pr_number }}
+      pr-head-sha: ${{ needs.detect-changes.outputs.pr_head_sha }}
+      cleanup-stale-environments: true
+    secrets:
+      AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+      AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+      AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      SWA_DEPLOYMENT_TOKEN: ${{ secrets.SWA_DEPLOYMENT_TOKEN }}
+
+  # ===========================================================================
+  # PHASE 8: POST PREVIEW COMMENT
+  # ===========================================================================
+  post-preview-comment:
+    name: Post Preview Comment
+    runs-on: ubuntu-latest
+    if: >-
+      always() && !cancelled() &&
+      (github.event_name != 'workflow_dispatch' || inputs.run_preview == true) &&
+      needs.check-concurrency.result == 'success' &&
+      needs.check-concurrency.outputs.can_deploy == 'true' &&
+      (needs.verify-deployment.result == 'success' || needs.verify-deployment.result == 'skipped') &&
+      needs.deploy-frontend-preview.result == 'success'
+    needs:
+      - update-overlay
+      - verify-deployment
+      - deploy-frontend-preview
+      - detect-changes
+      - get-ingress
+      - check-concurrency
+      - wait-for-ci
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Load shared environment
+        uses: AshleyHollis/shared-infra/.github/actions/load-shared-env@v1
+
+      - name: Post preview URL to PR
+        uses: AshleyHollis/shared-infra/.github/actions/post-preview-comment@v1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          pr-number: ${{ needs.detect-changes.outputs.pr_number }}
+          preview-url: ${{ needs.get-ingress.outputs.preview_url || needs.deploy-frontend-preview.outputs.static_web_app_url }}
+          image-tag: ${{ needs.wait-for-ci.outputs.image_tag || needs.check-concurrency.outputs.final_image_tag }}
+          commit-sha: ${{ needs.detect-changes.outputs.pr_head_sha || github.sha }}
+          frontend-url: ${{ needs.deploy-frontend-preview.outputs.static_web_app_url }}
+          run-id: ${{ github.run_id }}
+          repository: ${{ github.repository }}
+
+      - name: Create deployment summary
+        uses: AshleyHollis/shared-infra/.github/actions/create-pipeline-summary@v1
+        with:
+          summary-type: preview
+          pr-number: ${{ needs.detect-changes.outputs.pr_number }}
+          preview-url: ${{ needs.get-ingress.outputs.preview_url }}
+          image-tag: ${{ needs.wait-for-ci.outputs.image_tag }}
+          commit-sha: ${{ needs.detect-changes.outputs.pr_head_sha }}
+
+  # ===========================================================================
+  # PHASE 9: E2E TESTS (OPTIONAL)
+  # ===========================================================================
+  e2e-tests:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    needs:
+      - update-overlay
+      - verify-deployment
+      - deploy-frontend-preview
+      - post-preview-comment
+      - detect-changes
+      - get-ingress
+      - check-concurrency
+    if: >-
+      always() && !cancelled() &&
+      (github.event_name == 'pull_request' || (inputs.run_preview == true && inputs.run_e2e != false)) &&
+      needs.check-concurrency.result == 'success' &&
+      needs.check-concurrency.outputs.can_deploy == 'true' &&
+      needs.verify-deployment.result == 'success' &&
+      needs.get-ingress.outputs.preview_url != ''
+    outputs:
+      result: ${{ steps.run-tests.outcome }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Load shared environment
+        uses: AshleyHollis/shared-infra/.github/actions/load-shared-env@v1
+
+      - name: Setup Node.js
+        uses: AshleyHollis/shared-infra/.github/actions/setup-node@v1
+        with:
+          node-version: "22"
+          working-directory: apps/web
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Retrieve Auth0 test credentials from Key Vault
+        uses: azure/CLI@v2
+        with:
+          inlineScript: |
+            AUTH0_USER_EMAIL=$(az keyvault secret show --vault-name "kv-ytsumm-prd" --name "meal-planner-auth0-user-test-email" --query "value" -o tsv)
+            AUTH0_USER_PASSWORD=$(az keyvault secret show --vault-name "kv-ytsumm-prd" --name "meal-planner-auth0-user-test-password" --query "value" -o tsv)
+
+            echo "AUTH0_USER_TEST_EMAIL=$AUTH0_USER_EMAIL" >> $GITHUB_ENV
+            echo "::add-mask::$AUTH0_USER_PASSWORD"
+            echo "AUTH0_USER_TEST_PASSWORD=$AUTH0_USER_PASSWORD" >> $GITHUB_ENV
+
+      - name: Wait for API to be ready
+        uses: AshleyHollis/shared-infra/.github/actions/health-check@v1
+        with:
+          url: ${{ needs.get-ingress.outputs.preview_url }}/health/live
+          max-attempts: "20"
+          interval-seconds: "15"
+          timeout-seconds: "5"
+          expected-status: "200"
+          service-name: "Preview API (E2E)"
+
+      - name: Determine E2E base URL
+        id: base-url
+        shell: bash
+        run: |
+          base_url="${{ needs.deploy-frontend-preview.outputs.static_web_app_url }}"
+          if [[ -z "$base_url" ]]; then
+            base_url="${{ needs.get-ingress.outputs.preview_url }}"
+          fi
+          echo "base_url=$base_url" >> "$GITHUB_OUTPUT"
+
+      - name: Run E2E tests
+        id: run-tests
+        uses: AshleyHollis/shared-infra/.github/actions/run-playwright-tests@v1
+        env:
+          USE_EXTERNAL_SERVER: "true"
+          BASE_URL: ${{ steps.base-url.outputs.base_url }}
+          NEXT_PUBLIC_API_URL: ${{ needs.get-ingress.outputs.preview_url }}
+          API_URL: ${{ needs.get-ingress.outputs.preview_url }}
+          AUTH0_USER_TEST_EMAIL: ${{ env.AUTH0_USER_TEST_EMAIL }}
+          AUTH0_USER_TEST_PASSWORD: ${{ env.AUTH0_USER_TEST_PASSWORD }}
+
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report-pr-${{ needs.detect-changes.outputs.pr_number }}
+          path: apps/web/playwright-report/
+          retention-days: 7
+
+      - name: Comment E2E results on PR
+        if: always()
+        uses: AshleyHollis/shared-infra/.github/actions/post-e2e-results@v1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          pr-number: ${{ needs.detect-changes.outputs.pr_number }}
+          test-outcome: ${{ steps.run-tests.outcome }}
+          preview-url: ${{ needs.get-ingress.outputs.preview_url }}
+          commit-sha: ${{ needs.detect-changes.outputs.pr_head_sha }}
+          run-id: ${{ github.run_id }}
+          repository: ${{ github.repository }}
+
+  # ===========================================================================
+  # PHASE 10: FINAL STATUS CHECK
+  # ===========================================================================
+  preview-status-check:
+    name: Preview Status Check
+    runs-on: ubuntu-latest
+    needs:
+      - detect-changes
+      - wait-for-ci
+      - update-overlay
+      - verify-deployment
+      - deploy-frontend-preview
+      - e2e-tests
+      - get-ingress
+      - terraform
+      - check-concurrency
+    if: always()
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Load shared environment
+        uses: AshleyHollis/shared-infra/.github/actions/load-shared-env@v1
+
+      - name: Write execution rationale
+        env:
+          PLAN_SUMMARY: ${{ needs.terraform.outputs.plan-summary }}
+        run: |
+          {
+            echo "## Preview Execution Rationale"
+            echo ""
+            echo "- Needs deployment: ${{ needs.detect-changes.outputs.needs_deployment }}"
+            echo "- Needs image build: ${{ needs.detect-changes.outputs.needs_image_build }}"
+            echo "- Infra changed: ${{ needs.detect-changes.outputs.infra_changed }}"
+            terraform_plan_changes="n/a"
+            if [[ -n "$PLAN_SUMMARY" ]]; then
+              terraform_plan_changes="$PLAN_SUMMARY"
+            fi
+            terraform_plan_reason="not requested"
+            if [[ "${{ github.event_name }}" == 'workflow_dispatch' && "${{ inputs.run_terraform }}" == 'true' ]]; then
+              terraform_plan_reason="manual request"
+            elif [[ "${{ needs.detect-changes.outputs.infra_changed }}" == 'true' ]]; then
+              terraform_plan_reason="infra changes"
+            fi
+            wait_reason="no deployment"
+            if [[ "${{ needs.detect-changes.outputs.needs_deployment }}" == 'true' ]]; then
+              wait_reason="deployment needed"
+            fi
+            echo "- Terraform plan: ${{ needs.terraform.result }}"
+            echo "  changes: ${terraform_plan_changes}"
+            echo "  reason: ${terraform_plan_reason}"
+            echo "- Terraform apply: ${{ needs.terraform.result }}"
+            echo "- Wait for CI: ${{ needs.wait-for-ci.result }}"
+            echo "  reason: ${wait_reason}"
+            echo "- Concurrency gate: ${{ needs.check-concurrency.outputs.can_deploy || 'n/a' }}"
+            echo "- Overlay update: ${{ needs.update-overlay.result }}"
+            echo "- Backend verify: ${{ needs.verify-deployment.result }}"
+            echo "- Frontend deploy: ${{ needs.deploy-frontend-preview.result }}"
+            echo "- E2E tests: ${{ needs.e2e-tests.result }}"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Check preview pipeline status
+        uses: AshleyHollis/shared-infra/.github/actions/check-preview-status@v1
+        with:
+          needs-image-build: ${{ needs.detect-changes.outputs.needs_image_build }}
+          needs-deployment: ${{ needs.detect-changes.outputs.needs_deployment }}
+          wait-for-ci-result: ${{ needs.wait-for-ci.result }}
+          update-overlay-result: ${{ needs.update-overlay.result }}
+          verify-deployment-result: ${{ needs.verify-deployment.result }}
+          deploy-frontend-result: ${{ needs.deploy-frontend-preview.result }}
+          e2e-tests-result: ${{ needs.e2e-tests.result }}
+          api-url-configured: ${{ needs.get-ingress.outputs.preview_url }}

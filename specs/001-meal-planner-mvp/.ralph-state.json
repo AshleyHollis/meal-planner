@@ -1,0 +1,32 @@
+{
+  "source": "plan",
+  "name": "001-meal-planner-mvp",
+  "basePath": "./specs/001-meal-planner-mvp",
+  "phase": "execution",
+  "taskIndex": 106,
+  "totalTasks": 111,
+  "taskIteration": 1,
+  "maxTaskIterations": 5,
+  "globalIteration": 1,
+  "maxGlobalIterations": 100,
+  "commitSpec": false,
+  "quickMode": true,
+  "discoveredSkills": [
+    {
+      "name": "communication-style",
+      "matchedAt": "post-research",
+      "invoked": true
+    },
+    {
+      "name": "smart-ralph",
+      "matchedAt": "post-research",
+      "invoked": true
+    },
+    {
+      "name": "spec-workflow",
+      "matchedAt": "post-research",
+      "invoked": true
+    }
+  ],
+  "awaitingApproval": false
+}

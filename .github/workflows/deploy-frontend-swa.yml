@@ -1,0 +1,254 @@
+# =============================================================================
+# Deploy Frontend to Azure Static Web Apps (Reusable Workflow)
+# =============================================================================
+# Unified frontend deployment workflow for both production and preview.
+# Extracts common patterns from deploy-prod.yml and preview.yml to reduce
+# duplication and ensure consistent SWA deployments.
+#
+# WORKFLOW STEPS:
+#   1. Checkout code (with proper ref for preview)
+#   2. Load shared environment
+#   3. Verify SWA token is configured
+#   4. (Preview only) Azure login for SWA cleanup
+#   5. (Preview only) Cleanup stale SWA environments
+#   6. Deploy frontend with CI artifact
+#   7. Verify frontend deployment with health check
+#
+# USAGE:
+#   Production:
+#     uses: ./.github/workflows/deploy-frontend-swa.yml
+#     with:
+#       environment: prod
+#       ci-run-id: ${{ needs.wait-for-ci.outputs.ci_run_id }}
+#       api-url: https://api.meal-planner.example.com
+#       deployment-environment: default
+#
+#   Preview:
+#     uses: ./.github/workflows/deploy-frontend-swa.yml
+#     with:
+#       environment: preview
+#       ci-run-id: ${{ needs.wait-for-ci.outputs.ci_run_id }}
+#       api-url: https://pr-42.meal-planner.apps.ashleyhollis.com
+#       deployment-environment: pr-42
+#       pr-number: '42'
+#       pr-head-sha: abc1234567890
+#       cleanup-stale-environments: 'true'
+# =============================================================================
+
+name: Deploy Frontend to SWA
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: "Environment type: prod or preview"
+        required: true
+        type: string
+      ci-run-id:
+        description: "CI workflow run ID to fetch build artifact"
+        required: true
+        type: string
+      api-url:
+        description: "API URL for runtime configuration"
+        required: true
+        type: string
+      deployment-environment:
+        description: "SWA deployment environment (default for prod, pr-N for preview)"
+        required: true
+        type: string
+      # Preview-specific inputs
+      pr-number:
+        description: "PR number (preview only)"
+        required: false
+        type: string
+        default: ""
+      pr-head-sha:
+        description: "PR head SHA for checkout (preview only)"
+        required: false
+        type: string
+        default: ""
+      cleanup-stale-environments:
+        description: "Cleanup stale SWA environments before deploy (preview only)"
+        required: false
+        type: boolean
+        default: false
+
+    outputs:
+      static_web_app_url:
+        description: "The deployed SWA URL"
+        value: ${{ jobs.deploy.outputs.static_web_app_url }}
+
+    secrets:
+      AZURE_CLIENT_ID:
+        required: true
+      AZURE_TENANT_ID:
+        required: true
+      AZURE_SUBSCRIPTION_ID:
+        required: true
+      SWA_DEPLOYMENT_TOKEN:
+        required: true
+
+jobs:
+  deploy:
+    name: Deploy Frontend (${{ inputs.environment }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    outputs:
+      static_web_app_url: ${{ steps.swa-url.outputs.static_web_app_url }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.pr-head-sha != '' && inputs.pr-head-sha || github.sha }}
+
+      # Fail-fast if PR has been closed to avoid false failures and wasted resources
+      - name: Check if PR is still open
+        if: inputs.environment == 'preview' && inputs.pr-number != ''
+        uses: AshleyHollis/shared-infra/.github/actions/check-pr-open@v1
+        with:
+          pr-number: ${{ inputs.pr-number }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: false
+
+      - name: Load shared environment
+        uses: AshleyHollis/shared-infra/.github/actions/load-shared-env@v1
+
+      - name: Verify SWA token is configured
+        uses: AshleyHollis/shared-infra/.github/actions/verify-secret@v1
+        with:
+          secret-name: "SWA_DEPLOYMENT_TOKEN"
+          secret-value: ${{ secrets.SWA_DEPLOYMENT_TOKEN }}
+
+      # Preview-only: Azure login for SWA cleanup operations
+      - name: Azure Login for SWA cleanup
+        if: inputs.cleanup-stale-environments
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      # Preview-only: Cleanup stale environments before deploy
+      - name: Cleanup stale SWA environments
+        if: inputs.cleanup-stale-environments
+        id: cleanup-stale
+        continue-on-error: true
+        uses: AshleyHollis/shared-infra/.github/actions/cleanup-stale-swa-environments@v1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          swa-name: ${{ vars.SWA_NAME || 'swa-ytsumm-prd' }}
+          resource-group: ${{ vars.AZURE_RESOURCE_GROUP || 'rg-ytsumm-prd' }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          dry-run: "false"
+          min-age-hours: "1"
+          max-prs-to-check: "50"
+
+      - name: Report cleanup results
+        if: inputs.cleanup-stale-environments && steps.cleanup-stale.outputs.deleted-count != '0'
+        run: |
+          echo "✅ Cleaned up ${{ steps.cleanup-stale.outputs.deleted-count }} stale SWA environment(s)"
+          echo "💡 Deleted environments for PRs: ${{ steps.cleanup-stale.outputs.stale-prs }}"
+
+      - name: Deploy frontend with CI artifact
+        id: deploy-frontend
+        uses: AshleyHollis/shared-infra/.github/actions/deploy-frontend-swa@v1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          ci-run-id: ${{ inputs.ci-run-id }}
+          api-url: ${{ inputs.api-url }}
+          swa-token: ${{ secrets.SWA_DEPLOYMENT_TOKEN }}
+          app-location: apps/web
+          runtime-config-path: apps/web/public/runtime-config.js
+          output_location: ""
+          production-branch: master
+          deployment-environment: ${{ inputs.deployment-environment }}
+          verbose: ${{ inputs.environment == 'preview' && 'true' || 'false' }}
+
+      # Configure Auth0 AFTER deploy (cleanup may delete the preview environment,
+      # and the deploy step recreates it). SWA restarts the server when settings change.
+      - name: Azure Login (SWA app settings)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Configure SWA app settings from Key Vault
+        continue-on-error: true
+        shell: bash
+        run: |
+          KV_NAME="${{ vars.KEY_VAULT_NAME || 'kv-ytsumm-prd' }}"
+          SWA_NAME="${{ vars.SWA_NAME || 'swa-ytsumm-prd' }}"
+          RG="${{ vars.AZURE_RESOURCE_GROUP || 'rg-ytsumm-prd' }}"
+          # SWA CLI normalizes environment names by removing hyphens (pr-1 → pr1)
+          DEPLOY_ENV=$(echo "${{ inputs.deployment-environment }}" | tr -d '-')
+
+          if [[ "${{ inputs.environment }}" == "prod" ]]; then
+            AUTH0_SECRET=$(az keyvault secret show --vault-name "$KV_NAME" --name "meal-planner-auth0-session-secret" --query value -o tsv)
+            AUTH0_DOMAIN=$(az keyvault secret show --vault-name "$KV_NAME" --name "meal-planner-auth0-domain" --query value -o tsv)
+            AUTH0_CLIENT_ID=$(az keyvault secret show --vault-name "$KV_NAME" --name "meal-planner-auth0-client-id" --query value -o tsv)
+            AUTH0_CLIENT_SECRET=$(az keyvault secret show --vault-name "$KV_NAME" --name "meal-planner-auth0-client-secret" --query value -o tsv)
+            AUTH0_AUDIENCE=$(az keyvault secret show --vault-name "$KV_NAME" --name "meal-planner-auth0-audience" --query value -o tsv)
+            ENV_FLAG=""
+          else
+            AUTH0_SECRET=$(az keyvault secret show --vault-name "$KV_NAME" --name "meal-planner-auth0-preview-session-secret" --query value -o tsv)
+            AUTH0_DOMAIN=$(az keyvault secret show --vault-name "$KV_NAME" --name "meal-planner-auth0-preview-domain" --query value -o tsv)
+            AUTH0_CLIENT_ID=$(az keyvault secret show --vault-name "$KV_NAME" --name "meal-planner-auth0-preview-client-id" --query value -o tsv)
+            AUTH0_CLIENT_SECRET=$(az keyvault secret show --vault-name "$KV_NAME" --name "meal-planner-auth0-preview-client-secret" --query value -o tsv)
+            AUTH0_AUDIENCE=$(az keyvault secret show --vault-name "$KV_NAME" --name "meal-planner-auth0-audience" --query value -o tsv)
+            ENV_FLAG="--environment-name ${DEPLOY_ENV}"
+          fi
+
+          # Use the deployed URL for preview (includes -pr1 suffix), default hostname for prod
+          DEPLOYED_URL="${{ steps.deploy-frontend.outputs.static_web_app_url }}"
+          if [[ -n "$DEPLOYED_URL" ]]; then
+            APP_URL="$DEPLOYED_URL"
+          else
+            SWA_HOSTNAME=$(az staticwebapp show --name "$SWA_NAME" --resource-group "$RG" --query defaultHostname -o tsv)
+            APP_URL="https://${SWA_HOSTNAME}"
+          fi
+
+          # Auth0 v4 env var names: APP_BASE_URL (was AUTH0_BASE_URL),
+          # AUTH0_DOMAIN (was AUTH0_ISSUER_BASE_URL, domain only — no https://)
+          az staticwebapp appsettings set \
+            --name "$SWA_NAME" \
+            --resource-group "$RG" \
+            $ENV_FLAG \
+            --setting-names \
+              "AUTH0_SECRET=${AUTH0_SECRET}" \
+              "APP_BASE_URL=${APP_URL}" \
+              "AUTH0_DOMAIN=${AUTH0_DOMAIN}" \
+              "AUTH0_CLIENT_ID=${AUTH0_CLIENT_ID}" \
+              "AUTH0_CLIENT_SECRET=${AUTH0_CLIENT_SECRET}" \
+              "AUTH0_AUDIENCE=${AUTH0_AUDIENCE}"
+
+          echo "✅ SWA app settings configured for ${{ inputs.environment }} (env: ${DEPLOY_ENV})"
+
+      - name: Resolve SWA URL
+        id: swa-url
+        shell: bash
+        run: |
+          # Prefer the deployed URL from the SWA CLI (correct for preview environments)
+          DEPLOYED_URL="${{ steps.deploy-frontend.outputs.static_web_app_url }}"
+          if [[ -n "$DEPLOYED_URL" ]]; then
+            echo "static_web_app_url=$DEPLOYED_URL" >> "$GITHUB_OUTPUT"
+            echo "SWA URL (from deploy): $DEPLOYED_URL"
+          else
+            # Fallback to default hostname
+            SWA_NAME="${{ vars.SWA_NAME || 'swa-ytsumm-prd' }}"
+            RG="${{ vars.AZURE_RESOURCE_GROUP || 'rg-ytsumm-prd' }}"
+            SWA_HOSTNAME=$(az staticwebapp show --name "$SWA_NAME" --resource-group "$RG" --query defaultHostname -o tsv)
+            echo "static_web_app_url=https://${SWA_HOSTNAME}" >> "$GITHUB_OUTPUT"
+            echo "SWA URL (fallback): https://${SWA_HOSTNAME}"
+          fi
+
+      - name: Verify frontend deployment
+        if: steps.swa-url.outputs.static_web_app_url != ''
+        uses: AshleyHollis/shared-infra/.github/actions/health-check@v1
+        with:
+          url: ${{ steps.swa-url.outputs.static_web_app_url }}
+          max-attempts: ${{ env.HEALTH_CHECK_MAX_ATTEMPTS }}
+          interval-seconds: ${{ env.HEALTH_CHECK_INTERVAL }}
+          timeout-seconds: ${{ env.HEALTH_CHECK_TIMEOUT }}
+          expected-status: "200"
+          service-name: "${{ inputs.environment == 'prod' && 'Production' || 'Preview' }} Web"

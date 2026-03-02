@@ -1,0 +1,323 @@
+"""Meal plan service – create, read, update plans and slots."""
+
+from __future__ import annotations
+
+import json
+from datetime import UTC, datetime
+from uuid import UUID
+
+from fastapi import HTTPException, status
+from shared.config import get_settings
+from shared.db.models.meal_plan import MealPlan, MealSlot
+from shared.logging.config import get_logger
+from shared.queue.client import enqueue_message
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from ..models.meal_plan import (
+    CreateMealPlan,
+    UpdateMealSlot,
+    UpdatePlanStatus,
+    UpdateSlotStatus,
+)
+
+logger = get_logger(__name__)
+
+# LLM defaults for cook-time adaptation
+_ADAPT_TIMEOUT = 10
+_ADAPT_MAX_TOKENS = 2048
+_MODELS = {
+    "anthropic": "claude-sonnet-4-20250514",
+    "openai": "gpt-4o",
+}
+
+_ADAPT_PROMPT_TEMPLATE = """You are a cooking assistant. Adapt the following recipe for a {effort_level} cooking session.
+
+EFFORT LEVELS:
+- quick: Simplify steps, reduce cook time, suggest shortcuts (e.g. pre-made ingredients, microwave)
+- standard: Keep the recipe as-is with minor optimizations
+- elaborate: Add extra steps for better flavor (e.g. marinating, toasting spices, homemade sauces)
+
+RECIPE: {title}
+Description: {description}
+
+CURRENT STEPS:
+{steps_text}
+
+AVAILABLE EQUIPMENT:
+{equipment_text}
+
+Respond ONLY with a JSON array of adapted steps. Each step object must have:
+- "step_order": int (1-based)
+- "instruction": string
+- "duration_min": int or null
+
+Example: [{{"step_order": 1, "instruction": "Preheat oven to 200C", "duration_min": 5}}]
+
+Adapt the recipe now."""
+
+
+class MealPlanService:
+    """Household-scoped meal plan operations."""
+
+    def __init__(self, session: AsyncSession, household_id: UUID) -> None:
+        self.session = session
+        self.household_id = household_id
+
+    async def create_plan(
+        self,
+        data: CreateMealPlan,
+    ) -> MealPlan:
+        """Create a draft meal plan and enqueue generation request.
+
+        Raises:
+            HTTPException 409: If the household already has an active or draft plan.
+        """
+        existing = await self.session.execute(
+            select(MealPlan).where(
+                MealPlan.household_id == self.household_id,
+                MealPlan.status.in_(["draft", "active"]),
+            )
+        )
+        if existing.scalar_one_or_none() is not None:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Household already has an active or in-progress meal plan",
+            )
+
+        plan = MealPlan(
+            household_id=self.household_id,
+            week_start_date=data.week_start_date,
+            status="draft",
+        )
+        self.session.add(plan)
+        await self.session.flush()
+
+        enqueue_message(
+            {
+                "meal_plan_id": str(plan.id),
+                "household_id": str(self.household_id),
+                "week_start_date": data.week_start_date.isoformat(),
+            }
+        )
+
+        return plan
+
+    async def get_plan(
+        self,
+        plan_id: UUID,
+    ) -> MealPlan | None:
+        """Return a single meal plan with slots, or None if not found."""
+        stmt = select(MealPlan).where(
+            MealPlan.id == plan_id,
+            MealPlan.household_id == self.household_id,
+        )
+        result = await self.session.execute(stmt)
+        return result.scalar_one_or_none()
+
+    async def get_active_plan(self) -> MealPlan | None:
+        """Return the current active meal plan for the household."""
+        stmt = select(MealPlan).where(
+            MealPlan.household_id == self.household_id,
+            MealPlan.status == "active",
+        )
+        result = await self.session.execute(stmt)
+        return result.scalar_one_or_none()
+
+    async def list_plans(self) -> list[MealPlan]:
+        """Return all meal plans for the household, newest first."""
+        stmt = (
+            select(MealPlan)
+            .where(MealPlan.household_id == self.household_id)
+            .order_by(MealPlan.created_at.desc())
+        )
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())
+
+    async def update_slot(
+        self,
+        plan_id: UUID,
+        slot_id: UUID,
+        data: UpdateMealSlot,
+    ) -> MealSlot | None:
+        """Update a meal slot's recipe. Returns None if not found."""
+        stmt = (
+            select(MealSlot)
+            .join(MealPlan)
+            .where(
+                MealSlot.id == slot_id,
+                MealSlot.meal_plan_id == plan_id,
+                MealPlan.household_id == self.household_id,
+            )
+        )
+        result = await self.session.execute(stmt)
+        slot = result.scalar_one_or_none()
+        if slot is None:
+            return None
+
+        updates = data.model_dump(exclude_unset=True)
+        for field, value in updates.items():
+            setattr(slot, field, value)
+        await self.session.flush()
+        return slot
+
+    async def update_slot_status(
+        self,
+        plan_id: UUID,
+        slot_id: UUID,
+        data: UpdateSlotStatus,
+    ) -> MealSlot | None:
+        """Mark a slot as cooked/skipped with timestamp."""
+        stmt = (
+            select(MealSlot)
+            .join(MealPlan)
+            .where(
+                MealSlot.id == slot_id,
+                MealSlot.meal_plan_id == plan_id,
+                MealPlan.household_id == self.household_id,
+            )
+        )
+        result = await self.session.execute(stmt)
+        slot = result.scalar_one_or_none()
+        if slot is None:
+            return None
+
+        slot.status = data.status
+        if data.status in ("cooked", "skipped"):
+            slot.cooked_at = datetime.now(UTC)
+        else:
+            slot.cooked_at = None
+        await self.session.flush()
+        return slot
+
+    async def update_plan_status(
+        self,
+        plan_id: UUID,
+        data: UpdatePlanStatus,
+    ) -> MealPlan | None:
+        """Transition plan status: draft -> active -> completed."""
+        stmt = select(MealPlan).where(
+            MealPlan.id == plan_id,
+            MealPlan.household_id == self.household_id,
+        )
+        result = await self.session.execute(stmt)
+        plan = result.scalar_one_or_none()
+        if plan is None:
+            return None
+
+        plan.status = data.status
+        await self.session.flush()
+        return plan
+
+    @staticmethod
+    def adapt_recipe(
+        recipe: dict,
+        effort_level: str,
+        equipment: list[dict] | None = None,
+    ) -> dict:
+        """Adapt recipe steps based on effort level via direct LLM call.
+
+        Args:
+            recipe: Recipe data dict with title, description, steps.
+            effort_level: One of "quick", "standard", "elaborate".
+            equipment: Optional list of equipment dicts with name/modes.
+
+        Returns:
+            Recipe dict with adapted steps merged in.
+        """
+        steps_text = "\n".join(
+            f"{s.get('step_order', i + 1)}. {s.get('instruction', '')}"
+            f" ({s.get('duration_min', '?')} min)"
+            for i, s in enumerate(recipe.get("steps", []))
+        )
+
+        equipment_text = (
+            ", ".join(e.get("name", "") for e in equipment)
+            if equipment
+            else "Standard kitchen equipment"
+        )
+
+        prompt = _ADAPT_PROMPT_TEMPLATE.format(
+            effort_level=effort_level,
+            title=recipe.get("title", "Untitled"),
+            description=recipe.get("description", ""),
+            steps_text=steps_text or "No steps provided",
+            equipment_text=equipment_text,
+        )
+
+        raw = _call_llm(prompt)
+        adapted_steps = _parse_adapted_steps(raw)
+
+        # Merge adapted steps back into recipe, preserving everything else
+        result = dict(recipe)
+        result["steps"] = adapted_steps
+        return result
+
+
+def _call_llm(prompt: str) -> str:
+    """Call the configured LLM provider synchronously. Direct call for <10s adaptation."""
+    settings = get_settings()
+    provider = settings.llm.provider
+    api_key = settings.llm.api_key
+
+    logger.info("adapt_llm_call_start", provider=provider)
+
+    if provider == "anthropic":
+        import anthropic
+
+        client = anthropic.Anthropic(api_key=api_key, timeout=_ADAPT_TIMEOUT)
+        response = client.messages.create(
+            model=_MODELS["anthropic"],
+            max_tokens=_ADAPT_MAX_TOKENS,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        text = response.content[0].text
+    elif provider == "openai":
+        import openai
+
+        client = openai.OpenAI(api_key=api_key, timeout=_ADAPT_TIMEOUT)
+        response = client.chat.completions.create(
+            model=_MODELS["openai"],
+            max_tokens=_ADAPT_MAX_TOKENS,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        text = response.choices[0].message.content or ""
+    else:
+        msg = f"Unsupported LLM provider: {provider}"
+        raise ValueError(msg)
+
+    logger.info("adapt_llm_call_complete", provider=provider)
+    return text
+
+
+def _parse_adapted_steps(raw: str) -> list[dict]:
+    """Parse LLM response into a list of step dicts.
+
+    Handles cases where the LLM wraps JSON in markdown code fences.
+    """
+    text = raw.strip()
+    # Strip markdown code fences if present
+    if text.startswith("```"):
+        lines = text.split("\n")
+        # Remove first line (```json or ```) and last line (```)
+        lines = [ln for ln in lines if not ln.strip().startswith("```")]
+        text = "\n".join(lines)
+
+    try:
+        steps = json.loads(text)
+    except json.JSONDecodeError:
+        logger.warning("adapt_parse_failed", raw_length=len(raw))
+        return []
+
+    if not isinstance(steps, list):
+        return []
+
+    return [
+        {
+            "step_order": s.get("step_order", i + 1),
+            "instruction": s.get("instruction", ""),
+            "duration_min": s.get("duration_min"),
+        }
+        for i, s in enumerate(steps)
+        if isinstance(s, dict)
+    ]

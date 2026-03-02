@@ -1,0 +1,160 @@
+# =============================================================================
+# Preview Overlay
+# =============================================================================
+# Template for PR-based preview environments
+# Variables substituted by generate_preview_kustomization.sh:
+#   PR_NUMBER, COMMIT_SHA, SWA_URL
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: preview-pr-PLACEHOLDER
+
+resources:
+  - ../../base
+
+images:
+  - name: meal-planner-api
+    newName: acrytsummprd.azurecr.io/meal-planner-api
+    newTag: pr-PLACEHOLDER
+  - name: meal-planner-worker
+    newName: acrytsummprd.azurecr.io/meal-planner-worker
+    newTag: pr-PLACEHOLDER
+
+patches:
+  # ExternalSecret patches - use ClusterSecretStore for preview namespaces
+  - target:
+      kind: ExternalSecret
+      name: db-credentials
+    patch: |-
+      apiVersion: external-secrets.io/v1beta1
+      kind: ExternalSecret
+      metadata:
+        name: db-credentials
+      spec:
+        secretStoreRef:
+          kind: ClusterSecretStore
+          name: azure-keyvault-cluster
+
+  - target:
+      kind: ExternalSecret
+      name: storage-credentials
+    patch: |-
+      apiVersion: external-secrets.io/v1beta1
+      kind: ExternalSecret
+      metadata:
+        name: storage-credentials
+      spec:
+        secretStoreRef:
+          kind: ClusterSecretStore
+          name: azure-keyvault-cluster
+
+  - target:
+      kind: ExternalSecret
+      name: llm-credentials
+    patch: |-
+      apiVersion: external-secrets.io/v1beta1
+      kind: ExternalSecret
+      metadata:
+        name: llm-credentials
+      spec:
+        secretStoreRef:
+          kind: ClusterSecretStore
+          name: azure-keyvault-cluster
+
+  - target:
+      kind: ExternalSecret
+      name: auth0-credentials
+    patch: |-
+      apiVersion: external-secrets.io/v1beta1
+      kind: ExternalSecret
+      metadata:
+        name: auth0-credentials
+      spec:
+        secretStoreRef:
+          kind: ClusterSecretStore
+          name: azure-keyvault-cluster
+
+  # ConfigMap patch - preview environment
+  - target:
+      version: v1
+      kind: ConfigMap
+      name: meal-planner-config
+    patch: |-
+      apiVersion: v1
+      kind: ConfigMap
+      metadata:
+        name: meal-planner-config
+      data:
+        ENVIRONMENT: "preview"
+        LOG_LEVEL: "DEBUG"
+
+  # HTTPRoute patch - PR-specific hostname
+  - target:
+      group: gateway.networking.k8s.io
+      version: v1
+      kind: HTTPRoute
+      name: api-httproute
+    patch: |-
+      apiVersion: gateway.networking.k8s.io/v1
+      kind: HTTPRoute
+      metadata:
+        name: api-httproute
+        annotations:
+          external-dns.alpha.kubernetes.io/hostname: api-pr-PLACEHOLDER.meal-planner.apps.ashleyhollis.com
+      spec:
+        hostnames:
+        - "api-pr-PLACEHOLDER.meal-planner.apps.ashleyhollis.com"
+
+  # Single replica for all preview deployments
+  - target:
+      kind: Deployment
+      labelSelector: app.kubernetes.io/component
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 1
+
+  # Reduced resources for preview API
+  - target:
+      kind: Deployment
+      name: api
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/resources
+        value:
+          requests:
+            cpu: 50m
+            memory: 128Mi
+          limits:
+            cpu: 200m
+            memory: 256Mi
+
+  # Reduced resources for preview worker
+  - target:
+      kind: Deployment
+      labelSelector: app.kubernetes.io/component=worker
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/resources
+        value:
+          requests:
+            cpu: 25m
+            memory: 64Mi
+          limits:
+            cpu: 150m
+            memory: 256Mi
+
+  # Reduced resources for preview migration job
+  - target:
+      kind: Job
+      name: db-migration
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/resources
+        value:
+          requests:
+            cpu: 25m
+            memory: 64Mi
+          limits:
+            cpu: 150m
+            memory: 256Mi

@@ -1,0 +1,23 @@
+{
+  "universe_usage_history": [
+    {
+      "universe": "Alien",
+      "used_at": "2026-03-02T08:27:00Z",
+      "repo": "AshleyHollis/meal-planner"
+    }
+  ],
+  "assignment_cast_snapshots": {
+    "assignment-001": {
+      "assignment_id": "assignment-001",
+      "universe": "Alien",
+      "created_at": "2026-03-02T08:27:00Z",
+      "agents": {
+        "dallas": "Lead",
+        "ripley": "Backend Dev",
+        "kane": "Frontend Dev",
+        "parker": "DevOps",
+        "lambert": "Tester"
+      }
+    }
+  }
+}

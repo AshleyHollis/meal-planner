@@ -1,0 +1,8 @@
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Well-known non-secret values"
+paths = [
+  '''services/shared/shared/queue/client\.py''',
+]

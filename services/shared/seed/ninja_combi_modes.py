@@ -1,0 +1,16 @@
+NINJA_COMBI_MODES = [
+    {"name": "Air Crisp", "category": "air", "min_temp": 150, "max_temp": 230},
+    {"name": "Air Fry", "category": "air", "min_temp": 150, "max_temp": 210},
+    {"name": "Bake", "category": "oven", "min_temp": 120, "max_temp": 230},
+    {"name": "Combi Cook", "category": "combi", "min_temp": 100, "max_temp": 230},
+    {"name": "Combi Crisp", "category": "combi", "min_temp": 100, "max_temp": 230},
+    {"name": "Dehydrate", "category": "dehydrate", "min_temp": 35, "max_temp": 90},
+    {"name": "Grill", "category": "grill", "min_temp": None, "max_temp": None},
+    {"name": "Pizza", "category": "oven", "min_temp": 180, "max_temp": 230},
+    {"name": "Proof", "category": "proof", "min_temp": 25, "max_temp": 40},
+    {"name": "Sear/Saute", "category": "stovetop", "min_temp": None, "max_temp": None},
+    {"name": "Slow Cook", "category": "slow", "min_temp": None, "max_temp": None},
+    {"name": "Steam", "category": "steam", "min_temp": 100, "max_temp": 100},
+    {"name": "Steam Meals", "category": "steam", "min_temp": 100, "max_temp": 230},
+    {"name": "Toast", "category": "toast", "min_temp": None, "max_temp": None},
+]
