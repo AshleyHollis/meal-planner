@@ -78,7 +78,12 @@ setup('seed test data', async ({ request, baseURL }) => {
       if (data.length > 0) {
         ingredients.push(data[0]);
         console.log(`[seed-data]   Found: ${data[0].name} (${data[0].id})`);
+      } else {
+        console.log(`[seed-data]   Search "${name}": 200 OK but 0 results`);
       }
+    } else {
+      const body = await resp.text().catch(() => '');
+      console.log(`[seed-data]   Search "${name}": ${resp.status()} ${body.substring(0, 200)}`);
     }
   }
 
