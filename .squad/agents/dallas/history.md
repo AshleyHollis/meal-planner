@@ -24,3 +24,14 @@
 ### 2026-03-02: PR #1 Description Finalized
 
 Updated PR #1 body with final AC checklist (8 items, all checked), updated test plan (CI + pre-commit.ci checked, E2E summary added), and Known Limitations section (3 items). Used `gh pr edit --body-file` via temp file for clean markdown. PR is now review-ready with full traceability.
+
+### 2026-03-02: 003-personalization-ai Spec Created
+
+Wrote `specs/003-personalization-ai/spec.md` covering 4 user stories (P6→US1, P7→US2, P17→US3, P22→US4). Key decisions:
+
+- **MemberPreference as single polymorphic model** — one table with a `type` discriminator (allergy/dislike/like/dietary_restriction) rather than 4 separate tables. Keeps the schema simple and the preference CRUD unified.
+- **Ratings on MealSlot, not Recipe** — same recipe can be rated differently depending on when/how it was cooked. Context-specific feedback is more useful for AI tuning.
+- **Allergies are hard blocks, dislikes are soft** — this distinction is critical for safety. The spec explicitly separates the two with different AI prompt handling.
+- **History from existing MealSlot data** — no new history model needed. Cooked meals already have timestamps. Only new model is RecipeFavorite (boolean existence).
+- **Cuisine preferences are per-plan, not persistent** — avoids stale preferences. Each generation starts fresh.
+- **Conflict resolution order**: relax history first, then dislikes, never relax allergies. This is the fallback when constraints over-eliminate recipes.

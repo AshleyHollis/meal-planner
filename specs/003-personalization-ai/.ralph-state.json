@@ -1,0 +1,16 @@
+{
+  "source": "plan",
+  "name": "003-personalization-ai",
+  "basePath": "./specs/003-personalization-ai",
+  "phase": "execution",
+  "taskIndex": 0,
+  "totalTasks": 77,
+  "taskIteration": 1,
+  "maxTaskIterations": 5,
+  "globalIteration": 1,
+  "maxGlobalIterations": 100,
+  "commitSpec": false,
+  "quickMode": true,
+  "discoveredSkills": [],
+  "awaitingApproval": false
+}
