@@ -12,12 +12,13 @@ repos:
     hooks:
       - id: prettier
         types_or: [javascript, ts, tsx, json, yaml, markdown, css]
+        exclude: ^scripts/workflows/
 
   - repo: https://github.com/adrienverge/yamllint
     rev: v1.35.1
     hooks:
       - id: yamllint
-        args: [--strict]
+        args: [--strict, -c, .yamllint.yml]
 
   - repo: https://github.com/gitleaks/gitleaks
     rev: v8.22.1
