@@ -2,8 +2,7 @@
 
 import { forwardRef } from "react";
 
-interface InputProps
-  extends React.ComponentPropsWithoutRef<"input"> {
+interface InputProps extends React.ComponentPropsWithoutRef<"input"> {
   label?: string;
   error?: string;
 }

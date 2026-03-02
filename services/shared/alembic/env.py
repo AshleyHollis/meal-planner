@@ -2,11 +2,10 @@
 
 from logging.config import fileConfig
 
+from alembic import context
 from shared.config import get_settings
 from shared.db.models import Base  # noqa: F401 - registers all models with metadata
 from sqlalchemy import create_engine, pool
-
-from alembic import context
 
 # Alembic Config object
 config = context.config

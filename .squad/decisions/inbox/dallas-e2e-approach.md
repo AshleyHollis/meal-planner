@@ -11,7 +11,7 @@
 
 **Tests affected:** inventory.spec.ts — Edit, Remove, Expiry Badge, Autocomplete, Add Item
 
-**Root cause:** The `nullslast()` 500 error was bypassing Starlette's CORSMiddleware. When an unhandled exception occurs in the async ORM layer, Starlette's `ServerErrorMiddleware` (outermost layer) returns a bare 500 response *outside* the CORS middleware chain — so no `Access-Control-Allow-Origin` header is added. The browser then reports a CORS error, even though the CORS regex is correct.
+**Root cause:** The `nullslast()` 500 error was bypassing Starlette's CORSMiddleware. When an unhandled exception occurs in the async ORM layer, Starlette's `ServerErrorMiddleware` (outermost layer) returns a bare 500 response _outside_ the CORS middleware chain — so no `Access-Control-Allow-Origin` header is added. The browser then reports a CORS error, even though the CORS regex is correct.
 
 **Decision: No defensive CORS fix needed.**
 
@@ -26,6 +26,7 @@ The `nullslast()` fix (commit `eddc914`) resolved the root cause. With the 500 g
 ## Problem 2: Meal Plan Stuck in Draft (7 tests)
 
 **Tests affected:**
+
 - meal-plan.spec.ts — 4 tests (status badges, detail view, back nav, generate plan)
 - grocery.spec.ts — 3+ tests (all need active meal plan with grocery list)
 
@@ -34,6 +35,7 @@ The `nullslast()` fix (commit `eddc914`) resolved the root cause. With the 500 g
 **Decision: Accept that these 7 tests skip in preview for MVP (option d).**
 
 **Rationale:**
+
 1. **Cost:** Azure OpenAI in preview environments adds per-request LLM costs for every PR push — not acceptable for MVP.
 2. **Test design is solid:** All 7 tests have graceful skip logic (`test.skip(true, 'No meal plans to view')`) — they don't fail, they skip with clear messages.
 3. **Seeding complexity:** Pre-seeding a completed meal plan (option b) would require either a test-only API endpoint or direct SQL access from GitHub Actions — both add maintenance burden disproportionate to the value.
@@ -53,10 +55,10 @@ The `nullslast()` fix (commit `eddc914`) resolved the root cause. With the 500 g
 
 ## Summary
 
-| Problem | Tests | Decision | Action |
-|---------|-------|----------|--------|
-| CORS / 500 | 5 | Fixed by nullslast() | Verify on next pipeline run |
-| Meal plan draft | 7 | Accept skip in preview | No code change for MVP |
-| pre-commit.ci | — | Config fix | `typescript` → `ts` in .pre-commit-config.yaml |
+| Problem         | Tests | Decision               | Action                                         |
+| --------------- | ----- | ---------------------- | ---------------------------------------------- |
+| CORS / 500      | 5     | Fixed by nullslast()   | Verify on next pipeline run                    |
+| Meal plan draft | 7     | Accept skip in preview | No code change for MVP                         |
+| pre-commit.ci   | —     | Config fix             | `typescript` → `ts` in .pre-commit-config.yaml |
 
 **Expected outcome after next pipeline push:** 29 pass, 7 skip, 0 fail. PR status: ✅ (pre-commit.ci + CI both green).

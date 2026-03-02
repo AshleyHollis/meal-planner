@@ -71,10 +71,17 @@ function AddItemForm({ onSuccess }: AddItemFormProps) {
     setShowSuggestions(false);
 
     // Pre-fill defaults from ingredient
-    if (ingredient.default_unit === "g" || ingredient.default_unit === "ml" || ingredient.default_unit === "units") {
+    if (
+      ingredient.default_unit === "g" ||
+      ingredient.default_unit === "ml" ||
+      ingredient.default_unit === "units"
+    ) {
       setUnit(ingredient.default_unit as UnitType);
     }
-    if (ingredient.default_storage === "fridge" || ingredient.default_storage === "pantry") {
+    if (
+      ingredient.default_storage === "fridge" ||
+      ingredient.default_storage === "pantry"
+    ) {
       setLocation(ingredient.default_storage as StorageLocation);
     }
   };

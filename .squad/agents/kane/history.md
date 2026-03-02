@@ -1,6 +1,7 @@
 # Kane — History
 
 ## Project Context
+
 - **Project:** Meal Planner MVP — AI meal planner with inventory, weekly plans, grocery lists
 - **Stack:** Next.js 16 + React 19 + TypeScript 5 + Tailwind CSS 4, Auth0 v4 BFF
 - **Owner:** Ashley Hollis
@@ -10,4 +11,3 @@
 - **Auth pattern:** Auth0 v4 BFF — /auth/access-token endpoint, Bearer token on all API calls
 
 ## Learnings
-

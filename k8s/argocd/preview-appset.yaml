@@ -35,16 +35,16 @@ spec:
 
   template:
     metadata:
-      name: '{{path.basename}}'
+      name: "{{path.basename}}"
       namespace: argocd
       labels:
         app.kubernetes.io/name: meal-planner
-        app.kubernetes.io/instance: '{{path.basename}}'
+        app.kubernetes.io/instance: "{{path.basename}}"
         app.kubernetes.io/component: preview
         app.kubernetes.io/part-of: meal-planner
       annotations:
-        preview.meal-planner/overlay-path: '{{path}}'
-        preview.meal-planner/overlay-revision: '{{revision}}'
+        preview.meal-planner/overlay-path: "{{path}}"
+        preview.meal-planner/overlay-revision: "{{revision}}"
         argocd.argoproj.io/refresh: hard
       finalizers:
         - resources-finalizer.argocd.argoproj.io
@@ -54,11 +54,11 @@ spec:
       source:
         repoURL: https://github.com/AshleyHollis/meal-planner.git
         targetRevision: preview-overlays
-        path: '{{path}}'
+        path: "{{path}}"
 
       destination:
         server: https://kubernetes.default.svc
-        namespace: '{{path.basename}}'
+        namespace: "{{path.basename}}"
 
       syncPolicy:
         automated:

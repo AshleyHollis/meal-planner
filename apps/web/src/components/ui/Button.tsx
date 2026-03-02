@@ -19,8 +19,7 @@ const sizeClasses: Record<ButtonSize, string> = {
   lg: "min-h-[48px] min-w-[48px] px-6 py-3 text-lg",
 };
 
-interface ButtonProps
-  extends React.ComponentPropsWithoutRef<"button"> {
+interface ButtonProps extends React.ComponentPropsWithoutRef<"button"> {
   variant?: ButtonVariant;
   size?: ButtonSize;
   loading?: boolean;

@@ -66,9 +66,7 @@ function MealSlotCard({
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
           {recipe ? (
-            <p className="truncate font-medium text-gray-900">
-              {recipe.title}
-            </p>
+            <p className="truncate font-medium text-gray-900">{recipe.title}</p>
           ) : (
             <p className="text-sm text-gray-400">No recipe assigned</p>
           )}
@@ -78,16 +76,17 @@ function MealSlotCard({
       </div>
 
       {/* Time info */}
-      {recipe && (recipe.prep_time_min !== null || recipe.cook_time_min !== null) && (
-        <div className="mt-2 flex items-center gap-3 text-sm text-gray-600">
-          {recipe.prep_time_min !== null && (
-            <span>Prep: {formatTime(recipe.prep_time_min)}</span>
-          )}
-          {recipe.cook_time_min !== null && (
-            <span>Cook: {formatTime(recipe.cook_time_min)}</span>
-          )}
-        </div>
-      )}
+      {recipe &&
+        (recipe.prep_time_min !== null || recipe.cook_time_min !== null) && (
+          <div className="mt-2 flex items-center gap-3 text-sm text-gray-600">
+            {recipe.prep_time_min !== null && (
+              <span>Prep: {formatTime(recipe.prep_time_min)}</span>
+            )}
+            {recipe.cook_time_min !== null && (
+              <span>Cook: {formatTime(recipe.cook_time_min)}</span>
+            )}
+          </div>
+        )}
 
       {/* Equipment mode badges */}
       {equipmentModes.length > 0 && (
@@ -105,11 +104,7 @@ function MealSlotCard({
         <div className="mt-3 flex flex-wrap gap-2">
           {/* Swap */}
           {onSwap && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onSwap(slot.id)}
-            >
+            <Button variant="ghost" size="sm" onClick={() => onSwap(slot.id)}>
               Swap
             </Button>
           )}

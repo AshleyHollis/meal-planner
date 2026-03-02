@@ -1,4 +1,4 @@
-import { defineConfig, devices } from '@playwright/test';
+import { defineConfig, devices } from "@playwright/test";
 
 /**
  * Playwright configuration for Meal Planner E2E tests
@@ -6,10 +6,12 @@ import { defineConfig, devices } from '@playwright/test';
  */
 export default defineConfig({
   // Test directory
-  testDir: './e2e',
+  testDir: "./e2e",
 
   // Global setup - warms up SWA and waits for API readiness
-  globalSetup: process.env.USE_EXTERNAL_SERVER ? './e2e/global-setup.ts' : undefined,
+  globalSetup: process.env.USE_EXTERNAL_SERVER
+    ? "./e2e/global-setup.ts"
+    : undefined,
 
   // Maximum timeout for each test
   // 180s to accommodate SWA cold starts and API latency
@@ -28,18 +30,18 @@ export default defineConfig({
   workers: process.env.CI ? 4 : 1,
 
   // Reporter to use
-  reporter: [['html', { open: 'never' }], ['list']],
+  reporter: [["html", { open: "never" }], ["list"]],
 
   // Shared settings for all the projects below
   use: {
     // Base URL to use in actions like `await page.goto('/')`
-    baseURL: process.env.BASE_URL || 'http://localhost:3000',
+    baseURL: process.env.BASE_URL || "http://localhost:3000",
 
     // Collect trace when retrying the failed test
-    trace: 'on-first-retry',
+    trace: "on-first-retry",
 
     // Take screenshot on failure
-    screenshot: 'only-on-failure',
+    screenshot: "only-on-failure",
 
     // Standard viewport
     viewport: { width: 1280, height: 720 },
@@ -49,28 +51,28 @@ export default defineConfig({
   projects: [
     // Auth setup - authenticates with Auth0 and saves storage state
     {
-      name: 'auth-setup',
+      name: "auth-setup",
       testMatch: /auth\.setup\.ts/,
     },
     // Data seeding - seeds inventory, meal plan, grocery data via API
     {
-      name: 'seed-data',
+      name: "seed-data",
       testMatch: /seed-data\.setup\.ts/,
       use: {
-        storageState: 'playwright/.auth/user.json',
+        storageState: "playwright/.auth/user.json",
       },
-      dependencies: ['auth-setup'],
+      dependencies: ["auth-setup"],
     },
     // Chromium tests - use authenticated storage state
     {
-      name: 'chromium',
+      name: "chromium",
       use: {
-        ...devices['Desktop Chrome'],
+        ...devices["Desktop Chrome"],
         // Use authenticated storage state for tests that require auth
-        storageState: 'playwright/.auth/user.json',
+        storageState: "playwright/.auth/user.json",
       },
       // Run after auth and data seeding
-      dependencies: ['seed-data'],
+      dependencies: ["seed-data"],
     },
   ],
 
@@ -79,8 +81,8 @@ export default defineConfig({
   webServer: process.env.USE_EXTERNAL_SERVER
     ? undefined
     : {
-        command: 'npm run dev',
-        url: 'http://localhost:3000',
+        command: "npm run dev",
+        url: "http://localhost:3000",
         reuseExistingServer: !process.env.CI,
         timeout: 120_000, // 2 minutes for Next.js to start
       },

@@ -746,7 +746,7 @@ class GroceryItem(Base):
     )
 ```
 
-### models/__init__.py
+### models/**init**.py
 
 ```python
 """SQLAlchemy database models for Meal Planner."""
@@ -775,28 +775,28 @@ __all__ = [
 
 ### Endpoints
 
-| # | Method | Path | Purpose | Status | Request | Response |
-|---|--------|------|---------|--------|---------|----------|
-| 1 | GET | /api/v1/inventory | List household inventory | 200 | query: location? | `InventoryItemResponse[]` |
-| 2 | POST | /api/v1/inventory | Add inventory item | 201 | `CreateInventoryItem` | `InventoryItemResponse` |
-| 3 | PATCH | /api/v1/inventory/{id} | Update qty/expiry | 200 | `UpdateInventoryItem` | `InventoryItemResponse` |
-| 4 | DELETE | /api/v1/inventory/{id} | Remove item | 204 | - | - |
-| 5 | GET | /api/v1/equipment | List equipment + modes | 200 | - | `EquipmentResponse[]` |
-| 6 | POST | /api/v1/equipment | Register equipment | 201 | `CreateEquipment` | `EquipmentResponse` |
-| 7 | POST | /api/v1/meal-plans | Generate plan (async) | 202 | `CreateMealPlan` | `MealPlanResponse` |
-| 8 | GET | /api/v1/meal-plans/{id} | Get plan + recipes | 200 | - | `MealPlanDetailResponse` |
-| 9 | GET | /api/v1/meal-plans/active | Get active plan | 200 | - | `MealPlanDetailResponse` |
-| 10 | PATCH | /api/v1/meal-plans/{id}/status | Activate/complete plan | 200 | `UpdatePlanStatus` | `MealPlanResponse` |
-| 11 | PATCH | /api/v1/meal-plans/{id}/slots/{slot_id} | Swap/modify slot | 200 | `UpdateMealSlot` | `MealSlotResponse` |
-| 12 | POST | /api/v1/meal-plans/{id}/slots/{slot_id}/adapt | Cook-time adapt | 200 | `AdaptRequest` | `RecipeResponse` |
-| 13 | PATCH | /api/v1/meal-plans/{id}/slots/{slot_id}/status | Mark cooked/skipped | 200 | `UpdateSlotStatus` | `MealSlotResponse` |
-| 14 | POST | /api/v1/recipes/{id}/save-variation | Save cook-time variation | 201 | - | `RecipeResponse` |
-| 15 | GET | /api/v1/meal-plans/{id}/grocery-list | Get grocery list | 200 | - | `GroceryListResponse` |
-| 16 | PATCH | /api/v1/grocery-items/{id} | Check/uncheck item | 200 | `UpdateGroceryItem` | `GroceryItemResponse` |
-| 17 | POST | /api/v1/grocery-lists/{id}/complete | Complete shopping | 200 | `CompleteShoppingReq` | `InventoryItemResponse[]` |
-| 18 | GET | /api/v1/ingredients | Search/autocomplete | 200 | query: q, limit? | `IngredientResponse[]` |
-| 19 | GET | /health/live | Liveness probe | 200 | - | `{"status": "ok"}` |
-| 20 | GET | /health/ready | Readiness probe | 200 | - | `ReadinessStatus` |
+| #   | Method | Path                                           | Purpose                  | Status | Request               | Response                  |
+| --- | ------ | ---------------------------------------------- | ------------------------ | ------ | --------------------- | ------------------------- |
+| 1   | GET    | /api/v1/inventory                              | List household inventory | 200    | query: location?      | `InventoryItemResponse[]` |
+| 2   | POST   | /api/v1/inventory                              | Add inventory item       | 201    | `CreateInventoryItem` | `InventoryItemResponse`   |
+| 3   | PATCH  | /api/v1/inventory/{id}                         | Update qty/expiry        | 200    | `UpdateInventoryItem` | `InventoryItemResponse`   |
+| 4   | DELETE | /api/v1/inventory/{id}                         | Remove item              | 204    | -                     | -                         |
+| 5   | GET    | /api/v1/equipment                              | List equipment + modes   | 200    | -                     | `EquipmentResponse[]`     |
+| 6   | POST   | /api/v1/equipment                              | Register equipment       | 201    | `CreateEquipment`     | `EquipmentResponse`       |
+| 7   | POST   | /api/v1/meal-plans                             | Generate plan (async)    | 202    | `CreateMealPlan`      | `MealPlanResponse`        |
+| 8   | GET    | /api/v1/meal-plans/{id}                        | Get plan + recipes       | 200    | -                     | `MealPlanDetailResponse`  |
+| 9   | GET    | /api/v1/meal-plans/active                      | Get active plan          | 200    | -                     | `MealPlanDetailResponse`  |
+| 10  | PATCH  | /api/v1/meal-plans/{id}/status                 | Activate/complete plan   | 200    | `UpdatePlanStatus`    | `MealPlanResponse`        |
+| 11  | PATCH  | /api/v1/meal-plans/{id}/slots/{slot_id}        | Swap/modify slot         | 200    | `UpdateMealSlot`      | `MealSlotResponse`        |
+| 12  | POST   | /api/v1/meal-plans/{id}/slots/{slot_id}/adapt  | Cook-time adapt          | 200    | `AdaptRequest`        | `RecipeResponse`          |
+| 13  | PATCH  | /api/v1/meal-plans/{id}/slots/{slot_id}/status | Mark cooked/skipped      | 200    | `UpdateSlotStatus`    | `MealSlotResponse`        |
+| 14  | POST   | /api/v1/recipes/{id}/save-variation            | Save cook-time variation | 201    | -                     | `RecipeResponse`          |
+| 15  | GET    | /api/v1/meal-plans/{id}/grocery-list           | Get grocery list         | 200    | -                     | `GroceryListResponse`     |
+| 16  | PATCH  | /api/v1/grocery-items/{id}                     | Check/uncheck item       | 200    | `UpdateGroceryItem`   | `GroceryItemResponse`     |
+| 17  | POST   | /api/v1/grocery-lists/{id}/complete            | Complete shopping        | 200    | `CompleteShoppingReq` | `InventoryItemResponse[]` |
+| 18  | GET    | /api/v1/ingredients                            | Search/autocomplete      | 200    | query: q, limit?      | `IngredientResponse[]`    |
+| 19  | GET    | /health/live                                   | Liveness probe           | 200    | -                     | `{"status": "ok"}`        |
+| 20  | GET    | /health/ready                                  | Readiness probe          | 200    | -                     | `ReadinessStatus`         |
 
 All endpoints except health probes require JWT (Auth0). Household scoping enforced via `get_current_household_id()` dependency.
 
@@ -909,14 +909,14 @@ Follows yt-summarizer pattern: structured error JSON with correlation ID.
 }
 ```
 
-| Error Scenario | Status | Message |
-|----------------|--------|---------|
-| Item not found | 404 | Resource-specific message |
-| Validation failure | 422 | Pydantic field errors |
-| Unauthorized | 401 | Missing/invalid token |
-| Cross-household access | 404 | Returns 404 (not 403) to avoid enumeration |
-| Plan already active | 409 | "Active plan already exists" |
-| LLM generation failed | 500 | Error stored on MealPlan.error_message |
+| Error Scenario         | Status | Message                                    |
+| ---------------------- | ------ | ------------------------------------------ |
+| Item not found         | 404    | Resource-specific message                  |
+| Validation failure     | 422    | Pydantic field errors                      |
+| Unauthorized           | 401    | Missing/invalid token                      |
+| Cross-household access | 404    | Returns 404 (not 403) to avoid enumeration |
+| Plan already active    | 409    | "Active plan already exists"               |
+| LLM generation failed  | 500    | Error stored on MealPlan.error_message     |
 
 ## Worker Design: Meal Plan Generator
 
@@ -1160,14 +1160,14 @@ async def adapt_recipe(
 
 ### Pages (App Router)
 
-| Route | Page | Purpose |
-|-------|------|---------|
-| `/` | Dashboard | Show active plan summary, expiring items count |
-| `/inventory` | Inventory | List items grouped by location, add/edit/remove |
-| `/meal-plan` | Plan list | Create new plan, view current/past plans |
-| `/meal-plan/[id]` | Plan detail | Weekly list view, swap meals, mark cooked |
-| `/grocery-list/[id]` | Grocery | Checklist, complete shopping flow |
-| `/api/auth/[auth0]` | Auth BFF | Auth0 login/logout/callback (server route) |
+| Route                | Page        | Purpose                                         |
+| -------------------- | ----------- | ----------------------------------------------- |
+| `/`                  | Dashboard   | Show active plan summary, expiring items count  |
+| `/inventory`         | Inventory   | List items grouped by location, add/edit/remove |
+| `/meal-plan`         | Plan list   | Create new plan, view current/past plans        |
+| `/meal-plan/[id]`    | Plan detail | Weekly list view, swap meals, mark cooked       |
+| `/grocery-list/[id]` | Grocery     | Checklist, complete shopping flow               |
+| `/api/auth/[auth0]`  | Auth BFF    | Auth0 login/logout/callback (server route)      |
 
 ### Key Components
 
@@ -1200,14 +1200,11 @@ components/
 // apps/web/src/services/api.ts
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-async function fetchApi<T>(
-  path: string,
-  options?: RequestInit
-): Promise<T> {
+async function fetchApi<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${API_URL}${path}`, {
     ...options,
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
       ...options?.headers,
     },
   });
@@ -1220,17 +1217,17 @@ async function fetchApi<T>(
 
 // Inventory
 export const getInventory = () =>
-  fetchApi<InventoryItem[]>('/api/v1/inventory');
+  fetchApi<InventoryItem[]>("/api/v1/inventory");
 export const addInventoryItem = (data: CreateInventoryItem) =>
-  fetchApi<InventoryItem>('/api/v1/inventory', {
-    method: 'POST',
+  fetchApi<InventoryItem>("/api/v1/inventory", {
+    method: "POST",
     body: JSON.stringify(data),
   });
 
 // Meal Plans
 export const createMealPlan = (data: CreateMealPlan) =>
-  fetchApi<MealPlan>('/api/v1/meal-plans', {
-    method: 'POST',
+  fetchApi<MealPlan>("/api/v1/meal-plans", {
+    method: "POST",
     body: JSON.stringify(data),
   });
 export const getMealPlan = (id: string) =>
@@ -1252,7 +1249,7 @@ function useMealPlanPolling(planId: string) {
     const poll = setInterval(async () => {
       const result = await getMealPlan(planId);
       setPlan(result);
-      if (result.status !== 'draft') clearInterval(poll);
+      if (result.status !== "draft") clearInterval(poll);
     }, 3000);
     return () => clearInterval(poll);
   }, [planId]);
@@ -1791,11 +1788,11 @@ async def call_llm(prompt: str, timeout: int = 25) -> str:
 
 ### Cost Estimate
 
-| Model | Tokens/Plan (~) | Cost/Plan | NFR-10 Target |
-|-------|-----------------|-----------|---------------|
-| Claude Sonnet | ~5K in + ~4K out | ~$0.04 | < $0.15 |
-| GPT-4o | ~5K in + ~4K out | ~$0.06 | < $0.15 |
-| Retry (x1) | +50% | ~$0.06-0.09 | Still under |
+| Model         | Tokens/Plan (~)  | Cost/Plan   | NFR-10 Target |
+| ------------- | ---------------- | ----------- | ------------- |
+| Claude Sonnet | ~5K in + ~4K out | ~$0.04      | < $0.15       |
+| GPT-4o        | ~5K in + ~4K out | ~$0.06      | < $0.15       |
+| Retry (x1)    | +50%             | ~$0.06-0.09 | Still under   |
 
 ### Structured Output Schema
 
@@ -1853,17 +1850,17 @@ Full seed list curated during implementation. Categories: meat, seafood, produce
 
 ## Technical Decisions
 
-| Decision | Options Considered | Choice | Rationale |
-|----------|-------------------|--------|-----------|
-| State management | Redux, Zustand, React Query, None | None (server components + fetch) | YAGNI. Single user, simple CRUD. Add SWR only if polling needs it. |
-| LLM call location | Worker only, API + Worker | API for adapt, Worker for generate | Adapt must be <10s synchronous. Generation is 15-30s async. |
-| Grocery list derivation | On-the-fly computed, Materialized in DB | Materialized (GroceryList/GroceryItem tables) | Supports check-off persistence, shopping complete flow, offline-friendly. |
-| Ingredient matching | Fuzzy string match, ID-based lookup | ID-based with Ingredient FK | Deterministic. No ambiguity between "chicken breast" and "chicken thigh". |
-| Weekly view layout | Calendar grid, List | List | Mobile-first. Research confirms list works better on small screens. |
-| Seed data mechanism | Separate script, Alembic migration, API endpoint | Alembic data migration | Runs automatically with schema migration. No separate step. |
-| Queue technology | Azure Queue Storage, Azure Service Bus | Azure Queue Storage | Simpler, cheaper, sufficient for single-consumer. Matches yt-summarizer. |
-| Plan generation retries | Client-side retry, Worker retry with feedback | Worker retry with error feedback to LLM | Self-healing. LLM gets specific validation errors to correct. |
-| Household provisioning | Manual creation, Auto on first login | Auto on first login | Frictionless. No setup wizard needed for single-user MVP. |
+| Decision                | Options Considered                               | Choice                                        | Rationale                                                                 |
+| ----------------------- | ------------------------------------------------ | --------------------------------------------- | ------------------------------------------------------------------------- |
+| State management        | Redux, Zustand, React Query, None                | None (server components + fetch)              | YAGNI. Single user, simple CRUD. Add SWR only if polling needs it.        |
+| LLM call location       | Worker only, API + Worker                        | API for adapt, Worker for generate            | Adapt must be <10s synchronous. Generation is 15-30s async.               |
+| Grocery list derivation | On-the-fly computed, Materialized in DB          | Materialized (GroceryList/GroceryItem tables) | Supports check-off persistence, shopping complete flow, offline-friendly. |
+| Ingredient matching     | Fuzzy string match, ID-based lookup              | ID-based with Ingredient FK                   | Deterministic. No ambiguity between "chicken breast" and "chicken thigh". |
+| Weekly view layout      | Calendar grid, List                              | List                                          | Mobile-first. Research confirms list works better on small screens.       |
+| Seed data mechanism     | Separate script, Alembic migration, API endpoint | Alembic data migration                        | Runs automatically with schema migration. No separate step.               |
+| Queue technology        | Azure Queue Storage, Azure Service Bus           | Azure Queue Storage                           | Simpler, cheaper, sufficient for single-consumer. Matches yt-summarizer.  |
+| Plan generation retries | Client-side retry, Worker retry with feedback    | Worker retry with error feedback to LLM       | Self-healing. LLM gets specific validation errors to correct.             |
+| Household provisioning  | Manual creation, Auto on first login             | Auto on first login                           | Frictionless. No setup wizard needed for single-user MVP.                 |
 
 ## Data Flow
 

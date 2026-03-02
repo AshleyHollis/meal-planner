@@ -99,10 +99,7 @@ async function getAccessToken(): Promise<string | null> {
 // Generic fetch wrapper
 // ---------------------------------------------------------------------------
 
-async function fetchApi<T>(
-  path: string,
-  init?: RequestInit,
-): Promise<T> {
+async function fetchApi<T>(path: string, init?: RequestInit): Promise<T> {
   const token = await getAccessToken();
 
   const headers: Record<string, string> = {
@@ -302,27 +299,26 @@ export async function updateMealSlot(
   slotId: string,
   body: UpdateMealSlotBody,
 ): Promise<MealSlot> {
-  return fetchApi<MealSlot>(
-    `/api/v1/meal-plans/${planId}/slots/${slotId}`,
-    {
-      method: "PATCH",
-      body: JSON.stringify(body),
-    },
-  );
+  return fetchApi<MealSlot>(`/api/v1/meal-plans/${planId}/slots/${slotId}`, {
+    method: "PATCH",
+    body: JSON.stringify(body),
+  });
 }
 
 export async function adaptMealSlot(
   planId: string,
   slotId: string,
   body: AdaptMealSlotBody,
-): Promise<{ plan_id: string; slot_id: string; effort_level: string; status: string }> {
-  return fetchApi(
-    `/api/v1/meal-plans/${planId}/slots/${slotId}/adapt`,
-    {
-      method: "POST",
-      body: JSON.stringify(body),
-    },
-  );
+): Promise<{
+  plan_id: string;
+  slot_id: string;
+  effort_level: string;
+  status: string;
+}> {
+  return fetchApi(`/api/v1/meal-plans/${planId}/slots/${slotId}/adapt`, {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
 }
 
 export async function updateSlotStatus(
@@ -355,12 +351,8 @@ export async function saveRecipeVariation(
 // Grocery
 // ---------------------------------------------------------------------------
 
-export async function getGroceryList(
-  mealPlanId: string,
-): Promise<GroceryList> {
-  return fetchApi<GroceryList>(
-    `/api/v1/meal-plans/${mealPlanId}/grocery-list`,
-  );
+export async function getGroceryList(mealPlanId: string): Promise<GroceryList> {
+  return fetchApi<GroceryList>(`/api/v1/meal-plans/${mealPlanId}/grocery-list`);
 }
 
 export async function checkGroceryItem(

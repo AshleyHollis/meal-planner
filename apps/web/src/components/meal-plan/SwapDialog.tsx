@@ -76,13 +76,9 @@ function SwapDialog({
       onClose={onClose}
       title={`Swap: ${sourceSlot.recipe?.title ?? "Empty slot"}`}
     >
-      <p className="mb-3 text-sm text-gray-600">
-        Select a day to swap with:
-      </p>
+      <p className="mb-3 text-sm text-gray-600">Select a day to swap with:</p>
 
-      {error && (
-        <p className="mb-3 text-sm text-red-600">{error}</p>
-      )}
+      {error && <p className="mb-3 text-sm text-red-600">{error}</p>}
 
       <ul className="mb-4 space-y-2">
         {targets.map((slot) => (

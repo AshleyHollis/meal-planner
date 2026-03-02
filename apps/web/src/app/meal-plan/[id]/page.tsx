@@ -12,7 +12,9 @@ interface MealPlanDetailPageProps {
   params: Promise<{ id: string }>;
 }
 
-export default function MealPlanDetailPage({ params }: MealPlanDetailPageProps) {
+export default function MealPlanDetailPage({
+  params,
+}: MealPlanDetailPageProps) {
   const { id } = use(params);
   const { plan, loading, error } = useMealPlanPolling({
     planId: id,

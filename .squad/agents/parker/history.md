@@ -1,6 +1,7 @@
 # Parker — History
 
 ## Project Context
+
 - **Project:** Meal Planner MVP — AI meal planner with inventory, weekly plans, grocery lists
 - **Stack:** Next.js 16 + FastAPI + SQLAlchemy + Azure (AKS, SQL, SWA) + Auth0
 - **Owner:** Ashley Hollis
@@ -15,6 +16,7 @@
 ### CI Pipeline & E2E Test Architecture (2026-03-02)
 
 **Run 22566812309 Job Status:**
+
 - ✅ Python Lint (ruff) — PASSED
 - ✅ Frontend Quality (ESLint, tsc, build) — PASSED
 - ✅ Security Scan (bandit, pip-audit, gitleaks) — PASSED
@@ -28,6 +30,7 @@
 - ✅ CI Status Gate — PASSED
 
 **Pipeline Design:**
+
 - CI workflow (.github/workflows/ci.yml) runs on PR + push to master. Does NOT run E2E tests directly.
 - E2E tests live in separate workflows:
   - preview-e2e.yml: Manual trigger or workflow_call
@@ -39,6 +42,7 @@
   4. Deployment preview URLs (API + frontend)
 
 **E2E Gating in Preview Workflow:**
+
 - E2E only runs if:
   - All deployment jobs (verify-deployment, deploy-frontend) succeeded
   - Concurrency gate allows deployment
@@ -46,13 +50,14 @@
   - Always triggered for PR events (but respects success conditions)
 
 **SWA Deploy Skip:**
+
 - SWA deploy in CI is correctly skipped for PR events (requires `push` to `master`)
 - This is NOT blocking E2E — E2E runs against preview environment, not SWA directly
 - SWA is production deployment path only
 
 **Key Infrastructure:**
+
 - Argo CD auto-syncs k8s/overlays/preview/ for preview namespaces
 - Preview URLs follow pattern: pr-{number}.meal-planner.apps.ashleyhollis.com
 - TLS certificates verified before health checks
 - Database migrations checked as part of deployment diagnostics
-

@@ -5,7 +5,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import type { InventoryItem, MealPlanDetail } from "@/types";
-import { listInventory, getActiveMealPlan, createMealPlan } from "@/services/api";
+import {
+  listInventory,
+  getActiveMealPlan,
+  createMealPlan,
+} from "@/services/api";
 import { ApiError } from "@/services/api";
 import { Spinner } from "@/components/ui/Spinner";
 import { Button } from "@/components/ui/Button";
@@ -64,7 +68,9 @@ export default function DashboardPage() {
     try {
       setGenerating(true);
       setError(null);
-      const newPlan = await createMealPlan({ week_start_date: getNextMonday() });
+      const newPlan = await createMealPlan({
+        week_start_date: getNextMonday(),
+      });
       router.push(`/meal-plan/${newPlan.id}`);
     } catch {
       setError("Failed to generate meal plan.");
@@ -73,7 +79,8 @@ export default function DashboardPage() {
   };
 
   const expiringCount = inventory.filter(
-    (item) => item.expiry_status === "expiring" || item.expiry_status === "expired",
+    (item) =>
+      item.expiry_status === "expiring" || item.expiry_status === "expired",
   ).length;
 
   const cookedCount = plan

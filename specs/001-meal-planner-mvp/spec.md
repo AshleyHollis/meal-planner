@@ -5,7 +5,7 @@
 **Status**: Draft
 **Input**: AI-powered weekly meal planner with pantry tracking, expiry-based waste reduction, Ninja Combi cooking steps, multi-shop product catalogue, and plan-time/cook-time customization for 2 adults
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 - Pantry, Fridge & Equipment Inventory (Priority: P1)
 
@@ -333,7 +333,7 @@ simultaneous timers.
 5. **Given** the final timer in a recipe completes, **When** the notification
    fires, **Then** it says the meal is ready to eat (e.g., "Dinner is ready!
    Honey Garlic Chicken — serve and enjoy").
-4. **Given** a timer is running, **When** I navigate to another part of the app,
+6. **Given** a timer is running, **When** I navigate to another part of the app,
    **Then** the timer continues running and remains accessible.
 
 ---
@@ -1162,7 +1162,7 @@ available in inventory for other meals.
   an ingredient? They can exit cooking mode, substitute the ingredient (P8),
   and re-enter cooking mode with updated steps.
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 ### Functional Requirements
 
@@ -1396,7 +1396,7 @@ available in inventory for other meals.
   the tag if they disagree (e.g., mark a recipe as freezable that the AI
   tagged as not freezable).
 
-## Success Criteria *(mandatory)*
+## Success Criteria _(mandatory)_
 
 ### Measurable Outcomes
 

@@ -41,9 +41,7 @@ async def engine():
         cursor.execute("PRAGMA foreign_keys=ON")
         cursor.close()
         # Shim MSSQL sysutcdatetime() so TimestampMixin server defaults work
-        dbapi_conn.create_function(
-            "sysutcdatetime", 0, lambda: datetime.now(UTC).isoformat()
-        )
+        dbapi_conn.create_function("sysutcdatetime", 0, lambda: datetime.now(UTC).isoformat())
 
     async with eng.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
@@ -133,10 +131,9 @@ def mock_user() -> dict:
 @pytest.fixture()
 async def client(engine, household, mock_user) -> AsyncGenerator[AsyncClient, None]:
     """HTTPX async client wired to the app with mocked auth and DB session."""
-    from shared.db.connection import get_session
-
     from api.main import create_app
     from api.middleware.auth import get_current_household_id, get_current_user
+    from shared.db.connection import get_session
 
     app = create_app()
 

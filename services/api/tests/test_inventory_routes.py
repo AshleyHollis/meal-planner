@@ -3,14 +3,11 @@
 from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
-import pytest
+from api.main import create_app
 from httpx import ASGITransport, AsyncClient
 from shared.db.models.ingredient import Ingredient
 from shared.db.models.inventory import InventoryItem
 from sqlalchemy.ext.asyncio import AsyncSession
-
-from api.main import create_app
-
 
 # ---------------------------------------------------------------------------
 # Helpers

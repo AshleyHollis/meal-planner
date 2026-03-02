@@ -8,7 +8,7 @@ kind: Kustomization
 
 metadata:
   annotations:
-    config.kubernetes.io/local-config: 'true'
+    config.kubernetes.io/local-config: "true"
 
 namespace: preview-pr-${PR_NUMBER}
 

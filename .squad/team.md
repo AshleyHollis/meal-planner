@@ -4,21 +4,21 @@
 
 ## Coordinator
 
-| Name | Role | Notes |
-|------|------|-------|
+| Name  | Role        | Notes                                                                                  |
+| ----- | ----------- | -------------------------------------------------------------------------------------- |
 | Squad | Coordinator | Routes work, enforces handoffs and reviewer gates. Does not generate domain artifacts. |
 
 ## Members
 
-| Name | Role | Charter | Status |
-|------|------|---------|--------|
-| Dallas | Lead | `.squad/agents/dallas/charter.md` | ✅ Active |
-| Ripley | Backend Dev | `.squad/agents/ripley/charter.md` | ✅ Active |
-| Kane | Frontend Dev | `.squad/agents/kane/charter.md` | ✅ Active |
-| Parker | DevOps | `.squad/agents/parker/charter.md` | ✅ Active |
-| Lambert | Tester | `.squad/agents/lambert/charter.md` | ✅ Active |
-| Scribe | Session Logger | `.squad/agents/scribe/charter.md` | 📋 Silent |
-| Ralph | Work Monitor | — | 🔄 Monitor |
+| Name    | Role           | Charter                            | Status     |
+| ------- | -------------- | ---------------------------------- | ---------- |
+| Dallas  | Lead           | `.squad/agents/dallas/charter.md`  | ✅ Active  |
+| Ripley  | Backend Dev    | `.squad/agents/ripley/charter.md`  | ✅ Active  |
+| Kane    | Frontend Dev   | `.squad/agents/kane/charter.md`    | ✅ Active  |
+| Parker  | DevOps         | `.squad/agents/parker/charter.md`  | ✅ Active  |
+| Lambert | Tester         | `.squad/agents/lambert/charter.md` | ✅ Active  |
+| Scribe  | Session Logger | `.squad/agents/scribe/charter.md`  | 📋 Silent  |
+| Ralph   | Work Monitor   | —                                  | 🔄 Monitor |
 
 ## Project Context
 

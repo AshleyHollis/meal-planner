@@ -7,7 +7,6 @@ from meal_plan_generator.validator import validate_constraints
 
 from .conftest import _make_plan, _make_recipe
 
-
 # ---------------------------------------------------------------------------
 # 1. Exactly 7 recipes required
 # ---------------------------------------------------------------------------

@@ -19,7 +19,9 @@ function sortByExpiry(items: InventoryItem[]): InventoryItem[] {
   return [...items].sort((a, b) => {
     // Items with expiry dates come first, sorted ascending (soonest first)
     if (a.expiry_date && b.expiry_date) {
-      return new Date(a.expiry_date).getTime() - new Date(b.expiry_date).getTime();
+      return (
+        new Date(a.expiry_date).getTime() - new Date(b.expiry_date).getTime()
+      );
     }
     if (a.expiry_date && !b.expiry_date) return -1;
     if (!a.expiry_date && b.expiry_date) return 1;

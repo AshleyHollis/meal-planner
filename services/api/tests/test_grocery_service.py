@@ -3,16 +3,12 @@
 from datetime import UTC, datetime
 from uuid import uuid4
 
-import pytest
-from shared.db.models.grocery import GroceryItem, GroceryList
+from api.services.grocery_service import GroceryService
 from shared.db.models.ingredient import Ingredient
 from shared.db.models.inventory import InventoryItem
 from shared.db.models.meal_plan import MealPlan, MealSlot
 from shared.db.models.recipe import Recipe, RecipeIngredient
 from sqlalchemy.ext.asyncio import AsyncSession
-
-from api.services.grocery_service import GroceryService
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -139,9 +135,7 @@ async def _add_inventory(
 
 
 class TestGrocerySubtraction:
-    async def test_full_inventory_yields_empty_list(
-        self, session: AsyncSession, household
-    ):
+    async def test_full_inventory_yields_empty_list(self, session: AsyncSession, household):
         """If inventory covers everything, grocery list has zero items."""
         chicken = await _make_ingredient(session, "Chicken Breast")
         recipe = await _make_recipe(session, "Grilled Chicken", [(chicken, 500, "g")])
@@ -154,9 +148,7 @@ class TestGrocerySubtraction:
         gl = await svc.regenerate_grocery_list(plan.id)
         assert len(gl.items) == 0
 
-    async def test_no_inventory_yields_full_list(
-        self, session: AsyncSession, household
-    ):
+    async def test_no_inventory_yields_full_list(self, session: AsyncSession, household):
         """With no inventory, grocery list matches recipe needs exactly."""
         chicken = await _make_ingredient(session, "Chicken Breast")
         recipe = await _make_recipe(session, "Grilled Chicken", [(chicken, 500, "g")])
@@ -168,9 +160,7 @@ class TestGrocerySubtraction:
         assert float(gl.items[0].quantity_needed) == 500.0
         assert gl.items[0].ingredient_id == chicken.id
 
-    async def test_excess_inventory_yields_empty_list(
-        self, session: AsyncSession, household
-    ):
+    async def test_excess_inventory_yields_empty_list(self, session: AsyncSession, household):
         """More inventory than needed still yields zero grocery items."""
         rice = await _make_ingredient(session, "Rice", "g", "grain")
         recipe = await _make_recipe(session, "Plain Rice", [(rice, 300, "g")])
@@ -205,9 +195,7 @@ class TestConsolidation:
         assert float(gl.items[0].quantity_needed) == 500.0
         assert gl.items[0].ingredient_id == chicken.id
 
-    async def test_different_ingredients_separate_items(
-        self, session: AsyncSession, household
-    ):
+    async def test_different_ingredients_separate_items(self, session: AsyncSession, household):
         """Two recipes with different ingredients -> two grocery items."""
         chicken = await _make_ingredient(session, "Chicken Breast")
         rice = await _make_ingredient(session, "Rice", "g", "grain")
@@ -224,9 +212,7 @@ class TestConsolidation:
         assert float(items_by_id[chicken.id].quantity_needed) == 400.0
         assert float(items_by_id[rice.id].quantity_needed) == 200.0
 
-    async def test_optional_ingredients_excluded(
-        self, session: AsyncSession, household
-    ):
+    async def test_optional_ingredients_excluded(self, session: AsyncSession, household):
         """Optional recipe ingredients should NOT appear on grocery list."""
         chicken = await _make_ingredient(session, "Chicken Breast")
         garnish = await _make_ingredient(session, "Parsley", "g", "produce")
@@ -279,9 +265,7 @@ class TestConsolidation:
 
 
 class TestPartialInventory:
-    async def test_partial_stock_yields_remainder(
-        self, session: AsyncSession, household
-    ):
+    async def test_partial_stock_yields_remainder(self, session: AsyncSession, household):
         """500g needed, 200g in stock -> 300g on grocery list."""
         chicken = await _make_ingredient(session, "Chicken Breast")
         recipe = await _make_recipe(session, "Grilled Chicken", [(chicken, 500, "g")])
@@ -294,9 +278,7 @@ class TestPartialInventory:
         assert len(gl.items) == 1
         assert float(gl.items[0].quantity_needed) == 300.0
 
-    async def test_multiple_inventory_entries_summed(
-        self, session: AsyncSession, household
-    ):
+    async def test_multiple_inventory_entries_summed(self, session: AsyncSession, household):
         """Two inventory entries for same ingredient are summed before subtraction."""
         rice = await _make_ingredient(session, "Rice", "g", "grain")
         recipe = await _make_recipe(session, "Rice Bowl", [(rice, 500, "g")])
@@ -311,9 +293,7 @@ class TestPartialInventory:
         assert len(gl.items) == 1
         assert float(gl.items[0].quantity_needed) == 200.0
 
-    async def test_mixed_covered_and_partial(
-        self, session: AsyncSession, household
-    ):
+    async def test_mixed_covered_and_partial(self, session: AsyncSession, household):
         """One ingredient fully covered, another partially -> only partial on list."""
         chicken = await _make_ingredient(session, "Chicken Breast")
         rice = await _make_ingredient(session, "Rice", "g", "grain")
@@ -339,9 +319,7 @@ class TestPartialInventory:
 
 
 class TestCheckOff:
-    async def test_check_item_persists(
-        self, session: AsyncSession, household
-    ):
+    async def test_check_item_persists(self, session: AsyncSession, household):
         """Checking off a grocery item sets is_checked=True."""
         chicken = await _make_ingredient(session, "Chicken Breast")
         recipe = await _make_recipe(session, "Grilled Chicken", [(chicken, 500, "g")])
@@ -356,9 +334,7 @@ class TestCheckOff:
         assert checked is not None
         assert checked.is_checked is True
 
-    async def test_uncheck_item_persists(
-        self, session: AsyncSession, household
-    ):
+    async def test_uncheck_item_persists(self, session: AsyncSession, household):
         """Unchecking a grocery item sets is_checked=False."""
         chicken = await _make_ingredient(session, "Chicken Breast")
         recipe = await _make_recipe(session, "Grilled Chicken", [(chicken, 500, "g")])
@@ -373,25 +349,19 @@ class TestCheckOff:
         assert unchecked is not None
         assert unchecked.is_checked is False
 
-    async def test_check_nonexistent_returns_none(
-        self, session: AsyncSession, household
-    ):
+    async def test_check_nonexistent_returns_none(self, session: AsyncSession, household):
         svc = GroceryService(session, household.id)
         result = await svc.check_item(uuid4())
         assert result is None
 
-    async def test_uncheck_nonexistent_returns_none(
-        self, session: AsyncSession, household
-    ):
+    async def test_uncheck_nonexistent_returns_none(self, session: AsyncSession, household):
         svc = GroceryService(session, household.id)
         result = await svc.uncheck_item(uuid4())
         assert result is None
 
 
 class TestShoppingComplete:
-    async def test_complete_shopping_adds_to_inventory(
-        self, session: AsyncSession, household
-    ):
+    async def test_complete_shopping_adds_to_inventory(self, session: AsyncSession, household):
         """Completing shopping creates InventoryItem records."""
         chicken = await _make_ingredient(session, "Chicken Breast")
         recipe = await _make_recipe(session, "Grilled Chicken", [(chicken, 500, "g")])
@@ -443,9 +413,7 @@ class TestShoppingComplete:
 
 
 class TestRegenerateReplacesExisting:
-    async def test_regenerate_replaces_previous_list(
-        self, session: AsyncSession, household
-    ):
+    async def test_regenerate_replaces_previous_list(self, session: AsyncSession, household):
         """Calling regenerate twice replaces the first list."""
         chicken = await _make_ingredient(session, "Chicken Breast")
         recipe = await _make_recipe(session, "Grilled Chicken", [(chicken, 500, "g")])

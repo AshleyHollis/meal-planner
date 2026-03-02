@@ -95,20 +95,20 @@ future requirements.
 The meal-planner MUST use the same technology stack as yt-summarizer to maintain
 consistency and enable shared tooling.
 
-| Layer | Technology |
-|-------|-----------|
-| Frontend | Next.js (App Router) + React + TypeScript + Tailwind CSS v4 |
-| Backend API | FastAPI (Python 3.11+) + SQLAlchemy 2.0 async + Pydantic v2 |
-| Database | Azure SQL Database (MS SQL Server); local dev uses SQL Server container |
-| Workers | Python background workers polling Azure Queue Storage |
-| Auth | Auth0 (BFF pattern for frontend, JWT validation for API) |
-| Storage | Azure Blob Storage + Azure Queue Storage; local dev uses Azurite |
-| Orchestration | .NET Aspire (local dev), ArgoCD + Kustomize (production) |
-| IaC | Terraform (shared-infra repo for cluster, this repo for app-specific) |
-| CI/CD | GitHub Actions with OIDC auth to Azure |
-| Container Registry | Azure Container Registry (shared via shared-infra) |
-| Package Managers | npm (frontend), uv (Python services) |
-| Observability | OpenTelemetry + structlog + Aspire dashboard |
+| Layer              | Technology                                                              |
+| ------------------ | ----------------------------------------------------------------------- |
+| Frontend           | Next.js (App Router) + React + TypeScript + Tailwind CSS v4             |
+| Backend API        | FastAPI (Python 3.11+) + SQLAlchemy 2.0 async + Pydantic v2             |
+| Database           | Azure SQL Database (MS SQL Server); local dev uses SQL Server container |
+| Workers            | Python background workers polling Azure Queue Storage                   |
+| Auth               | Auth0 (BFF pattern for frontend, JWT validation for API)                |
+| Storage            | Azure Blob Storage + Azure Queue Storage; local dev uses Azurite        |
+| Orchestration      | .NET Aspire (local dev), ArgoCD + Kustomize (production)                |
+| IaC                | Terraform (shared-infra repo for cluster, this repo for app-specific)   |
+| CI/CD              | GitHub Actions with OIDC auth to Azure                                  |
+| Container Registry | Azure Container Registry (shared via shared-infra)                      |
+| Package Managers   | npm (frontend), uv (Python services)                                    |
+| Observability      | OpenTelemetry + structlog + Aspire dashboard                            |
 
 ## Development Workflow
 

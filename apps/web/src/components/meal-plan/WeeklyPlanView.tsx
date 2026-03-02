@@ -1,6 +1,11 @@
 "use client";
 
-import type { MealPlanDetail, MealSlot, Equipment, EquipmentMode } from "@/types";
+import type {
+  MealPlanDetail,
+  MealSlot,
+  Equipment,
+  EquipmentMode,
+} from "@/types";
 import { Badge } from "../ui/Badge";
 
 const DAY_LABELS = [
@@ -79,18 +84,14 @@ function WeeklyPlanView({ plan, equipment = [] }: WeeklyPlanViewProps) {
         {DAY_LABELS.map((label, dayIndex) => {
           const slot = slotsByDay.get(dayIndex);
           const recipe = slot?.recipe ?? null;
-          const equipmentTags = slot
-            ? getEquipmentTags(slot, modeLookup)
-            : [];
+          const equipmentTags = slot ? getEquipmentTags(slot, modeLookup) : [];
 
           return (
             <li key={dayIndex} className="px-4 py-3">
               <div className="flex items-start justify-between gap-3">
                 {/* Left: day + recipe info */}
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold text-gray-500">
-                    {label}
-                  </p>
+                  <p className="text-sm font-semibold text-gray-500">{label}</p>
 
                   {recipe ? (
                     <>

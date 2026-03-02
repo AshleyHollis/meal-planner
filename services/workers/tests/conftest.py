@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import pytest
-
 from meal_plan_generator.schemas import (
     GeneratedMealPlan,
     GeneratedRecipe,

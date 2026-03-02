@@ -50,9 +50,7 @@ async def _int_engine():
         cursor = dbapi_conn.cursor()
         cursor.execute("PRAGMA foreign_keys=ON")
         cursor.close()
-        dbapi_conn.create_function(
-            "sysutcdatetime", 0, lambda: datetime.now(UTC).isoformat()
-        )
+        dbapi_conn.create_function("sysutcdatetime", 0, lambda: datetime.now(UTC).isoformat())
 
     async with eng.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
@@ -65,9 +63,7 @@ async def _int_engine():
 @pytest.fixture()
 async def _int_session(_int_engine) -> AsyncGenerator[AsyncSession, None]:
     """Session bound to the shared engine. Rolls back after test."""
-    factory = async_sessionmaker(
-        _int_engine, class_=AsyncSession, expire_on_commit=False
-    )
+    factory = async_sessionmaker(_int_engine, class_=AsyncSession, expire_on_commit=False)
     async with factory() as sess:
         yield sess
         await sess.rollback()
@@ -101,19 +97,14 @@ async def _int_household(_int_session: AsyncSession) -> Household:
 
 
 @pytest.fixture()
-async def int_client(
-    _int_engine, _int_household
-) -> AsyncGenerator[AsyncClient, None]:
+async def int_client(_int_engine, _int_household) -> AsyncGenerator[AsyncClient, None]:
     """HTTPX client with shared-connection session override."""
-    from shared.db.connection import get_session
-
     from api.main import create_app
     from api.middleware.auth import get_current_household_id, get_current_user
+    from shared.db.connection import get_session
 
     app = create_app()
-    factory = async_sessionmaker(
-        _int_engine, class_=AsyncSession, expire_on_commit=False
-    )
+    factory = async_sessionmaker(_int_engine, class_=AsyncSession, expire_on_commit=False)
 
     async def _override_session() -> AsyncGenerator[AsyncSession, None]:
         async with factory() as sess:
@@ -150,9 +141,7 @@ def _next_monday() -> str:
     days_ahead = (7 - now.weekday()) % 7
     if days_ahead == 0:
         days_ahead = 7
-    monday = (now + timedelta(days=days_ahead)).replace(
-        hour=0, minute=0, second=0, microsecond=0
-    )
+    monday = (now + timedelta(days=days_ahead)).replace(hour=0, minute=0, second=0, microsecond=0)
     return monday.isoformat()
 
 
@@ -290,7 +279,7 @@ async def _simulate_worker_output(
     await session.flush()
 
     # Create meal slots
-    from sqlalchemy import select, update
+    from sqlalchemy import update
 
     for i, recipe in enumerate([recipe1, recipe2]):
         session.add(
@@ -308,9 +297,7 @@ async def _simulate_worker_output(
     await session.flush()
 
     # Activate the plan
-    await session.execute(
-        update(MealPlan).where(MealPlan.id == plan_id).values(status="active")
-    )
+    await session.execute(update(MealPlan).where(MealPlan.id == plan_id).values(status="active"))
     await session.flush()
 
     # Create grocery list
@@ -407,9 +394,7 @@ class TestFullLifecycle:
         # ---------------------------------------------------------------
         # Step 4: Simulate worker output (seed recipes, slots, grocery)
         # ---------------------------------------------------------------
-        await _simulate_worker_output(
-            _int_session, UUID(plan_id), _int_household.id, ingredients
-        )
+        await _simulate_worker_output(_int_session, UUID(plan_id), _int_household.id, ingredients)
 
         # ---------------------------------------------------------------
         # Step 5: Verify plan is active with slots
@@ -431,17 +416,13 @@ class TestFullLifecycle:
         # ---------------------------------------------------------------
         # Step 6: View grocery list
         # ---------------------------------------------------------------
-        grocery_resp = await int_client.get(
-            f"/api/v1/meal-plans/{plan_id}/grocery-list"
-        )
+        grocery_resp = await int_client.get(f"/api/v1/meal-plans/{plan_id}/grocery-list")
         assert grocery_resp.status_code == 200
         grocery_data = grocery_resp.json()
         assert len(grocery_data["items"]) == 3
         grocery_list_id = grocery_data["id"]
 
-        grocery_by_ing = {
-            item["ingredient_id"]: item for item in grocery_data["items"]
-        }
+        grocery_by_ing = {item["ingredient_id"]: item for item in grocery_data["items"]}
         assert grocery_by_ing[str(chicken.id)]["quantity_needed"] == 800.0
         assert grocery_by_ing[str(rice.id)]["quantity_needed"] == 300.0
         assert grocery_by_ing[str(broccoli.id)]["quantity_needed"] == 400.0
@@ -458,13 +439,8 @@ class TestFullLifecycle:
         assert check_resp.json()["is_checked"] is True
 
         # Verify persistence
-        grocery_resp2 = await int_client.get(
-            f"/api/v1/meal-plans/{plan_id}/grocery-list"
-        )
-        checked_items = {
-            item["ingredient_id"]: item
-            for item in grocery_resp2.json()["items"]
-        }
+        grocery_resp2 = await int_client.get(f"/api/v1/meal-plans/{plan_id}/grocery-list")
+        checked_items = {item["ingredient_id"]: item for item in grocery_resp2.json()["items"]}
         assert checked_items[str(chicken.id)]["is_checked"] is True
         assert checked_items[str(rice.id)]["is_checked"] is False
 
@@ -506,21 +482,15 @@ class TestFullLifecycle:
         # 200g chicken (original) + 800g chicken + 300g rice + 400g broccoli
         assert len(final_items) == 4
 
-        chicken_inv = [
-            i for i in final_items if i["ingredient"]["name"] == "Chicken Breast"
-        ]
+        chicken_inv = [i for i in final_items if i["ingredient"]["name"] == "Chicken Breast"]
         assert len(chicken_inv) == 2
         assert sum(i["quantity"] for i in chicken_inv) == 1000
 
-        rice_inv = [
-            i for i in final_items if i["ingredient"]["name"] == "Jasmine Rice"
-        ]
+        rice_inv = [i for i in final_items if i["ingredient"]["name"] == "Jasmine Rice"]
         assert len(rice_inv) == 1
         assert rice_inv[0]["quantity"] == 300
 
-        broccoli_inv = [
-            i for i in final_items if i["ingredient"]["name"] == "Broccoli"
-        ]
+        broccoli_inv = [i for i in final_items if i["ingredient"]["name"] == "Broccoli"]
         assert len(broccoli_inv) == 1
         assert broccoli_inv[0]["quantity"] == 400
 

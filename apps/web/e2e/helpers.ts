@@ -1,4 +1,4 @@
-import { Page, expect } from '@playwright/test';
+import { Page, expect } from "@playwright/test";
 
 /**
  * Shared E2E test helpers for Meal Planner.
@@ -12,7 +12,7 @@ import { Page, expect } from '@playwright/test';
  * Get the API base URL from environment or default to localhost.
  */
 export function getApiUrl(): string {
-  return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+  return process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 }
 
 /**
@@ -20,7 +20,7 @@ export function getApiUrl(): string {
  * Retries up to maxRetries times with a delay between each attempt.
  */
 export async function waitForApiReady(
-  options: { maxRetries?: number; retryDelayMs?: number } = {}
+  options: { maxRetries?: number; retryDelayMs?: number } = {},
 ): Promise<boolean> {
   const { maxRetries = 10, retryDelayMs = 5_000 } = options;
   const apiUrl = getApiUrl();
@@ -41,10 +41,12 @@ export async function waitForApiReady(
         console.log(`[helpers] API ready (attempt ${attempt})`);
         return true;
       }
-      console.log(`[helpers] API attempt ${attempt}/${maxRetries}: status=${response.status}`);
+      console.log(
+        `[helpers] API attempt ${attempt}/${maxRetries}: status=${response.status}`,
+      );
     } catch (error) {
       console.log(
-        `[helpers] API attempt ${attempt}/${maxRetries} failed: ${error instanceof Error ? error.message : error}`
+        `[helpers] API attempt ${attempt}/${maxRetries} failed: ${error instanceof Error ? error.message : error}`,
       );
     }
 
@@ -53,7 +55,7 @@ export async function waitForApiReady(
     }
   }
 
-  console.warn('[helpers] API did not become ready');
+  console.warn("[helpers] API did not become ready");
   return false;
 }
 
@@ -70,13 +72,15 @@ export async function waitForApiReady(
 export async function login(
   page: Page,
   email: string,
-  password: string
+  password: string,
 ): Promise<void> {
-  await page.goto('/auth/login');
+  await page.goto("/auth/login");
 
   const emailInput = page.getByLabel(/email/i);
   const passwordInput = page.getByLabel(/password/i);
-  const submitButton = page.getByRole('button', { name: /continue|log in|sign in/i }).last();
+  const submitButton = page
+    .getByRole("button", { name: /continue|log in|sign in/i })
+    .last();
 
   await emailInput.fill(email);
   await passwordInput.fill(password);
@@ -84,11 +88,12 @@ export async function login(
 
   // Wait for redirect back to the app
   await page.waitForURL(
-    (url) => !url.hostname.includes('auth0.com') && !url.pathname.includes('/auth/'),
-    { timeout: 30_000 }
+    (url) =>
+      !url.hostname.includes("auth0.com") && !url.pathname.includes("/auth/"),
+    { timeout: 30_000 },
   );
 
-  await expect(page.getByText('Log out')).toBeVisible({ timeout: 10_000 });
+  await expect(page.getByText("Log out")).toBeVisible({ timeout: 10_000 });
 }
 
 // ---------------------------------------------------------------------------
@@ -101,7 +106,7 @@ export async function login(
  */
 export async function waitForPageLoad(page: Page): Promise<void> {
   // Wait for the main content area to be present
-  await expect(page.locator('main')).toBeVisible({ timeout: 30_000 });
+  await expect(page.locator("main")).toBeVisible({ timeout: 30_000 });
 
   // Wait for any loading spinners to disappear
   const spinners = page.locator('[class*="animate-spin"]');
@@ -119,15 +124,15 @@ export async function waitForPageLoad(page: Page): Promise<void> {
 
 /** Navigation selectors - bottom nav bar */
 export const NAV = {
-  home: 'nav >> text=Home',
-  inventory: 'nav >> text=Inventory',
-  mealPlan: 'nav >> text=Meal Plan',
-  grocery: 'nav >> text=Grocery',
+  home: "nav >> text=Home",
+  inventory: "nav >> text=Inventory",
+  mealPlan: "nav >> text=Meal Plan",
+  grocery: "nav >> text=Grocery",
 } as const;
 
 /** Header selectors */
 export const HEADER = {
-  appTitle: 'text=Meal Planner',
-  logIn: 'text=Log in',
-  logOut: 'text=Log out',
+  appTitle: "text=Meal Planner",
+  logIn: "text=Log in",
+  logOut: "text=Log out",
 } as const;

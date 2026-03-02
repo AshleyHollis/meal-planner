@@ -1,6 +1,7 @@
 # Lambert — History
 
 ## Project Context
+
 - **Project:** Meal Planner MVP — AI meal planner with inventory, weekly plans, grocery lists
 - **Stack:** Next.js 16 + FastAPI + SQLAlchemy + Azure (AKS, SQL, SWA) + Auth0
 - **Owner:** Ashley Hollis
@@ -47,6 +48,7 @@
 ### Seed Data Analysis (seed-data.setup.ts)
 
 **What Gets Seeded**:
+
 1. Looks up 5 ingredients by name: chicken breast, jasmine rice, broccoli, olive oil, garlic
 2. Adds 5 inventory items with varied expiry dates:
    - Item 1: expired 2 days ago
@@ -57,7 +59,8 @@
 3. Creates ONE meal plan with `week_start_date = next Monday`
 4. **WAITS UP TO 120 SECONDS** for meal plan status to change from draft (lines 166-191)
 
-**Meal Plan Problem**: 
+**Meal Plan Problem**:
+
 - Created meal plan enters `draft` status initially (line 158)
 - Seed-data polls every 5 seconds checking if status changed from draft (lines 166-178)
 - Expects status to become `active` (meaning worker completed) or `failed` (LLM unavailable)
@@ -66,6 +69,7 @@
 - If worker fails (LLM not configured): logs failure reason (line 184)
 
 **Could Be Extended?** YES — Seed data could:
+
 - Create the meal plan with hardcoded completed status directly (skip worker)
 - OR create meal slots + grocery list via seed SQL INSERT
 - BUT current design requires worker to complete to test real flows
@@ -73,12 +77,13 @@
 ### Problem Map Summary
 
 **Problem 1: CORS/API Unavailable (5 tests)**
+
 - Inventory tests need `USE_EXTERNAL_SERVER=true` + working browser→API connection
 - Tests skip immediately when flag is false (form tests work, but search/create need API)
 
 **Problem 2: Meal Plan Generation Timeout (7 tests)**
+
 - Meal plan tests + all grocery tests require completed meal plan
 - Worker must transition plan from draft → active
 - Requires Azure OpenAI configured in K8s preview environment
 - OR pre-seeding a completed plan via direct DB insert
-

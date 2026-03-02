@@ -5,7 +5,7 @@
  * It warms up the SWA frontend and waits for the API to be ready.
  */
 
-import { FullConfig } from '@playwright/test';
+import { FullConfig } from "@playwright/test";
 
 /**
  * Warm up the SWA (Static Web App) preview environment.
@@ -17,7 +17,7 @@ import { FullConfig } from '@playwright/test';
  * tests no longer need try/catch/skip wrappers around page.goto().
  */
 async function warmUpSwa(): Promise<void> {
-  const WEB_URL = process.env.BASE_URL || 'http://localhost:3000';
+  const WEB_URL = process.env.BASE_URL || "http://localhost:3000";
   const maxRetries = 12;
   const retryDelay = 10_000; // 10 seconds between retries (120s max wait)
 
@@ -30,7 +30,7 @@ async function warmUpSwa(): Promise<void> {
       const timeout = setTimeout(() => controller.abort(), 15_000);
 
       const response = await fetch(WEB_URL, {
-        redirect: 'follow',
+        redirect: "follow",
         signal: controller.signal,
       });
       clearTimeout(timeout);
@@ -43,17 +43,17 @@ async function warmUpSwa(): Promise<void> {
       ) {
         const elapsed = Math.round((Date.now() - startTime) / 1000);
         console.log(
-          `[global-setup] SWA warm-up complete (${elapsed}s, status=${response.status})`
+          `[global-setup] SWA warm-up complete (${elapsed}s, status=${response.status})`,
         );
         return;
       }
       console.log(
-        `[global-setup] SWA attempt ${attempt}/${maxRetries}: status=${response.status}`
+        `[global-setup] SWA attempt ${attempt}/${maxRetries}: status=${response.status}`,
       );
     } catch (error) {
       const elapsed = Math.round((Date.now() - startTime) / 1000);
       console.log(
-        `[global-setup] SWA attempt ${attempt}/${maxRetries} failed (${elapsed}s): ${error instanceof Error ? error.message : error}`
+        `[global-setup] SWA attempt ${attempt}/${maxRetries} failed (${elapsed}s): ${error instanceof Error ? error.message : error}`,
       );
     }
 
@@ -64,7 +64,7 @@ async function warmUpSwa(): Promise<void> {
 
   const elapsed = Math.round((Date.now() - startTime) / 1000);
   console.log(
-    `[global-setup] SWA warm-up did not succeed after ${elapsed}s - tests may experience cold-start delays`
+    `[global-setup] SWA warm-up did not succeed after ${elapsed}s - tests may experience cold-start delays`,
   );
 }
 
@@ -72,7 +72,7 @@ async function warmUpSwa(): Promise<void> {
  * Wait for the backend API to be ready.
  */
 async function waitForApi(): Promise<void> {
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
   const maxRetries = 12;
   const retryDelay = 10_000;
 
@@ -95,12 +95,12 @@ async function waitForApi(): Promise<void> {
         return;
       }
       console.log(
-        `[global-setup] API attempt ${attempt}/${maxRetries}: status=${response.status}`
+        `[global-setup] API attempt ${attempt}/${maxRetries}: status=${response.status}`,
       );
     } catch (error) {
       const elapsed = Math.round((Date.now() - startTime) / 1000);
       console.log(
-        `[global-setup] API attempt ${attempt}/${maxRetries} failed (${elapsed}s): ${error instanceof Error ? error.message : error}`
+        `[global-setup] API attempt ${attempt}/${maxRetries} failed (${elapsed}s): ${error instanceof Error ? error.message : error}`,
       );
     }
 
@@ -109,13 +109,13 @@ async function waitForApi(): Promise<void> {
     }
   }
 
-  console.log('[global-setup] API did not become ready - tests may fail');
+  console.log("[global-setup] API did not become ready - tests may fail");
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function globalSetup(_config: FullConfig) {
   if (!process.env.USE_EXTERNAL_SERVER) {
-    console.log('[global-setup] Skipping (USE_EXTERNAL_SERVER not set)');
+    console.log("[global-setup] Skipping (USE_EXTERNAL_SERVER not set)");
     return;
   }
 

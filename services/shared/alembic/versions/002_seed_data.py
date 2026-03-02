@@ -8,9 +8,8 @@ Create Date: 2026-02-28
 import sys
 from pathlib import Path
 
-from alembic import op
 import sqlalchemy as sa
-from sqlalchemy.dialects.mssql import UNIQUEIDENTIFIER
+from alembic import op
 
 # Ensure seed package is importable when alembic runs
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))

@@ -17,19 +17,19 @@ The Meal Planner MVP occupies genuine white space: no existing app combines expi
 
 **Tier 1: AI-First Meal Planners**
 
-| App | AI Meal Gen | Pantry Tracking | Expiry Priority | Equipment Steps | Price |
-|-----|-------------|-----------------|-----------------|-----------------|-------|
-| **Ollie** | Yes (LLM) | Photo scan | No | No | $9.99/mo |
-| **Eat This Much** | Yes (macro-based) | No | No | No | ~$5/mo |
-| **Mealime** | Partial (curated) | No | No | No | $5.99/mo |
+| App               | AI Meal Gen       | Pantry Tracking | Expiry Priority | Equipment Steps | Price    |
+| ----------------- | ----------------- | --------------- | --------------- | --------------- | -------- |
+| **Ollie**         | Yes (LLM)         | Photo scan      | No              | No              | $9.99/mo |
+| **Eat This Much** | Yes (macro-based) | No              | No              | No              | ~$5/mo   |
+| **Mealime**       | Partial (curated) | No              | No              | No              | $5.99/mo |
 
 **Tier 2: Pantry/Waste Apps**
 
-| App | Pantry Tracking | Expiry Alerts | Recipe from Inventory |
-|-----|-----------------|---------------|----------------------|
-| **NoWaste** | Fridge/freezer/pantry | Yes | AI suggestions |
-| **KitchenPal** | Full | Yes | By ingredient search |
-| **CozZo** | Shopping + inventory | Yes | Yes (shutting down) |
+| App            | Pantry Tracking       | Expiry Alerts | Recipe from Inventory |
+| -------------- | --------------------- | ------------- | --------------------- |
+| **NoWaste**    | Fridge/freezer/pantry | Yes           | AI suggestions        |
+| **KitchenPal** | Full                  | Yes           | By ingredient search  |
+| **CozZo**      | Shopping + inventory  | Yes           | Yes (shutting down)   |
 
 **Competitive Gap Confirmed**: No single app combines all five: inventory with expiry, AI meal planning prioritizing expiry, equipment-specific steps, multi-shop grocery lists, and dual plan/cook-time customization.
 
@@ -59,36 +59,36 @@ The yt-summarizer project (`C:\Users\ashle\Source\GitHub\AshleyHollis\yt-summari
 
 **Already deployed and shared (Azure subscription 28aefbe7-e2af-4b4a-9ce1-92d6672c31bd):**
 
-| Resource | Details |
-|----------|---------|
-| AKS Cluster | Single-node, cost-optimized |
-| ACR | `acrytsummprd.azurecr.io` (shared container registry) |
-| Key Vault | Centralized secrets management |
-| Auth0 Tenant | Already configured with BFF pattern |
-| GitHub OIDC | Federated identity for CI/CD (no long-lived secrets) |
-| Cloudflare DNS | `*.apps.ashleyhollis.com` wildcard |
-| ArgoCD | GitOps controller on AKS |
-| Terraform State | Azure Blob Storage backend |
+| Resource        | Details                                               |
+| --------------- | ----------------------------------------------------- |
+| AKS Cluster     | Single-node, cost-optimized                           |
+| ACR             | `acrytsummprd.azurecr.io` (shared container registry) |
+| Key Vault       | Centralized secrets management                        |
+| Auth0 Tenant    | Already configured with BFF pattern                   |
+| GitHub OIDC     | Federated identity for CI/CD (no long-lived secrets)  |
+| Cloudflare DNS  | `*.apps.ashleyhollis.com` wildcard                    |
+| ArgoCD          | GitOps controller on AKS                              |
+| Terraform State | Azure Blob Storage backend                            |
 
 ### Tech Stack (Constitutional, NON-NEGOTIABLE)
 
-| Layer | Technology | Reference |
-|-------|-----------|-----------|
-| Frontend | Next.js 16 (App Router) + React 19 + TypeScript 5 + Tailwind CSS 4 | `apps/web/` |
-| Backend API | FastAPI 0.115+ + SQLAlchemy 2.0 async + Pydantic v2 + Uvicorn | `services/api/` |
-| Database | Azure SQL (serverless); SQL Server 2025 locally | Alembic migrations |
-| Workers | Python background workers polling Azure Queue Storage | `services/workers/` |
-| Shared | Shared Python package for DB models, config, logging | `services/shared/` |
-| Auth | Auth0 (@auth0/nextjs-auth0 BFF, JWT validation for API) | Already configured |
-| Storage | Azure Blob Storage + Azure Queue Storage; Azurite locally | Terraform + Aspire |
-| Orchestration | .NET Aspire (local), ArgoCD + Kustomize (production) | `services/aspire/` |
-| IaC | Terraform (shared-infra for cluster, /infra for app-specific) | `infra/terraform/` |
-| CI/CD | GitHub Actions (19 workflows, 9-phase CI) | `.github/workflows/` |
-| Deployment | AKS (backend) + Azure Static Web Apps (frontend) | ArgoCD GitOps |
-| DNS | Cloudflare + Gateway API | Auto-TLS certs |
-| Observability | OpenTelemetry + structlog + Aspire dashboard | All services |
-| Package Managers | npm (frontend), uv (Python) | Per-service |
-| Testing | pytest + Vitest + Playwright | All layers |
+| Layer            | Technology                                                         | Reference            |
+| ---------------- | ------------------------------------------------------------------ | -------------------- |
+| Frontend         | Next.js 16 (App Router) + React 19 + TypeScript 5 + Tailwind CSS 4 | `apps/web/`          |
+| Backend API      | FastAPI 0.115+ + SQLAlchemy 2.0 async + Pydantic v2 + Uvicorn      | `services/api/`      |
+| Database         | Azure SQL (serverless); SQL Server 2025 locally                    | Alembic migrations   |
+| Workers          | Python background workers polling Azure Queue Storage              | `services/workers/`  |
+| Shared           | Shared Python package for DB models, config, logging               | `services/shared/`   |
+| Auth             | Auth0 (@auth0/nextjs-auth0 BFF, JWT validation for API)            | Already configured   |
+| Storage          | Azure Blob Storage + Azure Queue Storage; Azurite locally          | Terraform + Aspire   |
+| Orchestration    | .NET Aspire (local), ArgoCD + Kustomize (production)               | `services/aspire/`   |
+| IaC              | Terraform (shared-infra for cluster, /infra for app-specific)      | `infra/terraform/`   |
+| CI/CD            | GitHub Actions (19 workflows, 9-phase CI)                          | `.github/workflows/` |
+| Deployment       | AKS (backend) + Azure Static Web Apps (frontend)                   | ArgoCD GitOps        |
+| DNS              | Cloudflare + Gateway API                                           | Auto-TLS certs       |
+| Observability    | OpenTelemetry + structlog + Aspire dashboard                       | All services         |
+| Package Managers | npm (frontend), uv (Python)                                        | Per-service          |
+| Testing          | pytest + Vitest + Playwright                                       | All layers           |
 
 ### Project Structure (from yt-summarizer)
 
@@ -133,6 +133,7 @@ meal-planner/
 ### Proven Patterns to Reuse
 
 **API Endpoints:**
+
 ```python
 @router.post("/api/v1/resources", response_model=ResponseModel, status_code=201)
 async def create_resource(
@@ -143,6 +144,7 @@ async def create_resource(
 ```
 
 **Database (async SQLAlchemy):**
+
 ```python
 async with AsyncSession(engine) as session:
     result = await session.execute(select(Model).where(Model.id == id))
@@ -150,12 +152,14 @@ async with AsyncSession(engine) as session:
 ```
 
 **Structured Logging:**
+
 ```python
 logger = get_logger(__name__)
 logger.info("event_name", entity_id=id, status="processing")
 ```
 
 **Health Checks:**
+
 ```python
 @router.get("/health/live")
 async def health_check(): return {"status": "ok"}
@@ -168,17 +172,17 @@ async def readiness_check(db=Depends(get_db)):
 
 ### CI/CD Pipeline (9-Phase)
 
-| Phase | Purpose | Tools |
-|-------|---------|-------|
-| 1 | Python Lint | ruff |
-| 2 | Frontend Quality | ESLint, TypeScript, Vitest |
-| 3 | Security Scan | bandit, pip audit |
-| 4 | Python Tests | pytest with xdist |
-| 5 | K8s Validation | kustomize, kubeval |
-| 6 | Docker Build | Multi-stage build → ACR |
-| 7 | Terraform Validate | terraform validate |
-| 8 | Secret Scanning | gitleaks |
-| 9 | Workflow Validation | actionlint, pre-commit |
+| Phase | Purpose             | Tools                      |
+| ----- | ------------------- | -------------------------- |
+| 1     | Python Lint         | ruff                       |
+| 2     | Frontend Quality    | ESLint, TypeScript, Vitest |
+| 3     | Security Scan       | bandit, pip audit          |
+| 4     | Python Tests        | pytest with xdist          |
+| 5     | K8s Validation      | kustomize, kubeval         |
+| 6     | Docker Build        | Multi-stage build → ACR    |
+| 7     | Terraform Validate  | terraform validate         |
+| 8     | Secret Scanning     | gitleaks                   |
+| 9     | Workflow Validation | actionlint, pre-commit     |
 
 ### GitHub Secrets (Already Configured)
 
@@ -249,27 +253,27 @@ Ingredient (1) ----< IngredientSubstitution (N)
 
 ## Quality Commands
 
-| Type | Command | Notes |
-|------|---------|-------|
-| Python Lint | `uv run ruff check` | 100-char lines |
-| Python Format | `uv run ruff format` | Auto-format |
-| Python Tests | `uv run pytest` | With xdist for parallel |
-| Frontend Lint | `npm run lint` | ESLint + Prettier |
-| Frontend Tests | `npm run test` | Vitest |
-| E2E Tests | `npx playwright test` | With Aspire running |
-| Build Frontend | `npm run build` | next build |
-| DB Migrate | `uv run alembic upgrade head` | Schema changes |
-| DB Revision | `uv run alembic revision --autogenerate -m "desc"` | New migration |
-| Aspire Start | `dotnet run --project services/aspire/AppHost` | Full stack local |
+| Type           | Command                                            | Notes                   |
+| -------------- | -------------------------------------------------- | ----------------------- |
+| Python Lint    | `uv run ruff check`                                | 100-char lines          |
+| Python Format  | `uv run ruff format`                               | Auto-format             |
+| Python Tests   | `uv run pytest`                                    | With xdist for parallel |
+| Frontend Lint  | `npm run lint`                                     | ESLint + Prettier       |
+| Frontend Tests | `npm run test`                                     | Vitest                  |
+| E2E Tests      | `npx playwright test`                              | With Aspire running     |
+| Build Frontend | `npm run build`                                    | next build              |
+| DB Migrate     | `uv run alembic upgrade head`                      | Schema changes          |
+| DB Revision    | `uv run alembic revision --autogenerate -m "desc"` | New migration           |
+| Aspire Start   | `dotnet run --project services/aspire/AppHost`     | Full stack local        |
 
 ## Feasibility Assessment
 
-| Aspect | Assessment | Notes |
-|--------|------------|-------|
-| Technical Viability | **High** | Proven stack, existing infra, established patterns |
-| Effort Estimate | **L** | 27 user stories; P1-P4 core loop is M-sized |
-| Risk Level | **Low** | Stack is production-proven in yt-summarizer |
-| Infra Cost | **Minimal** | Shared AKS cluster, serverless Azure SQL |
+| Aspect              | Assessment  | Notes                                              |
+| ------------------- | ----------- | -------------------------------------------------- |
+| Technical Viability | **High**    | Proven stack, existing infra, established patterns |
+| Effort Estimate     | **L**       | 27 user stories; P1-P4 core loop is M-sized        |
+| Risk Level          | **Low**     | Stack is production-proven in yt-summarizer        |
+| Infra Cost          | **Minimal** | Shared AKS cluster, serverless Azure SQL           |
 
 ## Recommendations for Requirements
 
@@ -286,33 +290,37 @@ Ingredient (1) ----< IngredientSubstitution (N)
 
 ## Open Questions (Resolved)
 
-| Question | Resolution |
-|----------|-----------|
-| Constitution vs simplicity? | Follow constitution. Stack is production-proven. |
-| Auth for personal app? | Use Auth0 (already deployed, BFF pattern ready). |
-| Database? | Azure SQL (serverless). Shared infra already exists. |
-| LLM provider? | Anthropic Claude or OpenAI (both available via yt-summarizer patterns). |
-| Ingredient granularity? | Separate entries ("chicken breast" vs "chicken thigh") -- affects cooking time. |
-| Leftover representation? | Separate entity with recipe reference (cleaner than overloading InventoryItem). |
-| Ninja Combi modes? | Pre-seeded, user-editable later. |
+| Question                    | Resolution                                                                      |
+| --------------------------- | ------------------------------------------------------------------------------- |
+| Constitution vs simplicity? | Follow constitution. Stack is production-proven.                                |
+| Auth for personal app?      | Use Auth0 (already deployed, BFF pattern ready).                                |
+| Database?                   | Azure SQL (serverless). Shared infra already exists.                            |
+| LLM provider?               | Anthropic Claude or OpenAI (both available via yt-summarizer patterns).         |
+| Ingredient granularity?     | Separate entries ("chicken breast" vs "chicken thigh") -- affects cooking time. |
+| Leftover representation?    | Separate entity with recipe reference (cleaner than overloading InventoryItem). |
+| Ninja Combi modes?          | Pre-seeded, user-editable later.                                                |
 
 ## Sources
 
 ### AI & Meal Planning
+
 - [Ollie AI](https://ollie.ai/)
 - [CHI 2025 - LLM + Constrained Optimization](https://dl.acm.org/doi/10.1145/3706599.3719960)
 - [DualAgent-Rec](https://arxiv.org/abs/2601.19121)
 
 ### Reference Architecture
+
 - yt-summarizer: `C:\Users\ashle\Source\GitHub\AshleyHollis\yt-summarizer`
 - Azure subscription: `28aefbe7-e2af-4b4a-9ce1-92d6672c31bd`
 - Shared infra: `AshleyHollis/shared-infra`
 
 ### Data Modeling
+
 - [Schema.org Recipe](https://schema.org/Recipe)
 - [Open Recipe Format](https://open-recipe-format.readthedocs.io/en/latest/)
 - [Ninja Combi SFP700 Guide](https://support.ninjakitchen.com/hc/en-us/articles/12422629276188)
 
 ### Voice & UX
+
 - [Web Speech API MDN](https://developer.mozilla.org/en-US/docs/Web/API/Web_Speech_API)
 - [Screen Wake Lock API MDN](https://developer.mozilla.org/en-US/docs/Web/API/Screen_Wake_Lock_API)

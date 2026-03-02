@@ -371,15 +371,15 @@ git worktree remove ../meal-planner-008-platform
 
 ## Summary
 
-| Tier | Spec | Branch | Features | Parallel With |
-|------|------|--------|----------|---------------|
-| 1 | 002 | 002-inventory-enhancements | P5, P11, P14, P15 | 003 |
-| 1 | 003 | 003-personalization-ai | P6, P7, P17, P22 | 002 |
-| 2 | 004 | 004-planning-enhancements | P8, P13, P20, P25 | 005 |
-| 2 | 005 | 005-grocery-enhancements | P18, P24 | 004 |
-| 3 | 006 | 006-cooking-experience | P9, P10, P26 | 007 |
-| 3 | 007 | 007-notifications-tracking | P16, P27 | 006 |
-| 4 | 008 | 008-platform | P12, P19 | - |
+| Tier | Spec | Branch                     | Features          | Parallel With |
+| ---- | ---- | -------------------------- | ----------------- | ------------- |
+| 1    | 002  | 002-inventory-enhancements | P5, P11, P14, P15 | 003           |
+| 1    | 003  | 003-personalization-ai     | P6, P7, P17, P22  | 002           |
+| 2    | 004  | 004-planning-enhancements  | P8, P13, P20, P25 | 005           |
+| 2    | 005  | 005-grocery-enhancements   | P18, P24          | 004           |
+| 3    | 006  | 006-cooking-experience     | P9, P10, P26      | 007           |
+| 3    | 007  | 007-notifications-tracking | P16, P27          | 006           |
+| 4    | 008  | 008-platform               | P12, P19          | -             |
 
 Total: 7 specs, 4 tiers, 23 features.
 With parallel execution, you run 7 specs in the wall-clock time of 4.

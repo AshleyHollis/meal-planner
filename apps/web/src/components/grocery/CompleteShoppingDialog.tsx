@@ -58,7 +58,9 @@ function CompleteShoppingDialog({
       onComplete?.();
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to complete shopping");
+      setError(
+        err instanceof Error ? err.message : "Failed to complete shopping",
+      );
     } finally {
       setLoading(false);
     }

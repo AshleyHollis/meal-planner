@@ -17,7 +17,7 @@ Focus: Scaffold the full stack, prove the core loop works end-to-end (inventory 
   - **Do**:
     1. Create `services/shared/` directory with `shared/__init__.py`, `pyproject.toml`
     2. Copy `pyproject.toml` pattern from yt-summarizer shared (hatchling build, ruff config, 100-char line-length, pytest config)
-    3. Add dependencies: sqlalchemy, pydantic, pydantic-settings, azure-storage-queue, structlog, alembic, pyodbc, aioodbc, greenlet, tenacity, opentelemetry-*
+    3. Add dependencies: sqlalchemy, pydantic, pydantic-settings, azure-storage-queue, structlog, alembic, pyodbc, aioodbc, greenlet, tenacity, opentelemetry-\*
   - **Files**: `services/shared/pyproject.toml`, `services/shared/shared/__init__.py`
   - **Done when**: `cd services/shared && uv sync` succeeds
   - **Verify**: `cd services/shared && uv sync 2>&1 | tail -1`
@@ -164,7 +164,7 @@ Focus: Scaffold the full stack, prove the core loop works end-to-end (inventory 
   - _Requirements: FR-09, FR-10, FR-11, AC-3.1_
   - _Design: Database Schema - grocery.py_
 
-- [x] 1.13 Create models __init__.py with all exports
+- [x] 1.13 Create models **init**.py with all exports
   - **Do**:
     1. Update `services/shared/shared/db/models/__init__.py` to import and re-export all 13 model classes
     2. Define `__all__` list matching design
@@ -172,7 +172,7 @@ Focus: Scaffold the full stack, prove the core loop works end-to-end (inventory 
   - **Done when**: All 13 models importable from `shared.db.models`
   - **Verify**: `cd services/shared && uv run python -c "from shared.db.models import Base, Household, HouseholdMember, Ingredient, InventoryItem, Equipment, EquipmentMode, Recipe, RecipeIngredient, RecipeStep, MealPlan, MealSlot, GroceryList, GroceryItem; print('13 models OK')"`
   - **Commit**: `feat(shared): export all SQLAlchemy models from models package`
-  - _Design: models/__init__.py_
+  - _Design: models/**init**.py_
 
 - [x] V1 [VERIFY] Quality checkpoint: shared package
   - **Do**: Run ruff linter and verify all imports resolve
@@ -386,7 +386,7 @@ Focus: Scaffold the full stack, prove the core loop works end-to-end (inventory 
 - [x] 1.29 Register all routers in app factory
   - **Do**:
     1. Update `services/api/src/api/main.py` to include inventory, equipment, ingredients, health routers
-    2. Set up proper route prefixes (/api/v1/*)
+    2. Set up proper route prefixes (/api/v1/\*)
   - **Files**: `services/api/src/api/main.py`
   - **Done when**: All routes accessible via create_app()
   - **Verify**: `cd services/api && uv run python -c "from src.api.main import create_app; app = create_app(); routes = [r.path for r in app.routes if hasattr(r, 'path')]; print(f'{len(routes)} total routes'); assert any('/inventory' in r for r in routes)"`

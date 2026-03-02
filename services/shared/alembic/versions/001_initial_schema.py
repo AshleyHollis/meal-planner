@@ -5,8 +5,8 @@ Revises:
 Create Date: 2026-02-28
 """
 
-from alembic import op
 import sqlalchemy as sa
+from alembic import op
 from sqlalchemy.dialects.mssql import UNIQUEIDENTIFIER
 
 # revision identifiers
@@ -24,8 +24,12 @@ def upgrade() -> None:
         sa.Column("id", UNIQUEIDENTIFIER(), nullable=False, server_default=sa.text("NEWID()")),
         sa.Column("name", sa.String(200), nullable=False),
         sa.Column("default_servings", sa.Integer(), nullable=False, server_default="2"),
-        sa.Column("created_at", sa.DateTime(), nullable=False, server_default=sa.text("SYSUTCDATETIME()")),
-        sa.Column("updated_at", sa.DateTime(), nullable=False, server_default=sa.text("SYSUTCDATETIME()")),
+        sa.Column(
+            "created_at", sa.DateTime(), nullable=False, server_default=sa.text("SYSUTCDATETIME()")
+        ),
+        sa.Column(
+            "updated_at", sa.DateTime(), nullable=False, server_default=sa.text("SYSUTCDATETIME()")
+        ),
         sa.PrimaryKeyConstraint("id"),
     )
 
@@ -37,8 +41,12 @@ def upgrade() -> None:
         sa.Column("default_unit", sa.String(10), nullable=False),
         sa.Column("default_storage", sa.String(20), nullable=False),
         sa.Column("typical_shelf_life_days", sa.Integer(), nullable=True),
-        sa.Column("created_at", sa.DateTime(), nullable=False, server_default=sa.text("SYSUTCDATETIME()")),
-        sa.Column("updated_at", sa.DateTime(), nullable=False, server_default=sa.text("SYSUTCDATETIME()")),
+        sa.Column(
+            "created_at", sa.DateTime(), nullable=False, server_default=sa.text("SYSUTCDATETIME()")
+        ),
+        sa.Column(
+            "updated_at", sa.DateTime(), nullable=False, server_default=sa.text("SYSUTCDATETIME()")
+        ),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("name"),
     )
@@ -54,8 +62,12 @@ def upgrade() -> None:
         sa.Column("auth0_user_id", sa.String(100), nullable=False),
         sa.Column("display_name", sa.String(200), nullable=False),
         sa.Column("role", sa.String(20), nullable=False, server_default="owner"),
-        sa.Column("created_at", sa.DateTime(), nullable=False, server_default=sa.text("SYSUTCDATETIME()")),
-        sa.Column("updated_at", sa.DateTime(), nullable=False, server_default=sa.text("SYSUTCDATETIME()")),
+        sa.Column(
+            "created_at", sa.DateTime(), nullable=False, server_default=sa.text("SYSUTCDATETIME()")
+        ),
+        sa.Column(
+            "updated_at", sa.DateTime(), nullable=False, server_default=sa.text("SYSUTCDATETIME()")
+        ),
         sa.PrimaryKeyConstraint("id"),
         sa.ForeignKeyConstraint(["household_id"], ["Households.id"]),
         sa.UniqueConstraint("auth0_user_id"),
@@ -72,8 +84,12 @@ def upgrade() -> None:
         sa.Column("unit", sa.String(10), nullable=False),
         sa.Column("location", sa.String(20), nullable=False),
         sa.Column("expiry_date", sa.DateTime(), nullable=True),
-        sa.Column("created_at", sa.DateTime(), nullable=False, server_default=sa.text("SYSUTCDATETIME()")),
-        sa.Column("updated_at", sa.DateTime(), nullable=False, server_default=sa.text("SYSUTCDATETIME()")),
+        sa.Column(
+            "created_at", sa.DateTime(), nullable=False, server_default=sa.text("SYSUTCDATETIME()")
+        ),
+        sa.Column(
+            "updated_at", sa.DateTime(), nullable=False, server_default=sa.text("SYSUTCDATETIME()")
+        ),
         sa.PrimaryKeyConstraint("id"),
         sa.ForeignKeyConstraint(["household_id"], ["Households.id"]),
         sa.ForeignKeyConstraint(["ingredient_id"], ["Ingredients.id"]),
@@ -89,8 +105,12 @@ def upgrade() -> None:
         sa.Column("household_id", UNIQUEIDENTIFIER(), nullable=False),
         sa.Column("name", sa.String(200), nullable=False),
         sa.Column("is_active", sa.Boolean(), nullable=False, server_default="1"),
-        sa.Column("created_at", sa.DateTime(), nullable=False, server_default=sa.text("SYSUTCDATETIME()")),
-        sa.Column("updated_at", sa.DateTime(), nullable=False, server_default=sa.text("SYSUTCDATETIME()")),
+        sa.Column(
+            "created_at", sa.DateTime(), nullable=False, server_default=sa.text("SYSUTCDATETIME()")
+        ),
+        sa.Column(
+            "updated_at", sa.DateTime(), nullable=False, server_default=sa.text("SYSUTCDATETIME()")
+        ),
         sa.PrimaryKeyConstraint("id"),
         sa.ForeignKeyConstraint(["household_id"], ["Households.id"]),
     )
@@ -124,8 +144,12 @@ def upgrade() -> None:
         sa.Column("cook_time_min", sa.Integer(), nullable=True),
         sa.Column("is_ai_generated", sa.Boolean(), nullable=False, server_default="0"),
         sa.Column("source_recipe_id", UNIQUEIDENTIFIER(), nullable=True),
-        sa.Column("created_at", sa.DateTime(), nullable=False, server_default=sa.text("SYSUTCDATETIME()")),
-        sa.Column("updated_at", sa.DateTime(), nullable=False, server_default=sa.text("SYSUTCDATETIME()")),
+        sa.Column(
+            "created_at", sa.DateTime(), nullable=False, server_default=sa.text("SYSUTCDATETIME()")
+        ),
+        sa.Column(
+            "updated_at", sa.DateTime(), nullable=False, server_default=sa.text("SYSUTCDATETIME()")
+        ),
         sa.PrimaryKeyConstraint("id"),
         sa.ForeignKeyConstraint(["household_id"], ["Households.id"]),
         sa.ForeignKeyConstraint(["source_recipe_id"], ["Recipes.id"]),
@@ -173,8 +197,12 @@ def upgrade() -> None:
         sa.Column("week_start_date", sa.DateTime(), nullable=False),
         sa.Column("status", sa.String(20), nullable=False, server_default="draft"),
         sa.Column("error_message", sa.String(1000), nullable=True),
-        sa.Column("created_at", sa.DateTime(), nullable=False, server_default=sa.text("SYSUTCDATETIME()")),
-        sa.Column("updated_at", sa.DateTime(), nullable=False, server_default=sa.text("SYSUTCDATETIME()")),
+        sa.Column(
+            "created_at", sa.DateTime(), nullable=False, server_default=sa.text("SYSUTCDATETIME()")
+        ),
+        sa.Column(
+            "updated_at", sa.DateTime(), nullable=False, server_default=sa.text("SYSUTCDATETIME()")
+        ),
         sa.PrimaryKeyConstraint("id"),
         sa.ForeignKeyConstraint(["household_id"], ["Households.id"]),
     )
@@ -191,8 +219,12 @@ def upgrade() -> None:
         sa.Column("meal_type", sa.String(20), nullable=False),
         sa.Column("status", sa.String(20), nullable=False, server_default="planned"),
         sa.Column("cooked_at", sa.DateTime(), nullable=True),
-        sa.Column("created_at", sa.DateTime(), nullable=False, server_default=sa.text("SYSUTCDATETIME()")),
-        sa.Column("updated_at", sa.DateTime(), nullable=False, server_default=sa.text("SYSUTCDATETIME()")),
+        sa.Column(
+            "created_at", sa.DateTime(), nullable=False, server_default=sa.text("SYSUTCDATETIME()")
+        ),
+        sa.Column(
+            "updated_at", sa.DateTime(), nullable=False, server_default=sa.text("SYSUTCDATETIME()")
+        ),
         sa.PrimaryKeyConstraint("id"),
         sa.ForeignKeyConstraint(["meal_plan_id"], ["MealPlans.id"]),
         sa.ForeignKeyConstraint(["recipe_id"], ["Recipes.id"]),
@@ -206,8 +238,12 @@ def upgrade() -> None:
         "GroceryLists",
         sa.Column("id", UNIQUEIDENTIFIER(), nullable=False, server_default=sa.text("NEWID()")),
         sa.Column("meal_plan_id", UNIQUEIDENTIFIER(), nullable=False),
-        sa.Column("created_at", sa.DateTime(), nullable=False, server_default=sa.text("SYSUTCDATETIME()")),
-        sa.Column("updated_at", sa.DateTime(), nullable=False, server_default=sa.text("SYSUTCDATETIME()")),
+        sa.Column(
+            "created_at", sa.DateTime(), nullable=False, server_default=sa.text("SYSUTCDATETIME()")
+        ),
+        sa.Column(
+            "updated_at", sa.DateTime(), nullable=False, server_default=sa.text("SYSUTCDATETIME()")
+        ),
         sa.PrimaryKeyConstraint("id"),
         sa.ForeignKeyConstraint(["meal_plan_id"], ["MealPlans.id"]),
         sa.UniqueConstraint("meal_plan_id"),
@@ -224,8 +260,12 @@ def upgrade() -> None:
         sa.Column("unit", sa.String(10), nullable=False),
         sa.Column("is_checked", sa.Boolean(), nullable=False, server_default="0"),
         sa.Column("preferred_store", sa.String(200), nullable=True),
-        sa.Column("created_at", sa.DateTime(), nullable=False, server_default=sa.text("SYSUTCDATETIME()")),
-        sa.Column("updated_at", sa.DateTime(), nullable=False, server_default=sa.text("SYSUTCDATETIME()")),
+        sa.Column(
+            "created_at", sa.DateTime(), nullable=False, server_default=sa.text("SYSUTCDATETIME()")
+        ),
+        sa.Column(
+            "updated_at", sa.DateTime(), nullable=False, server_default=sa.text("SYSUTCDATETIME()")
+        ),
         sa.PrimaryKeyConstraint("id"),
         sa.ForeignKeyConstraint(["grocery_list_id"], ["GroceryLists.id"]),
         sa.ForeignKeyConstraint(["ingredient_id"], ["Ingredients.id"]),

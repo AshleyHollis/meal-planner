@@ -58,7 +58,10 @@ function mockResponse(
 
 /** Token response from Auth0 BFF endpoint. */
 function tokenResponse(token = "test-jwt-token") {
-  return mockResponse({ token, expires_at: Math.floor(Date.now() / 1000) + 3600 });
+  return mockResponse({
+    token,
+    expires_at: Math.floor(Date.now() / 1000) + 3600,
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -106,7 +109,9 @@ describe("ApiError", () => {
   });
 
   it("isServerError returns true for 5xx", () => {
-    expect(new ApiError(500, "Internal Server Error", null).isServerError).toBe(true);
+    expect(new ApiError(500, "Internal Server Error", null).isServerError).toBe(
+      true,
+    );
     expect(new ApiError(502, "Bad Gateway", null).isServerError).toBe(true);
     expect(new ApiError(400, "Bad Request", null).isServerError).toBe(false);
   });
@@ -135,7 +140,9 @@ describe("fetchApi wrapper", () => {
   it("skips Authorization when token fetch fails", async () => {
     const api = await freshApi();
     fetchMock
-      .mockResolvedValueOnce(mockResponse(null, { status: 401, statusText: "Unauthorized" }))
+      .mockResolvedValueOnce(
+        mockResponse(null, { status: 401, statusText: "Unauthorized" }),
+      )
       .mockResolvedValueOnce(mockResponse([]));
 
     await api.listInventory();
@@ -150,7 +157,10 @@ describe("fetchApi wrapper", () => {
     fetchMock
       .mockResolvedValueOnce(tokenResponse())
       .mockResolvedValueOnce(
-        mockResponse({ detail: "not found" }, { status: 404, statusText: "Not Found" }),
+        mockResponse(
+          { detail: "not found" },
+          { status: 404, statusText: "Not Found" },
+        ),
       );
 
     try {
@@ -159,21 +169,21 @@ describe("fetchApi wrapper", () => {
     } catch (e) {
       expect(e).toBeInstanceOf(api.ApiError);
       expect((e as InstanceType<typeof api.ApiError>).status).toBe(404);
-      expect((e as InstanceType<typeof api.ApiError>).body).toEqual({ detail: "not found" });
+      expect((e as InstanceType<typeof api.ApiError>).body).toEqual({
+        detail: "not found",
+      });
     }
   });
 
   it("returns undefined for 204 No Content", async () => {
     const api = await freshApi();
-    fetchMock
-      .mockResolvedValueOnce(tokenResponse())
-      .mockResolvedValueOnce({
-        ...mockResponse(null),
-        ok: true,
-        status: 204,
-        statusText: "No Content",
-        json: () => Promise.reject(new Error("no body")),
-      } as Response);
+    fetchMock.mockResolvedValueOnce(tokenResponse()).mockResolvedValueOnce({
+      ...mockResponse(null),
+      ok: true,
+      status: 204,
+      statusText: "No Content",
+      json: () => Promise.reject(new Error("no body")),
+    } as Response);
 
     const result = await api.removeInventoryItem("item-1");
     expect(result).toBeUndefined();
@@ -181,15 +191,13 @@ describe("fetchApi wrapper", () => {
 
   it("handles JSON parse error in error body gracefully", async () => {
     const api = await freshApi();
-    fetchMock
-      .mockResolvedValueOnce(tokenResponse())
-      .mockResolvedValueOnce({
-        ok: false,
-        status: 500,
-        statusText: "Internal Server Error",
-        json: () => Promise.reject(new Error("invalid json")),
-        headers: new Headers(),
-      } as unknown as Response);
+    fetchMock.mockResolvedValueOnce(tokenResponse()).mockResolvedValueOnce({
+      ok: false,
+      status: 500,
+      statusText: "Internal Server Error",
+      json: () => Promise.reject(new Error("invalid json")),
+      headers: new Headers(),
+    } as unknown as Response);
 
     try {
       await api.listInventory();
@@ -241,12 +249,19 @@ describe("Inventory API methods", () => {
       .mockResolvedValueOnce(mockResponse([]));
 
     await api.listInventory("fridge");
-    expect(fetchMock.mock.calls[1][0]).toBe(`${API_URL}/api/v1/inventory?location=fridge`);
+    expect(fetchMock.mock.calls[1][0]).toBe(
+      `${API_URL}/api/v1/inventory?location=fridge`,
+    );
   });
 
   it("addInventoryItem calls POST /api/v1/inventory", async () => {
     const api = await freshApi();
-    const body = { ingredient_id: "i1", quantity: 500, unit: "g" as const, location: "pantry" as const };
+    const body = {
+      ingredient_id: "i1",
+      quantity: 500,
+      unit: "g" as const,
+      location: "pantry" as const,
+    };
     fetchMock
       .mockResolvedValueOnce(tokenResponse())
       .mockResolvedValueOnce(mockResponse({ id: "new" }));
@@ -272,15 +287,13 @@ describe("Inventory API methods", () => {
 
   it("removeInventoryItem calls DELETE /api/v1/inventory/:id", async () => {
     const api = await freshApi();
-    fetchMock
-      .mockResolvedValueOnce(tokenResponse())
-      .mockResolvedValueOnce({
-        ...mockResponse(null),
-        ok: true,
-        status: 204,
-        statusText: "No Content",
-        json: () => Promise.reject(new Error("no body")),
-      } as Response);
+    fetchMock.mockResolvedValueOnce(tokenResponse()).mockResolvedValueOnce({
+      ...mockResponse(null),
+      ok: true,
+      status: 204,
+      statusText: "No Content",
+      json: () => Promise.reject(new Error("no body")),
+    } as Response);
 
     await api.removeInventoryItem("x");
     const [url, init] = fetchMock.mock.calls[1];
@@ -307,7 +320,10 @@ describe("Equipment API methods", () => {
 
   it("registerEquipment calls POST /api/v1/equipment", async () => {
     const api = await freshApi();
-    const body = { name: "Ninja Combi", modes: [{ name: "Air Fry", category: "fry" }] };
+    const body = {
+      name: "Ninja Combi",
+      modes: [{ name: "Air Fry", category: "fry" }],
+    };
     fetchMock
       .mockResolvedValueOnce(tokenResponse())
       .mockResolvedValueOnce(mockResponse({ id: "eq2" }));
@@ -343,7 +359,9 @@ describe("Ingredients API methods", () => {
       .mockResolvedValueOnce(mockResponse([]));
 
     await api.searchIngredients("chick", 10);
-    expect(fetchMock.mock.calls[1][0]).toBe(`${API_URL}/api/v1/ingredients?q=chick&limit=10`);
+    expect(fetchMock.mock.calls[1][0]).toBe(
+      `${API_URL}/api/v1/ingredients?q=chick&limit=10`,
+    );
   });
 });
 
@@ -382,7 +400,9 @@ describe("Meal Plans API methods", () => {
       .mockResolvedValueOnce(mockResponse({ id: "mp1", slots: [] }));
 
     await api.getActiveMealPlan();
-    expect(fetchMock.mock.calls[1][0]).toBe(`${API_URL}/api/v1/meal-plans/active`);
+    expect(fetchMock.mock.calls[1][0]).toBe(
+      `${API_URL}/api/v1/meal-plans/active`,
+    );
   });
 
   it("getMealPlan calls GET /api/v1/meal-plans/:id", async () => {
@@ -453,7 +473,9 @@ describe("Recipes API methods", () => {
     const api = await freshApi();
     fetchMock
       .mockResolvedValueOnce(tokenResponse())
-      .mockResolvedValueOnce(mockResponse({ recipe_id: "r1", status: "saved" }));
+      .mockResolvedValueOnce(
+        mockResponse({ recipe_id: "r1", status: "saved" }),
+      );
 
     await api.saveRecipeVariation("r1");
     const [url, init] = fetchMock.mock.calls[1];
@@ -474,7 +496,9 @@ describe("Grocery API methods", () => {
       .mockResolvedValueOnce(mockResponse({ id: "gl1", items: [] }));
 
     await api.getGroceryList("mp1");
-    expect(fetchMock.mock.calls[1][0]).toBe(`${API_URL}/api/v1/meal-plans/mp1/grocery-list`);
+    expect(fetchMock.mock.calls[1][0]).toBe(
+      `${API_URL}/api/v1/meal-plans/mp1/grocery-list`,
+    );
   });
 
   it("checkGroceryItem calls PATCH /api/v1/grocery-items/:id", async () => {

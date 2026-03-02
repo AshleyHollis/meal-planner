@@ -3,15 +3,10 @@
 from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
-import pytest
-from shared.db.models.household import Household, HouseholdMember
-from shared.db.models.ingredient import Ingredient
-from shared.db.models.inventory import InventoryItem
-from sqlalchemy.ext.asyncio import AsyncSession
-
 from api.models.inventory import CreateInventoryItem, InventoryItemResponse, UpdateInventoryItem
 from api.services.inventory_service import InventoryService
-
+from shared.db.models.ingredient import Ingredient
+from sqlalchemy.ext.asyncio import AsyncSession
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -212,9 +207,7 @@ class TestUpdateItem:
         assert updated is not None
         assert updated.quantity == 300
 
-    async def test_update_nonexistent_returns_none(
-        self, session: AsyncSession, household
-    ):
+    async def test_update_nonexistent_returns_none(self, session: AsyncSession, household):
         svc = InventoryService(session, household.id)
         result = await svc.update_item(uuid4(), UpdateInventoryItem(quantity=100))
         assert result is None
@@ -257,9 +250,14 @@ class TestExpiryStatus:
     def test_no_expiry_is_safe(self):
         resp = InventoryItemResponse(
             id=uuid4(),
-            ingredient={"id": uuid4(), "name": "Rice", "category": "grain",
-                        "default_unit": "g", "default_storage": "pantry",
-                        "typical_shelf_life_days": 365},
+            ingredient={
+                "id": uuid4(),
+                "name": "Rice",
+                "category": "grain",
+                "default_unit": "g",
+                "default_storage": "pantry",
+                "typical_shelf_life_days": 365,
+            },
             quantity=1000,
             unit="g",
             location="pantry",
@@ -271,9 +269,14 @@ class TestExpiryStatus:
     def test_future_expiry_is_safe(self):
         resp = InventoryItemResponse(
             id=uuid4(),
-            ingredient={"id": uuid4(), "name": "Pasta", "category": "grain",
-                        "default_unit": "g", "default_storage": "pantry",
-                        "typical_shelf_life_days": 365},
+            ingredient={
+                "id": uuid4(),
+                "name": "Pasta",
+                "category": "grain",
+                "default_unit": "g",
+                "default_storage": "pantry",
+                "typical_shelf_life_days": 365,
+            },
             quantity=500,
             unit="g",
             location="pantry",
@@ -285,9 +288,14 @@ class TestExpiryStatus:
     def test_expiring_within_three_days(self):
         resp = InventoryItemResponse(
             id=uuid4(),
-            ingredient={"id": uuid4(), "name": "Milk", "category": "dairy",
-                        "default_unit": "ml", "default_storage": "fridge",
-                        "typical_shelf_life_days": 7},
+            ingredient={
+                "id": uuid4(),
+                "name": "Milk",
+                "category": "dairy",
+                "default_unit": "ml",
+                "default_storage": "fridge",
+                "typical_shelf_life_days": 7,
+            },
             quantity=1000,
             unit="ml",
             location="fridge",
@@ -299,9 +307,14 @@ class TestExpiryStatus:
     def test_past_expiry_is_expired(self):
         resp = InventoryItemResponse(
             id=uuid4(),
-            ingredient={"id": uuid4(), "name": "Yogurt", "category": "dairy",
-                        "default_unit": "ml", "default_storage": "fridge",
-                        "typical_shelf_life_days": 14},
+            ingredient={
+                "id": uuid4(),
+                "name": "Yogurt",
+                "category": "dairy",
+                "default_unit": "ml",
+                "default_storage": "fridge",
+                "typical_shelf_life_days": 14,
+            },
             quantity=200,
             unit="ml",
             location="fridge",
