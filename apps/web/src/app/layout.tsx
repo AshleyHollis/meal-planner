@@ -85,11 +85,71 @@ function GroceryIcon({ className }: { className?: string }) {
   );
 }
 
+function DesktopSidebar() {
+  const pathname = usePathname();
+  const { user, isLoading } = useUser();
+
+  return (
+    <aside className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0 lg:z-40 lg:border-r lg:border-gray-200 lg:bg-white">
+      <div className="flex h-14 items-center border-b border-gray-200 px-6">
+        <Link href="/" className="text-lg font-bold text-gray-900">
+          Meal Planner
+        </Link>
+      </div>
+      <nav className="flex-1 overflow-y-auto px-3 py-4">
+        {navItems.map(({ href, label, icon: Icon }) => {
+          const isActive =
+            href === "/" ? pathname === "/" : pathname.startsWith(href);
+          return (
+            <Link
+              key={href}
+              href={href}
+              className={`mb-1 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                isActive
+                  ? "bg-blue-50 text-blue-600"
+                  : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+              }`}
+            >
+              <Icon className="h-5 w-5 flex-shrink-0" />
+              <span>{label}</span>
+            </Link>
+          );
+        })}
+      </nav>
+      <div className="border-t border-gray-200 px-3 py-4">
+        {!isLoading &&
+          (user ? (
+            <div className="flex items-center gap-3">
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium text-gray-900">
+                  {user.name ?? user.email}
+                </p>
+              </div>
+              <a
+                href="/api/auth/logout"
+                className="text-sm text-gray-500 hover:text-gray-700"
+              >
+                Log out
+              </a>
+            </div>
+          ) : (
+            <a
+              href="/api/auth/login"
+              className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50"
+            >
+              Log in
+            </a>
+          ))}
+      </div>
+    </aside>
+  );
+}
+
 function Header() {
   const { user, isLoading } = useUser();
 
   return (
-    <header className="sticky top-0 z-40 border-b border-gray-200 bg-white">
+    <header className="sticky top-0 z-40 border-b border-gray-200 bg-white lg:hidden">
       <div className="mx-auto flex h-14 max-w-2xl items-center justify-between px-4">
         <Link href="/" className="text-lg font-bold text-gray-900">
           Meal Planner
@@ -120,7 +180,7 @@ function BottomNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-gray-200 bg-white pb-[env(safe-area-inset-bottom)]">
+    <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-gray-200 bg-white pb-[env(safe-area-inset-bottom)] lg:hidden">
       <div className="mx-auto flex max-w-2xl items-center justify-around">
         {navItems.map(({ href, label, icon: Icon }) => {
           const isActive =
@@ -164,9 +224,12 @@ export default function RootLayout({
       </head>
       <body className="min-w-[375px] bg-gray-50">
         <Auth0Provider>
-          <Header />
-          <div className="pb-20">{children}</div>
-          <BottomNav />
+          <DesktopSidebar />
+          <div className="lg:pl-64">
+            <Header />
+            <div className="pb-20 lg:pb-0">{children}</div>
+            <BottomNav />
+          </div>
         </Auth0Provider>
       </body>
     </html>

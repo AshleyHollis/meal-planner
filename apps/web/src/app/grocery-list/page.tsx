@@ -30,7 +30,7 @@ export default function GroceryListIndexPage() {
 
   if (loading && !noPlan) {
     return (
-      <main className="mx-auto max-w-2xl px-4 py-8">
+      <main className="mx-auto max-w-2xl px-4 py-8 lg:max-w-7xl">
         <div className="flex justify-center py-12">
           <Spinner size="lg" />
         </div>
@@ -39,7 +39,7 @@ export default function GroceryListIndexPage() {
   }
 
   return (
-    <main className="mx-auto max-w-2xl px-4 py-8">
+    <main className="mx-auto max-w-2xl px-4 py-8 lg:max-w-7xl">
       <h1 className="mb-6 text-2xl font-bold text-gray-900">Grocery List</h1>
       <div className="rounded-lg border border-gray-200 bg-white p-6 text-center">
         <p className="mb-4 text-gray-600">

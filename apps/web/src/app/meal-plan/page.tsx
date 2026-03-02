@@ -61,7 +61,7 @@ export default function MealPlanListPage() {
   };
 
   return (
-    <main className="mx-auto max-w-2xl px-4 py-8">
+    <main className="mx-auto max-w-2xl px-4 py-8 lg:max-w-7xl">
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">Meal Plans</h1>
         <Button
@@ -92,12 +92,12 @@ export default function MealPlanListPage() {
       )}
 
       {!loading && !error && plans.length > 0 && (
-        <ul className="divide-y divide-gray-200 rounded-lg border border-gray-200">
+        <ul className="divide-y divide-gray-200 rounded-lg border border-gray-200 lg:grid lg:grid-cols-2 lg:divide-y-0 lg:gap-px">
           {plans.map((plan) => (
-            <li key={plan.id}>
+            <li key={plan.id} className="lg:border lg:border-gray-200 lg:first:rounded-tl-lg lg:first:rounded-bl-lg lg:[&:nth-child(2)]:rounded-tr-lg lg:last:rounded-br-lg">
               <Link
                 href={`/meal-plan/${plan.id}`}
-                className="flex items-center justify-between px-4 py-3 hover:bg-gray-50"
+                className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 lg:rounded-lg lg:p-6"
               >
                 <div>
                   <p className="font-medium text-gray-900">

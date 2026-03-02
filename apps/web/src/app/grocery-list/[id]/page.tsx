@@ -44,7 +44,7 @@ export default function GroceryListPage({ params }: GroceryListPageProps) {
     groceryList?.items.filter((item) => item.is_checked) ?? [];
 
   return (
-    <main className="mx-auto max-w-2xl px-4 py-8">
+    <main className="mx-auto max-w-2xl px-4 py-8 lg:max-w-7xl">
       <div className="mb-6 flex items-center justify-between">
         <Link
           href={`/meal-plan/${groceryList?.meal_plan_id ?? id}`}

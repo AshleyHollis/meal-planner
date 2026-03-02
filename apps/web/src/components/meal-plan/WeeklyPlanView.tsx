@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import type {
   MealPlanDetail,
   MealSlot,
@@ -7,6 +8,7 @@ import type {
   EquipmentMode,
 } from "@/types";
 import { Badge } from "../ui/Badge";
+import { getMealImageUrl, getMealCategory, getCategoryColor } from "@/lib/meal-images";
 
 const DAY_LABELS = [
   "Monday",
@@ -80,14 +82,36 @@ function WeeklyPlanView({ plan, equipment = [] }: WeeklyPlanViewProps) {
         Week of {plan.week_start_date}
       </h2>
 
-      <ul className="divide-y divide-gray-200 rounded-lg border border-gray-200">
+      <ul className="divide-y divide-gray-200 rounded-lg border border-gray-200 lg:grid lg:grid-cols-2 lg:divide-y-0 xl:grid-cols-3">
         {DAY_LABELS.map((label, dayIndex) => {
           const slot = slotsByDay.get(dayIndex);
           const recipe = slot?.recipe ?? null;
           const equipmentTags = slot ? getEquipmentTags(slot, modeLookup) : [];
 
           return (
-            <li key={dayIndex} className="px-4 py-3">
+            <li key={dayIndex} className="overflow-hidden px-0 py-0 lg:border-b lg:border-r lg:border-gray-200">
+              {/* Thumbnail image (desktop: taller, mobile: shorter) */}
+              {recipe && (() => {
+                const imgUrl = getMealImageUrl(recipe.title, 400, 200);
+                const cat = getMealCategory(recipe.title);
+                const grad = getCategoryColor(cat);
+                return imgUrl ? (
+                  <div className="relative h-24 w-full lg:h-36">
+                    <Image
+                      src={imgUrl}
+                      alt={recipe.title}
+                      fill
+                      className="object-cover"
+                      placeholder="empty"
+                    />
+                    <div className={`absolute inset-0 bg-gradient-to-t ${grad} opacity-30`} />
+                  </div>
+                ) : (
+                  <div className={`h-1 w-full bg-gradient-to-r ${grad}`} />
+                );
+              })()}
+
+              <div className="px-4 py-3">
               <div className="flex items-start justify-between gap-3">
                 {/* Left: day + recipe info */}
                 <div className="min-w-0 flex-1">
@@ -126,6 +150,7 @@ function WeeklyPlanView({ plan, equipment = [] }: WeeklyPlanViewProps) {
                     </p>
                   )}
                 </div>
+              </div>
               </div>
             </li>
           );

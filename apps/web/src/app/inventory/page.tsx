@@ -34,29 +34,33 @@ export default function InventoryPage() {
   };
 
   return (
-    <main className="mx-auto max-w-2xl px-4 py-8">
+    <main className="mx-auto max-w-2xl px-4 py-8 lg:max-w-7xl">
       <h1 className="mb-6 text-2xl font-bold text-gray-900">Inventory</h1>
 
-      <section className="mb-8 rounded-lg border border-gray-200 bg-white p-4">
-        <h2 className="mb-4 text-lg font-semibold text-gray-900">Add Item</h2>
-        <AddItemForm onSuccess={handleChanged} />
-      </section>
+      <div className="lg:grid lg:grid-cols-2 lg:gap-8">
+        <section className="mb-8 rounded-lg border border-gray-200 bg-white p-4 lg:mb-0">
+          <h2 className="mb-4 text-lg font-semibold text-gray-900">Add Item</h2>
+          <AddItemForm onSuccess={handleChanged} />
+        </section>
 
-      {loading && (
-        <div className="flex justify-center py-12">
-          <Spinner size="lg" />
+        <div>
+          {loading && (
+            <div className="flex justify-center py-12">
+              <Spinner size="lg" />
+            </div>
+          )}
+
+          {error && (
+            <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+              {error}
+            </div>
+          )}
+
+          {!loading && !error && (
+            <InventoryList items={items} onChanged={handleChanged} />
+          )}
         </div>
-      )}
-
-      {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-          {error}
-        </div>
-      )}
-
-      {!loading && !error && (
-        <InventoryList items={items} onChanged={handleChanged} />
-      )}
+      </div>
     </main>
   );
 }

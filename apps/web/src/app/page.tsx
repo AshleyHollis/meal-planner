@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 
 import type { InventoryItem, MealPlanDetail } from "@/types";
@@ -14,6 +15,7 @@ import { ApiError } from "@/services/api";
 import { Spinner } from "@/components/ui/Spinner";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
+import { getMealImageUrl } from "@/lib/meal-images";
 
 function getNextMonday(): string {
   const today = new Date();
@@ -88,9 +90,19 @@ export default function DashboardPage() {
     : 0;
   const totalSlots = plan ? plan.slots.length : 0;
 
+  // Find today's dinner slot for the image accent
+  const today = new Date().getDay(); // 0=Sun, 1=Mon...
+  const dayIndex = today === 0 ? 6 : today - 1; // convert to Mon=0..Sun=6
+  const todaySlot = plan?.slots.find(
+    (s) => s.day === dayIndex && s.meal_type === "dinner",
+  );
+  const todayImageUrl = todaySlot?.recipe
+    ? getMealImageUrl(todaySlot.recipe.title, 600, 200)
+    : "";
+
   if (loading) {
     return (
-      <main className="mx-auto max-w-2xl px-4 py-8">
+      <main className="mx-auto max-w-2xl px-4 py-8 lg:max-w-7xl">
         <div className="flex justify-center py-12">
           <Spinner size="lg" />
         </div>
@@ -99,8 +111,12 @@ export default function DashboardPage() {
   }
 
   return (
-    <main className="mx-auto max-w-2xl px-4 py-8">
-      <h1 className="mb-6 text-2xl font-bold text-gray-900">Dashboard</h1>
+    <main className="mx-auto max-w-2xl px-4 py-8 lg:max-w-7xl">
+      <div className="mb-6 hidden lg:block">
+        <h1 className="text-3xl font-bold text-gray-900">Welcome back</h1>
+        <p className="mt-1 text-gray-500">Here&apos;s your meal planning overview</p>
+      </div>
+      <h1 className="mb-6 text-2xl font-bold text-gray-900 lg:hidden">Dashboard</h1>
 
       {error && (
         <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
@@ -110,7 +126,26 @@ export default function DashboardPage() {
 
       {/* Active Plan Summary */}
       {plan ? (
-        <section className="mb-6 rounded-lg border border-gray-200 bg-white p-4">
+        <section className="mb-6 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm lg:p-0">
+          {/* Today's meal image accent */}
+          {todayImageUrl && (
+            <div className="relative h-32 w-full lg:h-40">
+              <Image
+                src={todayImageUrl}
+                alt={todaySlot?.recipe?.title ?? "Today's meal"}
+                fill
+                className="object-cover"
+                placeholder="empty"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+              {todaySlot?.recipe && (
+                <p className="absolute bottom-2 left-4 text-sm font-semibold text-white drop-shadow">
+                  Tonight: {todaySlot.recipe.title}
+                </p>
+              )}
+            </div>
+          )}
+          <div className="p-4 lg:p-6">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-gray-900">Active Plan</h2>
             <Badge variant="success">{plan.status}</Badge>
@@ -128,6 +163,7 @@ export default function DashboardPage() {
             >
               View Plan &rarr;
             </Link>
+          </div>
           </div>
         </section>
       ) : (
@@ -163,10 +199,10 @@ export default function DashboardPage() {
       )}
 
       {/* Quick Links */}
-      <section className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+      <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
         <Link
           href="/inventory"
-          className="rounded-lg border border-gray-200 bg-white p-4 text-center hover:bg-gray-50"
+          className="rounded-lg border border-gray-200 bg-white p-4 text-center hover:bg-gray-50 lg:p-6"
         >
           <p className="text-sm font-medium text-gray-900">Inventory</p>
           <p className="mt-1 text-xs text-gray-500">
@@ -175,7 +211,7 @@ export default function DashboardPage() {
         </Link>
         <Link
           href="/meal-plan"
-          className="rounded-lg border border-gray-200 bg-white p-4 text-center hover:bg-gray-50"
+          className="rounded-lg border border-gray-200 bg-white p-4 text-center hover:bg-gray-50 lg:p-6"
         >
           <p className="text-sm font-medium text-gray-900">Meal Plans</p>
           <p className="mt-1 text-xs text-gray-500">Plan your week</p>
@@ -183,7 +219,7 @@ export default function DashboardPage() {
         {plan && (
           <Link
             href={`/grocery-list/${plan.id}`}
-            className="rounded-lg border border-gray-200 bg-white p-4 text-center hover:bg-gray-50"
+            className="rounded-lg border border-gray-200 bg-white p-4 text-center hover:bg-gray-50 lg:p-6"
           >
             <p className="text-sm font-medium text-gray-900">Grocery List</p>
             <p className="mt-1 text-xs text-gray-500">Shopping items</p>

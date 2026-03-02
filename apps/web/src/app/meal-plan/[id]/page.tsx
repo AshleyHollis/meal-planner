@@ -24,7 +24,7 @@ export default function MealPlanDetailPage({
   const isDraft = plan?.status === "draft";
 
   return (
-    <main className="mx-auto max-w-2xl px-4 py-8">
+    <main className="mx-auto max-w-2xl px-4 py-8 lg:max-w-7xl">
       <div className="mb-6">
         <Link
           href="/meal-plan"
