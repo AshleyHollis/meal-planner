@@ -1,8 +1,9 @@
 """JWT auth middleware with Auth0 validation and household auto-provisioning."""
 
+import json
+import urllib.request
 from uuid import UUID
 
-import httpx
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
@@ -22,9 +23,8 @@ async def _fetch_jwks(domain: str) -> dict:
     """Fetch JSON Web Key Set from Auth0."""
     global _jwks
     url = f"https://{domain}/.well-known/jwks.json"
-    resp = httpx.get(url)
-    resp.raise_for_status()
-    _jwks = resp.json()
+    with urllib.request.urlopen(url, timeout=10) as resp:
+        _jwks = json.loads(resp.read())
     return _jwks
 
 
