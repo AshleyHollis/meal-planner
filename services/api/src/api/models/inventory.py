@@ -77,7 +77,7 @@ class InventoryItemResponse(BaseModel):
 
 class DeductionResult(BaseModel):
     """Result of deducting recipe ingredients from inventory."""
-    
+
     ingredient_id: str
     ingredient_name: str
     requested: float
@@ -85,3 +85,14 @@ class DeductionResult(BaseModel):
     remaining: float
     unit: str
     unit_mismatch: bool
+
+
+class DefrostReminder(BaseModel):
+    """Response body for a defrost reminder."""
+
+    ingredient_name: str
+    defrost_hours: int
+    meal_day: int
+    meal_type: str
+    recipe_title: str
+

@@ -185,3 +185,73 @@ class InventoryService:
             })
         
         return deductions
+
+    async def get_defrost_reminders(self, days_ahead: int = 7) -> list[dict]:
+        """Get defrost reminders for upcoming meal plan slots using freezer items."""
+
+        from shared.db.models.meal_plan import MealPlan, MealSlot
+        from sqlalchemy.orm import selectinload as sl
+
+        # Find active plan
+        plan_stmt = select(MealPlan).where(
+            MealPlan.household_id == self.household_id,
+            MealPlan.status == "active",
+        )
+        plan_result = await self.session.execute(plan_stmt)
+        plan = plan_result.scalar_one_or_none()
+        if plan is None:
+            return []
+
+        # Get freezer items for this household
+        freezer_stmt = (
+            select(InventoryItem)
+            .options(selectinload(InventoryItem.ingredient))
+            .where(
+                InventoryItem.household_id == self.household_id,
+                InventoryItem.location == "freezer",
+                InventoryItem.defrost_hours.isnot(None),
+            )
+        )
+        freezer_result = await self.session.execute(freezer_stmt)
+        freezer_items = list(freezer_result.scalars().all())
+        if not freezer_items:
+            return []
+
+        # Get upcoming slots with recipes
+        slot_stmt = (
+            select(MealSlot)
+            .options(
+                sl(MealSlot.recipe).selectinload(sl("ingredients").selectinload(sl("ingredient")))
+            )
+            .where(
+                MealSlot.meal_plan_id == plan.id,
+                MealSlot.status == "planned",
+                MealSlot.recipe_id.isnot(None),
+            )
+        )
+        slot_result = await self.session.execute(slot_stmt)
+        slots = list(slot_result.scalars().all())
+
+        # Match freezer items to recipe ingredients
+        reminders = []
+        for slot in slots:
+            if slot.recipe is None:
+                continue
+            for ri in slot.recipe.ingredients:
+                for fi in freezer_items:
+                    if fi.ingredient_id == ri.ingredient_id:
+                        reminders.append(
+                            {
+                                "ingredient_name": (
+                                    fi.ingredient.name if fi.ingredient else "Unknown"
+                                ),
+                                "defrost_hours": fi.defrost_hours,
+                                "meal_day": slot.day,
+                                "meal_type": slot.meal_type,
+                                "recipe_title": (
+                                    slot.recipe.title if slot.recipe else "Unknown"
+                                ),
+                            }
+                        )
+        return reminders
+

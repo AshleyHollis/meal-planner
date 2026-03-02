@@ -186,15 +186,13 @@ class MealPlanService:
             return None, None
 
         deductions = None
-        
+
         # If transitioning to cooked and wasn't already cooked
-        if data.status == "cooked" and slot.status != "cooked":
-            # Deduct ingredients if recipe is assigned
-            if slot.recipe_id is not None:
-                from .inventory_service import InventoryService
-                
-                inv_service = InventoryService(self.session, self.household_id)
-                deductions = await inv_service.deduct_for_recipe(slot.recipe_id)
+        if data.status == "cooked" and slot.status != "cooked" and slot.recipe_id is not None:
+            from .inventory_service import InventoryService
+
+            inv_service = InventoryService(self.session, self.household_id)
+            deductions = await inv_service.deduct_for_recipe(slot.recipe_id)
 
         slot.status = data.status
         if data.status in ("cooked", "skipped"):

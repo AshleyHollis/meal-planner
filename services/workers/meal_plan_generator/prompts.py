@@ -106,10 +106,59 @@ def format_expiring(expiring: list[InventoryItem]) -> str:
     return "\n".join(lines)
 
 
+def format_leftovers(leftovers: list) -> str:
+    """Format leftover items for the prompt.
+
+    Args:
+        leftovers: List of Leftover objects with recipe, portions, and expiry info.
+
+    Returns:
+        Formatted string listing each leftover with portions and expiry.
+    """
+    if not leftovers:
+        return "No leftovers available."
+
+    lines = []
+    for leftover in leftovers:
+        recipe_title = getattr(leftover, "recipe_title", "Unknown recipe")
+        portions = getattr(leftover, "portions", 0)
+        expiry = getattr(leftover, "expiry_date", None)
+        location = getattr(leftover, "storage_location", "unknown")
+        expiry_str = expiry.strftime("%Y-%m-%d") if expiry else "no expiry"
+        lines.append(
+            f"- {recipe_title}: {portions} portions [{location}] (expires {expiry_str})"
+        )
+    return "\n".join(lines)
+
+
+def format_freezer_items(freezer_items: list[InventoryItem]) -> str:
+    """Format freezer items for the prompt.
+
+    Args:
+        freezer_items: List of InventoryItem ORM models in freezer with defrost times.
+
+    Returns:
+        Formatted string listing each freezer item with defrost hours.
+    """
+    if not freezer_items:
+        return "No items in freezer requiring defrosting."
+
+    lines = []
+    for item in freezer_items:
+        ingredient = getattr(item, "ingredient", None)
+        name = ingredient.name if ingredient else "Unknown"
+        qty = f"{item.quantity} {item.unit}" if item.unit else str(item.quantity)
+        defrost = item.defrost_hours if item.defrost_hours else "unknown"
+        lines.append(f"- {name}: {qty} (defrost {defrost}h)")
+    return "\n".join(lines)
+
+
 def build_prompt(
     inventory: list[InventoryItem],
     equipment: list[Equipment],
     expiring: list[InventoryItem],
+    leftovers: list | None = None,
+    freezer_items: list[InventoryItem] | None = None,
 ) -> str:
     """Build the complete meal plan generation prompt.
 
@@ -120,6 +169,8 @@ def build_prompt(
         inventory: All inventory items for the household.
         equipment: All equipment for the household.
         expiring: Inventory items with expiry dates, sorted soonest first.
+        leftovers: Optional list of leftover portions to use first.
+        freezer_items: Optional list of freezer items requiring defrosting.
 
     Returns:
         Complete formatted prompt string ready for LLM submission.
@@ -129,7 +180,7 @@ def build_prompt(
     inventory_info = format_inventory(inventory)
     expiring_info = format_expiring(expiring)
 
-    return f"""{SYSTEM_PROMPT.format(schema_json=schema_json)}
+    prompt = f"""{SYSTEM_PROMPT.format(schema_json=schema_json)}
 
 AVAILABLE EQUIPMENT:
 {equipment_info}
@@ -138,9 +189,24 @@ CURRENT INVENTORY (use these first):
 {inventory_info}
 
 EXPIRING SOON (prioritize these):
-{expiring_info}
+{expiring_info}"""
 
-Generate the meal plan JSON now."""
+    if leftovers:
+        leftovers_info = format_leftovers(leftovers)
+        prompt += f"""
+
+LEFTOVERS TO USE FIRST:
+{leftovers_info}"""
+
+    if freezer_items:
+        freezer_info = format_freezer_items(freezer_items)
+        prompt += f"""
+
+FREEZER ITEMS (need defrosting):
+{freezer_info}"""
+
+    prompt += "\n\nGenerate the meal plan JSON now."
+    return prompt
 
 
 def add_error_feedback(prompt: str, errors: str | list[str]) -> str:

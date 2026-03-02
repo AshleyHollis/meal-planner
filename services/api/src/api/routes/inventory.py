@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from ..dependencies import get_inventory_service
 from ..models.inventory import (
     CreateInventoryItem,
+    DefrostReminder,
     InventoryItemResponse,
     UpdateInventoryItem,
 )
@@ -25,6 +26,16 @@ async def list_inventory(
     """List inventory items for the current household."""
     items = await service.list_items(location=location)
     return [InventoryItemResponse.model_validate(i) for i in items]
+
+
+@router.get("/defrost-reminders", response_model=list[DefrostReminder])
+async def get_defrost_reminders(
+    days_ahead: int = Query(7, ge=1, le=30, description="Days ahead to check"),
+    service: InventoryService = Depends(get_inventory_service),  # noqa: B008
+) -> list[DefrostReminder]:
+    """Get defrost reminders for upcoming meal plan slots using freezer items."""
+    reminders = await service.get_defrost_reminders(days_ahead)
+    return [DefrostReminder.model_validate(r) for r in reminders]
 
 
 @router.post("", response_model=InventoryItemResponse, status_code=status.HTTP_201_CREATED)

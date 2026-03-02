@@ -17,7 +17,9 @@ from .middleware.auth import get_current_household_id
 from .services.equipment_service import EquipmentService
 from .services.grocery_service import GroceryService
 from .services.inventory_service import InventoryService
+from .services.leftover_service import LeftoverService
 from .services.meal_plan_service import MealPlanService
+from .services.staple_service import StapleService
 
 
 def get_inventory_service(
@@ -50,3 +52,19 @@ def get_grocery_service(
 ) -> GroceryService:
     """Dependency: household-scoped grocery service."""
     return GroceryService(session, household_id)
+
+
+def get_leftover_service(
+    session: AsyncSession = Depends(get_session),  # noqa: B008
+    household_id: UUID = Depends(get_current_household_id),  # noqa: B008
+) -> LeftoverService:
+    """Dependency: household-scoped leftover service."""
+    return LeftoverService(session, household_id)
+
+
+def get_staple_service(
+    session: AsyncSession = Depends(get_session),  # noqa: B008
+    household_id: UUID = Depends(get_current_household_id),  # noqa: B008
+) -> StapleService:
+    """Dependency: household-scoped staple service."""
+    return StapleService(session, household_id)
