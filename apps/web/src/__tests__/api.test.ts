@@ -21,6 +21,7 @@ import {
   getGroceryList,
   checkGroceryItem,
   completeShopping,
+  getMealHistory,
 } from "@/services/api";
 
 // ---------------------------------------------------------------------------
@@ -526,5 +527,34 @@ describe("Grocery API methods", () => {
     expect(url).toBe(`${API_URL}/api/v1/grocery-lists/gl1/complete`);
     expect(init.method).toBe("POST");
     expect(JSON.parse(init.body)).toEqual(body);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Meal History endpoints
+// ---------------------------------------------------------------------------
+
+describe("Meal History API methods", () => {
+  it("getMealHistory calls GET /api/v1/meal-history", async () => {
+    const api = await freshApi();
+    fetchMock
+      .mockResolvedValueOnce(tokenResponse())
+      .mockResolvedValueOnce(mockResponse([{ slot_id: "s1" }]));
+
+    const result = await api.getMealHistory();
+    expect(result).toEqual([{ slot_id: "s1" }]);
+    expect(fetchMock.mock.calls[1][0]).toBe(`${API_URL}/api/v1/meal-history`);
+  });
+
+  it("getMealHistory with pagination params", async () => {
+    const api = await freshApi();
+    fetchMock
+      .mockResolvedValueOnce(tokenResponse())
+      .mockResolvedValueOnce(mockResponse([]));
+
+    await api.getMealHistory(2, 10);
+    expect(fetchMock.mock.calls[1][0]).toBe(
+      `${API_URL}/api/v1/meal-history?page=2&page_size=10`,
+    );
   });
 });

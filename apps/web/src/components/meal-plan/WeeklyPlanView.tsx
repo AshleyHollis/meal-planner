@@ -9,6 +9,7 @@ import type {
   EquipmentMode,
 } from "@/types";
 import { Badge } from "../ui/Badge";
+import { FavoriteButton } from "../FavoriteButton";
 import {
   getMealImageUrl,
   getMealCategory,
@@ -100,9 +101,16 @@ function MealImage({ title }: { title: string }) {
 interface WeeklyPlanViewProps {
   plan: MealPlanDetail;
   equipment?: Equipment[];
+  favoriteRecipeIds?: Set<string>;
+  onFavoriteToggle?: (recipeId: string, isFavorited: boolean) => void;
 }
 
-function WeeklyPlanView({ plan, equipment = [] }: WeeklyPlanViewProps) {
+function WeeklyPlanView({
+  plan,
+  equipment = [],
+  favoriteRecipeIds = new Set(),
+  onFavoriteToggle,
+}: WeeklyPlanViewProps) {
   const modeLookup = buildEquipmentModeLookup(equipment);
 
   // Build a map of day number -> dinner slot
@@ -183,6 +191,15 @@ function WeeklyPlanView({ plan, equipment = [] }: WeeklyPlanViewProps) {
                       </p>
                     )}
                   </div>
+
+                  {/* Right: favorite button */}
+                  {recipe && (
+                    <FavoriteButton
+                      recipeId={recipe.id}
+                      isFavorited={favoriteRecipeIds.has(recipe.id)}
+                      onToggle={onFavoriteToggle}
+                    />
+                  )}
                 </div>
               </div>
             </li>

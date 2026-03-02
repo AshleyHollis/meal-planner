@@ -56,6 +56,10 @@ class Recipe(Base, TimestampMixin):
         ForeignKey("Recipes.id"),
         nullable=True,
     )
+    cuisine_type: Mapped[str | None] = mapped_column(
+        String(50),
+        nullable=True,
+    )
 
     ingredients: Mapped[list[RecipeIngredient]] = relationship(
         "RecipeIngredient",

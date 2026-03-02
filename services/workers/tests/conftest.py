@@ -14,6 +14,7 @@ from meal_plan_generator.schemas import (
 def _make_recipe(
     title: str = "Test Recipe",
     servings: int = 2,
+    cuisine_type: str | None = None,
     ingredients: list[RecipeIngredientSchema] | None = None,
     steps: list[RecipeStepSchema] | None = None,
 ) -> GeneratedRecipe:
@@ -24,6 +25,7 @@ def _make_recipe(
         prep_time_min=10,
         cook_time_min=20,
         servings=servings,
+        cuisine_type=cuisine_type,
         ingredients=ingredients
         or [
             RecipeIngredientSchema(ingredient_name="chicken breast", quantity=500, unit="g"),

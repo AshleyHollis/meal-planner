@@ -1,9 +1,12 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Image from "next/image";
-import type { MealSlot, EquipmentMode, EffortLevel } from "@/types";
+import type { MealSlot, EquipmentMode, EffortLevel, MealSlotRating } from "@/types";
 import { Badge } from "../ui/Badge";
 import { Button } from "../ui/Button";
+import { RatingWidget } from "../RatingWidget";
+import { FavoriteButton } from "../FavoriteButton";
 import {
   getMealImageUrl,
   getMealCategory,
@@ -43,11 +46,15 @@ const EFFORT_LABELS: Record<EffortLevel, string> = {
 
 interface MealSlotCardProps {
   slot: MealSlot;
+  planId?: string;
   equipmentModes?: EquipmentMode[];
   onSwap?: (slotId: string) => void;
   onAdapt?: (slotId: string, effort: EffortLevel) => void;
   onMarkCooked?: (slotId: string) => void;
   onMarkSkipped?: (slotId: string) => void;
+  onRated?: (rating: MealSlotRating) => void;
+  onFavoriteToggle?: (recipeId: string, isFavorited: boolean) => void;
+  isFavorited?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -56,15 +63,34 @@ interface MealSlotCardProps {
 
 function MealSlotCard({
   slot,
+  planId,
   equipmentModes = [],
   onSwap,
   onAdapt,
   onMarkCooked,
   onMarkSkipped,
+  onRated,
+  onFavoriteToggle,
+  isFavorited = false,
 }: MealSlotCardProps) {
   const recipe = slot.recipe;
   const statusCfg = STATUS_CONFIG[slot.status] ?? STATUS_CONFIG.planned;
   const isDone = slot.status === "cooked" || slot.status === "skipped";
+  const isCooked = slot.status === "cooked";
+
+  const [existingRating, setExistingRating] = useState<MealSlotRating | null>(null);
+  const [loadingRating, setLoadingRating] = useState(false);
+
+  useEffect(() => {
+    if (isCooked && planId && !existingRating && !loadingRating) {
+      setLoadingRating(true);
+      import("@/services/api")
+        .then(({ getRating }) => getRating(planId, slot.id))
+        .then((rating) => setExistingRating(rating))
+        .catch((err) => console.error("Failed to load rating:", err))
+        .finally(() => setLoadingRating(false));
+    }
+  }, [isCooked, planId, slot.id, existingRating, loadingRating]);
 
   const imageUrl = recipe ? getMealImageUrl(recipe.title, 800, 400) : "";
   const category = recipe ? getMealCategory(recipe.title) : "default";
@@ -98,7 +124,7 @@ function MealSlotCard({
       )}
 
       <div className="p-4">
-        {/* Header: title + status */}
+        {/* Header: title + status + favorite */}
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0 flex-1">
             {recipe ? (
@@ -110,7 +136,16 @@ function MealSlotCard({
             )}
           </div>
 
-          <Badge variant={statusCfg.variant}>{statusCfg.label}</Badge>
+          <div className="flex items-center gap-2">
+            {recipe && (
+              <FavoriteButton
+                recipeId={recipe.id}
+                isFavorited={isFavorited}
+                onToggle={onFavoriteToggle}
+              />
+            )}
+            <Badge variant={statusCfg.variant}>{statusCfg.label}</Badge>
+          </div>
         </div>
 
         {/* Time info */}
@@ -183,6 +218,23 @@ function MealSlotCard({
                 Skip
               </Button>
             )}
+          </div>
+        )}
+
+        {/* Rating widget for cooked meals */}
+        {isCooked && planId && (
+          <div className="mt-4">
+            <RatingWidget
+              planId={planId}
+              slotId={slot.id}
+              existingRating={existingRating}
+              onRated={(rating) => {
+                setExistingRating(rating);
+                if (onRated) {
+                  onRated(rating);
+                }
+              }}
+            />
           </div>
         )}
       </div>

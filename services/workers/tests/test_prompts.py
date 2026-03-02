@@ -8,9 +8,14 @@ from types import SimpleNamespace
 from meal_plan_generator.prompts import (
     add_error_feedback,
     build_prompt,
+    format_cuisine_preferences,
     format_equipment,
     format_expiring,
+    format_favorites,
     format_inventory,
+    format_preferences,
+    format_rating_insights,
+    format_recent_meals,
 )
 
 
@@ -220,3 +225,219 @@ class TestAddErrorFeedback:
     def test_corrected_generation_requested(self):
         result = add_error_feedback("prompt", "some error")
         assert "corrected" in result.lower() or "Generate" in result
+
+
+# --- format_preferences ---
+
+
+class TestFormatPreferences:
+    def test_empty_preferences(self):
+        result = format_preferences({})
+        assert result == ""
+
+    def test_single_member_with_allergy(self):
+        prefs = {
+            "Alice": [
+                {"preference_type": "allergy", "value": "peanuts"},
+            ]
+        }
+        result = format_preferences(prefs)
+        assert "Alice" in result
+        assert "ALLERGIES" in result
+        assert "HARD BLOCK" in result
+        assert "peanuts" in result
+
+    def test_multiple_preference_types(self):
+        prefs = {
+            "Bob": [
+                {"preference_type": "allergy", "value": "shellfish"},
+                {"preference_type": "dietary_restriction", "value": "vegetarian"},
+                {"preference_type": "dislike", "value": "mushrooms"},
+                {"preference_type": "like", "value": "pasta"},
+            ]
+        }
+        result = format_preferences(prefs)
+        assert "Bob" in result
+        assert "shellfish" in result
+        assert "vegetarian" in result
+        assert "mushrooms" in result
+        assert "pasta" in result
+
+    def test_multiple_members(self):
+        prefs = {
+            "Alice": [{"preference_type": "allergy", "value": "peanuts"}],
+            "Bob": [{"preference_type": "like", "value": "chicken"}],
+        }
+        result = format_preferences(prefs)
+        assert "Alice" in result
+        assert "Bob" in result
+
+
+# --- format_recent_meals ---
+
+
+class TestFormatRecentMeals:
+    def test_empty_recent_meals(self):
+        result = format_recent_meals([])
+        assert result == ""
+
+    def test_recent_meals_list(self):
+        meals = [
+            {"title": "Chicken Stir Fry", "cuisine_type": "Asian"},
+            {"title": "Spaghetti Carbonara", "cuisine_type": "Italian"},
+        ]
+        result = format_recent_meals(meals)
+        assert "Do NOT repeat" in result
+        assert "Chicken Stir Fry" in result
+        assert "Spaghetti Carbonara" in result
+
+
+# --- format_favorites ---
+
+
+class TestFormatFavorites:
+    def test_empty_favorites(self):
+        result = format_favorites([])
+        assert result == ""
+
+    def test_favorites_list(self):
+        favorites = ["Lasagna", "Tacos", "Pad Thai"]
+        result = format_favorites(favorites)
+        assert "Consider including" in result
+        assert "Lasagna" in result
+        assert "Tacos" in result
+        assert "Pad Thai" in result
+
+
+# --- format_rating_insights ---
+
+
+class TestFormatRatingInsights:
+    def test_empty_insights(self):
+        result = format_rating_insights({})
+        assert result == ""
+
+    def test_low_rated_only(self):
+        insights = {"low_rated": ["Bad Recipe", "Awful Dish"]}
+        result = format_rating_insights(insights)
+        assert "AVOID" in result
+        assert "Bad Recipe" in result
+        assert "Awful Dish" in result
+
+    def test_high_rated_only(self):
+        insights = {"high_rated": ["Amazing Dish", "Fantastic Meal"]}
+        result = format_rating_insights(insights)
+        assert "PREFER" in result
+        assert "Amazing Dish" in result
+        assert "Fantastic Meal" in result
+
+    def test_both_high_and_low(self):
+        insights = {
+            "low_rated": ["Bad Recipe"],
+            "high_rated": ["Great Recipe"],
+        }
+        result = format_rating_insights(insights)
+        assert "AVOID" in result
+        assert "PREFER" in result
+        assert "Bad Recipe" in result
+        assert "Great Recipe" in result
+
+
+# --- format_cuisine_preferences ---
+
+
+class TestFormatCuisinePreferences:
+    def test_empty_cuisine_preferences(self):
+        result = format_cuisine_preferences([])
+        assert result == ""
+
+    def test_single_cuisine(self):
+        result = format_cuisine_preferences(["Italian"])
+        assert "70%" in result
+        assert "Italian" in result
+
+    def test_multiple_cuisines(self):
+        result = format_cuisine_preferences(["Mexican", "Asian", "Italian"])
+        assert "70%" in result
+        assert "Mexican" in result
+        assert "Asian" in result
+        assert "Italian" in result
+
+
+# --- build_prompt with personalization ---
+
+
+class TestBuildPromptWithPersonalization:
+    def test_includes_member_preferences(self):
+        prefs = {"Alice": [{"preference_type": "allergy", "value": "peanuts"}]}
+        prompt = build_prompt(
+            inventory=[],
+            equipment=[],
+            expiring=[],
+            member_preferences=prefs,
+        )
+        assert "MEMBER PREFERENCES" in prompt
+        assert "Alice" in prompt
+        assert "peanuts" in prompt
+
+    def test_includes_recent_meals(self):
+        meals = [{"title": "Lasagna", "cuisine_type": "Italian"}]
+        prompt = build_prompt(
+            inventory=[],
+            equipment=[],
+            expiring=[],
+            recent_meals=meals,
+        )
+        assert "RECENT MEALS" in prompt
+        assert "Lasagna" in prompt
+
+    def test_includes_favorites(self):
+        prompt = build_prompt(
+            inventory=[],
+            equipment=[],
+            expiring=[],
+            favorites=["Tacos", "Pizza"],
+        )
+        assert "FAVORITES" in prompt
+        assert "Tacos" in prompt
+        assert "Pizza" in prompt
+
+    def test_includes_rating_insights(self):
+        insights = {"high_rated": ["Great Dish"], "low_rated": ["Bad Dish"]}
+        prompt = build_prompt(
+            inventory=[],
+            equipment=[],
+            expiring=[],
+            rating_insights=insights,
+        )
+        assert "RATING INSIGHTS" in prompt
+        assert "Great Dish" in prompt
+        assert "Bad Dish" in prompt
+
+    def test_includes_cuisine_preferences(self):
+        prompt = build_prompt(
+            inventory=[],
+            equipment=[],
+            expiring=[],
+            cuisine_preferences=["Mexican", "Italian"],
+        )
+        assert "CUISINE PREFERENCE" in prompt
+        assert "Mexican" in prompt
+        assert "Italian" in prompt
+
+    def test_omits_sections_when_data_absent(self):
+        prompt = build_prompt(
+            inventory=[],
+            equipment=[],
+            expiring=[],
+            member_preferences=None,
+            recent_meals=None,
+            favorites=None,
+            rating_insights=None,
+            cuisine_preferences=None,
+        )
+        assert "MEMBER PREFERENCES" not in prompt
+        assert "RECENT MEALS" not in prompt
+        assert "FAVORITES" not in prompt
+        assert "RATING INSIGHTS" not in prompt
+        assert "CUISINE PREFERENCE" not in prompt

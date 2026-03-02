@@ -15,9 +15,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from .middleware.auth import get_current_household_id
 from .services.equipment_service import EquipmentService
+from .services.favorite_service import FavoriteService
 from .services.grocery_service import GroceryService
 from .services.inventory_service import InventoryService
+from .services.meal_history_service import MealHistoryService
 from .services.meal_plan_service import MealPlanService
+from .services.preference_service import PreferenceService
+from .services.rating_service import RatingService
 
 
 def get_inventory_service(
@@ -50,3 +54,35 @@ def get_grocery_service(
 ) -> GroceryService:
     """Dependency: household-scoped grocery service."""
     return GroceryService(session, household_id)
+
+
+def get_meal_history_service(
+    session: AsyncSession = Depends(get_session),  # noqa: B008
+    household_id: UUID = Depends(get_current_household_id),  # noqa: B008
+) -> MealHistoryService:
+    """Dependency: household-scoped meal history service."""
+    return MealHistoryService(session, household_id)
+
+
+def get_favorite_service(
+    session: AsyncSession = Depends(get_session),  # noqa: B008
+    household_id: UUID = Depends(get_current_household_id),  # noqa: B008
+) -> FavoriteService:
+    """Dependency: household-scoped favorite service."""
+    return FavoriteService(session, household_id)
+
+
+def get_preference_service(
+    session: AsyncSession = Depends(get_session),  # noqa: B008
+    household_id: UUID = Depends(get_current_household_id),  # noqa: B008
+) -> PreferenceService:
+    """Dependency: household-scoped preference service."""
+    return PreferenceService(session, household_id)
+
+
+def get_rating_service(
+    session: AsyncSession = Depends(get_session),  # noqa: B008
+    household_id: UUID = Depends(get_current_household_id),  # noqa: B008
+) -> RatingService:
+    """Dependency: household-scoped rating service."""
+    return RatingService(session, household_id)

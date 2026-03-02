@@ -123,3 +123,66 @@ export interface GroceryList {
   created_at: string;
   items: GroceryItem[];
 }
+
+// --- Meal History ---
+
+export interface MealHistoryItem {
+  slot_id: string;
+  recipe_id: string;
+  recipe_title: string;
+  cooked_at: string;
+  day: number;
+  meal_type: string;
+  rating: number | null;
+  cuisine_type: string | null;
+}
+
+// --- Preferences ---
+
+export type PreferenceType =
+  | "dietary_restriction"
+  | "allergy"
+  | "dislike"
+  | "like";
+
+export interface MemberPreference {
+  id: string;
+  household_member_id: string;
+  preference_type: PreferenceType;
+  value: string;
+  ingredient_id: string | null;
+  notes: string | null;
+  created_at: string;
+}
+
+export interface CreateMemberPreference {
+  preference_type: PreferenceType;
+  value: string;
+  ingredient_id?: string | null;
+  notes?: string | null;
+}
+
+// --- Ratings ---
+
+export interface MealSlotRating {
+  id: string;
+  meal_slot_id: string;
+  rated_by: string;
+  rating: number;
+  feedback: string | null;
+  created_at: string;
+}
+
+export interface CreateMealSlotRating {
+  rating: number;
+  feedback?: string | null;
+}
+
+// --- Favorites ---
+
+export interface RecipeFavorite {
+  id: string;
+  recipe_id: string;
+  recipe_title: string;
+  created_at: string;
+}

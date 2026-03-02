@@ -7,6 +7,7 @@ retries up to 3x, and persists results to the database.
 from __future__ import annotations
 
 from collections import defaultdict
+from datetime import datetime, timedelta
 from typing import Any
 
 from shared.db.connection import get_db
@@ -14,20 +15,24 @@ from shared.db.models import (
     Equipment,
     GroceryItem,
     GroceryList,
+    HouseholdMember,
     Ingredient,
     InventoryItem,
     MealPlan,
     MealSlot,
+    MealSlotRating,
+    MemberPreference,
     Recipe,
+    RecipeFavorite,
     RecipeIngredient,
     RecipeStep,
 )
 from shared.logging.config import get_logger
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from .llm_client import call_llm
-from .prompts import add_error_feedback, build_prompt
+from .prompts import build_prompt
 from .schemas import GeneratedMealPlan
 from .validator import validate_constraints
 
@@ -52,6 +57,7 @@ async def generate_meal_plan(message_content: dict[str, Any]) -> None:
     """
     meal_plan_id = message_content["meal_plan_id"]
     household_id = message_content["household_id"]
+    cuisine_preferences = message_content.get("cuisine_preferences")
 
     logger.info(
         "generate_meal_plan_start",
@@ -63,7 +69,7 @@ async def generate_meal_plan(message_content: dict[str, Any]) -> None:
 
     try:
         # 1. Load context from DB
-        inventory, equipment, expiring = await _load_context(db, household_id)
+        context = await _load_context(db, household_id, cuisine_preferences)
 
         # 1.5. Verify meal plan still exists (may have been deleted/cleaned)
         async with db.session() as session:
@@ -75,23 +81,40 @@ async def generate_meal_plan(message_content: dict[str, Any]) -> None:
                 )
                 return
 
-        # 2. Build prompt
-        prompt = build_prompt(inventory, equipment, expiring)
+        # 2. Build prompt with all context
+        prompt = build_prompt(
+            context["inventory"],
+            context["equipment"],
+            context["expiring"],
+            member_preferences=context.get("member_preferences"),
+            recent_meals=context.get("recent_meals"),
+            favorites=context.get("favorites"),
+            rating_insights=context.get("rating_insights"),
+            cuisine_preferences=context.get("cuisine_preferences"),
+        )
 
         # Build lookup data for validator
         inventory_names = [
-            item.ingredient.name.lower() for item in inventory if getattr(item, "ingredient", None)
+            item.ingredient.name.lower()
+            for item in context["inventory"]
+            if getattr(item, "ingredient", None)
         ]
         equipment_modes: dict[str, list[str]] = {}
-        for eq in equipment:
+        for eq in context["equipment"]:
             modes = getattr(eq, "modes", [])
             equipment_modes[eq.name] = [m.name for m in modes]
 
         # 3. Call LLM with retry loop
-        plan = await _generate_with_retries(prompt, inventory_names, equipment_modes)
+        plan = await _generate_with_retries(
+            prompt,
+            inventory_names,
+            equipment_modes,
+            allergen_ingredients=context.get("allergen_ingredients"),
+            cuisine_preferences=context.get("cuisine_preferences"),
+        )
 
         # 4. Persist to DB
-        await _persist_plan(db, meal_plan_id, household_id, plan, inventory)
+        await _persist_plan(db, meal_plan_id, household_id, plan, context["inventory"])
 
         logger.info("generate_meal_plan_success", meal_plan_id=meal_plan_id)
 
@@ -106,9 +129,27 @@ async def generate_meal_plan(message_content: dict[str, Any]) -> None:
 
 
 async def _load_context(
-    db: Any, household_id: str
-) -> tuple[list[InventoryItem], list[Equipment], list[InventoryItem]]:
-    """Load inventory, equipment, and expiring items from DB."""
+    db: Any, household_id: str, cuisine_preferences: list[str] | None = None
+) -> dict[str, Any]:
+    """Load inventory, equipment, expiring items, and personalization data from DB.
+
+    Args:
+        db: Database connection instance.
+        household_id: UUID of the household.
+        cuisine_preferences: Optional list of cuisine types from queue message.
+
+    Returns:
+        Dict containing:
+            - inventory: List of InventoryItem
+            - equipment: List of Equipment
+            - expiring: List of expiring InventoryItem
+            - member_preferences: Dict mapping member_name -> list of preference dicts
+            - recent_meals: List of dicts with title and cuisine_type
+            - favorites: List of favorite recipe titles
+            - rating_insights: Dict with high_rated and low_rated recipe titles
+            - allergen_ingredients: Set of allergen ingredient names (lowercase)
+            - cuisine_preferences: List of cuisine types (passthrough from message)
+    """
     async with db.session() as session:
         # Load inventory with ingredient relationship
         inv_result = await session.execute(
@@ -130,13 +171,157 @@ async def _load_context(
             key=lambda x: x.expiry_date,
         )
 
-    return inventory, equipment, expiring
+        # Fetch member preferences grouped by member
+        member_preferences = await _fetch_member_preferences(session, household_id)
+
+        # Fetch recent meals (last 3 weeks)
+        recent_meals = await _fetch_recent_meals(session, household_id)
+
+        # Fetch favorites
+        favorites = await _fetch_favorites(session, household_id)
+
+        # Fetch rating insights
+        rating_insights = await _fetch_rating_insights(session, household_id)
+
+        # Extract allergen ingredients from member preferences
+        allergen_ingredients = set()
+        for prefs in member_preferences.values():
+            for pref in prefs:
+                if pref["preference_type"] == "allergy":
+                    allergen_ingredients.add(pref["value"].lower())
+
+    return {
+        "inventory": inventory,
+        "equipment": equipment,
+        "expiring": expiring,
+        "member_preferences": member_preferences if member_preferences else None,
+        "recent_meals": recent_meals if recent_meals else None,
+        "favorites": favorites if favorites else None,
+        "rating_insights": rating_insights if rating_insights else None,
+        "allergen_ingredients": allergen_ingredients if allergen_ingredients else None,
+        "cuisine_preferences": cuisine_preferences,
+    }
+
+
+async def _fetch_member_preferences(
+    session: AsyncSession, household_id: str
+) -> dict[str, list[dict]]:
+    """Fetch member preferences grouped by member name.
+
+    Args:
+        session: Database session.
+        household_id: UUID of the household.
+
+    Returns:
+        Dict mapping member display_name -> list of preference dicts with
+        preference_type and value keys.
+    """
+    result = await session.execute(
+        select(MemberPreference, HouseholdMember.display_name)
+        .join(HouseholdMember, MemberPreference.household_member_id == HouseholdMember.id)
+        .where(HouseholdMember.household_id == household_id)
+    )
+
+    preferences_by_member: dict[str, list[dict]] = defaultdict(list)
+    for pref, display_name in result.all():
+        preferences_by_member[display_name].append(
+            {
+                "preference_type": pref.preference_type,
+                "value": pref.value,
+            }
+        )
+
+    return dict(preferences_by_member)
+
+
+async def _fetch_recent_meals(session: AsyncSession, household_id: str) -> list[dict]:
+    """Fetch recent cooked meals from the last 3 weeks.
+
+    Args:
+        session: Database session.
+        household_id: UUID of the household.
+
+    Returns:
+        List of dicts with 'title' and 'cuisine_type' keys.
+    """
+    three_weeks_ago = datetime.utcnow() - timedelta(weeks=3)
+
+    result = await session.execute(
+        select(Recipe.title, Recipe.cuisine_type)
+        .join(MealSlot, MealSlot.recipe_id == Recipe.id)
+        .join(MealPlan, MealSlot.meal_plan_id == MealPlan.id)
+        .where(MealPlan.household_id == household_id)
+        .where(MealSlot.status == "cooked")
+        .where(MealSlot.cooked_at >= three_weeks_ago)
+        .distinct()
+    )
+
+    return [{"title": title, "cuisine_type": cuisine_type} for title, cuisine_type in result.all()]
+
+
+async def _fetch_favorites(session: AsyncSession, household_id: str) -> list[str]:
+    """Fetch favorite recipe titles for the household.
+
+    Args:
+        session: Database session.
+        household_id: UUID of the household.
+
+    Returns:
+        List of favorite recipe titles.
+    """
+    result = await session.execute(
+        select(Recipe.title)
+        .join(RecipeFavorite, RecipeFavorite.recipe_id == Recipe.id)
+        .where(RecipeFavorite.household_id == household_id)
+    )
+
+    return [title for (title,) in result.all()]
+
+
+async def _fetch_rating_insights(session: AsyncSession, household_id: str) -> dict[str, list[str]]:
+    """Fetch rating insights: high-rated (≥4) and low-rated (≤2) recipes.
+
+    Args:
+        session: Database session.
+        household_id: UUID of the household.
+
+    Returns:
+        Dict with 'high_rated' and 'low_rated' lists of recipe titles.
+    """
+    result = await session.execute(
+        select(Recipe.title, func.avg(MealSlotRating.rating).label("avg_rating"))
+        .join(MealSlot, MealSlot.recipe_id == Recipe.id)
+        .join(MealPlan, MealSlot.meal_plan_id == MealPlan.id)
+        .join(MealSlotRating, MealSlotRating.meal_slot_id == MealSlot.id)
+        .where(MealPlan.household_id == household_id)
+        .group_by(Recipe.id, Recipe.title)
+    )
+
+    high_rated = []
+    low_rated = []
+
+    for title, avg_rating in result.all():
+        if avg_rating >= 4:
+            high_rated.append(title)
+        elif avg_rating <= 2:
+            low_rated.append(title)
+
+    insights = {}
+    if high_rated:
+        insights["high_rated"] = high_rated
+    if low_rated:
+        insights["low_rated"] = low_rated
+
+    return insights if insights else {}
 
 
 async def _generate_with_retries(
     prompt: str,
     inventory_names: list[str],
     equipment_modes: dict[str, list[str]],
+    *,
+    allergen_ingredients: set[str] | None = None,
+    cuisine_preferences: list[str] | None = None,
 ) -> GeneratedMealPlan:
     """Call LLM and validate, retrying up to MAX_RETRIES times.
 
@@ -146,6 +331,8 @@ async def _generate_with_retries(
     Raises:
         ValueError: If all retries exhausted without valid output.
     """
+    from .prompts import add_error_feedback
+
     current_prompt = prompt
     last_errors: list[str] = []
 
@@ -162,7 +349,13 @@ async def _generate_with_retries(
             plan = GeneratedMealPlan.model_validate_json(cleaned)
 
             # Validate constraints
-            errors = validate_constraints(plan, inventory_names, equipment_modes)
+            errors = validate_constraints(
+                plan,
+                inventory_names,
+                equipment_modes,
+                allergen_ingredients=allergen_ingredients,
+                cuisine_preferences=cuisine_preferences,
+            )
             if not errors:
                 logger.info("llm_validation_passed", attempt=attempt)
                 return plan
@@ -227,6 +420,7 @@ async def _persist_plan(
                 servings=gen_recipe.servings,
                 prep_time_min=gen_recipe.prep_time_min,
                 cook_time_min=gen_recipe.cook_time_min,
+                cuisine_type=gen_recipe.cuisine_type,
                 is_ai_generated=True,
             )
             session.add(recipe)

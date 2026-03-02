@@ -361,3 +361,32 @@ class TestCreatePlanEnqueuesMessage:
             await svc.create_plan(CreateMealPlan(week_start_date=_next_monday()))
 
         mock_enqueue.assert_not_called()
+
+    @patch("api.services.meal_plan_service.enqueue_message")
+    async def test_create_plan_includes_cuisine_preferences_in_queue_message(
+        self, mock_enqueue, session: AsyncSession, household
+    ):
+        """Test that cuisine_preferences is passed through to queue message."""
+        svc = MealPlanService(session, household.id)
+        monday = _next_monday()
+        cuisines = ["italian", "mexican"]
+        plan = await svc.create_plan(
+            CreateMealPlan(week_start_date=monday, cuisine_preferences=cuisines)
+        )
+
+        mock_enqueue.assert_called_once()
+        call_args = mock_enqueue.call_args[0][0]
+        assert call_args["cuisine_preferences"] == cuisines
+
+    @patch("api.services.meal_plan_service.enqueue_message")
+    async def test_create_plan_without_cuisine_preferences(
+        self, mock_enqueue, session: AsyncSession, household
+    ):
+        """Test that queue message works without cuisine_preferences."""
+        svc = MealPlanService(session, household.id)
+        monday = _next_monday()
+        plan = await svc.create_plan(CreateMealPlan(week_start_date=monday))
+
+        mock_enqueue.assert_called_once()
+        call_args = mock_enqueue.call_args[0][0]
+        assert "cuisine_preferences" not in call_args
