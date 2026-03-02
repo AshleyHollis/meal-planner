@@ -35,7 +35,7 @@ spec:
             - -c
             - |
               echo "Starting database migrations..."
-              cd /app
+              cd /app/shared
               alembic upgrade head
               echo "Migrations completed successfully!"
           env:

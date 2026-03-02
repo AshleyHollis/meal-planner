@@ -55,6 +55,11 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 COPY shared/shared/ /app/shared/shared/
 COPY api/src/ ./src/
 
+# Copy Alembic migration files and seed data (used by migration job)
+COPY shared/alembic.ini /app/shared/alembic.ini
+COPY shared/alembic/ /app/shared/alembic/
+COPY shared/seed/ /app/shared/seed/
+
 # Set Python path
 ENV PYTHONPATH="/app/src:/app/shared"
 
