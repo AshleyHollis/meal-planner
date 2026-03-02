@@ -47,6 +47,12 @@ async def get_current_user(
     domain = settings.auth.domain
     token = credentials.credentials
 
+    if not domain:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Auth0 domain not configured",
+        )
+
     try:
         jwks = await _get_jwks(domain)
         unverified_header = jwt.get_unverified_header(token)
@@ -96,6 +102,13 @@ async def get_current_user(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=f"Token validation failed: {exc}",
+        ) from exc
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Authentication failed: {type(exc).__name__}: {exc}",
         ) from exc
 
 
