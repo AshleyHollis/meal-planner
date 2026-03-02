@@ -23,3 +23,13 @@
 - `CORSMiddleware` wraps exception handlers, so CORS headers are added even on 500 responses returned by `internal_exception_handler`.
 - The CORS regex `r"https://.*\.(azurestaticapps\.net|meal-planner\.apps\.ashleyhollis\.com)"` correctly matches Azure SWA preview origins like `agreeable-plant-04ffe2700-pr1.eastasia.6.azurestaticapps.net`.
 - The previous CORS failures in E2E were caused by the `nullslast()` 500 — now that it's fixed, CORS should work. The middleware config itself is correct.
+
+### Validator test suite updated for relaxed recipe count (2025-07)
+
+- The validator logic was changed to accept "at least 5 recipes" (no upper bound) instead of "exactly 7 recipes".
+- Fixed 3 failing tests in `services/workers/tests/test_validator.py`:
+  - `test_too_few_recipes`: Changed from 5 recipes (expecting error) to 4 recipes (still expecting error with updated message "Expected at least 5 recipes, got 4")
+  - `test_too_many_recipes`: Changed assertion to verify 9 recipes produces NO recipe count error (since there's no upper bound)
+  - `test_zero_recipes`: Updated expected error message from "Expected 7 recipes, got 0" to "Expected at least 5 recipes, got 0"
+- Updated class comment from "Exactly 7 recipes required" to "At least 5 recipes required"
+- All 29 worker tests now pass. CI should be unblocked.
