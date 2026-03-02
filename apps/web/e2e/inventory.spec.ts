@@ -188,6 +188,21 @@ test.describe('Inventory Management', () => {
     );
 
     test('can click Edit button on an inventory item', async ({ page }) => {
+      // Capture browser console and network for diagnostics
+      const consoleLogs: string[] = [];
+      const apiRequests: string[] = [];
+      page.on('console', (msg) => consoleLogs.push(`[${msg.type()}] ${msg.text()}`));
+      page.on('request', (req) => {
+        if (req.url().includes('/api/') || req.url().includes('/auth/')) {
+          apiRequests.push(`${req.method()} ${req.url()}`);
+        }
+      });
+      page.on('response', (resp) => {
+        if (resp.url().includes('/api/') || resp.url().includes('/auth/')) {
+          apiRequests.push(`  → ${resp.status()} ${resp.url()}`);
+        }
+      });
+
       await page.goto('/inventory');
       await expect(page.getByRole('heading', { name: 'Inventory' })).toBeVisible({
         timeout: 30_000,
@@ -199,6 +214,12 @@ test.describe('Inventory Management', () => {
         await expect(spinner.first()).not.toBeVisible({ timeout: 30_000 });
       }
 
+      // Log diagnostics
+      const runtimeConfig = await page.evaluate(() => (window as { __RUNTIME_CONFIG__?: { apiUrl?: string } }).__RUNTIME_CONFIG__);
+      console.log(`[diag] Runtime config: ${JSON.stringify(runtimeConfig)}`);
+      console.log(`[diag] API requests: ${apiRequests.join('\n  ')}`);
+      console.log(`[diag] Console logs: ${consoleLogs.slice(-5).join('\n  ')}`);
+
       // Check if there are items to edit
       const editButton = page.getByRole('button', { name: 'Edit' }).first();
       const emptyState = page.getByText('No items in inventory');
@@ -206,6 +227,8 @@ test.describe('Inventory Management', () => {
 
       // If empty or error, skip the test
       if (await emptyState.isVisible().catch(() => false) || await errorState.isVisible().catch(() => false)) {
+        const pageText = await page.locator('body').innerText().catch(() => '');
+        console.log(`[diag] Page shows empty/error. Visible text snippet: ${pageText.substring(0, 500)}`);
         test.skip(true, 'No inventory items to edit');
         return;
       }
