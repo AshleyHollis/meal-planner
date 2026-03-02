@@ -25,43 +25,6 @@ interface SeedIngredient {
   default_storage: string;
 }
 
-/**
- * Get a JWT access token by calling the Auth0 BFF token endpoint.
- * The page's storage state (cookies) provides the session.
- */
-async function getAccessToken(
-  request: ReturnType<typeof setup extends (n: string, fn: (args: infer A) => void) => void ? never : never>,
-  baseURL: string
-): Promise<string | null> {
-  // Use absolute URL to hit the frontend's auth endpoint
-  const resp = await request.get(`${baseURL}/auth/access-token`);
-  if (!resp.ok()) {
-    console.log(`[seed-data] Failed to get access token: ${resp.status()}`);
-    return null;
-  }
-  const data = (await resp.json()) as { token: string };
-  return data.token;
-}
-
-/**
- * Search for an ingredient by name. Returns the first match or null.
- */
-async function findIngredient(
-  request: Parameters<Parameters<typeof setup>[1]>[0]['request'],
-  name: string,
-  token: string
-): Promise<SeedIngredient | null> {
-  const resp = await request.get(`${API_URL}/api/v1/ingredients?q=${encodeURIComponent(name)}&limit=1`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  if (!resp.ok()) return null;
-  const data = (await resp.json()) as SeedIngredient[];
-  return data.length > 0 ? data[0] : null;
-}
-
-/**
- * Return next Monday as ISO string (meal plans must start on Monday).
- */
 function getNextMonday(): string {
   const now = new Date();
   const day = now.getDay(); // 0=Sun, 1=Mon, ...
@@ -82,12 +45,12 @@ setup('seed test data', async ({ request, baseURL }) => {
 
   // ── Step 1: Get access token ──────────────────────────────────────────
   console.log('[seed-data] Getting access token...');
-  const resp = await request.get(`${effectiveBaseURL}/auth/access-token`);
-  if (!resp.ok()) {
-    console.warn(`[seed-data] Could not get access token (${resp.status()}), skipping seeding`);
+  const tokenResp = await request.get(`${effectiveBaseURL}/auth/access-token`);
+  if (!tokenResp.ok()) {
+    console.warn(`[seed-data] Could not get access token (${tokenResp.status()}), skipping seeding`);
     return;
   }
-  const tokenData = (await resp.json()) as { token: string };
+  const tokenData = (await tokenResp.json()) as { token: string };
   const token = tokenData.token;
   if (!token) {
     console.warn('[seed-data] Access token is empty, skipping seeding');
@@ -106,10 +69,16 @@ setup('seed test data', async ({ request, baseURL }) => {
   const ingredients: SeedIngredient[] = [];
 
   for (const name of ingredientNames) {
-    const ing = await findIngredient(request, name, token);
-    if (ing) {
-      ingredients.push(ing);
-      console.log(`[seed-data]   Found: ${ing.name} (${ing.id})`);
+    const resp = await request.get(
+      `${API_URL}/api/v1/ingredients?q=${encodeURIComponent(name)}&limit=1`,
+      { headers }
+    );
+    if (resp.ok()) {
+      const data = (await resp.json()) as SeedIngredient[];
+      if (data.length > 0) {
+        ingredients.push(data[0]);
+        console.log(`[seed-data]   Found: ${data[0].name} (${data[0].id})`);
+      }
     }
   }
 
