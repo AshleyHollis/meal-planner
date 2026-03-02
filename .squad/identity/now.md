@@ -1,10 +1,10 @@
 ---
-updated_at: 2026-03-02T08:28:00Z
-focus_area: E2E test fixes and PR lifecycle
+updated_at: 2026-03-02T21:38:00Z
+focus_area: Inventory enhancements (002)
 active_issues:
-  ["CORS blocking browser→API (5 tests)", "Meal plan stuck in draft (7 tests)"]
+  ["Auto-deduct inventory on cook (P14)", "Record leftovers (P5)", "Staple ingredients (P15)", "Freezer storage (P11)"]
 ---
 
 # What We're Focused On
 
-Getting all 36 E2E tests passing on PR #1 (branch 001-meal-planner-mvp). Two problems: CORS blocks inventory tests, and the worker can't process meal plans without Azure OpenAI. Phase 5-6 remaining.
+Building 4 inventory enhancement features on branch 002-inventory-enhancements. 22 tasks across 7 phases: schema→auto-deduct→leftovers→staples→freezer→tests→polish. Ralph is driving execution.

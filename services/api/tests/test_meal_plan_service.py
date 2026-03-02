@@ -274,7 +274,7 @@ class TestSlotOperations:
         slot = await _make_slot(session, plan.id, day=0)
 
         svc = MealPlanService(session, household.id)
-        updated = await svc.update_slot_status(plan.id, slot.id, UpdateSlotStatus(status="cooked"))
+        updated, deductions = await svc.update_slot_status(plan.id, slot.id, UpdateSlotStatus(status="cooked"))
         assert updated is not None
         assert updated.status == "cooked"
         assert updated.cooked_at is not None
@@ -284,7 +284,7 @@ class TestSlotOperations:
         slot = await _make_slot(session, plan.id, day=1)
 
         svc = MealPlanService(session, household.id)
-        updated = await svc.update_slot_status(plan.id, slot.id, UpdateSlotStatus(status="skipped"))
+        updated, deductions = await svc.update_slot_status(plan.id, slot.id, UpdateSlotStatus(status="skipped"))
         assert updated is not None
         assert updated.status == "skipped"
         assert updated.cooked_at is not None
@@ -297,7 +297,7 @@ class TestSlotOperations:
         # Mark cooked first
         await svc.update_slot_status(plan.id, slot.id, UpdateSlotStatus(status="cooked"))
         # Revert to planned
-        updated = await svc.update_slot_status(plan.id, slot.id, UpdateSlotStatus(status="planned"))
+        updated, deductions = await svc.update_slot_status(plan.id, slot.id, UpdateSlotStatus(status="planned"))
         assert updated is not None
         assert updated.status == "planned"
         assert updated.cooked_at is None
@@ -315,7 +315,7 @@ class TestSlotOperations:
         plan = await _make_plan(session, household.id)
         svc = MealPlanService(session, household.id)
 
-        result = await svc.update_slot_status(plan.id, uuid4(), UpdateSlotStatus(status="cooked"))
+        result, deductions = await svc.update_slot_status(plan.id, uuid4(), UpdateSlotStatus(status="cooked"))
         assert result is None
 
     async def test_update_slot_scoped_to_household(self, session: AsyncSession, household):
@@ -324,7 +324,7 @@ class TestSlotOperations:
 
         # Other household cannot touch the slot
         svc_other = MealPlanService(session, uuid4())
-        result = await svc_other.update_slot_status(
+        result, deductions = await svc_other.update_slot_status(
             plan.id, slot.id, UpdateSlotStatus(status="cooked")
         )
         assert result is None

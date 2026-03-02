@@ -52,6 +52,7 @@ class InventoryService:
             unit=data.unit,
             location=data.location,
             expiry_date=data.expiry_date,
+            defrost_hours=data.defrost_hours,
         )
         self.session.add(item)
         await self.session.flush()
@@ -99,3 +100,88 @@ class InventoryService:
         await self.session.delete(item)
         await self.session.flush()
         return True
+
+    async def deduct_for_recipe(self, recipe_id: UUID) -> list[dict]:
+        """Deduct recipe ingredient quantities from household inventory.
+        
+        Returns a list of deduction results, one per recipe ingredient.
+        """
+        from shared.db.models.recipe import RecipeIngredient
+        
+        # Load recipe with ingredients
+        stmt = (
+            select(RecipeIngredient)
+            .options(selectinload(RecipeIngredient.ingredient))
+            .where(RecipeIngredient.recipe_id == recipe_id)
+        )
+        result = await self.session.execute(stmt)
+        recipe_ingredients = list(result.scalars().all())
+        
+        deductions = []
+        for ri in recipe_ingredients:
+            if ri.is_optional:
+                continue
+            
+            # Find matching inventory item
+            inv_stmt = select(InventoryItem).where(
+                InventoryItem.household_id == self.household_id,
+                InventoryItem.ingredient_id == ri.ingredient_id,
+            )
+            inv_result = await self.session.execute(inv_stmt)
+            inv_items = list(inv_result.scalars().all())
+            
+            ingredient_name = ri.ingredient.name if ri.ingredient else "Unknown"
+            
+            if not inv_items:
+                deductions.append({
+                    "ingredient_id": str(ri.ingredient_id),
+                    "ingredient_name": ingredient_name,
+                    "requested": ri.quantity,
+                    "deducted": 0.0,
+                    "remaining": 0.0,
+                    "unit": ri.unit,
+                    "unit_mismatch": False,
+                })
+                continue
+            
+            # Sum matching inventory (same unit)
+            matching = [i for i in inv_items if i.unit == ri.unit]
+            if not matching:
+                deductions.append({
+                    "ingredient_id": str(ri.ingredient_id),
+                    "ingredient_name": ingredient_name,
+                    "requested": ri.quantity,
+                    "deducted": 0.0,
+                    "remaining": sum(i.quantity for i in inv_items),
+                    "unit": ri.unit,
+                    "unit_mismatch": True,
+                })
+                continue
+            
+            # Deduct from matching items (oldest expiry first)
+            remaining_to_deduct = ri.quantity
+            total_deducted = 0.0
+            for inv_item in sorted(matching, key=lambda x: (x.expiry_date is None, x.expiry_date)):
+                if remaining_to_deduct <= 0:
+                    break
+                deduct_amount = min(remaining_to_deduct, inv_item.quantity)
+                inv_item.quantity -= deduct_amount
+                remaining_to_deduct -= deduct_amount
+                total_deducted += deduct_amount
+                if inv_item.quantity <= 0:
+                    await self.session.delete(inv_item)
+            
+            await self.session.flush()
+            
+            remaining_qty = sum(i.quantity for i in matching if i.quantity > 0)
+            deductions.append({
+                "ingredient_id": str(ri.ingredient_id),
+                "ingredient_name": ingredient_name,
+                "requested": ri.quantity,
+                "deducted": total_deducted,
+                "remaining": remaining_qty,
+                "unit": ri.unit,
+                "unit_mismatch": False,
+            })
+        
+        return deductions

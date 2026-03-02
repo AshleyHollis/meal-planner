@@ -166,8 +166,11 @@ class MealPlanService:
         plan_id: UUID,
         slot_id: UUID,
         data: UpdateSlotStatus,
-    ) -> MealSlot | None:
-        """Mark a slot as cooked/skipped with timestamp."""
+    ) -> tuple[MealSlot, list[dict] | None]:
+        """Mark a slot as cooked/skipped with timestamp.
+        
+        Returns tuple of (slot, deductions). Deductions is None unless transitioning to cooked.
+        """
         stmt = (
             select(MealSlot)
             .join(MealPlan)
@@ -180,7 +183,18 @@ class MealPlanService:
         result = await self.session.execute(stmt)
         slot = result.scalar_one_or_none()
         if slot is None:
-            return None
+            return None, None
+
+        deductions = None
+        
+        # If transitioning to cooked and wasn't already cooked
+        if data.status == "cooked" and slot.status != "cooked":
+            # Deduct ingredients if recipe is assigned
+            if slot.recipe_id is not None:
+                from .inventory_service import InventoryService
+                
+                inv_service = InventoryService(self.session, self.household_id)
+                deductions = await inv_service.deduct_for_recipe(slot.recipe_id)
 
         slot.status = data.status
         if data.status in ("cooked", "skipped"):
@@ -188,7 +202,7 @@ class MealPlanService:
         else:
             slot.cooked_at = None
         await self.session.flush()
-        return slot
+        return slot, deductions
 
     async def update_plan_status(
         self,

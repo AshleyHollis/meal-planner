@@ -15,8 +15,9 @@ class CreateInventoryItem(BaseModel):
     ingredient_id: UUID
     quantity: float = Field(gt=0)
     unit: Literal["g", "ml", "units"]
-    location: Literal["fridge", "pantry"]
+    location: Literal["fridge", "pantry", "freezer"]
     expiry_date: datetime | None = None
+    defrost_hours: int | None = None
 
 
 class UpdateInventoryItem(BaseModel):
@@ -24,6 +25,7 @@ class UpdateInventoryItem(BaseModel):
 
     quantity: float | None = Field(default=None, gt=0)
     expiry_date: datetime | None = None
+    defrost_hours: int | None = None
 
 
 class IngredientResponse(BaseModel):
@@ -50,6 +52,7 @@ class InventoryItemResponse(BaseModel):
     unit: str
     location: str
     expiry_date: datetime | None
+    defrost_hours: int | None = None
     created_at: datetime
 
     @computed_field  # type: ignore[prop-decorator]
@@ -70,3 +73,15 @@ class InventoryItemResponse(BaseModel):
         if days_remaining <= 3:
             return "expiring"
         return "safe"
+
+
+class DeductionResult(BaseModel):
+    """Result of deducting recipe ingredients from inventory."""
+    
+    ingredient_id: str
+    ingredient_name: str
+    requested: float
+    deducted: float
+    remaining: float
+    unit: str
+    unit_mismatch: bool
