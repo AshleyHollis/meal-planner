@@ -20,3 +20,7 @@
 **pre-commit.ci:** The `identify` library uses `ts` not `typescript` as the type tag for TypeScript files. Fix already committed (`ec2626f`).
 
 **Key insight:** When debugging CORS in Starlette/FastAPI, always check whether the underlying request returns a successful response first. A 500 that bypasses error handlers also bypasses CORSMiddleware, making it look like a CORS config problem when it's actually an application error.
+
+### 2026-03-02: PR #1 Description Finalized
+
+Updated PR #1 body with final AC checklist (8 items, all checked), updated test plan (CI + pre-commit.ci checked, E2E summary added), and Known Limitations section (3 items). Used `gh pr edit --body-file` via temp file for clean markdown. PR is now review-ready with full traceability.
