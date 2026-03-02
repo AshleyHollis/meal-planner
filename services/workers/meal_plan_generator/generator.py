@@ -65,6 +65,14 @@ async def generate_meal_plan(message_content: dict[str, Any]) -> None:
         # 1. Load context from DB
         inventory, equipment, expiring = await _load_context(db, household_id)
 
+        # 1.5. Verify meal plan still exists (may have been deleted/cleaned)
+        async with db.session() as session:
+            result = await session.execute(select(MealPlan).where(MealPlan.id == meal_plan_id))
+            meal_plan_row = result.scalar_one_or_none()
+            if meal_plan_row is None:
+                logger.warning("generate_meal_plan_skipped", meal_plan_id=meal_plan_id, reason="not_found")
+                return
+
         # 2. Build prompt
         prompt = build_prompt(inventory, equipment, expiring)
 
@@ -110,7 +118,7 @@ async def _load_context(
         eq_result = await session.execute(
             select(Equipment)
             .where(Equipment.household_id == household_id)
-            .where(Equipment.is_active.is_(True))
+            .where(Equipment.is_active == True)  # noqa: E712
         )
         equipment = list(eq_result.scalars().all())
 
@@ -253,11 +261,11 @@ async def _persist_plan(
                 )
                 session.add(step)
 
-            # Meal slot (day 1-7, dinner)
+            # Meal slot (day 0-6 = Mon-Sun, dinner)
             slot = MealSlot(
                 meal_plan_id=meal_plan_id,
                 recipe_id=recipe.id,
-                day=day_index + 1,
+                day=day_index,
                 meal_type="dinner",
                 status="planned",
             )

@@ -151,7 +151,7 @@ def receive_messages(
                 "pop_receipt": msg.pop_receipt,
                 "content": parsed,
                 "dequeue_count": msg.dequeue_count,
-                "insertion_time": str(msg.insertion_time) if msg.insertion_time else "",
+                "insertion_time": str(msg.inserted_on) if msg.inserted_on else "",
             }
         )
 

@@ -2,6 +2,21 @@
 
 from __future__ import annotations
 
+# Aspire sets SSL_CERT_DIR to its own OTEL cert dir which only contains the
+# Aspire dashboard cert. This breaks TLS to external endpoints (Azure OpenAI).
+# Remove it before any module imports that might cache SSL settings, and
+# explicitly point SSL_CERT_FILE at the certifi CA bundle.
+import os as _os
+
+_os.environ.pop("SSL_CERT_DIR", None)
+
+try:
+    import certifi as _certifi
+
+    _os.environ["SSL_CERT_FILE"] = _certifi.where()
+except ImportError:
+    pass
+
 import asyncio
 import contextlib
 import signal
@@ -10,6 +25,7 @@ import time
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 from shared.config import get_settings
+from shared.db.connection import get_db
 from shared.logging.config import configure_logging, get_logger
 from shared.queue.client import get_queue_client, receive_messages
 
@@ -53,19 +69,18 @@ def _handle_shutdown(signum: int, frame: object) -> None:
     _running = False
 
 
-def main() -> None:
-    """Worker entry point: configure, poll queue, process messages."""
-    configure_logging(service_name="meal-plan-worker")
-
+async def async_main() -> None:
+    """Async worker loop: poll queue, process messages."""
     settings = get_settings()
     poll_interval = settings.queue.poll_interval
 
-    # Graceful shutdown
-    signal.signal(signal.SIGINT, _handle_shutdown)
-    signal.signal(signal.SIGTERM, _handle_shutdown)
-
-    # Health endpoint
-    health_server = _start_health_server()
+    # Warm up DB connection so it's bound to this event loop
+    db = get_db()
+    try:
+        await db.connect()
+        logger.info("database_connected")
+    except Exception as exc:
+        logger.warning("database_connect_failed", error=str(exc))
 
     # Ensure queue exists
     queue_client = get_queue_client()
@@ -80,20 +95,33 @@ def main() -> None:
             for msg in messages:
                 try:
                     logger.info("message_received", message_id=msg["id"])
-                    asyncio.run(generate_meal_plan(msg["content"]))
-                    # Delete message on success
+                    await generate_meal_plan(msg["content"])
                     queue_client.delete_message(msg["id"], msg["pop_receipt"])
                     logger.info("plan_generated", message_id=msg["id"])
                 except Exception as e:
                     logger.error("plan_generation_failed", message_id=msg["id"], error=str(e))
-                    # Message becomes visible again after visibility timeout
         except Exception as e:
             logger.error("poll_error", error=str(e))
 
-        time.sleep(poll_interval)
+        await asyncio.sleep(poll_interval)
 
-    health_server.shutdown()
+    await db.close()
     logger.info("worker_stopped")
+
+
+def main() -> None:
+    """Worker entry point: configure, start health server, run async loop."""
+    configure_logging(service_name="meal-plan-worker")
+
+    signal.signal(signal.SIGINT, _handle_shutdown)
+    signal.signal(signal.SIGTERM, _handle_shutdown)
+
+    health_server = _start_health_server()
+
+    try:
+        asyncio.run(async_main())
+    finally:
+        health_server.shutdown()
 
 
 if __name__ == "__main__":

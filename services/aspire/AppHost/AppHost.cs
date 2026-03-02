@@ -3,6 +3,11 @@ var builder = DistributedApplication.CreateBuilder(args);
 // LLM API Key
 var llmApiKey = builder.AddParameter("llm-api-key", secret: true);
 
+// Azure OpenAI configuration
+var azureOpenAiEndpoint = builder.AddParameter("azure-openai-endpoint", secret: false);
+var azureOpenAiApiKey = builder.AddParameter("azure-openai-api-key", secret: true);
+var azureOpenAiDeployment = builder.AddParameter("azure-openai-deployment", secret: false);
+
 // Auth0 configuration
 var auth0Domain = builder.AddParameter("auth0-domain", secret: false);
 var auth0ClientId = builder.AddParameter("auth0-client-id", secret: false);
@@ -12,6 +17,7 @@ var auth0ClientSecret = builder.AddParameter(
 var auth0SessionSecret = builder.AddParameter(
     "auth0-session-secret", secret: true
 );
+var auth0Audience = builder.AddParameter("auth0-audience", secret: false);
 
 // Azure Storage (Azurite emulator for local dev)
 var storage = builder.AddAzureStorage("storage")
@@ -45,6 +51,7 @@ var api = builder.AddPythonModule("api", "../../api", "uvicorn")
     .WithEnvironment("AUTH0_CLIENT_ID", auth0ClientId)
     .WithEnvironment("AUTH0_CLIENT_SECRET", auth0ClientSecret)
     .WithEnvironment("AUTH0_SESSION_SECRET", auth0SessionSecret)
+    .WithEnvironment("AUTH0_AUDIENCE", auth0Audience)
     .WithEnvironment("API_BASE_URL", "http://localhost:8000");
 
 // Next.js Frontend
@@ -59,19 +66,21 @@ var web = builder.AddNpmApp("web", "../../../apps/web", "dev")
     );
 
 // Meal Plan Generator Worker
-var workerPath = Path.GetFullPath(
-    Path.Combine(builder.AppHostDirectory,
-    "../../workers/meal_plan_generator")
+var workersRoot = Path.GetFullPath(
+    Path.Combine(builder.AppHostDirectory, "../../workers")
 );
 var worker = builder.AddExecutable(
         "meal-plan-worker",
-        Path.Combine(workerPath, ".venv/Scripts/python.exe"),
-        workerPath,
-        "__main__.py"
+        Path.Combine(workersRoot, ".venv/Scripts/python.exe"),
+        workersRoot,
+        "-m", "meal_plan_generator"
     )
     .WithReference(queues)
     .WithReference(sql)
     .WithEnvironment("LLM_API_KEY", llmApiKey)
+    .WithEnvironment("AZURE_OPENAI_ENDPOINT", azureOpenAiEndpoint)
+    .WithEnvironment("AZURE_OPENAI_API_KEY", azureOpenAiApiKey)
+    .WithEnvironment("AZURE_OPENAI_DEPLOYMENT", azureOpenAiDeployment)
     .WithEnvironment("HEALTH_PORT", "8091")
     .WithEnvironment("QUEUE_POLL_INTERVAL", "5.0")
     .WithHttpEndpoint(

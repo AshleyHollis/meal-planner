@@ -104,7 +104,11 @@ export default function MealPlanListPage() {
               >
                 <div>
                   <p className="font-medium text-gray-900">
-                    Week of {plan.week_start_date}
+                    Week of{" "}
+                    {new Date(plan.week_start_date).toLocaleDateString(
+                      undefined,
+                      { month: "long", day: "numeric", year: "numeric" },
+                    )}
                   </p>
                   <p className="mt-0.5 text-sm text-gray-500">
                     Created {new Date(plan.created_at).toLocaleDateString()}

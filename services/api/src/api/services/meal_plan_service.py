@@ -124,6 +124,16 @@ class MealPlanService:
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
+    async def list_plans(self) -> list[MealPlan]:
+        """Return all meal plans for the household, newest first."""
+        stmt = (
+            select(MealPlan)
+            .where(MealPlan.household_id == self.household_id)
+            .order_by(MealPlan.created_at.desc())
+        )
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())
+
     async def update_slot(
         self,
         plan_id: UUID,

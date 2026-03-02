@@ -38,7 +38,7 @@ def upgrade() -> None:
         sa.Column("id", UNIQUEIDENTIFIER(), nullable=False, server_default=sa.text("NEWID()")),
         sa.Column("name", sa.String(200), nullable=False),
         sa.Column("category", sa.String(100), nullable=False),
-        sa.Column("default_unit", sa.String(10), nullable=False),
+        sa.Column("default_unit", sa.String(50), nullable=False),
         sa.Column("default_storage", sa.String(20), nullable=False),
         sa.Column("typical_shelf_life_days", sa.Integer(), nullable=True),
         sa.Column(
@@ -81,7 +81,7 @@ def upgrade() -> None:
         sa.Column("household_id", UNIQUEIDENTIFIER(), nullable=False),
         sa.Column("ingredient_id", UNIQUEIDENTIFIER(), nullable=False),
         sa.Column("quantity", sa.Float(), nullable=False),
-        sa.Column("unit", sa.String(10), nullable=False),
+        sa.Column("unit", sa.String(50), nullable=False),
         sa.Column("location", sa.String(20), nullable=False),
         sa.Column("expiry_date", sa.DateTime(), nullable=True),
         sa.Column(
@@ -164,7 +164,7 @@ def upgrade() -> None:
         sa.Column("recipe_id", UNIQUEIDENTIFIER(), nullable=False),
         sa.Column("ingredient_id", UNIQUEIDENTIFIER(), nullable=False),
         sa.Column("quantity", sa.Float(), nullable=False),
-        sa.Column("unit", sa.String(20), nullable=False),
+        sa.Column("unit", sa.String(50), nullable=False),
         sa.Column("is_optional", sa.Boolean(), nullable=False, server_default="0"),
         sa.PrimaryKeyConstraint("id"),
         sa.ForeignKeyConstraint(["recipe_id"], ["Recipes.id"]),
@@ -257,7 +257,7 @@ def upgrade() -> None:
         sa.Column("grocery_list_id", UNIQUEIDENTIFIER(), nullable=False),
         sa.Column("ingredient_id", UNIQUEIDENTIFIER(), nullable=False),
         sa.Column("quantity_needed", sa.Numeric(10, 2), nullable=False),
-        sa.Column("unit", sa.String(10), nullable=False),
+        sa.Column("unit", sa.String(50), nullable=False),
         sa.Column("is_checked", sa.Boolean(), nullable=False, server_default="0"),
         sa.Column("preferred_store", sa.String(200), nullable=True),
         sa.Column(

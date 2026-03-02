@@ -6,7 +6,7 @@ export type UnitType = "g" | "ml" | "units";
 export type StorageLocation = "fridge" | "pantry";
 export type ExpiryStatus = "safe" | "expiring" | "expired";
 export type MealSlotStatus = "planned" | "cooked" | "skipped";
-export type MealPlanStatus = "draft" | "active" | "completed";
+export type MealPlanStatus = "draft" | "active" | "completed" | "failed";
 export type EffortLevel = "quick" | "standard" | "elaborate";
 
 // --- Ingredient ---

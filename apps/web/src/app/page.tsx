@@ -157,7 +157,12 @@ export default function DashboardPage() {
               <Badge variant="success">{plan.status}</Badge>
             </div>
             <p className="mt-1 text-sm text-gray-600">
-              Week of {plan.week_start_date}
+              Week of{" "}
+              {new Date(plan.week_start_date).toLocaleDateString(undefined, {
+                month: "long",
+                day: "numeric",
+                year: "numeric",
+              })}
             </p>
             <p className="mt-1 text-sm text-gray-600">
               {cookedCount} of {totalSlots} meals cooked

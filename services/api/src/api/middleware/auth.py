@@ -11,6 +11,7 @@ from shared.config import get_settings
 from shared.db.connection import get_session
 from shared.db.models.household import Household, HouseholdMember
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 _bearer = HTTPBearer()
@@ -132,17 +133,28 @@ async def get_current_household_id(
         return member.household_id
 
     # Auto-provision: create household + member on first login
-    household = Household(name="My Household")
-    session.add(household)
-    await session.flush()  # populate household.id
+    try:
+        household = Household(name="My Household")
+        session.add(household)
+        await session.flush()  # populate household.id
 
-    new_member = HouseholdMember(
-        household_id=household.id,
-        auth0_user_id=auth0_user_id,
-        display_name=user.get("name", user.get("email", "User")),
-        role="owner",
-    )
-    session.add(new_member)
-    await session.flush()
+        new_member = HouseholdMember(
+            household_id=household.id,
+            auth0_user_id=auth0_user_id,
+            display_name=user.get("name", user.get("email", "User")),
+            role="owner",
+        )
+        session.add(new_member)
+        await session.flush()
 
-    return household.id
+        return household.id
+    except IntegrityError:
+        await session.rollback()
+        # Race condition: another request already created the member
+        result = await session.execute(
+            select(HouseholdMember).where(HouseholdMember.auth0_user_id == auth0_user_id)
+        )
+        member = result.scalar_one_or_none()
+        if member is not None:
+            return member.household_id
+        raise

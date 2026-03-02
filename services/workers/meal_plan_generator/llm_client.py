@@ -20,7 +20,7 @@ _MODELS = {
 GENERATION_TIMEOUT = 25  # NFR-01: meal plan generation p95 < 30s
 ADAPTATION_TIMEOUT = 8  # NFR-02: cook-time adaptation p95 < 10s
 
-_MAX_TOKENS = 4096
+_MAX_TOKENS = 8192
 
 # Approximate cost per 1K tokens (USD) for cost estimation
 _COST_PER_1K = {
@@ -36,7 +36,7 @@ def _estimate_cost(provider: str, input_tokens: int, output_tokens: int) -> floa
 
 
 @retry(
-    stop=stop_after_attempt(3),
+    stop=stop_after_attempt(2),
     wait=wait_exponential(multiplier=1, min=1, max=10),
     reraise=True,
 )
@@ -141,16 +141,32 @@ def _call_openai(prompt: str, api_key: str, timeout: int) -> str:
 
 def _call_azure_openai(prompt: str, settings: object, timeout: int) -> str:
     """Call Azure OpenAI API."""
+    import httpx
     import openai
 
     llm = settings.llm  # type: ignore[attr-defined]
     deployment = llm.azure_deployment or _MODELS["openai"]
 
+    # Explicitly use certifi CA bundle to avoid Aspire's SSL_CERT_DIR override
+    try:
+        import certifi
+
+        ca_bundle = certifi.where()
+    except ImportError:
+        ca_bundle = True  # type: ignore[assignment]
+
+    # Use a generous timeout (LLM calls can take 30s+) and disable SDK retries
+    http_client = httpx.Client(
+        verify=ca_bundle,
+        timeout=httpx.Timeout(60.0, connect=10.0),
+    )
+
     client = openai.AzureOpenAI(
         api_key=llm.azure_api_key,
         azure_endpoint=llm.azure_endpoint,
         api_version=llm.azure_api_version,
-        timeout=timeout,
+        http_client=http_client,
+        max_retries=0,
     )
     response = client.chat.completions.create(
         model=deployment,

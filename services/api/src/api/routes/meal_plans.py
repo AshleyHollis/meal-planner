@@ -33,6 +33,15 @@ async def create_meal_plan(
     return MealPlanResponse.model_validate(plan)
 
 
+@router.get("", response_model=list[MealPlanResponse])
+async def list_meal_plans(
+    service: MealPlanService = Depends(get_meal_plan_service),  # noqa: B008
+) -> list[MealPlanResponse]:
+    """List all meal plans for the household."""
+    plans = await service.list_plans()
+    return [MealPlanResponse.model_validate(p) for p in plans]
+
+
 @router.get("/active", response_model=MealPlanDetailResponse)
 async def get_active_meal_plan(
     service: MealPlanService = Depends(get_meal_plan_service),  # noqa: B008

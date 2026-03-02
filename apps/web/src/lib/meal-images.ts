@@ -2,10 +2,10 @@
 // URL format: https://images.unsplash.com/photo-{id}?auto=format&fit=crop&w={w}&h={h}&q=80
 
 const FOOD_CATEGORIES: Record<string, string> = {
-  chicken: "1604503468506-a8da13d82571",
+  chicken: "1604908177453-7462950a6a3b",
   beef: "1588168333986-5078d3ae3976",
   pasta: "1621996346565-e3dbc646d9a9",
-  fish: "1519708227418-b869ee951169",
+  fish: "1606728035253-49e8a23146de",
   salmon: "1467003909585-2f8a72700288",
   salad: "1512621776951-a57141f2eefd",
   soup: "1547592166-23ac45744acd",
@@ -22,6 +22,7 @@ const FOOD_CATEGORIES: Record<string, string> = {
   tacos: "1565299585323-38d6b0865b47",
   breakfast: "1533089860892-a7c6f0a88666",
   dessert: "1488477181946-6428a0291777",
+  default: "1504674900247-0877df9cc836",
 };
 
 // Keywords that map to categories
@@ -74,6 +75,14 @@ const KEYWORD_MAP: Record<string, string> = {
   taco: "tacos",
   burrito: "tacos",
   mexican: "tacos",
+  enchilada: "tacos",
+  pepper: "vegetable",
+  stuffed: "roast",
+  primavera: "pasta",
+  lemon: "chicken",
+  garlic: "chicken",
+  grilled: "steak",
+  baked: "roast",
   pancake: "breakfast",
   egg: "breakfast",
   toast: "breakfast",
@@ -127,8 +136,7 @@ export function getMealImageUrl(
   height = 600,
 ): string {
   const category = getMealCategory(mealName);
-  const photoId = FOOD_CATEGORIES[category];
-  if (!photoId) return "";
+  const photoId = FOOD_CATEGORIES[category] ?? FOOD_CATEGORIES.default;
   return `https://images.unsplash.com/photo-${photoId}?auto=format&fit=crop&w=${width}&h=${height}&q=80`;
 }
 

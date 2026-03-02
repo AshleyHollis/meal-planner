@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import type {
   MealPlanDetail,
@@ -64,6 +65,38 @@ function formatTime(minutes: number | null): string | null {
   return m > 0 ? `${h}h ${m}m` : `${h}h`;
 }
 
+function MealImage({ title }: { title: string }) {
+  const [failed, setFailed] = useState(false);
+  const imgUrl = getMealImageUrl(title, 400, 200);
+  const cat = getMealCategory(title);
+  const grad = getCategoryColor(cat);
+
+  if (failed) {
+    return (
+      <div
+        className={`flex h-24 w-full items-center justify-center bg-gradient-to-br ${grad} lg:h-36`}
+      >
+        <span className="text-3xl font-bold text-white/80 drop-shadow">
+          {title.charAt(0).toUpperCase()}
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative h-24 w-full lg:h-36">
+      <Image
+        src={imgUrl}
+        alt={title}
+        fill
+        className="object-cover"
+        placeholder="empty"
+        onError={() => setFailed(true)}
+      />
+    </div>
+  );
+}
+
 interface WeeklyPlanViewProps {
   plan: MealPlanDetail;
   equipment?: Equipment[];
@@ -83,7 +116,12 @@ function WeeklyPlanView({ plan, equipment = [] }: WeeklyPlanViewProps) {
   return (
     <div className="space-y-3">
       <h2 className="text-lg font-semibold text-gray-900">
-        Week of {plan.week_start_date}
+        Week of{" "}
+        {new Date(plan.week_start_date).toLocaleDateString(undefined, {
+          month: "long",
+          day: "numeric",
+          year: "numeric",
+        })}
       </h2>
 
       <ul className="divide-y divide-gray-200 rounded-lg border border-gray-200 lg:grid lg:grid-cols-2 lg:divide-y-0 xl:grid-cols-3">
@@ -97,29 +135,8 @@ function WeeklyPlanView({ plan, equipment = [] }: WeeklyPlanViewProps) {
               key={dayIndex}
               className="overflow-hidden px-0 py-0 lg:border-b lg:border-r lg:border-gray-200"
             >
-              {/* Thumbnail image (desktop: taller, mobile: shorter) */}
-              {recipe &&
-                (() => {
-                  const imgUrl = getMealImageUrl(recipe.title, 400, 200);
-                  const cat = getMealCategory(recipe.title);
-                  const grad = getCategoryColor(cat);
-                  return imgUrl ? (
-                    <div className="relative h-24 w-full lg:h-36">
-                      <Image
-                        src={imgUrl}
-                        alt={recipe.title}
-                        fill
-                        className="object-cover"
-                        placeholder="empty"
-                      />
-                      <div
-                        className={`absolute inset-0 bg-gradient-to-t ${grad} opacity-30`}
-                      />
-                    </div>
-                  ) : (
-                    <div className={`h-1 w-full bg-gradient-to-r ${grad}`} />
-                  );
-                })()}
+              {/* Thumbnail image */}
+              {recipe && <MealImage title={recipe.title} />}
 
               <div className="px-4 py-3">
                 <div className="flex items-start justify-between gap-3">

@@ -90,7 +90,11 @@ class AzureStorageSettings(BaseSettings):
         """Get the effective connection string, checking Aspire env vars if needed."""
         if self.connection_string:
             return self.connection_string
-        return os.environ.get("ConnectionStrings__storage") or ""  # noqa: SIM112 - .NET Aspire convention
+        return (
+            os.environ.get("ConnectionStrings__queues")  # noqa: SIM112 - .NET Aspire convention
+            or os.environ.get("ConnectionStrings__storage")  # noqa: SIM112 - .NET Aspire convention
+            or ""
+        )
 
 
 class LLMSettings(BaseSettings):
@@ -253,8 +257,8 @@ def _convert_ado_to_sqlalchemy(ado_conn: str) -> str:
 
     encoded_password = quote_plus(password)
     return (
-        f"mssql+pyodbc://{user}:{encoded_password}@{host}/{database}"
-        f"?driver=ODBC+Driver+18+for+SQL+Server&TrustServerCertificate=yes&port={port}"
+        f"mssql+pyodbc://{user}:{encoded_password}@{host}:{port}/{database}"
+        f"?driver=ODBC+Driver+18+for+SQL+Server&TrustServerCertificate=yes"
     )
 
 
