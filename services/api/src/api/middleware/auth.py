@@ -23,7 +23,7 @@ async def _fetch_jwks(domain: str) -> dict:
     """Fetch JSON Web Key Set from Auth0."""
     global _jwks
     url = f"https://{domain}/.well-known/jwks.json"
-    with urllib.request.urlopen(url, timeout=10) as resp:
+    with urllib.request.urlopen(url, timeout=10) as resp:  # nosec B310 - URL is always https
         _jwks = json.loads(resp.read())
     return _jwks
 
