@@ -14,6 +14,7 @@
 |------|------|---------|--------|
 | Dallas | Lead | `.squad/agents/dallas/charter.md` | ✅ Active |
 | Ripley | Backend Dev | `.squad/agents/ripley/charter.md` | ✅ Active |
+| Kane | Frontend Dev | `.squad/agents/kane/charter.md` | ✅ Active |
 | Parker | DevOps | `.squad/agents/parker/charter.md` | ✅ Active |
 | Lambert | Tester | `.squad/agents/lambert/charter.md` | ✅ Active |
 | Scribe | Session Logger | `.squad/agents/scribe/charter.md` | 📋 Silent |

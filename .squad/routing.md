@@ -8,6 +8,7 @@ How to decide who handles what.
 |-----------|----------|----------|
 | Architecture, scope, CORS diagnosis | Dallas | API design, middleware debugging, tech decisions |
 | Backend API, FastAPI, SQLAlchemy, worker | Ripley | Fix endpoints, CORS middleware, worker config, DB queries |
+| Frontend, Next.js, React, TypeScript, UI | Kane | Components, pages, API client, Auth0 BFF, runtime config |
 | K8s, CI/CD, Terraform, deployment | Parker | Pipeline fixes, AKS debugging, image verification, ArgoCD |
 | E2E tests, Playwright, test seeding | Lambert | Fix skipped tests, seed data strategy, test assertions |
 | Code review | Dallas | Review PRs, check quality, approve/reject |
