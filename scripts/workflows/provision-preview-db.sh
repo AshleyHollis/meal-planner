@@ -55,6 +55,8 @@ else
     --auto-pause-delay 60 \
     --max-size 2GB \
     --zone-redundant false \
+    --backup-storage-redundancy Local \
+    --yes \
     --output none
   echo "✅ Database ${DB_NAME} created"
 fi
