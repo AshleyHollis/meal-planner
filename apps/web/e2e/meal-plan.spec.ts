@@ -272,4 +272,153 @@ test.describe("Meal Plan Flow", () => {
       await expect(content.first()).toBeVisible({ timeout: 30_000 });
     });
   });
+
+  test.describe("Leftover Recording (New Feature)", () => {
+    test.skip(
+      () => !process.env.USE_EXTERNAL_SERVER,
+      "Requires backend - run with USE_EXTERNAL_SERVER=true",
+    );
+
+    test("cooked meal shows record leftovers button", async ({ page }) => {
+      await page.goto("/meal-plan");
+      await expect(
+        page.getByRole("heading", { name: "Meal Plans" }),
+      ).toBeVisible({ timeout: 30_000 });
+
+      const spinner = page.locator('[class*="animate-spin"]');
+      if ((await spinner.count()) > 0) {
+        await expect(spinner.first()).not.toBeVisible({ timeout: 30_000 });
+      }
+
+      // Navigate to first plan
+      const firstPlanLink = page.getByText(/Week of /).first();
+      if (
+        !(await firstPlanLink.isVisible({ timeout: 5_000 }).catch(() => false))
+      ) {
+        test.skip(true, "No meal plans available");
+        return;
+      }
+      await firstPlanLink.click();
+
+      // Wait for plan to load
+      await expect(page.getByText("Back to plans")).toBeVisible({
+        timeout: 30_000,
+      });
+
+      // Look for a "Cooked" badge (meal that's already cooked)
+      const cookedBadge = page.getByText("Cooked").first();
+      if (!(await cookedBadge.isVisible({ timeout: 5_000 }).catch(() => false))) {
+        test.skip(true, "No cooked meals found in plan");
+        return;
+      }
+
+      // Check for "Record Leftovers" button near the cooked meal
+      const leftoverButton = page.getByRole("button", {
+        name: /Record Leftovers/i,
+      });
+      await expect(leftoverButton).toBeVisible({ timeout: 5_000 });
+    });
+
+    test("record leftovers form has required fields", async ({ page }) => {
+      await page.goto("/meal-plan");
+      await expect(
+        page.getByRole("heading", { name: "Meal Plans" }),
+      ).toBeVisible({ timeout: 30_000 });
+
+      const spinner = page.locator('[class*="animate-spin"]');
+      if ((await spinner.count()) > 0) {
+        await expect(spinner.first()).not.toBeVisible({ timeout: 30_000 });
+      }
+
+      const firstPlanLink = page.getByText(/Week of /).first();
+      if (
+        !(await firstPlanLink.isVisible({ timeout: 5_000 }).catch(() => false))
+      ) {
+        test.skip(true, "No meal plans available");
+        return;
+      }
+      await firstPlanLink.click();
+
+      await expect(page.getByText("Back to plans")).toBeVisible({
+        timeout: 30_000,
+      });
+
+      const leftoverButton = page.getByRole("button", {
+        name: /Record Leftovers/i,
+      });
+      if (
+        !(await leftoverButton.isVisible({ timeout: 5_000 }).catch(() => false))
+      ) {
+        test.skip(true, "No Record Leftovers button found");
+        return;
+      }
+
+      // Click to show form
+      await leftoverButton.click();
+
+      // Check for form fields
+      await expect(page.getByLabel(/Portions/i)).toBeVisible({
+        timeout: 5_000,
+      });
+      await expect(page.getByLabel(/Storage Location/i)).toBeVisible();
+      await expect(page.getByLabel(/Expiry Date/i)).toBeVisible();
+      await expect(
+        page.getByRole("button", { name: /Save Leftover/i }),
+      ).toBeVisible();
+    });
+  });
+
+  test.describe("Auto-Deduct Inventory (New Feature)", () => {
+    test.skip(
+      () => !process.env.USE_EXTERNAL_SERVER,
+      "Requires backend - run with USE_EXTERNAL_SERVER=true",
+    );
+
+    test("marking meal as cooked shows deduction information", async ({
+      page,
+    }) => {
+      await page.goto("/meal-plan");
+      await expect(
+        page.getByRole("heading", { name: "Meal Plans" }),
+      ).toBeVisible({ timeout: 30_000 });
+
+      const spinner = page.locator('[class*="animate-spin"]');
+      if ((await spinner.count()) > 0) {
+        await expect(spinner.first()).not.toBeVisible({ timeout: 30_000 });
+      }
+
+      const firstPlanLink = page.getByText(/Week of /).first();
+      if (
+        !(await firstPlanLink.isVisible({ timeout: 5_000 }).catch(() => false))
+      ) {
+        test.skip(true, "No meal plans available");
+        return;
+      }
+      await firstPlanLink.click();
+
+      await expect(page.getByText("Back to plans")).toBeVisible({
+        timeout: 30_000,
+      });
+
+      // Look for a cooked meal with deduction info
+      const deductionHeading = page.getByText("Ingredients Deducted:");
+      if (
+        !(await deductionHeading.isVisible({ timeout: 5_000 }).catch(() => false))
+      ) {
+        test.skip(
+          true,
+          "No cooked meals with deductions found (may need to cook a meal first)",
+        );
+        return;
+      }
+
+      // Verify deduction information is displayed
+      await expect(deductionHeading).toBeVisible();
+
+      // Check that at least one ingredient deduction is shown
+      // Deductions are shown as "ingredient_name: X unit"
+      const deductionList = page.locator("text=/\\d+\\s+(g|ml|units)/").first();
+      await expect(deductionList).toBeVisible({ timeout: 2_000 });
+    });
+  });
 });

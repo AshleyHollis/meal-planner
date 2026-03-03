@@ -13,7 +13,7 @@
  *      (worker generates recipes, meal slots, and grocery list)
  */
 
-import { test as setup } from "@playwright/test";
+import { test as setup, expect } from "@playwright/test";
 
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL ||
@@ -53,18 +53,13 @@ setup("seed test data", async ({ request, baseURL }) => {
   // ── Step 1: Get access token ──────────────────────────────────────────
   console.log("[seed-data] Getting access token...");
   const tokenResp = await request.get(`${effectiveBaseURL}/auth/access-token`);
-  if (!tokenResp.ok()) {
-    console.warn(
-      `[seed-data] Could not get access token (${tokenResp.status()}), skipping seeding`,
-    );
-    return;
-  }
+  expect(
+    tokenResp.ok(),
+    `Failed to get access token: ${tokenResp.status()}`,
+  ).toBeTruthy();
   const tokenData = (await tokenResp.json()) as { token: string };
   const token = tokenData.token;
-  if (!token) {
-    console.warn("[seed-data] Access token is empty, skipping seeding");
-    return;
-  }
+  expect(token, "Access token is empty").toBeTruthy();
   console.log("[seed-data] Access token acquired");
 
   const headers = {
@@ -104,12 +99,10 @@ setup("seed test data", async ({ request, baseURL }) => {
     }
   }
 
-  if (ingredients.length === 0) {
-    console.warn(
-      "[seed-data] No ingredients found — ingredient DB may be empty",
-    );
-    return;
-  }
+  expect(
+    ingredients.length,
+    "No ingredients found — ingredient DB may be empty. This is critical for tests.",
+  ).toBeGreaterThan(0);
 
   // ── Step 3: Add inventory items with varied expiry dates ──────────────
   console.log("[seed-data] Adding inventory items...");
@@ -164,6 +157,12 @@ setup("seed test data", async ({ request, baseURL }) => {
     `[seed-data] Inventory seeded: ${inventoryAdded}/${ingredients.length} items`,
   );
 
+  // Fail hard if no inventory items could be added — this catches backend 500 errors
+  expect(
+    inventoryAdded,
+    `Inventory seeding failed: 0/${ingredients.length} items added. Backend may be returning 500 errors.`,
+  ).toBeGreaterThan(0);
+
   // ── Step 4: Create a meal plan ────────────────────────────────────────
   console.log("[seed-data] Creating meal plan...");
   const weekStart = getNextMonday();
@@ -172,15 +171,19 @@ setup("seed test data", async ({ request, baseURL }) => {
     data: { week_start_date: weekStart },
   });
 
-  if (!planResp.ok()) {
-    const errText = await planResp.text().catch(() => "");
-    console.warn(
-      `[seed-data] Failed to create meal plan: ${planResp.status()} ${errText}`,
-    );
+  if (planResp.status() === 409) {
     console.log(
-      "[seed-data] Inventory was seeded — some tests will pass, meal plan tests may skip",
+      "[seed-data] Meal plan already exists (409 Conflict) — skipping creation",
     );
     return;
+  }
+
+  if (!planResp.ok()) {
+    const errText = await planResp.text().catch(() => "");
+    expect(
+      false,
+      `Failed to create meal plan: ${planResp.status()} ${errText}`,
+    ).toBeTruthy();
   }
 
   const plan = (await planResp.json()) as { id: string; status: string };

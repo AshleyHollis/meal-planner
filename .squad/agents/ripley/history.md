@@ -33,3 +33,13 @@
   - `test_zero_recipes`: Updated expected error message from "Expected 7 recipes, got 0" to "Expected at least 5 recipes, got 0"
 - Updated class comment from "Exactly 7 recipes required" to "At least 5 recipes required"
 - All 29 worker tests now pass. CI should be unblocked.
+
+### Inventory POST 500 error investigation (2026-03)
+
+- Branch `002-inventory-enhancements` adds migration 003 which creates Leftovers and StapleIngredients tables and adds `defrost_hours` column to InventoryItems.
+- E2E run 22611078131 showed POST /api/v1/inventory returning 500 for all requests in preview environment.
+- All 98 API tests pass locally, confirming code is correct.
+- Root cause: Migration 003 has not been applied to the database in preview environment.
+- The API code expects `defrost_hours` column but database schema doesn't have it yet, causing SQLAlchemy to fail on insert.
+- Migration job is configured correctly (sync-wave 1, runs before API deployment wave 2) in k8s/base-preview/migration-job.yaml.
+- Solution: Migration should run automatically on next deployment. If it continues failing, check ArgoCD/K8s logs for migration job errors.

@@ -35,8 +35,8 @@
 
 ## Model
 
-- **Preferred:** auto
-- **Rationale:** Coordinator selects based on task — premium for architecture, haiku for triage
+- **Preferred:** claude-opus-4.6
+- **Rationale:** Lead needs premium reasoning for architecture decisions and code review
 
 ## Collaboration
 

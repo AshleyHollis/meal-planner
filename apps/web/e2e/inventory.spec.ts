@@ -107,11 +107,10 @@ test.describe("Inventory Management", () => {
         "Requires backend for ingredient search",
       );
 
-      // Skip if inventory failed to load (backend API issue)
+      // Fail if inventory failed to load (backend API issue)
       const errorMessage = page.getByText("Failed to load inventory");
       if (await errorMessage.isVisible({ timeout: 2_000 }).catch(() => false)) {
-        test.skip(true, "Inventory API returned an error");
-        return;
+        throw new Error("Inventory API returned an error - backend is failing");
       }
 
       const ingredientInput = page.getByPlaceholder("Search ingredients...");
@@ -160,7 +159,7 @@ test.describe("Inventory Management", () => {
       await expect(unitSelect.locator('option[value="units"]')).toHaveCount(1);
     });
 
-    test("location selector has fridge and pantry options", async ({
+    test("location selector has fridge, pantry, and freezer options", async ({
       page,
     }) => {
       const locationSelect = page.getByLabel("Location");
@@ -170,6 +169,9 @@ test.describe("Inventory Management", () => {
       ).toHaveCount(1);
       await expect(
         locationSelect.locator('option[value="pantry"]'),
+      ).toHaveCount(1);
+      await expect(
+        locationSelect.locator('option[value="freezer"]'),
       ).toHaveCount(1);
     });
   });
@@ -190,11 +192,10 @@ test.describe("Inventory Management", () => {
         },
       );
 
-      // Skip if inventory API is failing
+      // Fail if inventory API is failing
       const errorMessage = page.getByText("Failed to load inventory");
       if (await errorMessage.isVisible({ timeout: 2_000 }).catch(() => false)) {
-        test.skip(true, "Inventory API returned an error");
-        return;
+        throw new Error("Inventory API returned an error - backend is failing");
       }
 
       // Search for ingredient
@@ -338,6 +339,111 @@ test.describe("Inventory Management", () => {
         .getByText(/Expired|Expires in|d left|No expiry/)
         .first();
       await expect(expiryBadge).toBeVisible({ timeout: 10_000 });
+    });
+  });
+
+  test.describe("Freezer Storage (New Feature)", () => {
+    test.skip(
+      () => !process.env.USE_EXTERNAL_SERVER,
+      "Requires backend - run with USE_EXTERNAL_SERVER=true",
+    );
+
+    test("can add item to freezer location", async ({ page }) => {
+      await page.goto("/inventory");
+      await expect(page.getByRole("heading", { name: "Add Item" })).toBeVisible(
+        {
+          timeout: 30_000,
+        },
+      );
+
+      const errorMessage = page.getByText("Failed to load inventory");
+      if (await errorMessage.isVisible({ timeout: 2_000 }).catch(() => false)) {
+        throw new Error("Inventory API returned an error - backend is failing");
+      }
+
+      // Search and select ingredient
+      const ingredientInput = page.getByPlaceholder("Search ingredients...");
+      await ingredientInput.fill("chicken");
+
+      const firstSuggestion = page.locator("ul button").first();
+      if (
+        !(await firstSuggestion
+          .isVisible({ timeout: 10_000 })
+          .catch(() => false))
+      ) {
+        test.skip(true, "No ingredient suggestions available");
+        return;
+      }
+      await firstSuggestion.click();
+
+      // Fill form with freezer location
+      await page.getByLabel("Quantity").fill("1000");
+      await page.getByLabel("Location").selectOption("freezer");
+
+      // Submit
+      await page.getByRole("button", { name: "Add to Inventory" }).click();
+
+      // Wait for form to reset
+      await expect(ingredientInput).toHaveValue("", { timeout: 10_000 });
+
+      // Wait for inventory to reload
+      await page.waitForTimeout(1000);
+
+      // Check for Freezer heading
+      await expect(
+        page.getByRole("heading", { name: /Freezer/i }),
+      ).toBeVisible({ timeout: 10_000 });
+    });
+
+    test("freezer items show defrost hours field in form", async ({
+      page,
+    }) => {
+      await page.goto("/inventory");
+      await expect(page.getByRole("heading", { name: "Add Item" })).toBeVisible(
+        {
+          timeout: 30_000,
+        },
+      );
+
+      // Select freezer location
+      const locationSelect = page.getByLabel("Location");
+      await locationSelect.selectOption("freezer");
+
+      // Defrost hours field should become visible
+      const defrostField = page.getByLabel(/Defrost Hours/i);
+      await expect(defrostField).toBeVisible({ timeout: 2_000 });
+    });
+  });
+
+  test.describe("Staples Feature (New Feature)", () => {
+    test.skip(
+      () => !process.env.USE_EXTERNAL_SERVER,
+      "Requires backend - run with USE_EXTERNAL_SERVER=true",
+    );
+
+    test("staples management page loads", async ({ page }) => {
+      // Navigate to inventory (staples typically shown on same page or linked)
+      await page.goto("/inventory");
+      await expect(
+        page.getByRole("heading", { name: "Inventory" }),
+      ).toBeVisible({ timeout: 30_000 });
+
+      // Look for staples section/link - check if it exists on page or via navigation
+      const staplesHeading = page.getByRole("heading", { name: /Staples/i });
+      const staplesLink = page.getByText(/Manage Staples/i);
+
+      // If staples functionality exists, verify the UI is present
+      if (
+        (await staplesHeading.isVisible().catch(() => false)) ||
+        (await staplesLink.isVisible().catch(() => false))
+      ) {
+        // Pass if either heading or link is visible
+        await expect(
+          staplesHeading.or(staplesLink).first(),
+        ).toBeVisible();
+      } else {
+        test.skip(true, "Staples UI not found on inventory page");
+      }
     });
   });
 });
