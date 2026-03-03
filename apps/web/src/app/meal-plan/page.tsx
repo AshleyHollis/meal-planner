@@ -60,8 +60,13 @@ export default function MealPlanListPage() {
           cuisinePreferences.length > 0 ? cuisinePreferences : undefined,
       });
       router.push(`/meal-plan/${plan.id}`);
-    } catch {
-      setError("Failed to generate meal plan.");
+    } catch (err) {
+      // Extract API error detail or fall back to generic message
+      const message =
+        (err && typeof err === "object" && "body" in err
+          ? (err.body as { detail?: string })?.detail
+          : null) ?? "Failed to generate meal plan.";
+      setError(message);
       setGenerating(false);
     }
   };
