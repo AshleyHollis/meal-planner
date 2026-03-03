@@ -262,6 +262,7 @@ The meal planner needs visual richness: meal photos, store branding in grocery l
 **Solution:** Replaced shared-infra reference with local composite action (`.github/actions/cleanup-stale-swa-environments/`) that checks PR status before deleting. Only closed/merged PR environments deleted.
 
 **Trade-offs:**
+
 - ✅ Eliminates cross-branch deletion race condition
 - ⚠️ This repo now owns cleanup logic (not shared)
 - Requires `gh` + Azure CLI (available on `ubuntu-latest`)
