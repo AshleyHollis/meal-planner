@@ -24,6 +24,7 @@ from .services.meal_plan_service import MealPlanService
 from .services.preference_service import PreferenceService
 from .services.quick_suggestion_service import QuickSuggestionService
 from .services.rating_service import RatingService
+from .services.recurring_meal_service import RecurringMealService
 from .services.staple_service import StapleService
 from .services.substitution_service import SubstitutionService
 
@@ -122,3 +123,11 @@ def get_quick_suggestion_service(
 ) -> QuickSuggestionService:
     """Dependency: household-scoped quick suggestion service."""
     return QuickSuggestionService(session, household_id)
+
+
+def get_recurring_meal_service(
+    session: AsyncSession = Depends(get_session),  # noqa: B008
+    household_id: UUID = Depends(get_current_household_id),  # noqa: B008
+) -> RecurringMealService:
+    """Dependency: household-scoped recurring meal service."""
+    return RecurringMealService(session, household_id)
