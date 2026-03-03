@@ -21,7 +21,9 @@ export default function RecurringMealsPage() {
         window.location.href = "/api/auth/login";
         return;
       }
-      setError("Failed to load recurring meals. The service may be temporarily unavailable.");
+      setError(
+        "Failed to load recurring meals. The service may be temporarily unavailable.",
+      );
     } finally {
       setLoading(false);
     }
