@@ -189,9 +189,7 @@ test.describe("Recurring Meals Page (US4)", () => {
 
       // Check if template was created or if there was an error
       const created = page.getByText("Taco Tuesday Special");
-      const errorState = page.getByText(
-        /failed|error|unavailable|could not/i,
-      );
+      const errorState = page.getByText(/failed|error|unavailable|could not/i);
       const result = created.or(errorState).first();
       await expect(result).toBeVisible({ timeout: 10_000 });
 
