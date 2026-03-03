@@ -150,7 +150,10 @@ test.describe("Cuisine Selection Flow", () => {
       });
 
       // Select a cuisine
-      const mexicanButton = page.getByRole("button", { name: "Mexican" });
+      const mexicanButton = page.getByRole("button", {
+        name: "Mexican",
+        exact: true,
+      });
       await expect(mexicanButton).toBeVisible({ timeout: 10_000 });
       await mexicanButton.click();
 

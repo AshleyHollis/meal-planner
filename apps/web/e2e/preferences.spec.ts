@@ -128,8 +128,10 @@ test.describe("Preferences Management", () => {
       // Submit
       await page.getByRole("button", { name: /Add|Save|Submit/i }).click();
 
-      // Should show the added preference
-      await expect(page.getByText("vegetarian")).toBeVisible({
+      // Should show the added preference in the list
+      await expect(
+        page.locator("li").filter({ hasText: "vegetarian" }),
+      ).toBeVisible({
         timeout: 10_000,
       });
     });
@@ -162,8 +164,10 @@ test.describe("Preferences Management", () => {
       // Submit
       await page.getByRole("button", { name: /Add|Save|Submit/i }).click();
 
-      // Should show the added allergy
-      await expect(page.getByText("peanuts")).toBeVisible({
+      // Should show the added allergy in the list
+      await expect(
+        page.locator("li").filter({ hasText: "peanuts" }),
+      ).toBeVisible({
         timeout: 10_000,
       });
     });
@@ -196,8 +200,10 @@ test.describe("Preferences Management", () => {
       // Submit
       await page.getByRole("button", { name: /Add|Save|Submit/i }).click();
 
-      // Should show the added dislike
-      await expect(page.getByText("cilantro")).toBeVisible({
+      // Should show the added dislike in the list
+      await expect(
+        page.locator("li").filter({ hasText: "cilantro" }),
+      ).toBeVisible({
         timeout: 10_000,
       });
     });

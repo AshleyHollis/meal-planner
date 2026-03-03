@@ -33,7 +33,7 @@ async def list_preferences(
     service: PreferenceService = Depends(get_preference_service),  # noqa: B008
 ) -> list[MemberPreferenceResponse]:
     """List all preferences for a member."""
-    resolved_id = service.household_id if member_id == "current" else UUID(member_id)
+    resolved_id = await service.resolve_member_id(member_id)
     try:
         preferences = await service.list_preferences(resolved_id)
         return [MemberPreferenceResponse.model_validate(p) for p in preferences]
@@ -62,7 +62,7 @@ async def add_preference(
             detail=f"Invalid preference_type. Must be one of: {', '.join(valid_types)}",
         )
 
-    resolved_id = service.household_id if member_id == "current" else UUID(member_id)
+    resolved_id = await service.resolve_member_id(member_id)
     try:
         preference = await service.add_preference(resolved_id, body)
         return MemberPreferenceResponse.model_validate(preference)
@@ -88,7 +88,7 @@ async def delete_preference(
     service: PreferenceService = Depends(get_preference_service),  # noqa: B008
 ) -> None:
     """Remove a preference from a member."""
-    resolved_id = service.household_id if member_id == "current" else UUID(member_id)
+    resolved_id = await service.resolve_member_id(member_id)
     try:
         deleted = await service.delete_preference(resolved_id, preference_id)
         if not deleted:

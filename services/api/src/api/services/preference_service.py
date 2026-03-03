@@ -19,6 +19,22 @@ class PreferenceService:
         self.session = session
         self.household_id = household_id
 
+    async def resolve_member_id(self, member_id_or_current: str) -> UUID:
+        """Resolve 'current' to the primary household member's ID."""
+        if member_id_or_current != "current":
+            return UUID(member_id_or_current)
+        stmt = (
+            select(HouseholdMember.id)
+            .where(HouseholdMember.household_id == self.household_id)
+            .order_by(HouseholdMember.created_at)
+            .limit(1)
+        )
+        result = await self.session.execute(stmt)
+        mid = result.scalar_one_or_none()
+        if mid is None:
+            raise ValueError("No members found in household")
+        return mid
+
     async def _validate_member_ownership(self, member_id: UUID) -> None:
         """Raise ValueError if member doesn't belong to household."""
         stmt = select(HouseholdMember).where(

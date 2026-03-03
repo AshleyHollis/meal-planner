@@ -93,6 +93,14 @@ class TestListPreferences:
         resp = await client.get(f"/api/v1/members/{fake_member_id}/preferences")
         assert resp.status_code == 403
 
+    async def test_list_current_resolves_to_member(
+        self, client: AsyncClient, session: AsyncSession, household
+    ):
+        """Using member_id='current' resolves to the household's primary member."""
+        resp = await client.get("/api/v1/members/current/preferences")
+        assert resp.status_code == 200
+        assert resp.json() == []
+
 
 class TestAddPreference:
     async def test_add_dietary_restriction(
@@ -208,6 +216,20 @@ class TestAddPreference:
         }
         resp = await client.post(f"/api/v1/members/{fake_member_id}/preferences", json=payload)
         assert resp.status_code == 403
+
+    async def test_add_via_current_member(
+        self, client: AsyncClient, session: AsyncSession, household
+    ):
+        """Adding preference via member_id='current' uses household's primary member."""
+        payload = {
+            "preference_type": "allergy",
+            "value": "shellfish",
+        }
+        resp = await client.post("/api/v1/members/current/preferences", json=payload)
+        assert resp.status_code == 201
+        data = resp.json()
+        assert data["preference_type"] == "allergy"
+        assert data["value"] == "shellfish"
 
 
 class TestDeletePreference:
