@@ -142,7 +142,12 @@ async def client(engine, household, mock_user) -> AsyncGenerator[AsyncClient, No
 
     async def _override_session() -> AsyncGenerator[AsyncSession, None]:
         async with factory() as sess:
-            yield sess
+            try:
+                yield sess
+                await sess.commit()
+            except Exception:
+                await sess.rollback()
+                raise
 
     async def _override_user() -> dict:
         return mock_user

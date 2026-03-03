@@ -16,6 +16,7 @@ import { Spinner } from "@/components/ui/Spinner";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { getMealImageUrl } from "@/lib/meal-images";
+import { CuisineSelector } from "@/components/CuisineSelector";
 
 function getNextMonday(): string {
   const today = new Date();
@@ -33,6 +34,8 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showCuisineSelector, setShowCuisineSelector] = useState(false);
+  const [cuisinePreferences, setCuisinePreferences] = useState<string[]>([]);
 
   const fetchData = useCallback(async () => {
     try {
@@ -76,6 +79,8 @@ export default function DashboardPage() {
       setError(null);
       const newPlan = await createMealPlan({
         week_start_date: getNextMonday(),
+        cuisine_preferences:
+          cuisinePreferences.length > 0 ? cuisinePreferences : undefined,
       });
       router.push(`/meal-plan/${newPlan.id}`);
     } catch (err) {
@@ -186,17 +191,35 @@ export default function DashboardPage() {
           </div>
         </section>
       ) : (
-        <section className="mb-6 rounded-lg border border-gray-200 bg-white p-6 text-center">
-          <p className="mb-4 text-gray-600">
+        <section className="mb-6 rounded-lg border border-gray-200 bg-white p-6">
+          <p className="mb-4 text-center text-gray-600">
             No active meal plan. Generate one to get started.
           </p>
-          <Button
-            onClick={() => void handleGenerate()}
-            loading={generating}
-            disabled={generating}
-          >
-            Generate Plan
-          </Button>
+          {showCuisineSelector && (
+            <div className="mb-4">
+              <CuisineSelector
+                selected={cuisinePreferences}
+                onChange={setCuisinePreferences}
+              />
+            </div>
+          )}
+          <div className="flex justify-center gap-3">
+            {!showCuisineSelector && (
+              <Button
+                variant="secondary"
+                onClick={() => setShowCuisineSelector(true)}
+              >
+                Customize Cuisine
+              </Button>
+            )}
+            <Button
+              onClick={() => void handleGenerate()}
+              loading={generating}
+              disabled={generating}
+            >
+              Generate Plan
+            </Button>
+          </div>
         </section>
       )}
 

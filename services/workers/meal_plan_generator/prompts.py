@@ -106,6 +106,122 @@ def format_expiring(expiring: list[InventoryItem]) -> str:
     return "\n".join(lines)
 
 
+def format_preferences(member_preferences: dict) -> str:
+    """Format member preferences grouped by member.
+
+    Args:
+        member_preferences: Dict mapping member_name -> list of preference objects
+            with preference_type and value fields.
+
+    Returns:
+        Formatted string with dietary restrictions (FILTER), allergies (HARD BLOCK),
+        dislikes (minimize), and likes (prefer) per member.
+    """
+    if not member_preferences:
+        return ""
+
+    lines = []
+    for member_name, prefs in member_preferences.items():
+        lines.append(f"**{member_name}**:")
+
+        allergies = [p["value"] for p in prefs if p["preference_type"] == "allergy"]
+        if allergies:
+            lines.append(f"  - ALLERGIES (HARD BLOCK — never include): {', '.join(allergies)}")
+
+        restrictions = [p["value"] for p in prefs if p["preference_type"] == "dietary_restriction"]
+        if restrictions:
+            lines.append(f"  - Dietary restrictions (FILTER): {', '.join(restrictions)}")
+
+        dislikes = [p["value"] for p in prefs if p["preference_type"] == "dislike"]
+        if dislikes:
+            lines.append(f"  - Dislikes (avoid): {', '.join(dislikes)}")
+
+        likes = [p["value"] for p in prefs if p["preference_type"] == "like"]
+        if likes:
+            lines.append(f"  - Likes (prefer): {', '.join(likes)}")
+
+    return "\n".join(lines)
+
+
+def format_recent_meals(recent_meals: list[dict]) -> str:
+    """Format recent meals to avoid repetition.
+
+    Args:
+        recent_meals: List of dicts with 'title' and optional 'cuisine_type'.
+
+    Returns:
+        Formatted string listing recent meals with instruction to avoid repeating.
+    """
+    if not recent_meals:
+        return ""
+
+    titles = [meal["title"] for meal in recent_meals]
+    lines = ["Do NOT repeat these recipes:"] + [f"- {title}" for title in titles]
+    return "\n".join(lines)
+
+
+def format_favorites(favorites: list[str]) -> str:
+    """Format favorite recipes.
+
+    Args:
+        favorites: List of favorite recipe titles.
+
+    Returns:
+        Formatted string listing favorites with instruction to consider including one.
+    """
+    if not favorites:
+        return ""
+
+    lines = ["Consider including ~1 of these favorites if not recently cooked:"] + [
+        f"- {fav}" for fav in favorites
+    ]
+    return "\n".join(lines)
+
+
+def format_rating_insights(rating_insights: dict) -> str:
+    """Format rating insights to guide recipe selection.
+
+    Args:
+        rating_insights: Dict with 'high_rated' and 'low_rated' lists of recipe titles.
+
+    Returns:
+        Formatted string with recipes to prefer and avoid based on ratings.
+    """
+    if not rating_insights:
+        return ""
+
+    lines = []
+    low_rated = rating_insights.get("low_rated", [])
+    if low_rated:
+        lines.append("AVOID these low-rated recipes (≤2 stars):")
+        lines.extend([f"- {title}" for title in low_rated])
+
+    high_rated = rating_insights.get("high_rated", [])
+    if high_rated:
+        if lines:
+            lines.append("")
+        lines.append("PREFER these high-rated recipes (≥4 stars):")
+        lines.extend([f"- {title}" for title in high_rated])
+
+    return "\n".join(lines) if lines else ""
+
+
+def format_cuisine_preferences(cuisine_preferences: list[str]) -> str:
+    """Format cuisine preferences constraint.
+
+    Args:
+        cuisine_preferences: List of requested cuisine types.
+
+    Returns:
+        Formatted string with cuisine matching instruction.
+    """
+    if not cuisine_preferences:
+        return ""
+
+    cuisines = ", ".join(cuisine_preferences)
+    return f"At least 70% of recipes should match these cuisines: {cuisines}"
+
+
 def format_leftovers(leftovers: list) -> str:
     """Format leftover items for the prompt.
 
@@ -155,18 +271,29 @@ def build_prompt(
     inventory: list[InventoryItem],
     equipment: list[Equipment],
     expiring: list[InventoryItem],
+    *,
+    member_preferences: dict | None = None,
+    recent_meals: list[dict] | None = None,
+    favorites: list[str] | None = None,
+    rating_insights: dict | None = None,
+    cuisine_preferences: list[str] | None = None,
     leftovers: list | None = None,
     freezer_items: list[InventoryItem] | None = None,
 ) -> str:
     """Build the complete meal plan generation prompt.
 
     Combines the system prompt with formatted inventory, equipment, and expiring
-    item sections to create the full prompt for the LLM.
+    item sections, plus optional personalization sections.
 
     Args:
         inventory: All inventory items for the household.
         equipment: All equipment for the household.
         expiring: Inventory items with expiry dates, sorted soonest first.
+        member_preferences: Dict mapping member_name -> list of preference dicts.
+        recent_meals: List of recently cooked meal dicts with 'title', 'cuisine_type'.
+        favorites: List of favorite recipe titles.
+        rating_insights: Dict with 'high_rated' and 'low_rated' recipe title lists.
+        cuisine_preferences: List of requested cuisine types.
         leftovers: Optional list of leftover portions to use first.
         freezer_items: Optional list of freezer items requiring defrosting.
 
@@ -188,6 +315,32 @@ CURRENT INVENTORY (use these first):
 
 EXPIRING SOON (prioritize these):
 {expiring_info}"""
+
+    # Add personalization sections if data is present
+    if member_preferences:
+        prefs_info = format_preferences(member_preferences)
+        if prefs_info:
+            prompt += f"\n\nMEMBER PREFERENCES:\n{prefs_info}"
+
+    if recent_meals:
+        recent_info = format_recent_meals(recent_meals)
+        if recent_info:
+            prompt += f"\n\nRECENT MEALS:\n{recent_info}"
+
+    if favorites:
+        favorites_info = format_favorites(favorites)
+        if favorites_info:
+            prompt += f"\n\nFAVORITES:\n{favorites_info}"
+
+    if rating_insights:
+        ratings_info = format_rating_insights(rating_insights)
+        if ratings_info:
+            prompt += f"\n\nRATING INSIGHTS:\n{ratings_info}"
+
+    if cuisine_preferences:
+        cuisine_info = format_cuisine_preferences(cuisine_preferences)
+        if cuisine_info:
+            prompt += f"\n\nCUISINE PREFERENCE:\n{cuisine_info}"
 
     if leftovers:
         leftovers_info = format_leftovers(leftovers)

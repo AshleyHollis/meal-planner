@@ -48,3 +48,28 @@
   - Badge `"info"` variant is defined in `Badge.tsx` ✅
 - **Build result:** ✅ Clean — 7 routes, 0 TypeScript errors, 0 new warnings. Pre-existing `<a>` auth link lint warnings remain (intentional — Auth0 BFF requires hard redirects, not Next.js Link).
 - **Tests:** ✅ 37/37 passed — no regressions.
+
+### Phase 5 — Auto-complete Existing Plan Before New Generation
+
+- **What changed:** `apps/web/src/app/meal-plan/page.tsx` — modified `handleGenerate` function.
+- **Problem:** API returns 409 Conflict when user clicks "Generate New Plan" while an active or draft plan exists.
+- **Fix:** Before calling `createMealPlan()`, check `plans` state for any plan with status "active" or "draft". If found, call `updatePlanStatus(planId, { status: "completed" })` first.
+- **API detail:** `updatePlanStatus` takes `(planId: string, body: UpdatePlanStatusBody)` where `UpdatePlanStatusBody = { status: MealPlanStatus }`. Task description said plain string param but actual signature is object — always check TypeScript types.
+- **Tests:** ✅ 87/87 passed — no regressions. TypeScript clean.
+- **Commit:** `9f45365` on branch `003-personalization-ai`.
+
+### Phase 6 — Interactive Meal Cards & Recipe Details
+
+- **What changed:** 3 files updated, 1 file created — `meal-plan/[id]/page.tsx`, `history/page.tsx`, `layout.tsx`.
+- **Task 1 — Replace WeeklyPlanView with MealSlotCard:** Updated plan detail page to render `MealSlotCard` for each slot instead of read-only `WeeklyPlanView`. Added `onMarkCooked` and `onMarkSkipped` callbacks that call `updateSlotStatus` API, then trigger `refetch()` from polling hook to refresh data.
+- **Task 2 — Expandable recipe detail view:** Added `expandedSlots` state (Set<string>) and toggle handler. Below each `MealSlotCard`, render a "View Recipe" / "Hide Recipe" button. When expanded, show recipe description, ingredients list (with quantity/unit/ID — ingredient names not available in data), and cooking steps with step numbers and duration.
+- **Task 3 — Create /history page:** Created `apps/web/src/app/history/page.tsx` mounting `MealHistoryList` component. Implemented pagination with `getMealHistory(page, 20)`, page state, hasMore detection, and loading states. Added History nav link to layout with clock icon.
+- **Task 4 — Fix favorite state loading:** On plan detail page load, call `listFavorites()` and build `Set<string>` of recipe IDs. Pass `isFavorited={favoriteRecipeIds.has(recipe.id)}` to each `MealSlotCard`. Implemented `handleFavoriteToggle` that calls `addFavorite`/`removeFavorite` API and updates local state.
+- **Patterns used:**
+  - Grouped slots by day using `slotsByDay: Record<number, MealSlot[]>` then sorted keys for consistent render order.
+  - Used `useMealPlanPolling` hook's `refetch` method (not `setPlan`) to refresh data after mark-cooked/skip actions.
+  - HistoryIcon SVG uses clock symbol (viewBox 0 0 24 24, circle + clock hands path).
+  - Expanded nav from 5 to 6 items — bottom nav still fits on mobile (56px min-height per item ensures 44px tap target).
+  - Recipe detail shows ingredient IDs (not names) because `RecipeIngredient.ingredient_id` is a string ID — no join to Ingredient table in current data structure.
+- **Build result:** ✅ Clean — TypeScript 0 errors, lint 4 warnings (pre-existing auth `<a>` tags), tests 87/87 passed.
+- **Outcome:** Users can now mark meals as cooked/skipped, rate cooked meals, favorite recipes, view cooking instructions inline, and see meal history. All core personalization features wired up.

@@ -56,6 +56,10 @@ class Recipe(Base, TimestampMixin):
         ForeignKey("Recipes.id"),
         nullable=True,
     )
+    cuisine_type: Mapped[str | None] = mapped_column(
+        String(50),
+        nullable=True,
+    )
 
     ingredients: Mapped[list[RecipeIngredient]] = relationship(
         "RecipeIngredient",
@@ -115,6 +119,10 @@ class RecipeIngredient(Base):
         "Ingredient",
         lazy="selectin",
     )
+
+    @property
+    def ingredient_name(self) -> str:
+        return self.ingredient.name if self.ingredient else ""
 
     __table_args__ = (
         Index("ix_recipe_ingredients_recipe", "recipe_id"),

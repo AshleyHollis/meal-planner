@@ -15,6 +15,7 @@ class CreateMealPlan(BaseModel):
     """Request body for generating a new meal plan."""
 
     week_start_date: datetime
+    cuisine_preferences: list[str] | None = None
 
     @field_validator("week_start_date")
     @classmethod
@@ -85,6 +86,7 @@ class RecipeIngredientResponse(BaseModel):
 
     id: UUID
     ingredient_id: UUID
+    ingredient_name: str = ""
     quantity: float
     unit: str
     is_optional: bool

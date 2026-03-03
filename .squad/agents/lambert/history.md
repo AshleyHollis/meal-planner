@@ -5,6 +5,69 @@
 - **Project:** Meal Planner MVP — AI meal planner with inventory, weekly plans, grocery lists
 - **Stack:** Next.js 16 + FastAPI + SQLAlchemy + Azure (AKS, SQL, SWA) + Auth0
 - **Owner:** Ashley Hollis
+- **Branch:** 003-personalization-ai
+- **State:** 40 E2E test files total (smoke, inventory, meal-plan, grocery, preferences, favorites, ratings, cuisine)
+- **New Tests:** Phase 10 E2E tests covering personalization features (preferences CRUD, favorites toggle, recipe ratings, cuisine selection)
+- **Playwright config:** 3-project chain: auth-setup → seed-data → chromium
+- **Status:** TypeScript compiles, lint passes (4 pre-existing warnings in layout.tsx)
+
+## Learnings
+
+### UI/UX Phase Updates (2026-03-02 to 2026-03-03)
+
+All Phase 1–3 UI/UX work completed per Dallas's architecture (Decisions 4–6). Kane implemented responsive layout (desktop sidebar, multi-column grids), meal images (Unsplash CDN), and store branding (colored badges). Build clean, 37 tests pass, no regressions. Ripley fixed frontend error display pattern (Decision 11) — apply to all API interactions. All decisions merged into team decisions.md.
+
+**Frontend gaps closed (2026-03-03):**
+
+- Kane wired MealSlotCard into plan detail page with recipe expansion
+- Created /history page for viewing past meal plans
+- Fixed favorites loading on meal plan page
+- Implemented auto-complete existing plan before generating new one (Decision 13)
+- 87/87 tests pass, TypeScript clean, build succeeds (Commit 9f45365)
+
+**Test status update:**
+
+- Recipe detail expansion now part of plan detail page (affects meal-plan.spec.ts tests)
+- History page tests may need coverage added (scope TBD)
+- Favorites loading fix unblocks favorites.spec.ts E2E tests
+- Continue with existing E2E test suite (preferences, ratings, cuisine)
+
+- **T073**: Created `apps/web/e2e/preferences.spec.ts` — Tests preferences page CRUD flow (add dietary restrictions, allergies, dislikes; verify grouping; delete preferences)
+- **T074**: Created `apps/web/e2e/favorites.spec.ts` — Tests favoriting recipes from meal plans and managing favorites page
+- **T075**: Created `apps/web/e2e/ratings.spec.ts` — Tests rating cooked meal slots with stars and feedback, verifies persistence
+- **T076**: Created `apps/web/e2e/cuisine.spec.ts` — Tests cuisine selector UI and verifies cuisine_preferences in request
+- **T077**: Verified existing tests still compile (regression check via TypeScript compilation)
+
+**Pattern Consistency:**
+
+All new E2E tests follow the exact patterns established in existing specs:
+
+- Use `test.describe()` blocks for organization
+- Use `test.use({ storageState: 'playwright/.auth/user.json' })` for authenticated tests
+- Use role-based selectors (`getByRole`, `getByText`, `getByLabel`)
+- Include `.skip()` guards for `USE_EXTERNAL_SERVER` dependency
+- Handle loading spinners, empty states, and error states gracefully
+- Use `timeout: 30_000` for page loads, `timeout: 10_000` for element visibility
+- Structure: Page Load tests → UI tests → Backend-dependent tests
+
+**TypeScript Fix:**
+
+- `selectOption()` in Playwright doesn't accept regex in label field
+- Changed from `{ label: /pattern/i }` to direct value string (e.g., `"dietary_restriction"`)
+- This matches how other selects work in inventory.spec.ts and meal-plan.spec.ts
+
+**Test Dependencies:**
+
+- **preferences.spec.ts**: Requires backend API + preferences endpoints (Phase 2)
+- **favorites.spec.ts**: Requires active meal plan with recipes (Phase 3 + seeded plan)
+- **ratings.spec.ts**: Requires cooked meal slots (Phase 4 + plan generation)
+- **cuisine.spec.ts**: Can test UI without backend; request validation requires API (Phase 5)
+
+**Verification Done:**
+
+- `npx tsc --noEmit` passes (0 errors)
+- `npm run lint` passes (4 pre-existing warnings unrelated to new tests)
+- All test files compile and are ready for execution against deployed environment
 - **Branch:** 002-inventory-enhancements (enhanced inventory features)
 - **State:** E2E test suite hardened and expanded. Tests now fail on real errors instead of hiding them as skips.
 - **Test files:** smoke.spec.ts, inventory.spec.ts (expanded), meal-plan.spec.ts (expanded), grocery.spec.ts

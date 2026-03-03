@@ -33,6 +33,7 @@ class GeneratedRecipe(BaseModel):
     prep_time_min: int
     cook_time_min: int
     servings: int = 2
+    cuisine_type: str | None = None
     ingredients: list[RecipeIngredientSchema]
     steps: list[RecipeStepSchema]
 

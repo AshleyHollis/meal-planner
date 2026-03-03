@@ -12,6 +12,12 @@ import type {
   MealSlotStatus,
   UnitType,
   StorageLocation,
+  MealHistoryItem,
+  MealSlotRating,
+  CreateMealSlotRating,
+  RecipeFavorite,
+  MemberPreference,
+  CreateMemberPreference,
   Leftover,
   StapleIngredient,
   StapleSuggestion,
@@ -165,6 +171,7 @@ export interface CreateEquipmentBody {
 
 export interface CreateMealPlanBody {
   week_start_date: string;
+  cuisine_preferences?: string[];
 }
 
 export interface UpdatePlanStatusBody {
@@ -392,6 +399,115 @@ export async function completeShopping(
       method: "POST",
       body: JSON.stringify(body),
     },
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Preferences
+// ---------------------------------------------------------------------------
+
+export async function getPreferences(
+  memberId: string,
+): Promise<MemberPreference[]> {
+  return fetchApi<MemberPreference[]>(
+    `/api/v1/members/${memberId}/preferences`,
+  );
+}
+
+export async function addPreference(
+  memberId: string,
+  data: CreateMemberPreference,
+): Promise<MemberPreference> {
+  return fetchApi<MemberPreference>(`/api/v1/members/${memberId}/preferences`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deletePreference(
+  memberId: string,
+  preferenceId: string,
+): Promise<void> {
+  return fetchApi<void>(
+    `/api/v1/members/${memberId}/preferences/${preferenceId}`,
+    {
+      method: "DELETE",
+    },
+  );
+}
+
+export async function getDietaryTypes(): Promise<string[]> {
+  return fetchApi<string[]>("/api/v1/preferences/dietary-types");
+}
+
+// ---------------------------------------------------------------------------
+// Ratings
+// ---------------------------------------------------------------------------
+
+export async function submitRating(
+  planId: string,
+  slotId: string,
+  data: CreateMealSlotRating,
+): Promise<MealSlotRating> {
+  return fetchApi<MealSlotRating>(
+    `/api/v1/meal-plans/${planId}/slots/${slotId}/rating`,
+    {
+      method: "POST",
+      body: JSON.stringify(data),
+    },
+  );
+}
+
+export async function getRating(
+  planId: string,
+  slotId: string,
+): Promise<MealSlotRating | null> {
+  try {
+    return await fetchApi<MealSlotRating>(
+      `/api/v1/meal-plans/${planId}/slots/${slotId}/rating`,
+    );
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) {
+      return null;
+    }
+    throw error;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Favorites
+// ---------------------------------------------------------------------------
+
+export async function addFavorite(recipeId: string): Promise<RecipeFavorite> {
+  return fetchApi<RecipeFavorite>(`/api/v1/recipes/${recipeId}/favorite`, {
+    method: "POST",
+  });
+}
+
+export async function removeFavorite(recipeId: string): Promise<void> {
+  return fetchApi<void>(`/api/v1/recipes/${recipeId}/favorite`, {
+    method: "DELETE",
+  });
+}
+
+export async function listFavorites(): Promise<RecipeFavorite[]> {
+  return fetchApi<RecipeFavorite[]>("/api/v1/favorites");
+}
+
+// ---------------------------------------------------------------------------
+// Meal History
+// ---------------------------------------------------------------------------
+
+export async function getMealHistory(
+  page?: number,
+  pageSize?: number,
+): Promise<MealHistoryItem[]> {
+  const params = new URLSearchParams();
+  if (page !== undefined) params.set("page", String(page));
+  if (pageSize !== undefined) params.set("page_size", String(pageSize));
+  const qs = params.toString();
+  return fetchApi<MealHistoryItem[]>(
+    `/api/v1/meal-history${qs ? `?${qs}` : ""}`,
   );
 }
 

@@ -93,13 +93,15 @@ class MealPlanService:
         self.session.add(plan)
         await self.session.flush()
 
-        enqueue_message(
-            {
-                "meal_plan_id": str(plan.id),
-                "household_id": str(self.household_id),
-                "week_start_date": data.week_start_date.isoformat(),
-            }
-        )
+        message = {
+            "meal_plan_id": str(plan.id),
+            "household_id": str(self.household_id),
+            "week_start_date": data.week_start_date.isoformat(),
+        }
+        if data.cuisine_preferences:
+            message["cuisine_preferences"] = data.cuisine_preferences
+
+        enqueue_message(message)
 
         return plan
 

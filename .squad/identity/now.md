@@ -1,15 +1,13 @@
 ---
-updated_at: 2026-03-02T21:38:00Z
-focus_area: Inventory enhancements (002)
+updated_at: 2026-03-03T10:50:00Z
+focus_area: Personalization AI feature (003)
 active_issues:
   [
-    "Auto-deduct inventory on cook (P14)",
-    "Record leftovers (P5)",
-    "Staple ingredients (P15)",
-    "Freezer storage (P11)",
+    "UX overhaul deployed — ingredient names, compact cards, recipe detail",
+    "Merging inventory enhancements from master",
   ]
 ---
 
 # What We're Focused On
 
-Building 4 inventory enhancement features on branch 002-inventory-enhancements. 22 tasks across 7 phases: schema→auto-deduct→leftovers→staples→freezer→tests→polish. Ralph is driving execution.
+Building personalization features for the AI meal planner (branch 003-personalization-ai). Four user stories: per-member food preferences (P1 MVP), meal history & favorites, recipe ratings & feedback, and cuisine type requests. Inventory enhancements from PR #3 merged in (leftovers, freezer, auto-deduct, staples).

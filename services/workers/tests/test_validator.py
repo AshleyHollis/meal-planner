@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from meal_plan_generator.schemas import RecipeStepSchema
+from meal_plan_generator.schemas import RecipeIngredientSchema, RecipeStepSchema
 from meal_plan_generator.validator import validate_constraints
 
 from .conftest import _make_plan, _make_recipe
@@ -105,7 +105,116 @@ class TestEquipmentModes:
 
 
 # ---------------------------------------------------------------------------
-# 4. Valid plan passes
+# 4. Allergen validation
+# ---------------------------------------------------------------------------
+
+
+class TestAllergenValidation:
+    def test_allergen_ingredient_rejected(self, default_inventory, default_equipment):
+        """Recipe containing allergen ingredient should fail validation."""
+        allergens = {"peanuts", "shellfish"}
+        ing = RecipeIngredientSchema(ingredient_name="peanuts", quantity=100, unit="g")
+        recipes = [_make_recipe(title=f"R{i}") for i in range(7)]
+        recipes[0] = _make_recipe(title="Peanut Recipe", ingredients=[ing])
+        plan = _make_plan(recipes=recipes)
+        errors = validate_constraints(
+            plan,
+            default_inventory,
+            default_equipment,
+            allergen_ingredients=allergens,
+        )
+        assert any("allergen ingredient 'peanuts'" in e for e in errors)
+
+    def test_no_allergens_passes(self, default_inventory, default_equipment):
+        """Plan with no allergen ingredients should pass."""
+        allergens = {"peanuts", "shellfish"}
+        recipes = [_make_recipe(title=f"R{i}") for i in range(7)]
+        plan = _make_plan(recipes=recipes)
+        errors = validate_constraints(
+            plan,
+            default_inventory,
+            default_equipment,
+            allergen_ingredients=allergens,
+        )
+        assert not any("allergen" in e.lower() for e in errors)
+
+    def test_case_insensitive_allergen_check(self, default_inventory, default_equipment):
+        """Allergen check should be case-insensitive."""
+        allergens = {"peanuts"}
+        ing = RecipeIngredientSchema(ingredient_name="Peanuts", quantity=100, unit="g")
+        recipes = [_make_recipe(title=f"R{i}") for i in range(7)]
+        recipes[0] = _make_recipe(title="Peanut Recipe", ingredients=[ing])
+        plan = _make_plan(recipes=recipes)
+        errors = validate_constraints(
+            plan,
+            default_inventory,
+            default_equipment,
+            allergen_ingredients=allergens,
+        )
+        assert any("allergen" in e.lower() for e in errors)
+
+
+# ---------------------------------------------------------------------------
+# 5. Cuisine match validation
+# ---------------------------------------------------------------------------
+
+
+class TestCuisineValidation:
+    def test_cuisine_match_passes_at_70_percent(self, default_inventory, default_equipment):
+        """Plan with ≥70% cuisine match should pass."""
+        recipes = [
+            _make_recipe(title="R1", cuisine_type="Mexican"),
+            _make_recipe(title="R2", cuisine_type="Mexican"),
+            _make_recipe(title="R3", cuisine_type="Mexican"),
+            _make_recipe(title="R4", cuisine_type="Mexican"),
+            _make_recipe(title="R5", cuisine_type="Mexican"),
+            _make_recipe(title="R6", cuisine_type="Italian"),
+            _make_recipe(title="R7", cuisine_type="Asian"),
+        ]
+        plan = _make_plan(recipes=recipes)
+        errors = validate_constraints(
+            plan,
+            default_inventory,
+            default_equipment,
+            cuisine_preferences=["Mexican"],
+        )
+        assert not any("Cuisine match" in e for e in errors)
+
+    def test_cuisine_match_fails_below_70_percent(self, default_inventory, default_equipment):
+        """Plan with <70% cuisine match should fail."""
+        recipes = [
+            _make_recipe(title="R1", cuisine_type="Mexican"),
+            _make_recipe(title="R2", cuisine_type="Mexican"),
+            _make_recipe(title="R3", cuisine_type="Mexican"),
+            _make_recipe(title="R4", cuisine_type="Italian"),
+            _make_recipe(title="R5", cuisine_type="Italian"),
+            _make_recipe(title="R6", cuisine_type="Asian"),
+            _make_recipe(title="R7", cuisine_type="Asian"),
+        ]
+        plan = _make_plan(recipes=recipes)
+        errors = validate_constraints(
+            plan,
+            default_inventory,
+            default_equipment,
+            cuisine_preferences=["Mexican"],
+        )
+        assert any("Cuisine match" in e and "43%" in e for e in errors)
+
+    def test_no_cuisine_preference_skips_validation(self, default_inventory, default_equipment):
+        """When no cuisine preferences specified, skip validation."""
+        recipes = [_make_recipe(title=f"R{i}") for i in range(7)]
+        plan = _make_plan(recipes=recipes)
+        errors = validate_constraints(
+            plan,
+            default_inventory,
+            default_equipment,
+            cuisine_preferences=None,
+        )
+        assert not any("Cuisine match" in e for e in errors)
+
+
+# ---------------------------------------------------------------------------
+# 6. Valid plan passes
 # ---------------------------------------------------------------------------
 
 

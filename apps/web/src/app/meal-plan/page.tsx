@@ -5,10 +5,16 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import type { MealPlan } from "@/types";
-import { listMealPlans, createMealPlan, ApiError } from "@/services/api";
+import {
+  listMealPlans,
+  createMealPlan,
+  updatePlanStatus,
+  ApiError,
+} from "@/services/api";
 import { Spinner } from "@/components/ui/Spinner";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
+import { CuisineSelector } from "@/components/CuisineSelector";
 
 const STATUS_VARIANT: Record<string, "default" | "success" | "warning"> = {
   draft: "warning",
@@ -31,6 +37,7 @@ export default function MealPlanListPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
+  const [cuisinePreferences, setCuisinePreferences] = useState<string[]>([]);
 
   const fetchPlans = useCallback(async () => {
     try {
@@ -56,14 +63,32 @@ export default function MealPlanListPage() {
     try {
       setGenerating(true);
       setError(null);
-      const plan = await createMealPlan({ week_start_date: getNextMonday() });
+
+      // Auto-complete any active or draft plan to avoid 409 Conflict
+      const existing = plans.find(
+        (p) => p.status === "active" || p.status === "draft",
+      );
+      if (existing) {
+        await updatePlanStatus(existing.id, { status: "completed" });
+      }
+
+      const plan = await createMealPlan({
+        week_start_date: getNextMonday(),
+        cuisine_preferences:
+          cuisinePreferences.length > 0 ? cuisinePreferences : undefined,
+      });
       router.push(`/meal-plan/${plan.id}`);
     } catch (err) {
       if (err instanceof ApiError && err.isAuthError) {
         window.location.href = "/api/auth/login";
         return;
       }
-      setError("Failed to generate meal plan.");
+      // Extract API error detail or fall back to generic message
+      const message =
+        (err && typeof err === "object" && "body" in err
+          ? (err.body as { detail?: string })?.detail
+          : null) ?? "Failed to generate meal plan.";
+      setError(message);
       setGenerating(false);
     }
   };
@@ -72,13 +97,25 @@ export default function MealPlanListPage() {
     <main className="mx-auto max-w-2xl px-4 py-8 lg:max-w-7xl">
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">Meal Plans</h1>
-        <Button
-          onClick={() => void handleGenerate()}
-          loading={generating}
-          disabled={generating}
-        >
+      </div>
+
+      <div className="mb-6 rounded-lg border border-gray-200 bg-white p-6">
+        <h2 className="mb-4 text-lg font-semibold text-gray-900">
           Generate New Plan
-        </Button>
+        </h2>
+        <CuisineSelector
+          selected={cuisinePreferences}
+          onChange={setCuisinePreferences}
+        />
+        <div className="mt-4">
+          <Button
+            onClick={() => void handleGenerate()}
+            loading={generating}
+            disabled={generating}
+          >
+            Generate New Plan
+          </Button>
+        </div>
       </div>
 
       {loading && (
