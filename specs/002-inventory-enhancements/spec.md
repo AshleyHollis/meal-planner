@@ -140,38 +140,42 @@ As a household member, I want to store inventory items in the freezer with defro
 ### Key Entities
 
 #### New: `Leftover`
-| Column | Type | Constraints |
-|---|---|---|
-| id | UNIQUEIDENTIFIER | PK, default newid() |
-| meal_slot_id | UNIQUEIDENTIFIER | FK → MealSlot.id, NOT NULL |
-| recipe_id | UNIQUEIDENTIFIER | FK → Recipe.id, NOT NULL |
-| household_id | UNIQUEIDENTIFIER | FK → Household.id, NOT NULL |
-| portions | Integer | NOT NULL, CHECK > 0 |
-| storage_location | String(20) | NOT NULL, "fridge" / "pantry" / "freezer" |
-| expiry_date | Date | NOT NULL |
-| used_at | DateTime | nullable |
-| created_at | DateTime | NOT NULL, default sysutcdatetime() |
+
+| Column           | Type             | Constraints                               |
+| ---------------- | ---------------- | ----------------------------------------- |
+| id               | UNIQUEIDENTIFIER | PK, default newid()                       |
+| meal_slot_id     | UNIQUEIDENTIFIER | FK → MealSlot.id, NOT NULL                |
+| recipe_id        | UNIQUEIDENTIFIER | FK → Recipe.id, NOT NULL                  |
+| household_id     | UNIQUEIDENTIFIER | FK → Household.id, NOT NULL               |
+| portions         | Integer          | NOT NULL, CHECK > 0                       |
+| storage_location | String(20)       | NOT NULL, "fridge" / "pantry" / "freezer" |
+| expiry_date      | Date             | NOT NULL                                  |
+| used_at          | DateTime         | nullable                                  |
+| created_at       | DateTime         | NOT NULL, default sysutcdatetime()        |
 
 #### New: `StapleIngredient`
-| Column | Type | Constraints |
-|---|---|---|
-| id | UNIQUEIDENTIFIER | PK, default newid() |
-| household_id | UNIQUEIDENTIFIER | FK → Household.id, NOT NULL |
-| ingredient_id | UNIQUEIDENTIFIER | FK → Ingredient.id, NOT NULL |
-| min_threshold | Float | NOT NULL, CHECK > 0 |
-| unit | String(20) | NOT NULL, "g" / "ml" / "units" |
-| created_at | DateTime | NOT NULL, default sysutcdatetime() |
-| | | UNIQUE(household_id, ingredient_id) |
+
+| Column        | Type             | Constraints                         |
+| ------------- | ---------------- | ----------------------------------- |
+| id            | UNIQUEIDENTIFIER | PK, default newid()                 |
+| household_id  | UNIQUEIDENTIFIER | FK → Household.id, NOT NULL         |
+| ingredient_id | UNIQUEIDENTIFIER | FK → Ingredient.id, NOT NULL        |
+| min_threshold | Float            | NOT NULL, CHECK > 0                 |
+| unit          | String(20)       | NOT NULL, "g" / "ml" / "units"      |
+| created_at    | DateTime         | NOT NULL, default sysutcdatetime()  |
+|               |                  | UNIQUE(household_id, ingredient_id) |
 
 #### Modified: `InventoryItem`
-| Column | Change |
-|---|---|
-| location | Allow "freezer" (String(20) already accommodates) |
-| defrost_hours | **New** — Integer, nullable |
+
+| Column        | Change                                            |
+| ------------- | ------------------------------------------------- |
+| location      | Allow "freezer" (String(20) already accommodates) |
+| defrost_hours | **New** — Integer, nullable                       |
 
 #### Modified: `Ingredient`
-| Column | Change |
-|---|---|
+
+| Column          | Change                                            |
+| --------------- | ------------------------------------------------- |
 | default_storage | Allow "freezer" (String(20) already accommodates) |
 
 ---

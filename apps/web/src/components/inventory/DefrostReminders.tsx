@@ -52,7 +52,8 @@ function DefrostReminders() {
                   {reminder.ingredient_name}
                 </p>
                 <p className="mt-1 text-sm text-gray-700">
-                  For: <span className="font-medium">{reminder.recipe_title}</span>
+                  For:{" "}
+                  <span className="font-medium">{reminder.recipe_title}</span>
                 </p>
                 <p className="text-sm text-gray-600">
                   Day {reminder.meal_day} • {reminder.meal_type}

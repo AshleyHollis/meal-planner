@@ -103,11 +103,11 @@ class InventoryService:
 
     async def deduct_for_recipe(self, recipe_id: UUID) -> list[dict]:
         """Deduct recipe ingredient quantities from household inventory.
-        
+
         Returns a list of deduction results, one per recipe ingredient.
         """
         from shared.db.models.recipe import RecipeIngredient
-        
+
         # Load recipe with ingredients
         stmt = (
             select(RecipeIngredient)
@@ -116,12 +116,12 @@ class InventoryService:
         )
         result = await self.session.execute(stmt)
         recipe_ingredients = list(result.scalars().all())
-        
+
         deductions = []
         for ri in recipe_ingredients:
             if ri.is_optional:
                 continue
-            
+
             # Find matching inventory item
             inv_stmt = select(InventoryItem).where(
                 InventoryItem.household_id == self.household_id,
@@ -129,35 +129,39 @@ class InventoryService:
             )
             inv_result = await self.session.execute(inv_stmt)
             inv_items = list(inv_result.scalars().all())
-            
+
             ingredient_name = ri.ingredient.name if ri.ingredient else "Unknown"
-            
+
             if not inv_items:
-                deductions.append({
-                    "ingredient_id": str(ri.ingredient_id),
-                    "ingredient_name": ingredient_name,
-                    "requested": ri.quantity,
-                    "deducted": 0.0,
-                    "remaining": 0.0,
-                    "unit": ri.unit,
-                    "unit_mismatch": False,
-                })
+                deductions.append(
+                    {
+                        "ingredient_id": str(ri.ingredient_id),
+                        "ingredient_name": ingredient_name,
+                        "requested": ri.quantity,
+                        "deducted": 0.0,
+                        "remaining": 0.0,
+                        "unit": ri.unit,
+                        "unit_mismatch": False,
+                    }
+                )
                 continue
-            
+
             # Sum matching inventory (same unit)
             matching = [i for i in inv_items if i.unit == ri.unit]
             if not matching:
-                deductions.append({
-                    "ingredient_id": str(ri.ingredient_id),
-                    "ingredient_name": ingredient_name,
-                    "requested": ri.quantity,
-                    "deducted": 0.0,
-                    "remaining": sum(i.quantity for i in inv_items),
-                    "unit": ri.unit,
-                    "unit_mismatch": True,
-                })
+                deductions.append(
+                    {
+                        "ingredient_id": str(ri.ingredient_id),
+                        "ingredient_name": ingredient_name,
+                        "requested": ri.quantity,
+                        "deducted": 0.0,
+                        "remaining": sum(i.quantity for i in inv_items),
+                        "unit": ri.unit,
+                        "unit_mismatch": True,
+                    }
+                )
                 continue
-            
+
             # Deduct from matching items (oldest expiry first)
             remaining_to_deduct = ri.quantity
             total_deducted = 0.0
@@ -170,20 +174,22 @@ class InventoryService:
                 total_deducted += deduct_amount
                 if inv_item.quantity <= 0:
                     await self.session.delete(inv_item)
-            
+
             await self.session.flush()
-            
+
             remaining_qty = sum(i.quantity for i in matching if i.quantity > 0)
-            deductions.append({
-                "ingredient_id": str(ri.ingredient_id),
-                "ingredient_name": ingredient_name,
-                "requested": ri.quantity,
-                "deducted": total_deducted,
-                "remaining": remaining_qty,
-                "unit": ri.unit,
-                "unit_mismatch": False,
-            })
-        
+            deductions.append(
+                {
+                    "ingredient_id": str(ri.ingredient_id),
+                    "ingredient_name": ingredient_name,
+                    "requested": ri.quantity,
+                    "deducted": total_deducted,
+                    "remaining": remaining_qty,
+                    "unit": ri.unit,
+                    "unit_mismatch": False,
+                }
+            )
+
         return deductions
 
     async def get_defrost_reminders(self, days_ahead: int = 7) -> list[dict]:
@@ -219,11 +225,13 @@ class InventoryService:
 
         # Get upcoming slots with recipes
         from shared.db.models.recipe import Recipe, RecipeIngredient
-        
+
         slot_stmt = (
             select(MealSlot)
             .options(
-                sl(MealSlot.recipe).selectinload(Recipe.ingredients).selectinload(RecipeIngredient.ingredient)
+                sl(MealSlot.recipe)
+                .selectinload(Recipe.ingredients)
+                .selectinload(RecipeIngredient.ingredient)
             )
             .where(
                 MealSlot.meal_plan_id == plan.id,
@@ -250,10 +258,7 @@ class InventoryService:
                                 "defrost_hours": fi.defrost_hours,
                                 "meal_day": slot.day,
                                 "meal_type": slot.meal_type,
-                                "recipe_title": (
-                                    slot.recipe.title if slot.recipe else "Unknown"
-                                ),
+                                "recipe_title": (slot.recipe.title if slot.recipe else "Unknown"),
                             }
                         )
         return reminders
-

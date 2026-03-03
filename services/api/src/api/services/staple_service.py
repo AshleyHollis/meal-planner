@@ -51,9 +51,7 @@ class StapleService:
 
     async def list_staples(self) -> list[StapleIngredient]:
         """List all staples for this household."""
-        stmt = select(StapleIngredient).where(
-            StapleIngredient.household_id == self.household_id
-        )
+        stmt = select(StapleIngredient).where(StapleIngredient.household_id == self.household_id)
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
 

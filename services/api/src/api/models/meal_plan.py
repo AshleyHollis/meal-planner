@@ -55,7 +55,7 @@ class UpdatePlanStatus(BaseModel):
 
 class DeductionItem(BaseModel):
     """Result of a single ingredient deduction."""
-    
+
     ingredient_id: str
     ingredient_name: str
     requested: float

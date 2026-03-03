@@ -69,7 +69,7 @@ function MealSlotCard({
   onLeftoverRecorded,
 }: MealSlotCardProps) {
   const [showLeftoverForm, setShowLeftoverForm] = useState(false);
-  
+
   const recipe = slot.recipe;
   const statusCfg = STATUS_CONFIG[slot.status] ?? STATUS_CONFIG.planned;
   const isDone = slot.status === "cooked" || slot.status === "skipped";
@@ -158,7 +158,9 @@ function MealSlotCard({
                   {deduction.ingredient_name}: {deduction.deducted}{" "}
                   {deduction.unit}
                   {deduction.unit_mismatch && (
-                    <span className="ml-1 text-yellow-600">(unit mismatch)</span>
+                    <span className="ml-1 text-yellow-600">
+                      (unit mismatch)
+                    </span>
                   )}
                 </li>
               ))}

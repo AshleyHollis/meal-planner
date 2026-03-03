@@ -125,9 +125,7 @@ def format_leftovers(leftovers: list) -> str:
         expiry = getattr(leftover, "expiry_date", None)
         location = getattr(leftover, "storage_location", "unknown")
         expiry_str = expiry.strftime("%Y-%m-%d") if expiry else "no expiry"
-        lines.append(
-            f"- {recipe_title}: {portions} portions [{location}] (expires {expiry_str})"
-        )
+        lines.append(f"- {recipe_title}: {portions} portions [{location}] (expires {expiry_str})")
     return "\n".join(lines)
 
 

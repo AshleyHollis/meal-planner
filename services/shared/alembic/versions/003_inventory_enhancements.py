@@ -30,8 +30,12 @@ def upgrade() -> None:
         sa.Column("storage_location", sa.String(20), nullable=False),
         sa.Column("expiry_date", sa.Date(), nullable=False),
         sa.Column("used_at", sa.DateTime(), nullable=True),
-        sa.Column("created_at", sa.DateTime(), nullable=False, server_default=sa.text("SYSUTCDATETIME()")),
-        sa.Column("updated_at", sa.DateTime(), nullable=False, server_default=sa.text("SYSUTCDATETIME()")),
+        sa.Column(
+            "created_at", sa.DateTime(), nullable=False, server_default=sa.text("SYSUTCDATETIME()")
+        ),
+        sa.Column(
+            "updated_at", sa.DateTime(), nullable=False, server_default=sa.text("SYSUTCDATETIME()")
+        ),
         sa.PrimaryKeyConstraint("id"),
         sa.ForeignKeyConstraint(["meal_slot_id"], ["MealSlots.id"]),
         sa.ForeignKeyConstraint(["recipe_id"], ["Recipes.id"]),
@@ -49,8 +53,12 @@ def upgrade() -> None:
         sa.Column("ingredient_id", UNIQUEIDENTIFIER(), nullable=False),
         sa.Column("min_threshold", sa.Float(), nullable=False),
         sa.Column("unit", sa.String(20), nullable=False),
-        sa.Column("created_at", sa.DateTime(), nullable=False, server_default=sa.text("SYSUTCDATETIME()")),
-        sa.Column("updated_at", sa.DateTime(), nullable=False, server_default=sa.text("SYSUTCDATETIME()")),
+        sa.Column(
+            "created_at", sa.DateTime(), nullable=False, server_default=sa.text("SYSUTCDATETIME()")
+        ),
+        sa.Column(
+            "updated_at", sa.DateTime(), nullable=False, server_default=sa.text("SYSUTCDATETIME()")
+        ),
         sa.PrimaryKeyConstraint("id"),
         sa.ForeignKeyConstraint(["household_id"], ["Households.id"]),
         sa.ForeignKeyConstraint(["ingredient_id"], ["Ingredients.id"]),

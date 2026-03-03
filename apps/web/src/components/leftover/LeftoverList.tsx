@@ -77,9 +77,7 @@ function LeftoverList({ onChanged }: LeftoverListProps) {
               <span className="text-sm text-gray-600">
                 Expires: {new Date(leftover.expiry_date).toLocaleDateString()}
               </span>
-              {leftover.is_expired && (
-                <Badge variant="error">Expired</Badge>
-              )}
+              {leftover.is_expired && <Badge variant="error">Expired</Badge>}
             </div>
           </div>
 

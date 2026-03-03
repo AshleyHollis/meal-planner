@@ -95,4 +95,3 @@ class DefrostReminder(BaseModel):
     meal_day: int
     meal_type: str
     recipe_title: str
-

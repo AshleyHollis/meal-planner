@@ -168,7 +168,7 @@ class MealPlanService:
         data: UpdateSlotStatus,
     ) -> tuple[MealSlot, list[dict] | None]:
         """Mark a slot as cooked/skipped with timestamp.
-        
+
         Returns tuple of (slot, deductions). Deductions is None unless transitioning to cooked.
         """
         stmt = (

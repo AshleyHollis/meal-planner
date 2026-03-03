@@ -1,8 +1,8 @@
 """Tests for US-4: Freezer storage and defrost reminders."""
+
 from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
-import pytest
 from api.models.inventory import CreateInventoryItem
 from api.services.inventory_service import InventoryService
 from shared.db.models.ingredient import Ingredient
@@ -12,7 +12,9 @@ from shared.db.models.recipe import Recipe, RecipeIngredient
 from sqlalchemy.ext.asyncio import AsyncSession
 
 
-async def _make_ingredient(session, name="Chicken Breast", category="meat", default_unit="g") -> Ingredient:
+async def _make_ingredient(
+    session, name="Chicken Breast", category="meat", default_unit="g"
+) -> Ingredient:
     now = datetime.now(UTC)
     ing = Ingredient(
         id=uuid4(),
@@ -22,7 +24,7 @@ async def _make_ingredient(session, name="Chicken Breast", category="meat", defa
         default_storage="fridge",
         typical_shelf_life_days=3,
         created_at=now,
-        updated_at=now
+        updated_at=now,
     )
     session.add(ing)
     await session.flush()
@@ -40,14 +42,16 @@ async def _make_recipe(session, title="Test Recipe") -> Recipe:
         cook_time_min=20,
         is_ai_generated=False,
         created_at=now,
-        updated_at=now
+        updated_at=now,
     )
     session.add(recipe)
     await session.flush()
     return recipe
 
 
-async def _make_recipe_ingredient(session, recipe_id, ingredient_id, quantity, unit="g") -> RecipeIngredient:
+async def _make_recipe_ingredient(
+    session, recipe_id, ingredient_id, quantity, unit="g"
+) -> RecipeIngredient:
     ri = RecipeIngredient(
         id=uuid4(),
         recipe_id=recipe_id,
@@ -69,7 +73,7 @@ async def _make_plan(session, household_id, status="active") -> MealPlan:
         week_start_date=now.date(),
         status=status,
         created_at=now,
-        updated_at=now
+        updated_at=now,
     )
     session.add(plan)
     await session.flush()
@@ -86,7 +90,7 @@ async def _make_slot(session, plan_id, day=0, recipe_id=None, status="planned") 
         meal_type="dinner",
         status=status,
         created_at=now,
-        updated_at=now
+        updated_at=now,
     )
     session.add(slot)
     await session.flush()
@@ -97,21 +101,21 @@ async def test_add_freezer_item_with_defrost(session: AsyncSession, household):
     """Adding freezer item with defrost hours should store correctly."""
     ing = await _make_ingredient(session, "Chicken Breast")
     await session.commit()
-    
+
     service = InventoryService(session, household.id)
     expiry = datetime.now(UTC) + timedelta(days=90)
-    
+
     data = CreateInventoryItem(
         ingredient_id=ing.id,
         quantity=1000.0,
         unit="g",
         location="freezer",
         expiry_date=expiry.date(),
-        defrost_hours=12
+        defrost_hours=12,
     )
-    
+
     result = await service.add_item(data)
-    
+
     assert result.location == "freezer"
     assert result.defrost_hours == 12
     assert result.quantity == 1000.0
@@ -121,7 +125,7 @@ async def test_defrost_reminders_returns_matching_items(session: AsyncSession, h
     """Defrost reminders should return freezer items matching upcoming recipes."""
     ing = await _make_ingredient(session, "Chicken Breast")
     expiry = datetime.now(UTC) + timedelta(days=90)
-    
+
     # Add freezer item
     now = datetime.now(UTC)
     item = InventoryItemModel(
@@ -134,22 +138,22 @@ async def test_defrost_reminders_returns_matching_items(session: AsyncSession, h
         expiry_date=expiry.date(),
         defrost_hours=12,
         created_at=now,
-        updated_at=now
+        updated_at=now,
     )
     session.add(item)
-    
+
     # Create recipe with this ingredient
     recipe = await _make_recipe(session, "Grilled Chicken")
     await _make_recipe_ingredient(session, recipe.id, ing.id, 500.0, "g")
-    
+
     # Create active plan with upcoming slot
     plan = await _make_plan(session, household.id, status="active")
     await _make_slot(session, plan.id, day=1, recipe_id=recipe.id, status="planned")
     await session.commit()
-    
+
     service = InventoryService(session, household.id)
     reminders = await service.get_defrost_reminders()
-    
+
     assert len(reminders) == 1
     assert reminders[0]["ingredient_name"] == "Chicken Breast"
     assert reminders[0]["defrost_hours"] == 12
@@ -160,7 +164,7 @@ async def test_defrost_reminders_empty_without_plan(session: AsyncSession, house
     """Defrost reminders should return empty list without active plan."""
     ing = await _make_ingredient(session, "Chicken Breast")
     expiry = datetime.now(UTC) + timedelta(days=90)
-    
+
     # Add freezer item
     now = datetime.now(UTC)
     item = InventoryItemModel(
@@ -173,31 +177,31 @@ async def test_defrost_reminders_empty_without_plan(session: AsyncSession, house
         expiry_date=expiry.date(),
         defrost_hours=12,
         created_at=now,
-        updated_at=now
+        updated_at=now,
     )
     session.add(item)
     await session.commit()
-    
+
     service = InventoryService(session, household.id)
     reminders = await service.get_defrost_reminders()
-    
+
     assert len(reminders) == 0
 
 
 async def test_defrost_reminders_empty_without_freezer_items(session: AsyncSession, household):
     """Defrost reminders should return empty list without freezer items."""
     ing = await _make_ingredient(session, "Chicken Breast")
-    
+
     # Create recipe
     recipe = await _make_recipe(session, "Grilled Chicken")
     await _make_recipe_ingredient(session, recipe.id, ing.id, 500.0, "g")
-    
+
     # Create active plan with upcoming slot
     plan = await _make_plan(session, household.id, status="active")
     await _make_slot(session, plan.id, day=1, recipe_id=recipe.id, status="planned")
     await session.commit()
-    
+
     service = InventoryService(session, household.id)
     reminders = await service.get_defrost_reminders()
-    
+
     assert len(reminders) == 0

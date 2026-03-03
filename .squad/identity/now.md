@@ -2,7 +2,12 @@
 updated_at: 2026-03-02T21:38:00Z
 focus_area: Inventory enhancements (002)
 active_issues:
-  ["Auto-deduct inventory on cook (P14)", "Record leftovers (P5)", "Staple ingredients (P15)", "Freezer storage (P11)"]
+  [
+    "Auto-deduct inventory on cook (P14)",
+    "Record leftovers (P5)",
+    "Staple ingredients (P15)",
+    "Freezer storage (P11)",
+  ]
 ---
 
 # What We're Focused On

@@ -413,9 +413,7 @@ export async function createLeftover(
   );
 }
 
-export async function listLeftovers(
-  includeUsed = false,
-): Promise<Leftover[]> {
+export async function listLeftovers(includeUsed = false): Promise<Leftover[]> {
   const params = includeUsed ? "?include_used=true" : "";
   return fetchApi<Leftover[]>(`/api/v1/leftovers${params}`);
 }
