@@ -74,6 +74,7 @@ class RecipeIngredientResponse(BaseModel):
 
     id: UUID
     ingredient_id: UUID
+    ingredient_name: str = ""
     quantity: float
     unit: str
     is_optional: bool

@@ -56,6 +56,7 @@ export interface Equipment {
 export interface RecipeIngredient {
   id: string;
   ingredient_id: string;
+  ingredient_name: string;
   quantity: number;
   unit: string;
   is_optional: boolean;

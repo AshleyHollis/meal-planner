@@ -120,6 +120,10 @@ class RecipeIngredient(Base):
         lazy="selectin",
     )
 
+    @property
+    def ingredient_name(self) -> str:
+        return self.ingredient.name if self.ingredient else ""
+
     __table_args__ = (
         Index("ix_recipe_ingredients_recipe", "recipe_id"),
         Index("ix_recipe_ingredients_ingredient", "ingredient_id"),

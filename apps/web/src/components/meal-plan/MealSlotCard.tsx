@@ -87,6 +87,7 @@ function MealSlotCard({
     null,
   );
   const [loadingRating, setLoadingRating] = useState(false);
+  const [expanded, setExpanded] = useState(false);
 
   useEffect(() => {
     if (isCooked && planId && !existingRating && !loadingRating) {
@@ -105,9 +106,9 @@ function MealSlotCard({
 
   return (
     <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
-      {/* Meal image with gradient overlay */}
+      {/* Compact meal image with title overlay */}
       {recipe && imageUrl && (
-        <div className="relative h-32 w-full lg:h-48">
+        <div className="relative h-24 w-full lg:h-32">
           <Image
             src={imageUrl}
             alt={recipe.title}
@@ -130,17 +131,25 @@ function MealSlotCard({
         <div className={`h-2 w-full bg-gradient-to-r ${gradientColor}`} />
       )}
 
-      <div className="p-4">
-        {/* Header: title + status + favorite */}
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0 flex-1">
-            {recipe ? (
-              <p className="truncate font-medium text-gray-900">
-                {recipe.title}
-              </p>
-            ) : (
+      <div className="p-3">
+        {/* Header: status + favorite (no duplicate title) */}
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            {!recipe && (
               <p className="text-sm text-gray-400">No recipe assigned</p>
             )}
+            {recipe &&
+              (recipe.prep_time_min !== null ||
+                recipe.cook_time_min !== null) && (
+                <div className="flex items-center gap-3 text-xs text-gray-500">
+                  {recipe.prep_time_min !== null && (
+                    <span>Prep: {formatTime(recipe.prep_time_min)}</span>
+                  )}
+                  {recipe.cook_time_min !== null && (
+                    <span>Cook: {formatTime(recipe.cook_time_min)}</span>
+                  )}
+                </div>
+              )}
           </div>
 
           <div className="flex items-center gap-2">
@@ -155,19 +164,6 @@ function MealSlotCard({
           </div>
         </div>
 
-        {/* Time info */}
-        {recipe &&
-          (recipe.prep_time_min !== null || recipe.cook_time_min !== null) && (
-            <div className="mt-2 flex items-center gap-3 text-sm text-gray-600">
-              {recipe.prep_time_min !== null && (
-                <span>Prep: {formatTime(recipe.prep_time_min)}</span>
-              )}
-              {recipe.cook_time_min !== null && (
-                <span>Cook: {formatTime(recipe.cook_time_min)}</span>
-              )}
-            </div>
-          )}
-
         {/* Equipment mode badges */}
         {equipmentModes.length > 0 && (
           <div className="mt-2 flex flex-wrap gap-1">
@@ -180,57 +176,123 @@ function MealSlotCard({
         )}
 
         {/* Actions */}
-        {!isDone && recipe && (
-          <div className="mt-3 flex flex-wrap gap-2">
-            {/* Swap */}
-            {onSwap && (
-              <Button variant="ghost" size="sm" onClick={() => onSwap(slot.id)}>
-                Swap
-              </Button>
-            )}
-
-            {/* Adapt effort levels */}
-            {onAdapt &&
-              (["quick", "standard", "elaborate"] as EffortLevel[]).map(
-                (effort) => (
+        {recipe && (
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            {!isDone && (
+              <>
+                {onSwap && (
                   <Button
-                    key={effort}
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onSwap(slot.id)}
+                  >
+                    Swap
+                  </Button>
+                )}
+                {onAdapt &&
+                  (["quick", "standard", "elaborate"] as EffortLevel[]).map(
+                    (effort) => (
+                      <Button
+                        key={effort}
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => onAdapt(slot.id, effort)}
+                      >
+                        {EFFORT_LABELS[effort]}
+                      </Button>
+                    ),
+                  )}
+                {onMarkCooked && (
+                  <Button
                     variant="secondary"
                     size="sm"
-                    onClick={() => onAdapt(slot.id, effort)}
+                    onClick={() => onMarkCooked(slot.id)}
+                    className="border-green-300 bg-green-50 text-green-700 hover:bg-green-100"
                   >
-                    {EFFORT_LABELS[effort]}
+                    ✓ Cooked
                   </Button>
-                ),
-              )}
-
-            {/* Mark cooked */}
-            {onMarkCooked && (
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={() => onMarkCooked(slot.id)}
-              >
-                Cooked
-              </Button>
+                )}
+                {onMarkSkipped && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onMarkSkipped(slot.id)}
+                  >
+                    Skip
+                  </Button>
+                )}
+              </>
             )}
+            <button
+              onClick={() => setExpanded(!expanded)}
+              className="ml-auto text-xs font-medium text-blue-600 hover:text-blue-800 hover:underline"
+            >
+              {expanded ? "Hide Recipe ▲" : "View Recipe ▼"}
+            </button>
+          </div>
+        )}
 
-            {/* Mark skipped */}
-            {onMarkSkipped && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => onMarkSkipped(slot.id)}
-              >
-                Skip
-              </Button>
+        {/* Expandable recipe detail */}
+        {recipe && expanded && (
+          <div className="mt-3 border-t border-gray-100 pt-3 text-sm">
+            {recipe.description && (
+              <p className="mb-3 text-gray-600">{recipe.description}</p>
+            )}
+            {recipe.ingredients.length > 0 && (
+              <div className="mb-3">
+                <h4 className="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  Ingredients
+                </h4>
+                <ul className="grid grid-cols-1 gap-0.5 text-gray-700 sm:grid-cols-2">
+                  {recipe.ingredients.map((ing) => (
+                    <li key={ing.id} className="flex items-baseline gap-1">
+                      <span className="text-gray-400">•</span>
+                      <span>
+                        {ing.quantity} {ing.unit}{" "}
+                        {ing.ingredient_name || "ingredient"}
+                        {ing.is_optional && (
+                          <span className="ml-1 text-xs text-gray-400">
+                            (optional)
+                          </span>
+                        )}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {recipe.steps.length > 0 && (
+              <div>
+                <h4 className="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  Steps
+                </h4>
+                <ol className="space-y-1.5 text-gray-700">
+                  {recipe.steps
+                    .sort((a, b) => a.step_order - b.step_order)
+                    .map((step, idx) => (
+                      <li key={step.id} className="flex gap-2">
+                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-100 text-xs font-medium text-blue-700">
+                          {idx + 1}
+                        </span>
+                        <span>
+                          {step.instruction}
+                          {step.duration_min && (
+                            <span className="ml-1 text-xs text-gray-400">
+                              ({step.duration_min} min)
+                            </span>
+                          )}
+                        </span>
+                      </li>
+                    ))}
+                </ol>
+              </div>
             )}
           </div>
         )}
 
         {/* Rating widget for cooked meals */}
         {isCooked && planId && (
-          <div className="mt-4">
+          <div className="mt-3 border-t border-gray-100 pt-3">
             <RatingWidget
               planId={planId}
               slotId={slot.id}
