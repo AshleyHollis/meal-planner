@@ -87,13 +87,14 @@ def upgrade() -> None:
             ),
         )
 
-    if _table_exists("RecurringMealTemplates"):
-        if not _index_exists("ix_recurring_templates_household"):
-            op.create_index(
-                "ix_recurring_templates_household",
-                "RecurringMealTemplates",
-                ["household_id"],
-            )
+    if _table_exists("RecurringMealTemplates") and not _index_exists(
+        "ix_recurring_templates_household"
+    ):
+        op.create_index(
+            "ix_recurring_templates_household",
+            "RecurringMealTemplates",
+            ["household_id"],
+        )
 
 
 def downgrade() -> None:
