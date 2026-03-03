@@ -14,6 +14,7 @@ from sqlalchemy import (
     Index,
     Integer,
     String,
+    UniqueConstraint,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -66,6 +67,12 @@ class InventoryItem(Base, TimestampMixin):
 
     __table_args__ = (
         CheckConstraint("quantity >= 0", name="ck_inventory_qty"),
+        UniqueConstraint(
+            "household_id",
+            "ingredient_id",
+            "location",
+            name="uq_inventory_household_ingredient_location",
+        ),
         Index("ix_inventory_household", "household_id"),
         Index("ix_inventory_ingredient", "ingredient_id"),
         Index("ix_inventory_expiry", "expiry_date"),

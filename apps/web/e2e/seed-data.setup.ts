@@ -104,7 +104,28 @@ setup("seed test data", async ({ request, baseURL }) => {
     "No ingredients found — ingredient DB may be empty. This is critical for tests.",
   ).toBeGreaterThan(0);
 
-  // ── Step 3: Add inventory items with varied expiry dates ──────────────
+  // ── Step 3: Clear existing inventory then add fresh items ───────────────
+  console.log("[seed-data] Clearing existing inventory before seeding...");
+  const clearResp = await request.get(`${API_URL}/api/v1/inventory`, {
+    headers,
+  });
+  if (clearResp.ok()) {
+    const existingItems = (await clearResp.json()) as Array<{ id: string }>;
+    console.log(
+      `[seed-data]   Deleting ${existingItems.length} existing inventory items`,
+    );
+    for (const existingItem of existingItems) {
+      await request.delete(`${API_URL}/api/v1/inventory/${existingItem.id}`, {
+        headers,
+      });
+    }
+    console.log("[seed-data]   Existing inventory cleared");
+  } else {
+    console.log(
+      `[seed-data]   Could not list inventory for cleanup: ${clearResp.status()}`,
+    );
+  }
+
   console.log("[seed-data] Adding inventory items...");
 
   const now = new Date();
