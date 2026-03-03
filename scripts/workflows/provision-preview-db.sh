@@ -62,7 +62,7 @@ else
 fi
 
 # Build connection string
-CONNECTION_STRING="Server=tcp:${SQL_FQDN},1433;Initial Catalog=${DB_NAME};User ID=${SQL_ADMIN_USERNAME};Password=${SQL_ADMIN_PASSWORD};Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;"
+CONNECTION_STRING="Server=tcp:${SQL_FQDN},1433;Initial Catalog=${DB_NAME};User ID=${SQL_ADMIN_USERNAME};Password=${SQL_ADMIN_PASSWORD};Encrypt=True;TrustServerCertificate=False;Connection Timeout=120;"
 
 # Create/update Key Vault secret
 echo "🔑 Setting Key Vault secret ${SECRET_NAME}..."
