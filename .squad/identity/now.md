@@ -1,13 +1,12 @@
 ---
-updated_at: 2026-03-03T10:50:00Z
-focus_area: Personalization AI feature (003)
+updated_at: 2026-03-03T11:22:00Z
+focus_area: Grocery Enhancements feature (005)
 active_issues:
   [
-    "UX overhaul deployed — ingredient names, compact cards, recipe detail",
-    "Merging inventory enhancements from master",
+    "Creating spec/plan/tasks for 005-grocery-enhancements",
   ]
 ---
 
 # What We're Focused On
 
-Building personalization features for the AI meal planner (branch 003-personalization-ai). Four user stories: per-member food preferences (P1 MVP), meal history & favorites, recipe ratings & feedback, and cuisine type requests. Inventory enhancements from PR #3 merged in (leftovers, freezer, auto-deduct, staples).
+Building grocery list enhancements for the AI meal planner (branch 005-grocery-enhancements). Two user stories: (P18) Map ingredients to specific products with brand, size, price, and preferred shop so grocery lists show exact items to buy at each store. (P24) Filter the grocery list by shop for per-trip shopping with per-trip check-off tracking.

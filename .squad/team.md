@@ -27,8 +27,8 @@
 - **Description:** AI-powered meal planner that tracks pantry inventory, generates weekly dinner plans using LLM, and produces consolidated grocery lists
 - **Created:** 2026-03-02T08:27:00Z
 - **Repo:** AshleyHollis/meal-planner
-- **Branch:** 001-meal-planner-mvp
-- **PR:** #1
+- **Branch:** 005-grocery-enhancements
+- **PR:** (pending)
 
 ## Issue Source
 
