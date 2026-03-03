@@ -126,7 +126,10 @@ test.describe("Recurring Meals Page (US4)", () => {
 
     // If we got an error, skip the rest of the test
     if (await errorBanner.isVisible().catch(() => false)) {
-      test.skip(true, "API returned an error — recurring meals endpoint unavailable in preview");
+      test.skip(
+        true,
+        "API returned an error — recurring meals endpoint unavailable in preview",
+      );
       return;
     }
 
