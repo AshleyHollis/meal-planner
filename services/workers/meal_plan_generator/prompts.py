@@ -26,6 +26,57 @@ OUTPUT SCHEMA:
 """
 
 
+def format_meal_types_description(meal_types: list[str] | None) -> str:
+    """Format meal types for the system prompt description.
+
+    Args:
+        meal_types: List of meal types, or None for default (dinner).
+
+    Returns:
+        Human-readable string describing the meal types.
+    """
+    if not meal_types or meal_types == ["dinner"]:
+        return "dinner"
+    return " and ".join(meal_types)
+
+
+def format_system_prompt(meal_types: list[str] | None = None) -> str:
+    """Build system prompt with configurable meal types.
+
+    Args:
+        meal_types: Optional list of meal types. Defaults to ["dinner"].
+
+    Returns:
+        System prompt string with {schema_json} placeholder for later formatting.
+    """
+    effective_types = meal_types or ["dinner"]
+    types_desc = format_meal_types_description(effective_types)
+    total_recipes = len(effective_types) * 7
+
+    type_instructions = ""
+    if len(effective_types) > 1:
+        type_instructions = f"""
+8. For each recipe, include a "meal_type" field with one of: {', '.join(f'"{t}"' for t in effective_types)}
+9. Generate {total_recipes} total recipes: {', '.join(f'7 {t}' for t in effective_types)}
+10. Breakfast recipes should be lighter/quicker; lunch should be moderate; dinner can be more elaborate"""
+
+    return f"""You are a meal planning assistant. Generate a \
+7-day {types_desc} plan for 2 adults.
+
+CRITICAL REQUIREMENTS:
+1. You MUST generate EXACTLY {total_recipes} recipes — {"one" if len(effective_types) == 1 else str(len(effective_types))} for each day: Monday through Sunday
+2. Prioritize ingredients expiring soonest (use them Mon-Wed)
+3. Each recipe: EXACTLY 2 servings, realistic prep/cook times
+4. Equipment-specific steps with mode, temperature, duration
+5. Respond ONLY with valid JSON matching the schema — no comments, no trailing commas
+6. Use ingredient names that match the provided inventory list
+7. Every recipe must have at least one step{type_instructions}
+
+OUTPUT SCHEMA:
+{{schema_json}}
+"""
+
+
 def _get_schema_json() -> str:
     """Get the GeneratedMealPlan JSON schema for the prompt."""
     # Import here to avoid circular imports at module level
@@ -267,11 +318,36 @@ def format_freezer_items(freezer_items: list[InventoryItem]) -> str:
     return "\n".join(lines)
 
 
+def format_recurring_constraints(recurring_templates: list) -> str:
+    """Format recurring meal template constraints for the prompt.
+
+    Args:
+        recurring_templates: List of RecurringMealTemplate ORM objects.
+
+    Returns:
+        Formatted string listing pre-assigned recurring meals, or empty string if none.
+    """
+    if not recurring_templates:
+        return ""
+
+    day_names = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+    lines = [
+        "The following slots already have recurring meals assigned (do NOT generate for these):"
+    ]
+    for tpl in recurring_templates:
+        day_name = day_names[tpl.day] if 0 <= tpl.day <= 6 else f"Day {tpl.day}"
+        recipe = getattr(tpl, "recipe", None)
+        title = tpl.recipe_title or (recipe.title if recipe else "Unknown")
+        lines.append(f"- {day_name} {tpl.meal_type}: {title}")
+    return "\n".join(lines)
+
+
 def build_prompt(
     inventory: list[InventoryItem],
     equipment: list[Equipment],
     expiring: list[InventoryItem],
     *,
+    meal_types: list[str] | None = None,
     member_preferences: dict | None = None,
     recent_meals: list[dict] | None = None,
     favorites: list[str] | None = None,
@@ -279,6 +355,7 @@ def build_prompt(
     cuisine_preferences: list[str] | None = None,
     leftovers: list | None = None,
     freezer_items: list[InventoryItem] | None = None,
+    recurring_constraints: list | None = None,
 ) -> str:
     """Build the complete meal plan generation prompt.
 
@@ -289,6 +366,7 @@ def build_prompt(
         inventory: All inventory items for the household.
         equipment: All equipment for the household.
         expiring: Inventory items with expiry dates, sorted soonest first.
+        meal_types: Optional list of meal types to include (e.g. ["breakfast", "dinner"]).
         member_preferences: Dict mapping member_name -> list of preference dicts.
         recent_meals: List of recently cooked meal dicts with 'title', 'cuisine_type'.
         favorites: List of favorite recipe titles.
@@ -296,16 +374,18 @@ def build_prompt(
         cuisine_preferences: List of requested cuisine types.
         leftovers: Optional list of leftover portions to use first.
         freezer_items: Optional list of freezer items requiring defrosting.
+        recurring_constraints: Optional list of RecurringMealTemplate objects already assigned.
 
     Returns:
         Complete formatted prompt string ready for LLM submission.
     """
     schema_json = _get_schema_json()
+    system_prompt = format_system_prompt(meal_types)
     equipment_info = format_equipment(equipment)
     inventory_info = format_inventory(inventory)
     expiring_info = format_expiring(expiring)
 
-    prompt = f"""{SYSTEM_PROMPT.format(schema_json=schema_json)}
+    prompt = f"""{system_prompt.format(schema_json=schema_json)}
 
 AVAILABLE EQUIPMENT:
 {equipment_info}
@@ -356,8 +436,154 @@ LEFTOVERS TO USE FIRST:
 FREEZER ITEMS (need defrosting):
 {freezer_info}"""
 
+    if recurring_constraints:
+        recurring_info = format_recurring_constraints(recurring_constraints)
+        if recurring_info:
+            prompt += f"\n\nRECURRING MEALS (pre-assigned, skip these slots):\n{recurring_info}"
+
     prompt += "\n\nGenerate the meal plan JSON now."
     return prompt
+
+
+def build_substitution_prompt(
+    recipe_title: str,
+    recipe_ingredients: list[dict],
+    recipe_steps: list[dict],
+    original_ingredient: str,
+    replacement_ingredient: str,
+    allergen_ingredients: set[str] | None = None,
+) -> str:
+    """Build a prompt for ingredient substitution in a recipe.
+
+    Args:
+        recipe_title: Title of the recipe being modified.
+        recipe_ingredients: List of ingredient dicts with name, quantity, unit.
+        recipe_steps: List of step dicts with step_order, instruction, duration_min.
+        original_ingredient: Name of the ingredient to replace.
+        replacement_ingredient: Name of the replacement ingredient.
+        allergen_ingredients: Optional set of allergen ingredient names to warn about.
+
+    Returns:
+        Complete formatted prompt string ready for LLM submission.
+    """
+    ingredients_text = "\n".join(
+        f"- {ing.get('ingredient_name', ing.get('name', 'Unknown'))}: "
+        f"{ing.get('quantity', 0)} {ing.get('unit', '')}"
+        for ing in recipe_ingredients
+    )
+    steps_text = "\n".join(
+        f"{s.get('step_order', i + 1)}. {s.get('instruction', '')}"
+        for i, s in enumerate(recipe_steps)
+    )
+    allergen_note = ""
+    if allergen_ingredients:
+        allergen_list = ", ".join(sorted(allergen_ingredients))
+        allergen_note = f"\nALLERGEN WARNING: The following are allergens for household members: {allergen_list}. Do NOT introduce these ingredients."
+
+    return f"""You are a cooking assistant. Modify the following recipe by substituting one ingredient.
+
+RECIPE: {recipe_title}
+
+CURRENT INGREDIENTS:
+{ingredients_text}
+
+CURRENT STEPS:
+{steps_text}
+
+SUBSTITUTION INSTRUCTION: Replace "{original_ingredient}" with "{replacement_ingredient}".
+Adjust quantities, steps, and cooking instructions as needed for the swap.{allergen_note}
+
+Respond ONLY with valid JSON matching this schema:
+{{
+  "title": "string",
+  "description": "string",
+  "prep_time_min": int,
+  "cook_time_min": int,
+  "servings": int,
+  "ingredients": [
+    {{"ingredient_name": "string", "quantity": float, "unit": "string", "is_optional": false}}
+  ],
+  "steps": [
+    {{"step_order": int, "instruction": "string", "duration_min": int or null}}
+  ]
+}}
+
+Generate the modified recipe JSON now."""
+
+
+def build_quick_suggestion_prompt(
+    inventory_items: list[dict],
+    expiring_items: list[dict],
+    max_results: int,
+    allergen_ingredients: set[str] | None = None,
+) -> str:
+    """Build a prompt for quick meal suggestions based on available inventory.
+
+    Args:
+        inventory_items: List of dicts with name, quantity, unit fields.
+        expiring_items: List of dicts with name, quantity, unit, expiry fields.
+        max_results: Maximum number of suggestions to return.
+        allergen_ingredients: Optional set of allergen ingredient names to avoid.
+
+    Returns:
+        Complete formatted prompt string ready for LLM submission.
+    """
+    if inventory_items:
+        inventory_text = "\n".join(
+            f"- {item.get('name', 'Unknown')}: {item.get('quantity', 0)} {item.get('unit', '')}"
+            for item in inventory_items
+        )
+    else:
+        inventory_text = "No inventory items available."
+
+    if expiring_items:
+        expiring_text = "\n".join(
+            f"- {item.get('name', 'Unknown')}: {item.get('quantity', 0)} {item.get('unit', '')} "
+            f"(expires {item.get('expiry', 'soon')})"
+            for item in expiring_items
+        )
+    else:
+        expiring_text = "No items expiring soon."
+
+    allergen_note = ""
+    if allergen_ingredients:
+        allergen_list = ", ".join(sorted(allergen_ingredients))
+        allergen_note = f"\nALLERGEN RESTRICTION (HARD BLOCK — never include): {allergen_list}"
+
+    return f"""You are a meal planning assistant. Suggest {max_results} quick meals that can be made primarily from the available inventory.{allergen_note}
+
+CURRENT INVENTORY:
+{inventory_text}
+
+EXPIRING SOON (prioritize using these):
+{expiring_text}
+
+Requirements:
+- Suggest exactly {max_results} recipes
+- Prioritize ingredients expiring soon
+- Each recipe should be practical and quick to prepare
+- Use ingredient names from the inventory where possible
+
+Respond ONLY with valid JSON matching this schema:
+{{
+  "recipes": [
+    {{
+      "title": "string",
+      "description": "string",
+      "prep_time_min": int,
+      "cook_time_min": int,
+      "servings": 2,
+      "ingredients": [
+        {{"ingredient_name": "string", "quantity": float, "unit": "string", "is_optional": false}}
+      ],
+      "steps": [
+        {{"step_order": int, "instruction": "string", "duration_min": int or null}}
+      ]
+    }}
+  ]
+}}
+
+Generate the meal suggestions JSON now."""
 
 
 def add_error_feedback(prompt: str, errors: str | list[str]) -> str:

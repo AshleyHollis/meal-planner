@@ -12,6 +12,7 @@ def validate_constraints(
     *,
     allergen_ingredients: set[str] | None = None,
     cuisine_preferences: list[str] | None = None,
+    meal_types: list[str] | None = None,
 ) -> list[str]:
     """Validate a generated meal plan against hard constraints.
 
@@ -21,19 +22,33 @@ def validate_constraints(
         equipment: Mapping of equipment name -> list of mode names.
         allergen_ingredients: Set of ingredient names (lowercase) that are allergens.
         cuisine_preferences: List of requested cuisine types (≥70% match required).
+        meal_types: Optional list of requested meal types. When multiple types provided,
+            validates that total recipe count matches len(meal_types) * 7 (±2 tolerance).
 
     Returns:
         List of error strings. Empty list means valid.
     """
     errors: list[str] = []
 
-    # 1. At least 5 recipes (ideally 7, but accept fewer gracefully)
-    if len(plan.recipes) < 5:
-        errors.append(f"Expected at least 5 recipes, got {len(plan.recipes)}")
+    effective_types = meal_types or ["dinner"]
+
+    # 1. Recipe count check
+    if len(effective_types) > 1:
+        # Multi-meal: expected total is len(meal_types) * 7, allow ±2 tolerance
+        expected_total = len(effective_types) * 7
+        tolerance = 2
+        if abs(len(plan.recipes) - expected_total) > tolerance:
+            errors.append(
+                f"Expected ~{expected_total} recipes for {len(effective_types)} meal types "
+                f"(±{tolerance}), got {len(plan.recipes)}"
+            )
+    else:
+        # Single meal type: at least 5 recipes (ideally 7)
+        if len(plan.recipes) < 5:
+            errors.append(f"Expected at least 5 recipes, got {len(plan.recipes)}")
 
     # Track cuisine matches for cuisine preference validation
     cuisine_matches = 0
-    total_recipes_with_cuisine = 0
 
     for i, recipe in enumerate(plan.recipes):
         label = f"Recipe {i + 1} ({recipe.title})"
@@ -71,7 +86,6 @@ def validate_constraints(
 
         # 6. Track cuisine matches for validation
         if cuisine_preferences and recipe.cuisine_type:
-            total_recipes_with_cuisine += 1
             if recipe.cuisine_type in cuisine_preferences:
                 cuisine_matches += 1
 
