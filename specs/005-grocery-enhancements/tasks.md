@@ -22,7 +22,7 @@
 **⚠️ CRITICAL**: No API or frontend work can begin until this phase is complete.
 
 - [ ] T001 [P] Create Product SQLAlchemy model in `services/shared/shared/db/models/product.py` — UUID PK, household_id FK (→Households.id), ingredient_id FK (→Ingredients.id), brand (String 200 NOT NULL), product_name (String 300 NOT NULL), size_desc (String 100 nullable), price (Numeric 8,2 nullable), shop (String 200 nullable), notes (String 500 nullable), timestamps. UNIQUE(household_id, ingredient_id). Indexes on household_id and ingredient_id. Relationships: household → Household, ingredient → Ingredient (lazy="selectin").
-- [ ] T002 Export Product model in `services/shared/shared/db/models/__init__.py` — add Product to imports and __all__
+- [ ] T002 Export Product model in `services/shared/shared/db/models/__init__.py` — add Product to imports and **all**
 - [ ] T003 Create Alembic migration `services/shared/alembic/versions/005_grocery_products.py` — create Products table with all columns, FK constraints, UNIQUE(household_id, ingredient_id), indexes. Use idempotent pattern (IF NOT EXISTS). Downgrade drops table.
 
 ### V1 — Model & Migration Checkpoint
@@ -228,12 +228,12 @@ Phase 1 (foundation)
 
 ## Task Summary
 
-| Phase                              | Tasks     | Tests       | Checkpoints |
-| ---------------------------------- | --------- | ----------- | ----------- |
-| 1. Model & Migration               | T001–T003 | —           | V001–V002   |
-| 2. Product API (US1 backend)       | T004–T013 | T012–T013   | V003–V005   |
-| 3. Product Frontend (US1 frontend) | T014–T022 | T021–T022   | V006–V008   |
-| 4. Shop-Filtered Trips (US2)       | T023–T030 | T028–T030   | V009–V011   |
-| 5. E2E + Polish                    | T031–T033 | T031–T033   | V012–V016   |
+| Phase                              | Tasks     | Tests     | Checkpoints |
+| ---------------------------------- | --------- | --------- | ----------- |
+| 1. Model & Migration               | T001–T003 | —         | V001–V002   |
+| 2. Product API (US1 backend)       | T004–T013 | T012–T013 | V003–V005   |
+| 3. Product Frontend (US1 frontend) | T014–T022 | T021–T022 | V006–V008   |
+| 4. Shop-Filtered Trips (US2)       | T023–T030 | T028–T030 | V009–V011   |
+| 5. E2E + Polish                    | T031–T033 | T031–T033 | V012–V016   |
 
 **Total: 33 tasks + 16 verification checkpoints = 49 items**

@@ -15,9 +15,9 @@ interface GroceryItemProps {
 function GroceryItem({ item, onChanged, tripChecked }: GroceryItemProps) {
   const [saving, setSaving] = useState(false);
   const [showLinkForm, setShowLinkForm] = useState(false);
-  const [linkedProduct, setLinkedProduct] = useState<
-    NonNullable<GroceryItemType["product"]> | null
-  >(item.product ?? null);
+  const [linkedProduct, setLinkedProduct] = useState<NonNullable<
+    GroceryItemType["product"]
+  > | null>(item.product ?? null);
 
   const isChecked = tripChecked !== undefined ? tripChecked : item.is_checked;
   const displayName = item.ingredient_name ?? item.ingredient_id;
@@ -108,4 +108,3 @@ function GroceryItem({ item, onChanged, tripChecked }: GroceryItemProps) {
 
 export { GroceryItem };
 export type { GroceryItemProps };
-

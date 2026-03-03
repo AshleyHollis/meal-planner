@@ -58,7 +58,11 @@ interface GroceryListProps {
 // Component
 // ---------------------------------------------------------------------------
 
-function GroceryList({ groceryList, onChanged, onProductLinked }: GroceryListProps) {
+function GroceryList({
+  groceryList,
+  onChanged,
+  onProductLinked,
+}: GroceryListProps) {
   const { items } = groceryList;
   const [selectedShop, setSelectedShop] = useState<string | null>(null);
   const [tripCheckedIds, setTripCheckedIds] = useState<Set<string>>(() => {
@@ -158,4 +162,3 @@ function GroceryList({ groceryList, onChanged, onProductLinked }: GroceryListPro
 
 export { GroceryList };
 export type { GroceryListProps };
-

@@ -99,9 +99,7 @@ function ProductMappingForm({
         )}
       </h3>
 
-      {errors.form && (
-        <p className="text-xs text-red-600">{errors.form}</p>
-      )}
+      {errors.form && <p className="text-xs text-red-600">{errors.form}</p>}
 
       <div className="grid grid-cols-2 gap-3">
         <div>

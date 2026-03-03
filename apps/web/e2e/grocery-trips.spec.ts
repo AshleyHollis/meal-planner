@@ -82,18 +82,14 @@ test.describe("Grocery Shop Filtering & Trips", () => {
       expect(text).toMatch(/All\s*\d+/);
     });
 
-    test("clicking a shop filter narrows displayed items", async ({
-      page,
-    }) => {
+    test("clicking a shop filter narrows displayed items", async ({ page }) => {
       if (!(await navigateToGroceryList(page))) {
         test.skip(true, "No active plan with grocery list");
         return;
       }
 
       // Count all grocery item checkboxes initially
-      const allCheckboxes = page.locator(
-        'li input[type="checkbox"]',
-      );
+      const allCheckboxes = page.locator('li input[type="checkbox"]');
       const initialCount = await allCheckboxes.count();
 
       if (initialCount === 0) {
@@ -102,9 +98,7 @@ test.describe("Grocery Shop Filtering & Trips", () => {
       }
 
       // Find shop filter buttons (not the "All" button)
-      const filterButtons = page.locator(
-        'button.rounded-full',
-      );
+      const filterButtons = page.locator("button.rounded-full");
       const buttonCount = await filterButtons.count();
 
       // Look for a shop-specific button (not "All", not "Other")
@@ -129,9 +123,7 @@ test.describe("Grocery Shop Filtering & Trips", () => {
       await page.waitForTimeout(500);
 
       // After clicking a shop filter, the item count should be <= initial
-      const filteredCheckboxes = page.locator(
-        'li input[type="checkbox"]',
-      );
+      const filteredCheckboxes = page.locator('li input[type="checkbox"]');
       const filteredCount = await filteredCheckboxes.count();
       expect(filteredCount).toBeLessThanOrEqual(initialCount);
 
@@ -152,7 +144,7 @@ test.describe("Grocery Shop Filtering & Trips", () => {
       }
 
       // Find a shop-specific filter button
-      const filterButtons = page.locator('button.rounded-full');
+      const filterButtons = page.locator("button.rounded-full");
       const buttonCount = await filterButtons.count();
 
       let shopButton: import("@playwright/test").Locator | null = null;
@@ -194,7 +186,7 @@ test.describe("Grocery Shop Filtering & Trips", () => {
       }
 
       // Select a shop filter
-      const filterButtons = page.locator('button.rounded-full');
+      const filterButtons = page.locator("button.rounded-full");
       const buttonCount = await filterButtons.count();
 
       let shopButton: import("@playwright/test").Locator | null = null;
@@ -251,7 +243,7 @@ test.describe("Grocery Shop Filtering & Trips", () => {
         return;
       }
 
-      const filterButtons = page.locator('button.rounded-full');
+      const filterButtons = page.locator("button.rounded-full");
       const buttonCount = await filterButtons.count();
 
       let shopButton: import("@playwright/test").Locator | null = null;
@@ -290,7 +282,7 @@ test.describe("Grocery Shop Filtering & Trips", () => {
       }
 
       // Select a shop filter first
-      const filterButtons = page.locator('button.rounded-full');
+      const filterButtons = page.locator("button.rounded-full");
       const buttonCount = await filterButtons.count();
 
       let shopButton: import("@playwright/test").Locator | null = null;

@@ -64,14 +64,20 @@ test.describe("Product Library", () => {
       }
 
       // Should show either products or empty state
-      const productCard = page.locator(".rounded-lg.border.border-gray-200.bg-white").first();
+      const productCard = page
+        .locator(".rounded-lg.border.border-gray-200.bg-white")
+        .first();
       const emptyState = page.getByText("No products yet");
       await expect(productCard.or(emptyState)).toBeVisible({ timeout: 10_000 });
     });
   });
 
   test.describe("Product CRUD", () => {
-    test("can add a product via the form", async ({ page, request, baseURL }) => {
+    test("can add a product via the form", async ({
+      page,
+      request,
+      baseURL,
+    }) => {
       // First look up an ingredient to use
       const effectiveBaseURL =
         baseURL || process.env.BASE_URL || "http://localhost:3000";
@@ -97,7 +103,10 @@ test.describe("Product Library", () => {
         test.skip(true, "Could not look up ingredients");
         return;
       }
-      const ingredients = (await ingResp.json()) as Array<{ id: string; name: string }>;
+      const ingredients = (await ingResp.json()) as Array<{
+        id: string;
+        name: string;
+      }>;
       if (ingredients.length === 0) {
         test.skip(true, "No ingredients in database");
         return;
@@ -188,7 +197,9 @@ test.describe("Product Library", () => {
       }
 
       // Check if there are products to search
-      const productCard = page.locator(".rounded-lg.border.border-gray-200.bg-white").first();
+      const productCard = page
+        .locator(".rounded-lg.border.border-gray-200.bg-white")
+        .first();
       const emptyState = page.getByText("No products yet");
 
       if (await emptyState.isVisible().catch(() => false)) {

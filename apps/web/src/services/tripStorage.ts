@@ -60,8 +60,7 @@ export function getTripProgress(
   return {
     checked,
     total: totalItems,
-    percentage:
-      totalItems > 0 ? Math.round((checked / totalItems) * 100) : 0,
+    percentage: totalItems > 0 ? Math.round((checked / totalItems) * 100) : 0,
   };
 }
 

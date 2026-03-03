@@ -255,9 +255,7 @@ setup("seed test data", async ({ request, baseURL }) => {
       );
     } else if (createResp.status() === 409) {
       productsAdded++;
-      console.log(
-        `[seed-data]   Product already exists for ${ing.name} (409)`,
-      );
+      console.log(`[seed-data]   Product already exists for ${ing.name} (409)`);
     } else {
       const errBody = await createResp.text().catch(() => "");
       console.log(

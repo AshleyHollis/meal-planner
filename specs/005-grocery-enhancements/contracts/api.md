@@ -7,6 +7,7 @@
 Create a product mapping.
 
 **Request**:
+
 ```json
 {
   "ingredient_id": "uuid",
@@ -20,6 +21,7 @@ Create a product mapping.
 ```
 
 **Response** (201):
+
 ```json
 {
   "id": "uuid",
@@ -50,6 +52,7 @@ List all product mappings for the household.
 Update a product mapping. All fields optional (partial update).
 
 **Request**:
+
 ```json
 {
   "brand": "Perdue",
@@ -78,6 +81,7 @@ Search products by brand, product name, or shop. Case-insensitive partial match.
 ### GET /api/v1/meal-plans/{meal_plan_id}/grocery-list
 
 **Response** (200) — extended item shape:
+
 ```json
 {
   "id": "uuid",

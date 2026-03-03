@@ -163,8 +163,6 @@
   - The `/search` route must be registered BEFORE `/{product_id}` in the router to avoid path conflicts (FastAPI matches `/search` as a UUID otherwise). Keep explicit ordering in router file.
   - For manual Pydantic construction in routes (when ORM `model_validate` is insufficient due to extra fields like `ingredient_name`), build a `_to_response(product)` helper that maps all fields explicitly.
 
-
-
 - The upsert-only fix was insufficient: existing duplicates in the live DB persisted, and the seed still accumulated quantity on repeated runs.
 - Full fix implemented in commit `14333c2`:
   1. **Migration 005**: CTE-based dedup (keeps latest `created_at` per group), then idempotent `UNIQUE CONSTRAINT` on `(household_id, ingredient_id, location)`.

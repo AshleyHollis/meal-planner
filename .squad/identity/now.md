@@ -1,10 +1,7 @@
 ---
 updated_at: 2026-03-03T11:22:00Z
 focus_area: Grocery Enhancements feature (005)
-active_issues:
-  [
-    "Creating spec/plan/tasks for 005-grocery-enhancements",
-  ]
+active_issues: ["Creating spec/plan/tasks for 005-grocery-enhancements"]
 ---
 
 # What We're Focused On

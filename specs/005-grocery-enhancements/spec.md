@@ -67,7 +67,7 @@ list becomes actionable immediately.
    reflected.
 7. **Given** I delete a product mapping, **When** the next grocery list is
    generated, **Then** that ingredient reverts to plain display (ingredient name
-   + quantity).
+   - quantity).
 
 ---
 

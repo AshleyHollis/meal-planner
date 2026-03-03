@@ -26,6 +26,7 @@ _GATE: Passes._
 This feature adds 1 new model (Product) — well within complexity norms established by the existing 16-table schema. The Product model follows existing patterns (UNIQUEIDENTIFIER PK, TimestampMixin, household scoping). Shopping trip state is client-side (localStorage), avoiding unnecessary server-side complexity — consistent with Principle VI (Simplicity & YAGNI). No new infrastructure dependencies. No new service boundaries. Worker changes are minimal (apply product mapping to existing grocery generation). Frontend changes add components within the existing app router structure. All existing patterns followed.
 
 **Constitution compliance:**
+
 - **I. Shared Infrastructure**: ✅ No infrastructure changes needed
 - **II. Test-First Development**: ✅ Tests planned for all new endpoints and components
 - **III. Observability**: ✅ New endpoints will use existing structlog + OTel instrumentation
@@ -44,7 +45,7 @@ This feature adds 1 new model (Product) — well within complexity norms establi
 | `ingredient_id` | `UUID`                    | FK → `Ingredients.id`, NOT NULL              |
 | `brand`         | `String(200)`             | NOT NULL                                     |
 | `product_name`  | `String(300)`             | NOT NULL                                     |
-| `size_desc`     | `String(100)`             | NULLABLE, e.g. "2.5 lb bag", "16 oz can"    |
+| `size_desc`     | `String(100)`             | NULLABLE, e.g. "2.5 lb bag", "16 oz can"     |
 | `price`         | `Numeric(8,2)`            | NULLABLE                                     |
 | `shop`          | `String(200)`             | NULLABLE                                     |
 | `notes`         | `String(500)`             | NULLABLE                                     |
@@ -67,8 +68,8 @@ Trip state is managed in the frontend via localStorage:
 interface TripState {
   groceryListId: string;
   shop: string;
-  checkedItemIds: string[];  // grocery item IDs checked during this trip
-  startedAt: string;         // ISO timestamp
+  checkedItemIds: string[]; // grocery item IDs checked during this trip
+  startedAt: string; // ISO timestamp
 }
 ```
 
@@ -80,13 +81,13 @@ This satisfies FR-013 (separate from global is_checked), FR-014 (persists across
 
 ### Products — `/api/v1/products`
 
-| Method   | Path                            | Description                             | Request Body    | Response                                    |
-| -------- | ------------------------------- | --------------------------------------- | --------------- | ------------------------------------------- |
-| `GET`    | `/api/v1/products`              | List all product mappings for household | —               | `list[ProductResponse]`                     |
-| `POST`   | `/api/v1/products`              | Create a product mapping                | `CreateProduct` | `ProductResponse` (201)                     |
-| `PUT`    | `/api/v1/products/{product_id}` | Update a product mapping                | `UpdateProduct` | `ProductResponse`                           |
-| `DELETE` | `/api/v1/products/{product_id}` | Delete a product mapping                | —               | 204 No Content                              |
-| `GET`    | `/api/v1/products/search`       | Search products by name/brand/shop      | query: `q`      | `list[ProductResponse]`                     |
+| Method   | Path                            | Description                             | Request Body    | Response                |
+| -------- | ------------------------------- | --------------------------------------- | --------------- | ----------------------- |
+| `GET`    | `/api/v1/products`              | List all product mappings for household | —               | `list[ProductResponse]` |
+| `POST`   | `/api/v1/products`              | Create a product mapping                | `CreateProduct` | `ProductResponse` (201) |
+| `PUT`    | `/api/v1/products/{product_id}` | Update a product mapping                | `UpdateProduct` | `ProductResponse`       |
+| `DELETE` | `/api/v1/products/{product_id}` | Delete a product mapping                | —               | 204 No Content          |
+| `GET`    | `/api/v1/products/search`       | Search products by name/brand/shop      | query: `q`      | `list[ProductResponse]` |
 
 **Service**: `ProductService(session, household_id)` — validates ingredient exists, enforces unique constraint on (household_id, ingredient_id), provides search across brand + product_name + shop.
 
@@ -95,6 +96,7 @@ This satisfies FR-013 (separate from global is_checked), FR-014 (persists across
 Modify existing `GET /api/v1/meal-plans/{meal_plan_id}/grocery-list` to include product details in each `GroceryItemResponse`:
 
 **Extended `GroceryItemResponse`**:
+
 ```
 id, ingredient_id, ingredient_name, ingredient_category, quantity_needed, unit, is_checked, preferred_store,
 product: { id, brand, product_name, size_desc, price, shop } | null
@@ -107,6 +109,7 @@ Also add `ingredient_name` and `ingredient_category` to the response (join throu
 ### Trip Completion — reuse existing endpoints
 
 No new trip-specific server endpoints. Trip completion uses the existing:
+
 - `PATCH /api/v1/grocery-items/{item_id}` — mark items as globally checked
 - `POST /api/v1/grocery-lists/{id}/complete` — add checked items to inventory
 
@@ -115,6 +118,7 @@ The frontend calls these when the user completes a trip.
 ### Pydantic Models (new in `services/api/src/api/models/`)
 
 **`product.py`**:
+
 - `CreateProduct`: `ingredient_id: UUID`, `brand: str`, `product_name: str`, `size_desc: str | None`, `price: float | None`, `shop: str | None`, `notes: str | None`
 - `UpdateProduct`: all fields optional (partial update)
 - `ProductResponse`: all fields + `id`, `ingredient_name`, `created_at`, `updated_at`
@@ -125,6 +129,7 @@ The frontend calls these when the user completes a trip.
 ### New Page
 
 **`/products`** — Product library:
+
 - Lists all household product mappings grouped by ingredient category
 - Search bar filtering by product name, brand, or shop
 - Add/edit/delete product mappings
@@ -133,12 +138,14 @@ The frontend calls these when the user completes a trip.
 ### Modified Components
 
 **`GroceryList.tsx`** — Enhanced grocery list:
+
 - Show product details (brand, product name, size, price) when a product mapping exists
 - Show plain ingredient + quantity when no mapping exists (current behavior)
 - Add "Link Product" button on unmapped items → opens inline product mapping form
 - Shop filter tabs at top: all distinct shops from items + "All" + "Other / Any Store"
 
 **`GroceryItem.tsx`** — Enhanced grocery item:
+
 - Display ingredient name (not UUID) — fix existing bug
 - Show product brand + name if mapped, price badge, shop tag
 - "Link Product" action button for unmapped items
@@ -146,11 +153,13 @@ The frontend calls these when the user completes a trip.
 ### New Components
 
 **`ShopFilter.tsx`** — Shop filter tabs/pills:
+
 - Derives distinct shops from grocery items' product mappings
 - "All", per-shop tabs, "Other / Any Store" for unmapped items
 - Manages active filter state, emits filter change
 
 **`TripTracker.tsx`** — Per-trip check-off overlay:
+
 - Appears when a shop filter is active (not "All")
 - Manages trip state in localStorage
 - Shows trip progress (checked/total)
@@ -158,6 +167,7 @@ The frontend calls these when the user completes a trip.
 - Independent check state from global is_checked
 
 **`ProductMappingForm.tsx`** — Inline form for creating/editing product mapping:
+
 - Fields: brand, product name, size description, price, shop
 - Ingredient is pre-selected (from the grocery item context)
 - Used both inline on grocery list and on the /products page
@@ -208,6 +218,7 @@ Update the existing `GroceryItemResponse` type to include `ingredient_name`, `in
 ### Generator (`generator.py`)
 
 When persisting grocery items in `_persist_plan()`, look up existing product mappings for the household:
+
 - Query `Product` table for household_id
 - Build lookup: `ingredient_id` → `Product`
 - When creating `GroceryItem`, set `preferred_store` from `product.shop` if a mapping exists
