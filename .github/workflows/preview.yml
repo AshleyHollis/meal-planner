@@ -317,6 +317,39 @@ jobs:
             })
 
   # ===========================================================================
+  # PHASE 3B: PROVISION PER-PR DATABASE
+  # ===========================================================================
+  provision-preview-db:
+    name: Provision Preview DB
+    runs-on: ubuntu-latest
+    if: |
+      always() && !cancelled() &&
+      (github.event_name != 'workflow_dispatch' || inputs.run_preview == true) &&
+      needs.check-concurrency.result == 'success' &&
+      needs.check-concurrency.outputs.can_deploy == 'true'
+    needs: [check-concurrency, detect-changes]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Azure Login via OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Provision preview database
+        run: scripts/workflows/provision-preview-db.sh
+        env:
+          PR_NUMBER: ${{ needs.detect-changes.outputs.pr_number }}
+          AZURE_SQL_SERVER: ${{ vars.AZURE_SQL_SERVER || 'sql-mealplan-prd' }}
+          AZURE_RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP || 'rg-ytsumm-prd' }}
+          KEY_VAULT_NAME: ${{ vars.KEY_VAULT_NAME || 'kv-ytsumm-prd' }}
+          SQL_ADMIN_USERNAME: ${{ vars.SQL_ADMIN_USERNAME || 'sqladmin' }}
+          SQL_ADMIN_PASSWORD: ${{ secrets.SQL_ADMIN_PASSWORD }}
+
+  # ===========================================================================
   # PHASE 4: COMPUTE PREVIEW URLS
   # ===========================================================================
   get-ingress:
@@ -429,6 +462,28 @@ jobs:
       AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
   # ===========================================================================
+  # PHASE 5B: PATCH OVERLAY FOR PER-PR DATABASE
+  # ===========================================================================
+  patch-db-overlay:
+    name: Patch DB Overlay
+    runs-on: ubuntu-latest
+    if: |
+      always() && !cancelled() &&
+      needs.update-overlay.result == 'success' &&
+      needs.provision-preview-db.result == 'success'
+    needs: [update-overlay, provision-preview-db, detect-changes]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Patch overlay with per-PR database secret
+        run: scripts/workflows/patch-overlay-db-secret.sh
+        env:
+          PR_NUMBER: ${{ needs.detect-changes.outputs.pr_number }}
+
+  # ===========================================================================
   # PHASE 6: VERIFY DEPLOYMENT (Reusable Workflow)
   # ===========================================================================
   verify-deployment:
@@ -440,8 +495,15 @@ jobs:
       needs.detect-changes.outputs.needs_backend_deployment == 'true' &&
       needs.check-concurrency.result == 'success' &&
       needs.check-concurrency.outputs.can_deploy == 'true' &&
-      needs.update-overlay.result == 'success'
-    needs: [update-overlay, check-concurrency, get-ingress, detect-changes]
+      needs.patch-db-overlay.result == 'success'
+    needs:
+      [
+        patch-db-overlay,
+        update-overlay,
+        check-concurrency,
+        get-ingress,
+        detect-changes,
+      ]
     with:
       environment: preview
       namespace: preview-pr-${{ needs.detect-changes.outputs.pr_number }}

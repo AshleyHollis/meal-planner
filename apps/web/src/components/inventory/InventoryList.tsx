@@ -11,9 +11,10 @@ import { ExpiryBadge } from "./ExpiryBadge";
 const LOCATION_LABELS: Record<StorageLocation, string> = {
   fridge: "Fridge",
   pantry: "Pantry",
+  freezer: "Freezer",
 };
 
-const LOCATION_ORDER: StorageLocation[] = ["fridge", "pantry"];
+const LOCATION_ORDER: StorageLocation[] = ["fridge", "pantry", "freezer"];
 
 function sortByExpiry(items: InventoryItem[]): InventoryItem[] {
   return [...items].sort((a, b) => {
@@ -36,6 +37,7 @@ function groupByLocation(
   const groups: Record<StorageLocation, InventoryItem[]> = {
     fridge: [],
     pantry: [],
+    freezer: [],
   };
 
   for (const item of items) {
@@ -134,9 +136,16 @@ function InventoryList({ items, onChanged }: InventoryListProps) {
                 >
                   {/* Left: name + expiry */}
                   <div className="min-w-0 flex-1">
-                    <p className="truncate font-medium text-gray-900">
-                      {item.ingredient.name}
-                    </p>
+                    <div className="flex items-center gap-2">
+                      <p className="truncate font-medium text-gray-900">
+                        {item.ingredient.name}
+                      </p>
+                      {location === "freezer" && (
+                        <span className="text-lg" title="Freezer item">
+                          ❄️
+                        </span>
+                      )}
+                    </div>
                     <div className="mt-1 flex items-center gap-2">
                       {editingId === item.id ? (
                         <div className="flex items-center gap-2">
@@ -175,6 +184,13 @@ function InventoryList({ items, onChanged }: InventoryListProps) {
                         </span>
                       )}
                       <ExpiryBadge expiryDate={item.expiry_date} />
+                      {location === "freezer" &&
+                        item.defrost_hours !== null &&
+                        item.defrost_hours > 0 && (
+                          <span className="rounded bg-blue-100 px-2 py-0.5 text-xs text-blue-700">
+                            {item.defrost_hours}h defrost
+                          </span>
+                        )}
                     </div>
                   </div>
 

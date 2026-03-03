@@ -53,6 +53,18 @@ class UpdatePlanStatus(BaseModel):
 # --- Response models ---
 
 
+class DeductionItem(BaseModel):
+    """Result of a single ingredient deduction."""
+
+    ingredient_id: str
+    ingredient_name: str
+    requested: float
+    deducted: float
+    remaining: float
+    unit: str
+    unit_mismatch: bool
+
+
 class RecipeStepResponse(BaseModel):
     """Nested recipe step data in responses."""
 
@@ -106,6 +118,7 @@ class MealSlotResponse(BaseModel):
     status: str
     cooked_at: datetime | None
     recipe: RecipeResponse | None
+    deductions: list[DeductionItem] | None = None
 
 
 class MealPlanResponse(BaseModel):

@@ -12,6 +12,7 @@ from sqlalchemy import (
     Float,
     ForeignKey,
     Index,
+    Integer,
     String,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -51,6 +52,10 @@ class InventoryItem(Base, TimestampMixin):
     )  # fridge, pantry
     expiry_date: Mapped[datetime | None] = mapped_column(
         DateTime,
+        nullable=True,
+    )
+    defrost_hours: Mapped[int | None] = mapped_column(
+        Integer,
         nullable=True,
     )
 

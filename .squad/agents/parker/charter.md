@@ -36,8 +36,8 @@
 
 ## Model
 
-- **Preferred:** auto
-- **Rationale:** Mixed — code for workflow files, haiku for log analysis
+- **Preferred:** claude-haiku-4.5
+- **Rationale:** DevOps tasks are mechanical — haiku tier for cost efficiency
 
 ## Collaboration
 

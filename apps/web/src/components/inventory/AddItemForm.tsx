@@ -12,7 +12,7 @@ import { Button } from "../ui/Button";
 import { Input } from "../ui/Input";
 
 const UNITS: UnitType[] = ["g", "ml", "units"];
-const LOCATIONS: StorageLocation[] = ["fridge", "pantry"];
+const LOCATIONS: StorageLocation[] = ["fridge", "pantry", "freezer"];
 
 interface AddItemFormProps {
   onSuccess?: () => void;
@@ -31,6 +31,7 @@ function AddItemForm({ onSuccess }: AddItemFormProps) {
   const [unit, setUnit] = useState<UnitType>("g");
   const [location, setLocation] = useState<StorageLocation>("fridge");
   const [expiryDate, setExpiryDate] = useState("");
+  const [defrostHours, setDefrostHours] = useState("");
 
   // --- submission state ---
   const [submitting, setSubmitting] = useState(false);
@@ -124,6 +125,14 @@ function AddItemForm({ onSuccess }: AddItemFormProps) {
       expiry_date: expiryDate || null,
     };
 
+    // Add defrost_hours if location is freezer
+    if (location === "freezer" && defrostHours) {
+      const hours = parseFloat(defrostHours);
+      if (!Number.isNaN(hours) && hours > 0) {
+        body.defrost_hours = hours;
+      }
+    }
+
     setSubmitting(true);
     try {
       await addInventoryItem(body);
@@ -134,6 +143,7 @@ function AddItemForm({ onSuccess }: AddItemFormProps) {
       setUnit("g");
       setLocation("fridge");
       setExpiryDate("");
+      setDefrostHours("");
       onSuccess?.();
     } catch {
       setError("Failed to add item. Please try again.");
@@ -238,6 +248,19 @@ function AddItemForm({ onSuccess }: AddItemFormProps) {
         value={expiryDate}
         onChange={(e) => setExpiryDate(e.target.value)}
       />
+
+      {/* Defrost Hours (only for freezer) */}
+      {location === "freezer" && (
+        <Input
+          label="Defrost Hours (optional)"
+          type="number"
+          min="0"
+          step="any"
+          value={defrostHours}
+          onChange={(e) => setDefrostHours(e.target.value)}
+          placeholder="Hours needed to defrost"
+        />
+      )}
 
       {/* Error message */}
       {error && <p className="text-sm text-red-600">{error}</p>}

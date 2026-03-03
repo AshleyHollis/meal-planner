@@ -38,8 +38,8 @@
 
 ## Model
 
-- **Preferred:** auto
-- **Rationale:** Writing test code — sonnet tier for quality
+- **Preferred:** claude-haiku-4.5
+- **Rationale:** Configured per team preference — newest haiku for test work
 
 ## Collaboration
 

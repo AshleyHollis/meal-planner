@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import type { MealPlan } from "@/types";
-import { listMealPlans, createMealPlan } from "@/services/api";
+import { listMealPlans, createMealPlan, ApiError } from "@/services/api";
 import { Spinner } from "@/components/ui/Spinner";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
@@ -37,7 +37,11 @@ export default function MealPlanListPage() {
       setError(null);
       const data = await listMealPlans();
       setPlans(data);
-    } catch {
+    } catch (err) {
+      if (err instanceof ApiError && err.isAuthError) {
+        window.location.href = "/api/auth/login";
+        return;
+      }
       setError("Failed to load meal plans.");
     } finally {
       setLoading(false);
@@ -54,7 +58,11 @@ export default function MealPlanListPage() {
       setError(null);
       const plan = await createMealPlan({ week_start_date: getNextMonday() });
       router.push(`/meal-plan/${plan.id}`);
-    } catch {
+    } catch (err) {
+      if (err instanceof ApiError && err.isAuthError) {
+        window.location.href = "/api/auth/login";
+        return;
+      }
       setError("Failed to generate meal plan.");
       setGenerating(false);
     }

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 import type { InventoryItem } from "@/types";
-import { listInventory } from "@/services/api";
+import { listInventory, ApiError } from "@/services/api";
 import { Spinner } from "@/components/ui/Spinner";
 import { AddItemForm } from "@/components/inventory/AddItemForm";
 import { InventoryList } from "@/components/inventory/InventoryList";
@@ -16,9 +16,14 @@ export default function InventoryPage() {
   const fetchItems = useCallback(async () => {
     try {
       setError(null);
+      setLoading(true);
       const data = await listInventory();
       setItems(data);
-    } catch {
+    } catch (err) {
+      if (err instanceof ApiError && err.isAuthError) {
+        window.location.href = "/api/auth/login";
+        return;
+      }
       setError("Failed to load inventory. Please try again.");
     } finally {
       setLoading(false);
@@ -52,7 +57,13 @@ export default function InventoryPage() {
 
           {error && (
             <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-              {error}
+              <p>{error}</p>
+              <button
+                onClick={() => void fetchItems()}
+                className="mt-2 rounded bg-red-100 px-3 py-1 text-xs font-medium text-red-800 hover:bg-red-200"
+              >
+                Retry
+              </button>
             </div>
           )}
 
