@@ -18,6 +18,7 @@
 All Phase 1–3 UI/UX work completed per Dallas's architecture (Decisions 4–6). Kane implemented responsive layout (desktop sidebar, multi-column grids), meal images (Unsplash CDN), and store branding (colored badges). Build clean, 37 tests pass, no regressions. Ripley fixed frontend error display pattern (Decision 11) — apply to all API interactions. All decisions merged into team decisions.md.
 
 **Frontend gaps closed (2026-03-03):**
+
 - Kane wired MealSlotCard into plan detail page with recipe expansion
 - Created /history page for viewing past meal plans
 - Fixed favorites loading on meal plan page
@@ -25,6 +26,7 @@ All Phase 1–3 UI/UX work completed per Dallas's architecture (Decisions 4–6)
 - 87/87 tests pass, TypeScript clean, build succeeds (Commit 9f45365)
 
 **Test status update:**
+
 - Recipe detail expansion now part of plan detail page (affects meal-plan.spec.ts tests)
 - History page tests may need coverage added (scope TBD)
 - Favorites loading fix unblocks favorites.spec.ts E2E tests
