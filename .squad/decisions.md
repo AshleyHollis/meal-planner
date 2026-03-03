@@ -59,11 +59,13 @@ The meal planner needs visual richness: meal photos, store branding in grocery l
 **Strategy:** Single responsive codebase (Tailwind `lg:` breakpoints at 1024px), not two versions.
 
 **Breakpoint strategy:**
+
 - **Mobile (<1024px):** Bottom nav, single column, `max-w-2xl` content (existing layout)
 - **Desktop (≥1024px):** Sidebar nav (240px fixed left), multi-column grids, `max-w-6xl` content
 - **XL (≥1280px):** Wider spacing only (no structural changes)
 
 **Key changes:**
+
 - `layout.tsx`: Sidebar nav component, hidden bottom nav on `lg:`, content width `max-w-2xl lg:max-w-6xl`, body `lg:pl-60` offset
 - Dashboard: 3-column card grid on desktop
 - Meal plan: 7-column calendar grid on desktop
@@ -71,6 +73,7 @@ The meal planner needs visual richness: meal photos, store branding in grocery l
 - Inventory: 3-column card grid on desktop
 
 **Meal images architecture:**
+
 - Hardcoded Unsplash photo ID map (20+ categories)
 - `getMealImageUrl(mealTitle)`: Extract keywords, match category, return CDN URL
 - CSS gradient fallback
@@ -80,12 +83,14 @@ The meal planner needs visual richness: meal photos, store branding in grocery l
 - Footer attribution: "Photos by Unsplash"
 
 **Store branding architecture:**
+
 - Colored circle avatars with store initials (no real logos)
 - `STORE_BRANDS` map: Costco (CO, #005DAA), Woolworths (W, #125F2A), Coles (C, #E01A22), Aldi (A, #00477E), IGA (IG, #D32F2F), Trader Joe's (TJ, #C8102E), default (? gray)
 - GroceryList: Branded headers with colored left border + circle avatar
 - GroceryItem: Optional small store dot
 
 **Not doing:**
+
 - No new npm dependencies (Tailwind 4 + `next/image` sufficient)
 - No backend changes (frontend-only)
 - No dark mode yet
@@ -94,12 +99,14 @@ The meal planner needs visual richness: meal photos, store branding in grocery l
 - No custom Tailwind config
 
 **Implementation order (4 phases, 3 days total):**
+
 1. Responsive layout (1 day)
 2. Meal images (1 day, depends on P1)
 3. Store branding (0.5 day, depends on P1)
 4. Polish (0.5 day, depends on P1-P3)
 
 **Validation criteria:**
+
 - Desktop (1280px): Sidebar visible, bottom nav hidden, multi-column grids
 - Mobile (375px): No visual regression, bottom nav visible
 - Tablet (768px): Mobile layout (no awkward in-between)
@@ -125,6 +132,7 @@ The meal planner needs visual richness: meal photos, store branding in grocery l
 **Dashboard hero:** Day-of-week logic finds today's dinner slot from active plan. Shows banner image (graceful fallback if absent/no dinner assigned).
 
 **Non-decisions:**
+
 - No blur placeholder
 - No new npm packages
 - No API/type changes
@@ -143,6 +151,7 @@ The meal planner needs visual richness: meal photos, store branding in grocery l
 **Content width:** All `<main>`: `max-w-2xl lg:max-w-7xl mx-auto`
 
 **Page grid upgrades:**
+
 - Dashboard quick links: `grid-cols-1 sm:grid-cols-2 lg:grid-cols-3`
 - Meal plan list: `lg:grid-cols-2`
 - Inventory: `lg:grid-cols-2` (form left, list right)
@@ -160,12 +169,14 @@ The meal planner needs visual richness: meal photos, store branding in grocery l
 **Context:** Validator relaxed from "exactly 7 recipes" to "at least 5 recipes". Tests were outdated, blocking CI.
 
 **Changes to `test_validator.py`:**
+
 1. `test_too_few_recipes`: Now tests 4 recipes (not 5), expects "Expected at least 5 recipes, got 4"
 2. `test_too_many_recipes`: Verifies 9 recipes produces NO error (no upper bound)
 3. `test_zero_recipes`: Expects "Expected at least 5 recipes, got 0"
 4. Class docstring: "At least 5 recipes required" (was "Exactly 7")
 
 **Rationale:**
+
 - Consistency: Tests reflect actual validator behavior
 - Flexibility: Relaxed constraint allows AI to vary recipe count based on inventory
 - Coverage: Validates minimum threshold, no maximum
