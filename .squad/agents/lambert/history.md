@@ -38,17 +38,20 @@
    - Result: Coverage for P5, P14, P15 features
 
 **Test Coverage Summary:**
+
 - inventory.spec.ts: Added 5 new tests (freezer, staples, defrost hours)
 - meal-plan.spec.ts: Added 3 new tests (leftovers, auto-deduct)
 - Total: 8 new E2E tests for branch 002 features
 
 **Key Learnings:**
+
 - Setup failures should fail loudly (use `expect()` assertions) not silently skip
 - Distinguish between legitimate skips (feature flag not set) vs bugs (API returns error)
 - Test actual user journeys (add→verify, cook→verify deduct) not just "does page load"
 - New features need E2E coverage BEFORE merge, not after bugs are found
 
 **File Paths:**
+
 - E2E tests: `apps/web/e2e/`
 - Seed data setup: `apps/web/e2e/seed-data.setup.ts`
 - Inventory tests: `apps/web/e2e/inventory.spec.ts`

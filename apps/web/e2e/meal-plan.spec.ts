@@ -307,7 +307,9 @@ test.describe("Meal Plan Flow", () => {
 
       // Look for a "Cooked" badge (meal that's already cooked)
       const cookedBadge = page.getByText("Cooked").first();
-      if (!(await cookedBadge.isVisible({ timeout: 5_000 }).catch(() => false))) {
+      if (
+        !(await cookedBadge.isVisible({ timeout: 5_000 }).catch(() => false))
+      ) {
         test.skip(true, "No cooked meals found in plan");
         return;
       }
@@ -403,7 +405,9 @@ test.describe("Meal Plan Flow", () => {
       // Look for a cooked meal with deduction info
       const deductionHeading = page.getByText("Ingredients Deducted:");
       if (
-        !(await deductionHeading.isVisible({ timeout: 5_000 }).catch(() => false))
+        !(await deductionHeading
+          .isVisible({ timeout: 5_000 })
+          .catch(() => false))
       ) {
         test.skip(
           true,

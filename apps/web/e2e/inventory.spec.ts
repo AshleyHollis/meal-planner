@@ -390,14 +390,12 @@ test.describe("Inventory Management", () => {
       await page.waitForTimeout(1000);
 
       // Check for Freezer heading
-      await expect(
-        page.getByRole("heading", { name: /Freezer/i }),
-      ).toBeVisible({ timeout: 10_000 });
+      await expect(page.getByRole("heading", { name: /Freezer/i })).toBeVisible(
+        { timeout: 10_000 },
+      );
     });
 
-    test("freezer items show defrost hours field in form", async ({
-      page,
-    }) => {
+    test("freezer items show defrost hours field in form", async ({ page }) => {
       await page.goto("/inventory");
       await expect(page.getByRole("heading", { name: "Add Item" })).toBeVisible(
         {
@@ -438,9 +436,7 @@ test.describe("Inventory Management", () => {
         (await staplesLink.isVisible().catch(() => false))
       ) {
         // Pass if either heading or link is visible
-        await expect(
-          staplesHeading.or(staplesLink).first(),
-        ).toBeVisible();
+        await expect(staplesHeading.or(staplesLink).first()).toBeVisible();
       } else {
         test.skip(true, "Staples UI not found on inventory page");
       }
