@@ -182,9 +182,7 @@ export default function MealPlanDetailPage({
                             onMarkSkipped={handleMarkSkipped}
                             onFavoriteToggle={handleFavoriteToggle}
                             isFavorited={
-                              recipe
-                                ? favoriteRecipeIds.has(recipe.id)
-                                : false
+                              recipe ? favoriteRecipeIds.has(recipe.id) : false
                             }
                           />
                           {recipe && (
@@ -231,7 +229,8 @@ export default function MealPlanDetailPage({
                                       <ol className="list-inside list-decimal space-y-2 text-gray-700">
                                         {recipe.steps
                                           .sort(
-                                            (a, b) => a.step_order - b.step_order,
+                                            (a, b) =>
+                                              a.step_order - b.step_order,
                                           )
                                           .map((step) => (
                                             <li key={step.id}>
