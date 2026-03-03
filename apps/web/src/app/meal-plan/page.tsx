@@ -86,7 +86,7 @@ export default function MealPlanListPage() {
             loading={generating}
             disabled={generating}
           >
-            Generate Plan
+            Generate New Plan
           </Button>
         </div>
       </div>

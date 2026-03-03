@@ -26,20 +26,8 @@ test.describe("Cuisine Selection Flow", () => {
         timeout: 30_000,
       });
 
-      // Click Generate New Plan button
-      const generateButton = page.getByRole("button", {
-        name: "Generate New Plan",
-      });
-      await expect(generateButton).toBeVisible();
-      await generateButton.click();
-
-      // Should show generate form (might be modal or new page)
-      // Look for cuisine selector
-      const cuisineSelector = page.getByLabel(/Cuisine|cuisine preference/i);
-      const cuisineHeading = page.getByText(/Cuisine|Select cuisine/i);
-
-      // Cuisine selector should be visible
-      await expect(cuisineSelector.or(cuisineHeading).first()).toBeVisible({
+      // CuisineSelector is directly visible on the meal plan page
+      await expect(page.getByText("Cuisine Preferences")).toBeVisible({
         timeout: 10_000,
       });
     });
@@ -52,23 +40,16 @@ test.describe("Cuisine Selection Flow", () => {
         timeout: 30_000,
       });
 
-      const generateButton = page.getByRole("button", {
-        name: "Generate New Plan",
-      });
-      await generateButton.click();
-
-      // Wait for form
-      await page.waitForTimeout(500);
-
-      // Look for cuisine options (Mexican, Italian, Asian, etc.)
-      const mexicanOption = page.getByText(/Mexican/i);
-      const italianOption = page.getByText(/Italian/i);
-      const asianOption = page.getByText(/Asian/i);
-
-      // At least one cuisine option should be visible
+      // Cuisine toggle buttons should be visible on the page
       await expect(
-        mexicanOption.or(italianOption).or(asianOption).first(),
+        page.getByRole("button", { name: "Mexican" }),
       ).toBeVisible({ timeout: 10_000 });
+      await expect(
+        page.getByRole("button", { name: "Italian" }),
+      ).toBeVisible();
+      await expect(
+        page.getByRole("button", { name: "Asian" }),
+      ).toBeVisible();
     });
   });
 
@@ -86,29 +67,15 @@ test.describe("Cuisine Selection Flow", () => {
         timeout: 30_000,
       });
 
-      const generateButton = page.getByRole("button", {
-        name: "Generate New Plan",
+      // Select Mexican cuisine (toggle button on page)
+      const mexicanButton = page.getByRole("button", { name: "Mexican" });
+      await expect(mexicanButton).toBeVisible({ timeout: 10_000 });
+      await mexicanButton.click();
+
+      // Verify selection is shown (Selected section appears)
+      await expect(page.getByText("Selected:")).toBeVisible({
+        timeout: 5_000,
       });
-      await generateButton.click();
-
-      // Wait for form
-      await page.waitForTimeout(500);
-
-      // Select Mexican cuisine
-      const mexicanOption = page.getByText("Mexican");
-      if (
-        !(await mexicanOption.isVisible({ timeout: 5_000 }).catch(() => false))
-      ) {
-        test.skip(true, "Mexican cuisine option not found");
-        return;
-      }
-
-      // Click Mexican (could be checkbox, button, or dropdown option)
-      await mexicanOption.click();
-
-      // Verify selection is shown (checked, highlighted, or added to list)
-      // This depends on UI implementation - could be checkbox, chip, etc.
-      await expect(mexicanOption).toBeVisible();
     });
 
     test("selected cuisine appears in generation request", async ({ page }) => {
@@ -135,35 +102,15 @@ test.describe("Cuisine Selection Flow", () => {
         timeout: 30_000,
       });
 
-      const generateButton = page.getByRole("button", {
-        name: "Generate New Plan",
-      });
-      await generateButton.click();
-
-      // Wait for form
-      await page.waitForTimeout(500);
-
       // Select Mexican cuisine
-      const mexicanOption = page.getByText("Mexican");
-      if (
-        !(await mexicanOption.isVisible({ timeout: 5_000 }).catch(() => false))
-      ) {
-        test.skip(true, "Mexican cuisine option not found");
-        return;
-      }
-      await mexicanOption.click();
+      const mexicanButton = page.getByRole("button", { name: "Mexican" });
+      await expect(mexicanButton).toBeVisible({ timeout: 10_000 });
+      await mexicanButton.click();
 
-      // Find and click the final generate/submit button
-      const submitButton = page
-        .getByRole("button", { name: /Generate|Create|Submit/i })
-        .last();
-      if (
-        !(await submitButton.isVisible({ timeout: 5_000 }).catch(() => false))
-      ) {
-        test.skip(true, "Submit button not found");
-        return;
-      }
-      await submitButton.click();
+      // Click Generate New Plan button to submit
+      await page
+        .getByRole("button", { name: "Generate New Plan" })
+        .click();
 
       // Wait for request to be sent
       await page.waitForTimeout(2000);
@@ -185,39 +132,19 @@ test.describe("Cuisine Selection Flow", () => {
         timeout: 30_000,
       });
 
-      const generateButton = page.getByRole("button", {
-        name: "Generate New Plan",
+      // Select Mexican
+      const mexicanButton = page.getByRole("button", { name: "Mexican" });
+      await expect(mexicanButton).toBeVisible({ timeout: 10_000 });
+      await mexicanButton.click();
+
+      // Select Italian
+      const italianButton = page.getByRole("button", { name: "Italian" });
+      await italianButton.click();
+
+      // Both should be selected (Selected section shows both)
+      await expect(page.getByText("Selected:")).toBeVisible({
+        timeout: 5_000,
       });
-      await generateButton.click();
-
-      // Wait for form
-      await page.waitForTimeout(500);
-
-      // Try to select multiple cuisines
-      const mexicanOption = page.getByText("Mexican");
-      const italianOption = page.getByText("Italian");
-
-      if (
-        !(await mexicanOption.isVisible({ timeout: 5_000 }).catch(() => false))
-      ) {
-        test.skip(true, "Cuisine options not found");
-        return;
-      }
-
-      await mexicanOption.click();
-
-      if (
-        await italianOption.isVisible({ timeout: 2_000 }).catch(() => false)
-      ) {
-        await italianOption.click();
-
-        // Both should remain selected (if multi-select is supported)
-        await expect(mexicanOption).toBeVisible();
-        await expect(italianOption).toBeVisible();
-      } else {
-        // Single-select only
-        await expect(mexicanOption).toBeVisible();
-      }
     });
 
     test("can clear cuisine selection", async ({ page }) => {
@@ -228,36 +155,23 @@ test.describe("Cuisine Selection Flow", () => {
         timeout: 30_000,
       });
 
-      const generateButton = page.getByRole("button", {
-        name: "Generate New Plan",
-      });
-      await generateButton.click();
-
-      // Wait for form
-      await page.waitForTimeout(500);
-
       // Select a cuisine
-      const mexicanOption = page.getByText("Mexican");
-      if (
-        !(await mexicanOption.isVisible({ timeout: 5_000 }).catch(() => false))
-      ) {
-        test.skip(true, "Cuisine options not found");
-        return;
-      }
-      await mexicanOption.click();
+      const mexicanButton = page.getByRole("button", { name: "Mexican" });
+      await expect(mexicanButton).toBeVisible({ timeout: 10_000 });
+      await mexicanButton.click();
 
-      // Look for clear/deselect button or click again to deselect
-      const clearButton = page.getByRole("button", { name: /Clear|Reset/i });
-      if (await clearButton.isVisible({ timeout: 2_000 }).catch(() => false)) {
-        await clearButton.click();
-      } else {
-        // Try clicking the option again to deselect
-        await mexicanOption.click();
-      }
+      // Verify selected
+      await expect(page.getByText("Selected:")).toBeVisible({
+        timeout: 5_000,
+      });
 
-      // Cuisine should be deselected (UI state may vary)
-      // This test verifies the deselect mechanism exists
-      await page.waitForTimeout(500);
+      // Click again to deselect (toggle behavior)
+      await mexicanButton.click();
+
+      // Selected section should disappear
+      await expect(page.getByText("Selected:")).not.toBeVisible({
+        timeout: 5_000,
+      });
     });
   });
 
@@ -277,32 +191,18 @@ test.describe("Cuisine Selection Flow", () => {
         timeout: 30_000,
       });
 
-      const generateButton = page.getByRole("button", {
-        name: "Generate New Plan",
-      });
-      await generateButton.click();
-
-      // Wait for form
-      await page.waitForTimeout(500);
-
       // Select cuisine
-      const mexicanOption = page.getByText("Mexican");
+      const mexicanButton = page.getByRole("button", { name: "Mexican" });
       if (
-        await mexicanOption.isVisible({ timeout: 5_000 }).catch(() => false)
+        await mexicanButton.isVisible({ timeout: 5_000 }).catch(() => false)
       ) {
-        await mexicanOption.click();
+        await mexicanButton.click();
       }
 
-      // Submit
-      const submitButton = page
-        .getByRole("button", { name: /Generate|Create|Submit/i })
-        .last();
-      if (await submitButton.isVisible({ timeout: 5_000 }).catch(() => false)) {
-        await submitButton.click();
-      } else {
-        // Might already be on creation flow
-        await page.getByRole("button", { name: "Generate New Plan" }).click();
-      }
+      // Click Generate New Plan button
+      await page
+        .getByRole("button", { name: "Generate New Plan" })
+        .click();
 
       // Should navigate to plan detail page or show generating state
       try {

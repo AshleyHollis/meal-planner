@@ -29,12 +29,13 @@ DIETARY_TYPES = [
     response_model=list[MemberPreferenceResponse],
 )
 async def list_preferences(
-    member_id: UUID,
+    member_id: str,
     service: PreferenceService = Depends(get_preference_service),  # noqa: B008
 ) -> list[MemberPreferenceResponse]:
     """List all preferences for a member."""
+    resolved_id = service.household_id if member_id == "current" else UUID(member_id)
     try:
-        preferences = await service.list_preferences(member_id)
+        preferences = await service.list_preferences(resolved_id)
         return [MemberPreferenceResponse.model_validate(p) for p in preferences]
     except ValueError as e:
         raise HTTPException(
@@ -49,7 +50,7 @@ async def list_preferences(
     status_code=status.HTTP_201_CREATED,
 )
 async def add_preference(
-    member_id: UUID,
+    member_id: str,
     body: CreateMemberPreference,
     service: PreferenceService = Depends(get_preference_service),  # noqa: B008
 ) -> MemberPreferenceResponse:
@@ -61,8 +62,9 @@ async def add_preference(
             detail=f"Invalid preference_type. Must be one of: {', '.join(valid_types)}",
         )
 
+    resolved_id = service.household_id if member_id == "current" else UUID(member_id)
     try:
-        preference = await service.add_preference(member_id, body)
+        preference = await service.add_preference(resolved_id, body)
         return MemberPreferenceResponse.model_validate(preference)
     except ValueError as e:
         if "duplicate" in str(e).lower():
@@ -81,13 +83,14 @@ async def add_preference(
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def delete_preference(
-    member_id: UUID,
+    member_id: str,
     preference_id: UUID,
     service: PreferenceService = Depends(get_preference_service),  # noqa: B008
 ) -> None:
     """Remove a preference from a member."""
+    resolved_id = service.household_id if member_id == "current" else UUID(member_id)
     try:
-        deleted = await service.delete_preference(member_id, preference_id)
+        deleted = await service.delete_preference(resolved_id, preference_id)
         if not deleted:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,

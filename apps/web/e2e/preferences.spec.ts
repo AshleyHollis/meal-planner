@@ -35,11 +35,22 @@ test.describe("Preferences Management", () => {
         timeout: 30_000,
       });
 
-      // Form should have preference type selector
-      await expect(page.getByLabel(/Type|Preference Type/i)).toBeVisible();
+      // Wait for loading spinner to disappear
+      const spinner = page.locator('[class*="animate-spin"]');
+      if ((await spinner.count()) > 0) {
+        await expect(spinner.first()).not.toBeVisible({ timeout: 30_000 });
+      }
 
-      // Form should have value input
-      await expect(page.getByLabel(/Value/i)).toBeVisible();
+      // Form should have preference type selector
+      await expect(
+        page.getByLabel(/Type|Preference Type/i),
+      ).toBeVisible({ timeout: 10_000 });
+
+      // Form should have value input or dietary restriction dropdown
+      // (depends on whether dietary types API returns data)
+      await expect(
+        page.getByLabel(/Value|Dietary Restriction/i),
+      ).toBeVisible({ timeout: 10_000 });
 
       // Form should have add/submit button
       await expect(
@@ -90,6 +101,12 @@ test.describe("Preferences Management", () => {
         timeout: 30_000,
       });
 
+      // Wait for loading spinner to disappear
+      const spinner = page.locator('[class*="animate-spin"]');
+      if ((await spinner.count()) > 0) {
+        await expect(spinner.first()).not.toBeVisible({ timeout: 30_000 });
+      }
+
       // Wait for form to load
       const typeSelector = page.getByLabel(/Type|Preference Type/i);
       await expect(typeSelector).toBeVisible({ timeout: 10_000 });
@@ -97,9 +114,16 @@ test.describe("Preferences Management", () => {
       // Select dietary restriction
       await typeSelector.selectOption("dietary_restriction");
 
-      // Enter value
+      // For dietary restriction, the API returns predefined types shown in a dropdown
+      const dietaryDropdown = page.getByLabel(/Dietary Restriction/i);
       const valueInput = page.getByLabel(/Value/i);
-      await valueInput.fill("vegetarian");
+      if (
+        await dietaryDropdown.isVisible({ timeout: 5_000 }).catch(() => false)
+      ) {
+        await dietaryDropdown.selectOption("vegetarian");
+      } else {
+        await valueInput.fill("vegetarian");
+      }
 
       // Submit
       await page.getByRole("button", { name: /Add|Save|Submit/i }).click();
@@ -118,14 +142,21 @@ test.describe("Preferences Management", () => {
         timeout: 30_000,
       });
 
+      // Wait for loading spinner to disappear
+      const spinner = page.locator('[class*="animate-spin"]');
+      if ((await spinner.count()) > 0) {
+        await expect(spinner.first()).not.toBeVisible({ timeout: 30_000 });
+      }
+
       const typeSelector = page.getByLabel(/Type|Preference Type/i);
       await expect(typeSelector).toBeVisible({ timeout: 10_000 });
 
       // Select allergy
       await typeSelector.selectOption("allergy");
 
-      // Enter value
+      // Enter value (allergy type shows Value input, not dietary dropdown)
       const valueInput = page.getByLabel(/Value/i);
+      await expect(valueInput).toBeVisible({ timeout: 5_000 });
       await valueInput.fill("peanuts");
 
       // Submit
@@ -145,14 +176,21 @@ test.describe("Preferences Management", () => {
         timeout: 30_000,
       });
 
+      // Wait for loading spinner to disappear
+      const spinner = page.locator('[class*="animate-spin"]');
+      if ((await spinner.count()) > 0) {
+        await expect(spinner.first()).not.toBeVisible({ timeout: 30_000 });
+      }
+
       const typeSelector = page.getByLabel(/Type|Preference Type/i);
       await expect(typeSelector).toBeVisible({ timeout: 10_000 });
 
       // Select dislike
       await typeSelector.selectOption("dislike");
 
-      // Enter value
+      // Enter value (dislike type shows Value input, not dietary dropdown)
       const valueInput = page.getByLabel(/Value/i);
+      await expect(valueInput).toBeVisible({ timeout: 5_000 });
       await valueInput.fill("cilantro");
 
       // Submit

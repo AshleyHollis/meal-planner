@@ -40,6 +40,7 @@ htmlcov/
 playwright-report/
 **/playwright/.auth/
 test-results/
+pw-report*/
 
 # Lock files (generated)
 uv.lock
