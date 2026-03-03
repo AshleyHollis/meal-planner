@@ -201,7 +201,7 @@
 - [ ] T049 [US1] Write/extend validator tests in `services/workers/tests/test_validator.py` — test allergen check (hard block), pass when no allergens
 - [ ] T050 [US2] Write/extend validator tests in `services/workers/tests/test_validator.py` — test repetition check
 - [ ] T051 [US4] Write/extend validator tests in `services/workers/tests/test_validator.py` — test cuisine match check (≥70%)
-- [ ] T052 Extend generator tests in `services/workers/tests/test_generator.py` — test that _load_context includes preferences, history, favorites, ratings
+- [ ] T052 Extend generator tests in `services/workers/tests/test_generator.py` — test that \_load_context includes preferences, history, favorites, ratings
 
 ### V6 — Worker Checkpoint
 
@@ -363,17 +363,17 @@ Phases 2-6 can all proceed in parallel after Phase 1 completes (different files,
 
 ## Task Summary
 
-| Phase | Tasks | Tests | Checkpoints |
-|-------|-------|-------|-------------|
-| 1. Models & Migration | T001–T006 | — | V001–V002 |
-| 2. Preferences API (US1) | T007–T012 | T012 | V003–V004 |
-| 3. Favorites API (US2) | T013–T018 | T018 | V005–V006 |
-| 4. Ratings API (US3) | T019–T024 | T024 | V007–V008 |
-| 5. Meal History API (US2, US4) | T025–T033 | T032–T033 | V009–V010 |
-| 6. Worker (US1-US4) | T034–T052 | T045–T052 | V011–V012 |
-| 7. Frontend Preferences (US1) | T053–T057 | T057 | V013–V015 |
-| 8. Frontend Ratings & Favs (US2, US3) | T058–T065 | T064–T065 | V016–V018 |
-| 9. Frontend History & Cuisine (US2, US4) | T066–T072 | T071–T072 | V019–V021 |
-| 10. E2E + Polish | T073–T077 | T073–T077 | V022–V026 |
+| Phase                                    | Tasks     | Tests     | Checkpoints |
+| ---------------------------------------- | --------- | --------- | ----------- |
+| 1. Models & Migration                    | T001–T006 | —         | V001–V002   |
+| 2. Preferences API (US1)                 | T007–T012 | T012      | V003–V004   |
+| 3. Favorites API (US2)                   | T013–T018 | T018      | V005–V006   |
+| 4. Ratings API (US3)                     | T019–T024 | T024      | V007–V008   |
+| 5. Meal History API (US2, US4)           | T025–T033 | T032–T033 | V009–V010   |
+| 6. Worker (US1-US4)                      | T034–T052 | T045–T052 | V011–V012   |
+| 7. Frontend Preferences (US1)            | T053–T057 | T057      | V013–V015   |
+| 8. Frontend Ratings & Favs (US2, US3)    | T058–T065 | T064–T065 | V016–V018   |
+| 9. Frontend History & Cuisine (US2, US4) | T066–T072 | T071–T072 | V019–V021   |
+| 10. E2E + Polish                         | T073–T077 | T073–T077 | V022–V026   |
 
 **Total: 77 tasks + 26 verification checkpoints = 103 items**

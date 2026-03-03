@@ -18,7 +18,10 @@ describe("CuisineSelector", () => {
   it("highlights selected cuisines", () => {
     const mockOnChange = vi.fn();
     render(
-      <CuisineSelector selected={["Italian", "Thai"]} onChange={mockOnChange} />,
+      <CuisineSelector
+        selected={["Italian", "Thai"]}
+        onChange={mockOnChange}
+      />,
     );
 
     const italianButton = screen.getAllByText("Italian")[0]; // First occurrence is in the button list
@@ -117,9 +120,7 @@ describe("CuisineSelector", () => {
   it("does not add duplicate custom cuisine", async () => {
     const user = userEvent.setup();
     const mockOnChange = vi.fn();
-    render(
-      <CuisineSelector selected={["Korean"]} onChange={mockOnChange} />,
-    );
+    render(<CuisineSelector selected={["Korean"]} onChange={mockOnChange} />);
 
     const input = screen.getByPlaceholderText(/Add custom cuisine/i);
     await user.type(input, "Korean");

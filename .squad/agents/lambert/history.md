@@ -26,6 +26,7 @@
 **Pattern Consistency:**
 
 All new E2E tests follow the exact patterns established in existing specs:
+
 - Use `test.describe()` blocks for organization
 - Use `test.use({ storageState: 'playwright/.auth/user.json' })` for authenticated tests
 - Use role-based selectors (`getByRole`, `getByText`, `getByLabel`)
@@ -48,6 +49,7 @@ All new E2E tests follow the exact patterns established in existing specs:
 - **cuisine.spec.ts**: Can test UI without backend; request validation requires API (Phase 5)
 
 **Verification Done:**
+
 - `npx tsc --noEmit` passes (0 errors)
 - `npm run lint` passes (4 pre-existing warnings unrelated to new tests)
 - All test files compile and are ready for execution against deployed environment

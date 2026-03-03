@@ -188,11 +188,12 @@ async def test_get_meal_history_sort_order(client, session, household):
 @pytest.mark.asyncio
 async def test_get_meal_history_rating_inclusion(client, session, household):
     """Test meal history includes rating when available."""
-    from .conftest import TEST_USER_SUB
     from shared.db.models import HouseholdMember
 
     # Get the test member
     from sqlalchemy import select
+
+    from .conftest import TEST_USER_SUB
 
     result = await session.execute(
         select(HouseholdMember).where(HouseholdMember.auth0_user_id == TEST_USER_SUB)

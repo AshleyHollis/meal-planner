@@ -18,9 +18,7 @@ test.describe("Cuisine Selection Flow", () => {
   test.use({ storageState: "playwright/.auth/user.json" });
 
   test.describe("Cuisine Selector UI", () => {
-    test("meal plan creation page shows cuisine selector", async ({
-      page,
-    }) => {
+    test("meal plan creation page shows cuisine selector", async ({ page }) => {
       await page.goto("/meal-plan");
       await expect(
         page.getByRole("heading", { name: "Meal Plans" }),
@@ -41,9 +39,9 @@ test.describe("Cuisine Selection Flow", () => {
       const cuisineHeading = page.getByText(/Cuisine|Select cuisine/i);
 
       // Cuisine selector should be visible
-      await expect(
-        cuisineSelector.or(cuisineHeading).first(),
-      ).toBeVisible({ timeout: 10_000 });
+      await expect(cuisineSelector.or(cuisineHeading).first()).toBeVisible({
+        timeout: 10_000,
+      });
     });
 
     test("cuisine selector has predefined options", async ({ page }) => {
@@ -299,9 +297,7 @@ test.describe("Cuisine Selection Flow", () => {
       const submitButton = page
         .getByRole("button", { name: /Generate|Create|Submit/i })
         .last();
-      if (
-        await submitButton.isVisible({ timeout: 5_000 }).catch(() => false)
-      ) {
+      if (await submitButton.isVisible({ timeout: 5_000 }).catch(() => false)) {
         await submitButton.click();
       } else {
         // Might already be on creation flow

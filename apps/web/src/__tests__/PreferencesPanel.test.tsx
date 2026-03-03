@@ -237,8 +237,9 @@ describe("PreferencesPanel", () => {
     render(<PreferencesPanel memberId="member-1" />);
 
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: /add preference/i }))
-        .toBeDefined();
+      expect(
+        screen.getByRole("button", { name: /add preference/i }),
+      ).toBeDefined();
     });
 
     // Try to submit without entering a value

@@ -6,8 +6,8 @@ on:
   push:
     branches: [preview]
     paths:
-      - 'docs/**'
-      - '.github/workflows/squad-docs.yml'
+      - "docs/**"
+      - ".github/workflows/squad-docs.yml"
 
 permissions:
   contents: read

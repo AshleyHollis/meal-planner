@@ -44,8 +44,9 @@ function PreferencesPanel({ memberId }: PreferencesPanelProps) {
   const [error, setError] = useState<string | null>(null);
 
   // Form state
-  const [selectedType, setSelectedType] =
-    useState<PreferenceType>("dietary_restriction");
+  const [selectedType, setSelectedType] = useState<PreferenceType>(
+    "dietary_restriction",
+  );
   const [value, setValue] = useState("");
   const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -156,7 +157,9 @@ function PreferencesPanel({ memberId }: PreferencesPanelProps) {
             <select
               id="preference-type"
               value={selectedType}
-              onChange={(e) => setSelectedType(e.target.value as PreferenceType)}
+              onChange={(e) =>
+                setSelectedType(e.target.value as PreferenceType)
+              }
               className="min-h-[44px] w-full rounded-lg border border-gray-300 px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
             >
               <option value="dietary_restriction">Dietary Restriction</option>

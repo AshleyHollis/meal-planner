@@ -150,9 +150,7 @@ test.describe("Favorites Flow", () => {
         .getByRole("button", { name: /favorite|heart/i })
         .first();
       if (
-        !(await favoriteButton
-          .isVisible({ timeout: 5_000 })
-          .catch(() => false))
+        !(await favoriteButton.isVisible({ timeout: 5_000 }).catch(() => false))
       ) {
         test.skip(true, "No favorite buttons available");
         return;
@@ -256,15 +254,15 @@ test.describe("Favorites Flow", () => {
           .replace(/unfavorite|remove|heart/gi, "")
           .trim();
         if (cleanName.length > 5) {
-          await expect(
-            page.getByText(cleanName).first(),
-          ).not.toBeVisible({ timeout: 10_000 }).catch(() => {
-            // If recipe still visible, might have multiple favorites
-            // Check for empty state instead
-            expect(
-              page.getByText(/No favorites|haven't favorited/i),
-            ).toBeVisible({ timeout: 5_000 });
-          });
+          await expect(page.getByText(cleanName).first())
+            .not.toBeVisible({ timeout: 10_000 })
+            .catch(() => {
+              // If recipe still visible, might have multiple favorites
+              // Check for empty state instead
+              expect(
+                page.getByText(/No favorites|haven't favorited/i),
+              ).toBeVisible({ timeout: 5_000 });
+            });
         }
       }
     });

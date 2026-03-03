@@ -2,7 +2,10 @@
 updated_at: 2026-03-02T21:39:00Z
 focus_area: Personalization AI feature (003)
 active_issues:
-  ["Spec pipeline complete — 77 tasks across 10 phases", "Phase 1: Models & Migration up first"]
+  [
+    "Spec pipeline complete — 77 tasks across 10 phases",
+    "Phase 1: Models & Migration up first",
+  ]
 ---
 
 # What We're Focused On

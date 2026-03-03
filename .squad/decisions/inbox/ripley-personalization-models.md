@@ -41,21 +41,25 @@ Phase 1 of the personalization AI feature required designing 3 new database mode
 ### Key Design Choices
 
 **Why household-scoped favorites instead of per-member?**
+
 - Simplifies AI prompt construction (avoid conflicts between members' favorites)
 - Aligns with meal planning being a household-level activity
 - Reduces table size and join complexity
 
 **Why immutable ratings (no updated_at, no UPDATE operations)?**
+
 - Preserves historical feedback integrity for AI training
 - Prevents rating manipulation
 - Simpler API (POST to create, GET to read, no PUT/PATCH)
 
 **Why CHECK constraint on rating instead of application-level validation?**
+
 - Database enforces data integrity even if API validation bypassed
 - Prevents invalid data from other entry points (admin tools, scripts)
 - Self-documenting schema constraint
 
 **Why batch_alter_table for cuisine_type column?**
+
 - Alembic best practice for MSSQL to avoid table locking issues
 - Consistent with existing migration patterns in the codebase
 

@@ -2,7 +2,12 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import type { MealSlot, EquipmentMode, EffortLevel, MealSlotRating } from "@/types";
+import type {
+  MealSlot,
+  EquipmentMode,
+  EffortLevel,
+  MealSlotRating,
+} from "@/types";
 import { Badge } from "../ui/Badge";
 import { Button } from "../ui/Button";
 import { RatingWidget } from "../RatingWidget";
@@ -78,7 +83,9 @@ function MealSlotCard({
   const isDone = slot.status === "cooked" || slot.status === "skipped";
   const isCooked = slot.status === "cooked";
 
-  const [existingRating, setExistingRating] = useState<MealSlotRating | null>(null);
+  const [existingRating, setExistingRating] = useState<MealSlotRating | null>(
+    null,
+  );
   const [loadingRating, setLoadingRating] = useState(false);
 
   useEffect(() => {

@@ -29,22 +29,23 @@ This feature adds 3 new models (MemberPreference, RecipeFavorite, MealSlotRating
 
 ### MemberPreference (new table: `MemberPreferences`)
 
-| Column | Type | Constraints |
-|--------|------|-------------|
-| `id` | `UUID` (UNIQUEIDENTIFIER) | PK, default `uuid4()` |
-| `household_member_id` | `UUID` | FK → `HouseholdMembers.id`, NOT NULL |
-| `preference_type` | `String(30)` | NOT NULL, one of: `dietary_restriction`, `allergy`, `dislike`, `like` |
-| `value` | `String(200)` | NOT NULL, human-readable value (e.g., "vegetarian", "peanut", "cilantro") |
-| `ingredient_id` | `UUID` | FK → `Ingredients.id`, NULLABLE — set for ingredient-level prefs (allergy/dislike/like) |
-| `notes` | `String(500)` | NULLABLE, optional context |
-| `created_at` | `DateTime` | NOT NULL, default `sysutcdatetime()` |
-| `updated_at` | `DateTime` | NOT NULL, default `sysutcdatetime()`, onupdate |
+| Column                | Type                      | Constraints                                                                             |
+| --------------------- | ------------------------- | --------------------------------------------------------------------------------------- |
+| `id`                  | `UUID` (UNIQUEIDENTIFIER) | PK, default `uuid4()`                                                                   |
+| `household_member_id` | `UUID`                    | FK → `HouseholdMembers.id`, NOT NULL                                                    |
+| `preference_type`     | `String(30)`              | NOT NULL, one of: `dietary_restriction`, `allergy`, `dislike`, `like`                   |
+| `value`               | `String(200)`             | NOT NULL, human-readable value (e.g., "vegetarian", "peanut", "cilantro")               |
+| `ingredient_id`       | `UUID`                    | FK → `Ingredients.id`, NULLABLE — set for ingredient-level prefs (allergy/dislike/like) |
+| `notes`               | `String(500)`             | NULLABLE, optional context                                                              |
+| `created_at`          | `DateTime`                | NOT NULL, default `sysutcdatetime()`                                                    |
+| `updated_at`          | `DateTime`                | NOT NULL, default `sysutcdatetime()`, onupdate                                          |
 
 **Constraints**: `UNIQUE(household_member_id, preference_type, value)` — prevents duplicate preferences.
 **Indexes**: `ix_member_prefs_member` on `household_member_id`.
 **Relationships**: `household_member` → `HouseholdMember`, `ingredient` → `Ingredient` (nullable).
 
 **Valid `preference_type` values**:
+
 - `dietary_restriction`: value is one of `vegetarian`, `vegan`, `halal`, `kosher`, `gluten-free`, `dairy-free`, `keto`, `paleo`
 - `allergy`: value is ingredient name, `ingredient_id` should be set — **HARD BLOCK** in AI generation
 - `dislike`: value is ingredient name, `ingredient_id` should be set — soft avoidance
@@ -52,34 +53,34 @@ This feature adds 3 new models (MemberPreference, RecipeFavorite, MealSlotRating
 
 ### RecipeFavorite (new table: `RecipeFavorites`)
 
-| Column | Type | Constraints |
-|--------|------|-------------|
-| `id` | `UUID` (UNIQUEIDENTIFIER) | PK, default `uuid4()` |
-| `household_id` | `UUID` | FK → `Households.id`, NOT NULL |
-| `recipe_id` | `UUID` | FK → `Recipes.id`, NOT NULL |
-| `created_at` | `DateTime` | NOT NULL, default `sysutcdatetime()` |
+| Column         | Type                      | Constraints                          |
+| -------------- | ------------------------- | ------------------------------------ |
+| `id`           | `UUID` (UNIQUEIDENTIFIER) | PK, default `uuid4()`                |
+| `household_id` | `UUID`                    | FK → `Households.id`, NOT NULL       |
+| `recipe_id`    | `UUID`                    | FK → `Recipes.id`, NOT NULL          |
+| `created_at`   | `DateTime`                | NOT NULL, default `sysutcdatetime()` |
 
 **Constraints**: `UNIQUE(household_id, recipe_id)` — one favorite record per recipe per household.
 **Indexes**: `ix_recipe_favorites_household` on `household_id`.
 
 ### MealSlotRating (new table: `MealSlotRatings`)
 
-| Column | Type | Constraints |
-|--------|------|-------------|
-| `id` | `UUID` (UNIQUEIDENTIFIER) | PK, default `uuid4()` |
-| `meal_slot_id` | `UUID` | FK → `MealSlots.id`, NOT NULL |
-| `rated_by` | `UUID` | FK → `HouseholdMembers.id`, NOT NULL |
-| `rating` | `Integer` | NOT NULL, CHECK 1–5 |
-| `feedback` | `String(500)` | NULLABLE |
-| `created_at` | `DateTime` | NOT NULL, default `sysutcdatetime()` |
+| Column         | Type                      | Constraints                          |
+| -------------- | ------------------------- | ------------------------------------ |
+| `id`           | `UUID` (UNIQUEIDENTIFIER) | PK, default `uuid4()`                |
+| `meal_slot_id` | `UUID`                    | FK → `MealSlots.id`, NOT NULL        |
+| `rated_by`     | `UUID`                    | FK → `HouseholdMembers.id`, NOT NULL |
+| `rating`       | `Integer`                 | NOT NULL, CHECK 1–5                  |
+| `feedback`     | `String(500)`             | NULLABLE                             |
+| `created_at`   | `DateTime`                | NOT NULL, default `sysutcdatetime()` |
 
 **Constraints**: `UNIQUE(meal_slot_id, rated_by)` — one rating per member per slot.
 **Indexes**: `ix_meal_slot_ratings_slot` on `meal_slot_id`.
 
 ### Recipe.cuisine_type (new column on existing `Recipes` table)
 
-| Column | Type | Constraints |
-|--------|------|-------------|
+| Column         | Type         | Constraints                              |
+| -------------- | ------------ | ---------------------------------------- |
 | `cuisine_type` | `String(50)` | NULLABLE, added to existing Recipe model |
 
 Predefined values: `mexican`, `italian`, `asian`, `indian`, `mediterranean`, `american`, `comfort_food`. Free-text also accepted.
@@ -87,6 +88,7 @@ Predefined values: `mexican`, `italian`, `asian`, `indian`, `mediterranean`, `am
 ### CreateMealPlan extension (modify existing Pydantic model)
 
 Add optional field to `CreateMealPlan`:
+
 ```python
 cuisine_preferences: list[str] | None = None
 ```
@@ -97,62 +99,66 @@ This is per-request, not persisted on the MealPlan row. Passed through the queue
 
 ### Preferences — `/api/v1/members/{member_id}/preferences`
 
-| Method | Path | Description | Request Body | Response |
-|--------|------|-------------|--------------|----------|
-| `GET` | `/api/v1/members/{member_id}/preferences` | List all preferences for a member | — | `list[MemberPreferenceResponse]` |
-| `POST` | `/api/v1/members/{member_id}/preferences` | Add a preference | `CreateMemberPreference` | `MemberPreferenceResponse` (201) |
-| `DELETE` | `/api/v1/members/{member_id}/preferences/{preference_id}` | Remove a preference | — | 204 No Content |
+| Method   | Path                                                      | Description                       | Request Body             | Response                         |
+| -------- | --------------------------------------------------------- | --------------------------------- | ------------------------ | -------------------------------- |
+| `GET`    | `/api/v1/members/{member_id}/preferences`                 | List all preferences for a member | —                        | `list[MemberPreferenceResponse]` |
+| `POST`   | `/api/v1/members/{member_id}/preferences`                 | Add a preference                  | `CreateMemberPreference` | `MemberPreferenceResponse` (201) |
+| `DELETE` | `/api/v1/members/{member_id}/preferences/{preference_id}` | Remove a preference               | —                        | 204 No Content                   |
 
 **Static reference endpoint**:
 
-| Method | Path | Description | Response |
-|--------|------|-------------|----------|
-| `GET` | `/api/v1/preferences/dietary-types` | List available dietary restriction enum values | `list[str]` |
+| Method | Path                                | Description                                    | Response    |
+| ------ | ----------------------------------- | ---------------------------------------------- | ----------- |
+| `GET`  | `/api/v1/preferences/dietary-types` | List available dietary restriction enum values | `list[str]` |
 
 **Service**: `PreferenceService(session, household_id)` — validates member belongs to household, enforces unique constraint.
 
 ### Favorites — `/api/v1/recipes/{recipe_id}/favorite`
 
-| Method | Path | Description | Request Body | Response |
-|--------|------|-------------|--------------|----------|
-| `POST` | `/api/v1/recipes/{recipe_id}/favorite` | Mark recipe as favorite (idempotent) | — | `RecipeFavoriteResponse` (201) |
-| `DELETE` | `/api/v1/recipes/{recipe_id}/favorite` | Remove favorite | — | 204 No Content |
-| `GET` | `/api/v1/favorites` | List household favorites | — | `list[RecipeFavoriteResponse]` |
+| Method   | Path                                   | Description                          | Request Body | Response                       |
+| -------- | -------------------------------------- | ------------------------------------ | ------------ | ------------------------------ |
+| `POST`   | `/api/v1/recipes/{recipe_id}/favorite` | Mark recipe as favorite (idempotent) | —            | `RecipeFavoriteResponse` (201) |
+| `DELETE` | `/api/v1/recipes/{recipe_id}/favorite` | Remove favorite                      | —            | 204 No Content                 |
+| `GET`    | `/api/v1/favorites`                    | List household favorites             | —            | `list[RecipeFavoriteResponse]` |
 
 **Service**: `FavoriteService(session, household_id)` — scoped to household, idempotent toggle.
 
 ### Ratings — `/api/v1/meal-plans/{plan_id}/slots/{slot_id}/rating`
 
-| Method | Path | Description | Request Body | Response |
-|--------|------|-------------|--------------|----------|
-| `POST` | `/api/v1/meal-plans/{plan_id}/slots/{slot_id}/rating` | Submit rating (1–5 + optional feedback) | `CreateMealSlotRating` | `MealSlotRatingResponse` (201) |
-| `GET` | `/api/v1/meal-plans/{plan_id}/slots/{slot_id}/rating` | Get rating for a slot | — | `MealSlotRatingResponse \| null` |
+| Method | Path                                                  | Description                             | Request Body           | Response                         |
+| ------ | ----------------------------------------------------- | --------------------------------------- | ---------------------- | -------------------------------- |
+| `POST` | `/api/v1/meal-plans/{plan_id}/slots/{slot_id}/rating` | Submit rating (1–5 + optional feedback) | `CreateMealSlotRating` | `MealSlotRatingResponse` (201)   |
+| `GET`  | `/api/v1/meal-plans/{plan_id}/slots/{slot_id}/rating` | Get rating for a slot                   | —                      | `MealSlotRatingResponse \| null` |
 
 **Validation**: Slot must have `status="cooked"` before rating. Rating 1–5, feedback max 500 chars.
 **Service**: `RatingService(session, household_id)` — validates slot belongs to household's plan.
 
 ### Meal History — `/api/v1/meal-history`
 
-| Method | Path | Description | Query Params | Response |
-|--------|------|-------------|--------------|----------|
-| `GET` | `/api/v1/meal-history` | Paginated cooked meal history | `page`, `page_size` (default 20) | `PaginatedResponse[MealHistoryItem]` |
+| Method | Path                   | Description                   | Query Params                     | Response                             |
+| ------ | ---------------------- | ----------------------------- | -------------------------------- | ------------------------------------ |
+| `GET`  | `/api/v1/meal-history` | Paginated cooked meal history | `page`, `page_size` (default 20) | `PaginatedResponse[MealHistoryItem]` |
 
 Returns MealSlot records with `status="cooked"`, joined with recipe data, sorted by `cooked_at DESC`.
 
 ### Pydantic Models (new in `services/api/src/api/models/`)
 
 **`preference.py`**:
+
 - `CreateMemberPreference`: `preference_type: str`, `value: str`, `ingredient_id: UUID | None`, `notes: str | None`
 - `MemberPreferenceResponse`: all fields + `id`, `created_at`
 
 **`favorite.py`**:
+
 - `RecipeFavoriteResponse`: `id`, `recipe_id`, `recipe_title`, `created_at`
 
 **`rating.py`**:
+
 - `CreateMealSlotRating`: `rating: int` (Field ge=1, le=5), `feedback: str | None` (max 500)
 - `MealSlotRatingResponse`: all fields + `id`, `rated_by`, `created_at`
 
 **`meal_history.py`**:
+
 - `MealHistoryItem`: `slot_id`, `recipe_title`, `recipe_id`, `cooked_at`, `day`, `meal_type`, `rating: int | None`
 
 ## Worker Prompt Changes
@@ -188,6 +194,7 @@ New formatter functions: `format_preferences()`, `format_recent_meals()`, `forma
 ### Generator (`generator.py`)
 
 Extend `_load_context()` to also load:
+
 - Member preferences for the household (query `MemberPreferences` joined through `HouseholdMembers`)
 - Recent cooked meals within lookback window (query `MealSlots` where `status="cooked"` and `cooked_at >= now - 21 days`)
 - Household favorites (query `RecipeFavorites` joined with `Recipes`)
@@ -212,6 +219,7 @@ def validate_constraints(
 ```
 
 **New validation checks**:
+
 1. **Allergen check**: No recipe contains an ingredient matching any household member's allergy. Hard failure.
 2. **Repetition check**: No recipe title matches a recently cooked recipe (case-insensitive).
 3. **Cuisine match**: When cuisine preferences specified, ≥70% of recipes must match the requested cuisine type(s).
@@ -225,12 +233,14 @@ Add `cuisine_type: str | None = None` to `GeneratedRecipe` schema so the LLM can
 ### New Pages
 
 **`/preferences`** — Member preference management:
+
 - List current member's preferences grouped by type
 - Add/remove dietary restrictions from predefined list
 - Add/remove ingredient-level allergies, dislikes, likes with autocomplete
 - Each preference shows type badge + value + optional notes
 
 **`/history`** — Meal history timeline:
+
 - Paginated list of cooked meals sorted by date descending
 - Each entry: date, recipe title, rating (if exists), cuisine tag
 - Infinite scroll or page-based pagination
@@ -238,6 +248,7 @@ Add `cuisine_type: str | None = None` to `GeneratedRecipe` schema so the LLM can
 ### Modified Components
 
 **`MealSlotCard`**:
+
 - After slot status = "cooked", show star rating UI (1–5 clickable stars)
 - Optional feedback textarea (max 500 chars)
 - Submit rating via `POST /api/v1/meal-plans/{planId}/slots/{slotId}/rating`
@@ -245,18 +256,31 @@ Add `cuisine_type: str | None = None` to `GeneratedRecipe` schema so the LLM can
 - Favorite toggle heart icon on the recipe
 
 **`CreateMealPlan` flow** (existing plan creation UI):
+
 - Add optional cuisine selector: multi-select dropdown with predefined types + free-text input
 - Pass `cuisine_preferences` in request body
 
 **`WeeklyPlanView`**:
+
 - Show cuisine type tag on each meal slot card (if recipe has `cuisine_type`)
 - Favorite toggle (heart icon) on each recipe
 
 ### New TypeScript Types (`apps/web/src/types/index.ts`)
 
 ```typescript
-export type PreferenceType = "dietary_restriction" | "allergy" | "dislike" | "like";
-export type CuisineType = "mexican" | "italian" | "asian" | "indian" | "mediterranean" | "american" | "comfort_food";
+export type PreferenceType =
+  | "dietary_restriction"
+  | "allergy"
+  | "dislike"
+  | "like";
+export type CuisineType =
+  | "mexican"
+  | "italian"
+  | "asian"
+  | "indian"
+  | "mediterranean"
+  | "american"
+  | "comfort_food";
 
 export interface MemberPreference {
   id: string;

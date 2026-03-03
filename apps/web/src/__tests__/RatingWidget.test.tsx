@@ -142,7 +142,7 @@ describe("RatingWidget", () => {
     );
 
     const submitButton = screen.getByText("Submit Rating");
-    
+
     // Button should be disabled without rating
     expect(submitButton.hasAttribute("disabled")).toBe(true);
   });
@@ -162,7 +162,7 @@ describe("RatingWidget", () => {
 
     // Check maxLength attribute is set
     expect(textarea.getAttribute("maxlength")).toBe("500");
-    
+
     // Character counter should show
     expect(screen.getByText(/\/500 characters/)).toBeDefined();
   });

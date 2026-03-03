@@ -77,7 +77,7 @@
   - Tests for dietary types endpoint
   - Helper functions `_seed_member` and `_seed_preference` for test data setup
 - **Verification:** All 14 preference tests pass, all 115 total API tests pass (no regressions), ruff format/check pass
-- **Pattern lessons:** 
+- **Pattern lessons:**
   - Service uses `flush()` not `commit()` (commit happens in session context manager)
   - Tests don't need to commit seed data (same transaction scope as client fixture)
   - DELETE tests verify status code only (not data absence) to avoid session isolation issues

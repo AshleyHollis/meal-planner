@@ -401,13 +401,10 @@ export async function addPreference(
   memberId: string,
   data: CreateMemberPreference,
 ): Promise<MemberPreference> {
-  return fetchApi<MemberPreference>(
-    `/api/v1/members/${memberId}/preferences`,
-    {
-      method: "POST",
-      body: JSON.stringify(data),
-    },
-  );
+  return fetchApi<MemberPreference>(`/api/v1/members/${memberId}/preferences`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
 }
 
 export async function deletePreference(

@@ -3,8 +3,7 @@
 from datetime import UTC, datetime
 from uuid import uuid4
 
-from api.main import create_app
-from httpx import ASGITransport, AsyncClient
+from httpx import AsyncClient
 from shared.db.models import HouseholdMember, MealPlan, MealSlot, Recipe
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -13,7 +12,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 # ---------------------------------------------------------------------------
 
 
-async def _seed_member(session: AsyncSession, household_id, name: str = "Test Member") -> HouseholdMember:
+async def _seed_member(
+    session: AsyncSession, household_id, name: str = "Test Member"
+) -> HouseholdMember:
     """Create a test household member."""
     now = datetime.now(UTC)
     member = HouseholdMember(
@@ -97,7 +98,9 @@ async def _seed_meal_slot(
 
 
 class TestSubmitRating:
-    async def test_submit_rating_success(self, client: AsyncClient, session: AsyncSession, household):
+    async def test_submit_rating_success(
+        self, client: AsyncClient, session: AsyncSession, household
+    ):
         """Submit a rating for a cooked meal slot."""
         # Seed plan, recipe, cooked slot
         plan = await _seed_meal_plan(session, household.id)
@@ -106,7 +109,9 @@ class TestSubmitRating:
         await session.commit()
 
         payload = {"rating": 5, "feedback": "Delicious!"}
-        resp = await client.post(f"/api/v1/meal-plans/{plan.id}/slots/{slot.id}/rating", json=payload)
+        resp = await client.post(
+            f"/api/v1/meal-plans/{plan.id}/slots/{slot.id}/rating", json=payload
+        )
 
         assert resp.status_code == 201
         data = resp.json()
@@ -114,7 +119,9 @@ class TestSubmitRating:
         assert data["feedback"] == "Delicious!"
         assert data["meal_slot_id"] == str(slot.id)
 
-    async def test_submit_rating_updates_existing(self, client: AsyncClient, session: AsyncSession, household):
+    async def test_submit_rating_updates_existing(
+        self, client: AsyncClient, session: AsyncSession, household
+    ):
         """Submitting a rating twice updates the existing rating."""
         plan = await _seed_meal_plan(session, household.id)
         recipe = await _seed_recipe(session)
@@ -123,20 +130,26 @@ class TestSubmitRating:
 
         # First submission
         payload1 = {"rating": 3, "feedback": "Okay"}
-        resp1 = await client.post(f"/api/v1/meal-plans/{plan.id}/slots/{slot.id}/rating", json=payload1)
+        resp1 = await client.post(
+            f"/api/v1/meal-plans/{plan.id}/slots/{slot.id}/rating", json=payload1
+        )
         assert resp1.status_code == 201
         rating_id_1 = resp1.json()["id"]
 
         # Second submission (update)
         payload2 = {"rating": 5, "feedback": "Actually amazing!"}
-        resp2 = await client.post(f"/api/v1/meal-plans/{plan.id}/slots/{slot.id}/rating", json=payload2)
+        resp2 = await client.post(
+            f"/api/v1/meal-plans/{plan.id}/slots/{slot.id}/rating", json=payload2
+        )
         assert resp2.status_code == 201
         data2 = resp2.json()
         assert data2["id"] == rating_id_1  # Same rating ID
         assert data2["rating"] == 5
         assert data2["feedback"] == "Actually amazing!"
 
-    async def test_submit_rating_non_cooked_slot_fails(self, client: AsyncClient, session: AsyncSession, household):
+    async def test_submit_rating_non_cooked_slot_fails(
+        self, client: AsyncClient, session: AsyncSession, household
+    ):
         """Cannot rate a slot that is not cooked."""
         plan = await _seed_meal_plan(session, household.id)
         recipe = await _seed_recipe(session)
@@ -144,12 +157,16 @@ class TestSubmitRating:
         await session.commit()
 
         payload = {"rating": 5, "feedback": "Great!"}
-        resp = await client.post(f"/api/v1/meal-plans/{plan.id}/slots/{slot.id}/rating", json=payload)
+        resp = await client.post(
+            f"/api/v1/meal-plans/{plan.id}/slots/{slot.id}/rating", json=payload
+        )
 
         assert resp.status_code == 409
         assert "must be cooked" in resp.json()["detail"].lower()
 
-    async def test_submit_rating_out_of_range_fails(self, client: AsyncClient, session: AsyncSession, household):
+    async def test_submit_rating_out_of_range_fails(
+        self, client: AsyncClient, session: AsyncSession, household
+    ):
         """Rating must be between 1 and 5."""
         plan = await _seed_meal_plan(session, household.id)
         recipe = await _seed_recipe(session)
@@ -158,17 +175,21 @@ class TestSubmitRating:
 
         # Rating too low
         resp_low = await client.post(
-            f"/api/v1/meal-plans/{plan.id}/slots/{slot.id}/rating", json={"rating": 0, "feedback": "Bad"}
+            f"/api/v1/meal-plans/{plan.id}/slots/{slot.id}/rating",
+            json={"rating": 0, "feedback": "Bad"},
         )
         assert resp_low.status_code == 422  # Pydantic validation error
 
         # Rating too high
         resp_high = await client.post(
-            f"/api/v1/meal-plans/{plan.id}/slots/{slot.id}/rating", json={"rating": 6, "feedback": "Too good"}
+            f"/api/v1/meal-plans/{plan.id}/slots/{slot.id}/rating",
+            json={"rating": 6, "feedback": "Too good"},
         )
         assert resp_high.status_code == 422
 
-    async def test_submit_rating_feedback_too_long_fails(self, client: AsyncClient, session: AsyncSession, household):
+    async def test_submit_rating_feedback_too_long_fails(
+        self, client: AsyncClient, session: AsyncSession, household
+    ):
         """Feedback must be max 500 characters."""
         plan = await _seed_meal_plan(session, household.id)
         recipe = await _seed_recipe(session)
@@ -177,11 +198,15 @@ class TestSubmitRating:
 
         long_feedback = "x" * 501
         payload = {"rating": 5, "feedback": long_feedback}
-        resp = await client.post(f"/api/v1/meal-plans/{plan.id}/slots/{slot.id}/rating", json=payload)
+        resp = await client.post(
+            f"/api/v1/meal-plans/{plan.id}/slots/{slot.id}/rating", json=payload
+        )
 
         assert resp.status_code == 422  # Pydantic validation error
 
-    async def test_submit_rating_without_feedback_success(self, client: AsyncClient, session: AsyncSession, household):
+    async def test_submit_rating_without_feedback_success(
+        self, client: AsyncClient, session: AsyncSession, household
+    ):
         """Feedback is optional."""
         plan = await _seed_meal_plan(session, household.id)
         recipe = await _seed_recipe(session)
@@ -189,23 +214,31 @@ class TestSubmitRating:
         await session.commit()
 
         payload = {"rating": 4}
-        resp = await client.post(f"/api/v1/meal-plans/{plan.id}/slots/{slot.id}/rating", json=payload)
+        resp = await client.post(
+            f"/api/v1/meal-plans/{plan.id}/slots/{slot.id}/rating", json=payload
+        )
 
         assert resp.status_code == 201
         data = resp.json()
         assert data["rating"] == 4
         assert data["feedback"] is None
 
-    async def test_submit_rating_plan_not_found_fails(self, client: AsyncClient, session: AsyncSession, household):
+    async def test_submit_rating_plan_not_found_fails(
+        self, client: AsyncClient, session: AsyncSession, household
+    ):
         """Non-existent plan returns 400."""
         fake_plan_id = uuid4()
         fake_slot_id = uuid4()
         payload = {"rating": 5}
-        resp = await client.post(f"/api/v1/meal-plans/{fake_plan_id}/slots/{fake_slot_id}/rating", json=payload)
+        resp = await client.post(
+            f"/api/v1/meal-plans/{fake_plan_id}/slots/{fake_slot_id}/rating", json=payload
+        )
 
         assert resp.status_code == 400
 
-    async def test_submit_rating_slot_not_in_plan_fails(self, client: AsyncClient, session: AsyncSession, household):
+    async def test_submit_rating_slot_not_in_plan_fails(
+        self, client: AsyncClient, session: AsyncSession, household
+    ):
         """Slot must belong to the specified plan."""
         plan1 = await _seed_meal_plan(session, household.id)
         plan2 = await _seed_meal_plan(session, household.id)
@@ -215,7 +248,9 @@ class TestSubmitRating:
 
         # Try to rate slot under wrong plan
         payload = {"rating": 5}
-        resp = await client.post(f"/api/v1/meal-plans/{plan2.id}/slots/{slot.id}/rating", json=payload)
+        resp = await client.post(
+            f"/api/v1/meal-plans/{plan2.id}/slots/{slot.id}/rating", json=payload
+        )
 
         assert resp.status_code == 400
 
@@ -235,7 +270,9 @@ class TestGetRating:
 
         # Submit rating
         payload = {"rating": 4, "feedback": "Good meal"}
-        submit_resp = await client.post(f"/api/v1/meal-plans/{plan.id}/slots/{slot.id}/rating", json=payload)
+        submit_resp = await client.post(
+            f"/api/v1/meal-plans/{plan.id}/slots/{slot.id}/rating", json=payload
+        )
         assert submit_resp.status_code == 201
 
         # Retrieve rating
@@ -245,7 +282,9 @@ class TestGetRating:
         assert data["rating"] == 4
         assert data["feedback"] == "Good meal"
 
-    async def test_get_rating_not_found_returns_null(self, client: AsyncClient, session: AsyncSession, household):
+    async def test_get_rating_not_found_returns_null(
+        self, client: AsyncClient, session: AsyncSession, household
+    ):
         """Returns null if no rating exists."""
         plan = await _seed_meal_plan(session, household.id)
         recipe = await _seed_recipe(session)
@@ -257,7 +296,9 @@ class TestGetRating:
         # FastAPI returns 200 with null body for Optional response models
         assert resp.json() is None
 
-    async def test_get_rating_plan_not_found_fails(self, client: AsyncClient, session: AsyncSession):
+    async def test_get_rating_plan_not_found_fails(
+        self, client: AsyncClient, session: AsyncSession
+    ):
         """Non-existent plan returns 400."""
         fake_plan_id = uuid4()
         fake_slot_id = uuid4()
@@ -265,7 +306,9 @@ class TestGetRating:
 
         assert resp.status_code == 400
 
-    async def test_get_rating_slot_not_in_plan_fails(self, client: AsyncClient, session: AsyncSession, household):
+    async def test_get_rating_slot_not_in_plan_fails(
+        self, client: AsyncClient, session: AsyncSession, household
+    ):
         """Slot must belong to the specified plan."""
         plan1 = await _seed_meal_plan(session, household.id)
         plan2 = await _seed_meal_plan(session, household.id)

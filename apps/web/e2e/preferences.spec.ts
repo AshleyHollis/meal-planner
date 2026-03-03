@@ -36,9 +36,7 @@ test.describe("Preferences Management", () => {
       });
 
       // Form should have preference type selector
-      await expect(
-        page.getByLabel(/Type|Preference Type/i),
-      ).toBeVisible();
+      await expect(page.getByLabel(/Type|Preference Type/i)).toBeVisible();
 
       // Form should have value input
       await expect(page.getByLabel(/Value/i)).toBeVisible();

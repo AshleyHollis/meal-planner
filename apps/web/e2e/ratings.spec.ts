@@ -189,7 +189,9 @@ test.describe("Recipe Ratings Flow", () => {
 
       // Add optional feedback
       const feedbackInput = page.getByLabel(/feedback|comment|notes/i);
-      if (await feedbackInput.isVisible({ timeout: 2_000 }).catch(() => false)) {
+      if (
+        await feedbackInput.isVisible({ timeout: 2_000 }).catch(() => false)
+      ) {
         await feedbackInput.fill("Delicious meal!");
       }
 
@@ -244,9 +246,7 @@ test.describe("Recipe Ratings Flow", () => {
       // Check if rating already exists
       const existingRating = page.getByText(/★|⭐|stars?|rated/i).first();
       if (
-        !(await existingRating
-          .isVisible({ timeout: 5_000 })
-          .catch(() => false))
+        !(await existingRating.isVisible({ timeout: 5_000 }).catch(() => false))
       ) {
         test.skip(true, "No ratings to verify persistence");
         return;
@@ -336,12 +336,12 @@ test.describe("Recipe Ratings Flow", () => {
       await page.waitForTimeout(1000);
 
       // Verify feedback is displayed (if UI shows it)
-      await expect(
-        page.getByText(/Great recipe|would make again/i).first(),
-      ).toBeVisible({ timeout: 10_000 }).catch(() => {
-        // Feedback might not be displayed inline - that's OK
-        return Promise.resolve();
-      });
+      await expect(page.getByText(/Great recipe|would make again/i).first())
+        .toBeVisible({ timeout: 10_000 })
+        .catch(() => {
+          // Feedback might not be displayed inline - that's OK
+          return Promise.resolve();
+        });
     });
   });
 });
