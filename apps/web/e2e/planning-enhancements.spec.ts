@@ -412,7 +412,12 @@ test.describe("Navigation", () => {
     const quickCookLink = page.getByRole("link", {
       name: /quick cook/i,
     });
-    if (await quickCookLink.first().isVisible({ timeout: 5_000 }).catch(() => false)) {
+    if (
+      await quickCookLink
+        .first()
+        .isVisible({ timeout: 5_000 })
+        .catch(() => false)
+    ) {
       await quickCookLink.first().click();
       await expect(page).toHaveURL(/quick-suggestions/);
     }
@@ -425,7 +430,12 @@ test.describe("Navigation", () => {
     const recurringLink = page.getByRole("link", {
       name: /recurring/i,
     });
-    if (await recurringLink.first().isVisible({ timeout: 5_000 }).catch(() => false)) {
+    if (
+      await recurringLink
+        .first()
+        .isVisible({ timeout: 5_000 })
+        .catch(() => false)
+    ) {
       await recurringLink.first().click();
       await expect(page).toHaveURL(/recurring-meals/);
     }
