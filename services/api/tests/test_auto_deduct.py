@@ -73,7 +73,6 @@ async def _make_recipe(session, title="Test Recipe") -> Recipe:
 async def _make_recipe_ingredient(
     session, recipe_id, ingredient_id, quantity, unit="g", is_optional=False
 ) -> RecipeIngredient:
-    now = datetime.now(UTC)
     ri = RecipeIngredient(
         id=uuid4(),
         recipe_id=recipe_id,
