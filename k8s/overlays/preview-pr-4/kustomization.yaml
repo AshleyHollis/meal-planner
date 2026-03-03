@@ -184,3 +184,12 @@ patches:
     target:
       kind: Job
       name: db-migration
+
+  # Per-PR database isolation: point ExternalSecret to PR-specific Key Vault secret
+  - target:
+      kind: ExternalSecret
+      name: db-credentials
+    patch: |-
+      - op: replace
+        path: /spec/data/0/remoteRef/key
+        value: meal-planner-sql-connection-string-pr-4
