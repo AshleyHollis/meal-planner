@@ -1,0 +1,16 @@
+{
+  "source": "plan",
+  "name": "004-planning-enhancements",
+  "basePath": "./specs/004-planning-enhancements",
+  "phase": "execution",
+  "taskIndex": 0,
+  "totalTasks": 68,
+  "taskIteration": 1,
+  "maxTaskIterations": 5,
+  "globalIteration": 1,
+  "maxGlobalIterations": 100,
+  "commitSpec": false,
+  "quickMode": true,
+  "discoveredSkills": [],
+  "awaitingApproval": false
+}
