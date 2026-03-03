@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import type { MealPlan } from "@/types";
-import { listMealPlans, createMealPlan } from "@/services/api";
+import { listMealPlans, createMealPlan, updatePlanStatus } from "@/services/api";
 import { Spinner } from "@/components/ui/Spinner";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
@@ -54,6 +54,15 @@ export default function MealPlanListPage() {
     try {
       setGenerating(true);
       setError(null);
+
+      // Auto-complete any active or draft plan to avoid 409 Conflict
+      const existing = plans.find(
+        (p) => p.status === "active" || p.status === "draft",
+      );
+      if (existing) {
+        await updatePlanStatus(existing.id, { status: "completed" });
+      }
+
       const plan = await createMealPlan({
         week_start_date: getNextMonday(),
         cuisine_preferences:
