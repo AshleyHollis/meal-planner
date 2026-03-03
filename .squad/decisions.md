@@ -36,6 +36,52 @@ CORS middleware ordering is correct. The `nullslast()` 500 error was the blocker
 
 Proposed pre-seeding completed meal plan. Dallas's analysis determined this unnecessary for MVP; accept graceful skips instead. Can revisit post-MVP with test endpoint approach.
 
+## Session 2026-03-03T0609 Frontend Gaps Closed
+
+**Resolved:** 2 decisions (Auto-complete plan on generate, LLM model directive)
+
+### Decision 13: Auto-complete Existing Plan Before Generating New One
+
+**Author:** Kane (Frontend Dev)  
+**Date:** 2026-03-03  
+**Status:** Implemented
+
+## Context
+
+The API enforces a constraint: only one active or draft meal plan per household. When the user clicks "Generate New Plan" while one already exists, the API returns 409 Conflict. Previously, the frontend displayed this as an error message (Decision 11 improved the error display), but the user still had to manually complete the old plan.
+
+## Decision
+
+The frontend now auto-completes any existing active/draft plan before creating a new one. In `handleGenerate`:
+
+1. Check `plans` state for any plan with status "active" or "draft"
+2. If found, call `updatePlanStatus(planId, { status: "completed" })`
+3. Then proceed with `createMealPlan(...)` as normal
+
+## Rationale
+
+- Users expect "Generate New Plan" to just work — they shouldn't need to understand the one-active-plan constraint
+- The old plan is implicitly superseded by the new one, so marking it "completed" is semantically correct
+- This is a frontend-only change; no backend modifications needed
+
+## Outcome
+
+- 87/87 frontend tests pass
+- TypeScript compiles clean
+- Commit `9f45365` on branch `003-personalization-ai`
+
+### Decision 14: User Directive — Latest LLM Models
+
+**Author:** Ashley Hollis (via Copilot)  
+**Date:** 2026-03-03  
+**Status:** Active (Squad coordination)
+
+The team should always use the latest LLM models. Specifically: `claude-opus-4.6` for Lead, `claude-sonnet-4.6` for Devs, `claude-haiku-4.5` for Ops/Test/Scribe. The user's Layer 1 override supersedes the Squad coordinator's default model selection table.
+
+**Rationale:** User request — captured for team memory.
+
+**Outcome:** Applied to squad spawn manifest starting 2026-03-03T060858Z.
+
 ## Session 2026-03-02T0923 UI/UX Improvements
 
 **Resolved:** 4 decisions (responsive layout, meal images, store branding, UI/UX architecture)
@@ -252,3 +298,45 @@ Meal planner needs images (meal photos, store branding), proper desktop layout (
 **Rationale:** Current text-only, mobile-first-only UI doesn't meet UX expectations.
 
 **Outcome:** Captured for team memory. Decisions 4-6 address this directive.
+
+### Decision 13: Auto-complete Existing Plan Before Generating New One
+
+**Author:** Kane (Frontend Dev)  
+**Date:** 2026-03-03  
+**Status:** Implemented
+
+## Context
+
+The API enforces a constraint: only one active or draft meal plan per household. When the user clicks "Generate New Plan" while one already exists, the API returns 409 Conflict. Previously, the frontend displayed this as an error message (Decision 11 improved the error display), but the user still had to manually complete the old plan.
+
+## Decision
+
+The frontend now auto-completes any existing active/draft plan before creating a new one. In `handleGenerate`:
+
+1. Check `plans` state for any plan with status "active" or "draft"
+2. If found, call `updatePlanStatus(planId, { status: "completed" })`
+3. Then proceed with `createMealPlan(...)` as normal
+
+## Rationale
+
+- Users expect "Generate New Plan" to just work — they shouldn't need to understand the one-active-plan constraint
+- The old plan is implicitly superseded by the new one, so marking it "completed" is semantically correct
+- This is a frontend-only change; no backend modifications needed
+
+## Outcome
+
+- 87/87 frontend tests pass
+- TypeScript compiles clean
+- Commit `9f45365` on branch `003-personalization-ai`
+
+### Decision 14: User Directive — Latest LLM Models
+
+**Author:** Ashley Hollis (via Copilot)  
+**Date:** 2026-03-03  
+**Status:** Active (Squad coordination)
+
+The team should always use the latest LLM models. Specifically: `claude-opus-4.6` for Lead, `claude-sonnet-4.6` for Devs, `claude-haiku-4.5` for Ops/Test/Scribe. The user's Layer 1 override supersedes the Squad coordinator's default model selection table.
+
+**Rationale:** User request — captured for team memory.
+
+**Outcome:** Applied to squad spawn manifest starting 2026-03-03T060858Z.

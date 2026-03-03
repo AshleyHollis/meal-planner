@@ -103,3 +103,12 @@
 - **Pattern:** Always extract and display API error details in frontend catch blocks for better UX
 - **Decision logged:** Decision 11 in team decisions.md. Apply pattern to all frontend API calls (inventory, preferences, etc.)
 - **Commit:** 5ed1955 — "fix: show actual API error message for meal plan generation failures"
+
+### Frontend gap fixes — Kane completed (2026-03-03)
+
+- **Gaps addressed:** Wire MealSlotCard into plan detail page, add recipe detail expansion, create /history page, fix favorites loading
+- **Outcome:** 87/87 frontend tests pass, TypeScript clean, Next.js build succeeds
+- **Related decisions:** Decision 13 (auto-complete existing plan), Decision 14 (latest LLM models user directive)
+- **Commit:** 9f45365 — Frontend gaps: plan detail, history page, favorites, auto-complete
+- **Impact on backend:** Frontend now expects all backend APIs (favorites, preferences, ratings) to return proper error details (per Decision 11 pattern)
+- **Status:** Ready for integration; frontend fully functional per Kane's scope
