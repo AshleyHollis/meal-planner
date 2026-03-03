@@ -287,6 +287,18 @@ jobs:
             echo "image_tag=$(echo ${{ github.sha }} | cut -c1-7)" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Write image tag file
+        run: |
+          mkdir -p /tmp/image-tag
+          echo "${{ steps.tag.outputs.image_tag }}" > /tmp/image-tag/image-tag.txt
+
+      - name: Upload image-tag artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-tag
+          path: /tmp/image-tag/image-tag.txt
+          retention-days: 1
+
   docker-build:
     name: Build ${{ matrix.service }} Image
     runs-on: ubuntu-latest
