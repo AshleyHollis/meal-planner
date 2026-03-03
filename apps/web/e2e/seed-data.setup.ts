@@ -184,6 +184,91 @@ setup("seed test data", async ({ request, baseURL }) => {
     `Inventory seeding failed: 0/${ingredients.length} items added. Backend may be returning 500 errors.`,
   ).toBeGreaterThan(0);
 
+  // ── Step 3b: Seed product mappings for shop filtering E2E tests ──────
+  console.log("[seed-data] Seeding product mappings...");
+  const shopAssignments: Array<{
+    ingredientName: string;
+    brand: string;
+    productName: string;
+    shop: string;
+    price: number;
+  }> = [
+    {
+      ingredientName: "chicken breast",
+      brand: "Coles",
+      productName: "RSPCA Chicken Breast 1kg",
+      shop: "Coles",
+      price: 12.0,
+    },
+    {
+      ingredientName: "jasmine rice",
+      brand: "SunRice",
+      productName: "Jasmine Rice 5kg",
+      shop: "Woolworths",
+      price: 9.0,
+    },
+    {
+      ingredientName: "broccoli",
+      brand: "Fresh",
+      productName: "Broccoli Head",
+      shop: "Coles",
+      price: 3.5,
+    },
+    {
+      ingredientName: "olive oil",
+      brand: "Cobram Estate",
+      productName: "Extra Virgin 750ml",
+      shop: "Aldi",
+      price: 8.5,
+    },
+  ];
+
+  let productsAdded = 0;
+  for (const mapping of shopAssignments) {
+    const ing = ingredients.find(
+      (i) => i.name.toLowerCase() === mapping.ingredientName,
+    );
+    if (!ing) {
+      console.log(
+        `[seed-data]   Skipping product for "${mapping.ingredientName}" (not in lookup)`,
+      );
+      continue;
+    }
+
+    const createResp = await request.post(`${API_URL}/api/v1/products`, {
+      headers,
+      data: {
+        ingredient_id: ing.id,
+        brand: mapping.brand,
+        product_name: mapping.productName,
+        shop: mapping.shop,
+        price: mapping.price,
+        size_desc: null,
+        notes: "Seeded by E2E setup",
+      },
+    });
+
+    if (createResp.ok() || createResp.status() === 201) {
+      productsAdded++;
+      console.log(
+        `[seed-data]   Created product: ${mapping.brand} ${mapping.productName} @ ${mapping.shop}`,
+      );
+    } else if (createResp.status() === 409) {
+      productsAdded++;
+      console.log(
+        `[seed-data]   Product already exists for ${ing.name} (409)`,
+      );
+    } else {
+      const errBody = await createResp.text().catch(() => "");
+      console.log(
+        `[seed-data]   Failed to create product for ${ing.name}: ${createResp.status()} ${errBody}`,
+      );
+    }
+  }
+  console.log(
+    `[seed-data] Products seeded: ${productsAdded}/${shopAssignments.length}`,
+  );
+
   // ── Step 4: Create a meal plan ────────────────────────────────────────
   console.log("[seed-data] Creating meal plan...");
   const weekStart = getNextMonday();
