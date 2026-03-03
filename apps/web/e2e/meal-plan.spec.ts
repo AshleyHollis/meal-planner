@@ -157,9 +157,7 @@ test.describe("Meal Plan Flow", () => {
       const generatingText = page.getByText("Generating your meal plan...");
       const failedText = page.getByText(/failed|error|0 of 0/i);
 
-      await expect(
-        weekLabel.or(generatingText).or(failedText),
-      ).toBeVisible({
+      await expect(weekLabel.or(generatingText).or(failedText)).toBeVisible({
         timeout: 30_000,
       });
 
