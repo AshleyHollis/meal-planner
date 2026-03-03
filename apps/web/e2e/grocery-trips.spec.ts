@@ -88,9 +88,12 @@ test.describe("Grocery Shop Filtering & Trips", () => {
         return;
       }
 
-      // Count all grocery item checkboxes initially
-      const allCheckboxes = page.locator('li input[type="checkbox"]');
-      const initialCount = await allCheckboxes.count();
+      // Count grocery item checkboxes in the main list (exclude trip tracker)
+      // The main list uses <ul class="divide-y ..."> while trip tracker uses <div class="bg-blue-50">
+      const mainListCheckboxes = page.locator(
+        'ul.divide-y li input[type="checkbox"]',
+      );
+      const initialCount = await mainListCheckboxes.count();
 
       if (initialCount === 0) {
         test.skip(true, "No grocery items");
@@ -122,8 +125,10 @@ test.describe("Grocery Shop Filtering & Trips", () => {
       await shopButton.click();
       await page.waitForTimeout(500);
 
-      // After clicking a shop filter, the item count should be <= initial
-      const filteredCheckboxes = page.locator('li input[type="checkbox"]');
+      // After clicking a shop filter, the main list item count should be <= initial
+      const filteredCheckboxes = page.locator(
+        'ul.divide-y li input[type="checkbox"]',
+      );
       const filteredCount = await filteredCheckboxes.count();
       expect(filteredCount).toBeLessThanOrEqual(initialCount);
 
@@ -131,7 +136,7 @@ test.describe("Grocery Shop Filtering & Trips", () => {
       await page.getByRole("button", { name: /^All/ }).click();
       await page.waitForTimeout(500);
 
-      const resetCount = await allCheckboxes.count();
+      const resetCount = await mainListCheckboxes.count();
       expect(resetCount).toBe(initialCount);
     });
   });
