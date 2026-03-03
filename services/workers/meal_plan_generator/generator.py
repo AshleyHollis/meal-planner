@@ -22,6 +22,7 @@ from shared.db.models import (
     MealSlot,
     MealSlotRating,
     MemberPreference,
+    Product,
     Recipe,
     RecipeFavorite,
     RecipeIngredient,
@@ -480,6 +481,15 @@ async def _persist_plan(
         session.add(grocery_list)
         await session.flush()
 
+        # Build product shop lookup: ingredient_id → shop
+        products_result = await session.execute(
+            select(Product).where(Product.household_id == household_id)
+        )
+        product_shop_map: dict[Any, str | None] = {
+            p.ingredient_id: p.shop for p in products_result.scalars().all()
+        }
+
+        grocery_items: list[GroceryItem] = []
         for ing_name, need in grocery_needs.items():
             on_hand = inv_map.get(ing_name, 0.0)
             needed = need["quantity"] - on_hand
@@ -495,8 +505,10 @@ async def _persist_plan(
                 ingredient_id=ing_id,
                 quantity_needed=needed,
                 unit=need["unit"],
+                preferred_store=product_shop_map.get(ing_id),
             )
             session.add(gi)
+            grocery_items.append(gi)
 
         # Update meal plan status to active
         result = await session.execute(select(MealPlan).where(MealPlan.id == meal_plan_id))

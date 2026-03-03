@@ -8,6 +8,7 @@ from uuid import UUID
 from shared.db.models.grocery import GroceryItem, GroceryList
 from shared.db.models.inventory import InventoryItem
 from shared.db.models.meal_plan import MealPlan
+from shared.db.models.product import Product
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -28,6 +29,26 @@ class GroceryService:
         stmt = select(GroceryList).where(GroceryList.meal_plan_id == meal_plan_id)
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
+
+    async def get_enriched_grocery_list(
+        self,
+        meal_plan_id: UUID,
+    ) -> tuple[GroceryList | None, dict[UUID, Product]]:
+        """Return the grocery list and a lookup of ingredient_id → Product."""
+        grocery_list = await self.get_grocery_list(meal_plan_id)
+        if grocery_list is None or not grocery_list.items:
+            return grocery_list, {}
+
+        ingredient_ids = [item.ingredient_id for item in grocery_list.items]
+        products_stmt = select(Product).where(
+            Product.household_id == self.household_id,
+            Product.ingredient_id.in_(ingredient_ids),
+        )
+        products_result = await self.session.execute(products_stmt)
+        products_lookup: dict[UUID, Product] = {
+            p.ingredient_id: p for p in products_result.scalars().all()
+        }
+        return grocery_list, products_lookup
 
     async def check_item(
         self,

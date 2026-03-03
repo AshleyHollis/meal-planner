@@ -58,7 +58,21 @@
 - **Tests:** ✅ 87/87 passed — no regressions. TypeScript clean.
 - **Commit:** `9f45365` on branch `003-personalization-ai`.
 
-### Phase 6 — Interactive Meal Cards & Recipe Details
+### Phase 7 — 005-grocery-enhancements (T014–T027)
+
+- **What changed:** 9 files — 5 new, 4 modified. Commit `4779cfe` on branch `005-grocery-enhancements`.
+- **Types (T014+T016):** Extended `GroceryItem` with `ingredient_name?`, `ingredient_category?`, `product?: ProductSummary | null`. Added `ProductSummary`, `Product`, `TripState` interfaces to `types/index.ts`. Used optional fields throughout for backwards compatibility.
+- **API (T015):** Added `Product` to imports, `CreateProductBody`/`UpdateProductBody` request types, and 5 product API functions (getProducts, createProduct, updateProduct, deleteProduct, searchProducts) to `api.ts`.
+- **ProductMappingForm (T017):** New `components/ProductMappingForm.tsx` — create/edit form with brand (required), product_name (required), size_desc, price, shop, notes. Uses updateProduct if existingProduct provided, otherwise createProduct. Inline validation, consistent Tailwind styling.
+- **GroceryItem (T018):** Fixed UUID display bug — now shows `ingredient_name ?? ingredient_id`. Shows product details (brand·name, price badge, shop tag) when linked. Shows "Link Product" button inline when not linked. Added `tripChecked` prop for trip mode visual state.
+- **tripStorage (T023):** New `services/tripStorage.ts` — localStorage trip state management with getTripState, setItemChecked, getTripProgress, clearTripsForList, isNewList. SSR-safe (`typeof window === "undefined"` guards).
+- **ShopFilter (T024):** New `components/ShopFilter.tsx` — derives distinct shops from `product?.shop`, renders "All" + per-shop tabs + "Other". Shows item counts, active tab uses store brand color. `"__other__"` sentinel for items with no product shop.
+- **TripTracker (T025):** New `components/TripTracker.tsx` — progress bar + item checklist for active shop filter. "Complete Trip" marks all trip-checked items globally via API then clears localStorage state.
+- **GroceryList (T019+T026):** Integrated ShopFilter + TripTracker at top. `selectedShop` state drives filtering + TripTracker visibility. Passes `tripChecked` to GroceryItem. Added `onProductLinked` prop.
+- **Products page (T020):** New `app/products/page.tsx` — full CRUD page. Debounced search (300ms), grouped by ingredient_name, inline edit/delete with confirmation, add form at top.
+- **Pattern note:** `"__other__"` is the sentinel used for shop filter "Other" tab (items with no product or no product.shop). ShopFilter emits this, filterByShop in GroceryList handles it.
+- **TypeScript result:** ✅ 0 errors. Lint: ✅ 0 errors (4 pre-existing auth `<a>` warnings, intentional).
+- **node_modules missing on start:** Had to run `npm install` in `apps/web` before TypeScript check worked. Not pre-installed in this environment.
 
 - **What changed:** 3 files updated, 1 file created — `meal-plan/[id]/page.tsx`, `history/page.tsx`, `layout.tsx`.
 - **Task 1 — Replace WeeklyPlanView with MealSlotCard:** Updated plan detail page to render `MealSlotCard` for each slot instead of read-only `WeeklyPlanView`. Added `onMarkCooked` and `onMarkSkipped` callbacks that call `updateSlotStatus` API, then trigger `refetch()` from polling hook to refresh data.

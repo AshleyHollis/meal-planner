@@ -10,6 +10,7 @@ from .inventory import InventoryItem
 from .leftover import Leftover
 from .meal_plan import MealPlan, MealSlot
 from .preference import MemberPreference
+from .product import Product
 from .rating import MealSlotRating
 from .recipe import Recipe, RecipeIngredient, RecipeStep
 from .staple_ingredient import StapleIngredient
@@ -28,6 +29,7 @@ __all__ = [
     "MealPlan",
     "MealSlot",
     "MemberPreference",
+    "Product",
     "Recipe",
     "RecipeFavorite",
     "RecipeIngredient",

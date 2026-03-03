@@ -14,6 +14,7 @@ from ..models.grocery import (
     UpdateGroceryItem,
 )
 from ..models.inventory import InventoryItemResponse
+from ..models.product import ProductSummary
 from ..services.grocery_service import GroceryService
 
 router = APIRouter(tags=["grocery"])
@@ -27,14 +28,40 @@ async def get_grocery_list(
     meal_plan_id: UUID,
     service: GroceryService = Depends(get_grocery_service),  # noqa: B008
 ) -> GroceryListResponse:
-    """Return the grocery list for a meal plan."""
-    grocery_list = await service.get_grocery_list(meal_plan_id)
+    """Return the grocery list for a meal plan, enriched with ingredient and product data."""
+    grocery_list, products_lookup = await service.get_enriched_grocery_list(meal_plan_id)
     if grocery_list is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Grocery list not found",
         )
-    return GroceryListResponse.model_validate(grocery_list)
+
+    enriched_items: list[GroceryItemResponse] = []
+    for item in grocery_list.items:
+        ingredient_name = item.ingredient.name if item.ingredient else ""
+        ingredient_category = item.ingredient.category if item.ingredient else ""
+        product = products_lookup.get(item.ingredient_id)
+        product_summary = ProductSummary.model_validate(product) if product else None
+        enriched_items.append(
+            GroceryItemResponse(
+                id=item.id,
+                ingredient_id=item.ingredient_id,
+                quantity_needed=item.quantity_needed,
+                unit=item.unit,
+                is_checked=item.is_checked,
+                preferred_store=item.preferred_store,
+                ingredient_name=ingredient_name,
+                ingredient_category=ingredient_category,
+                product=product_summary,
+            )
+        )
+
+    return GroceryListResponse(
+        id=grocery_list.id,
+        meal_plan_id=grocery_list.meal_plan_id,
+        created_at=grocery_list.created_at,
+        items=enriched_items,
+    )
 
 
 @router.patch(

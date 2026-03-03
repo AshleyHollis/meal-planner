@@ -7,6 +7,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from .product import ProductSummary
+
 # --- Request models ---
 
 
@@ -44,6 +46,9 @@ class GroceryItemResponse(BaseModel):
     unit: str
     is_checked: bool
     preferred_store: str | None
+    ingredient_name: str = ""
+    ingredient_category: str = ""
+    product: ProductSummary | None = None
 
 
 class GroceryListResponse(BaseModel):

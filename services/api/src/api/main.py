@@ -20,6 +20,7 @@ from .routes.meal_history import router as meal_history_router
 from .routes.meal_plans import recipes_router
 from .routes.meal_plans import router as meal_plans_router
 from .routes.preferences import router as preferences_router
+from .routes.products import router as products_router
 from .routes.ratings import router as ratings_router
 from .routes.staple_routes import router as staple_router
 
@@ -94,6 +95,7 @@ def create_app() -> FastAPI:
     app.include_router(meal_history_router)
     app.include_router(favorites_router)
     app.include_router(preferences_router)
+    app.include_router(products_router)
     app.include_router(ratings_router)
     app.include_router(leftover_router)
     app.include_router(staple_router)
