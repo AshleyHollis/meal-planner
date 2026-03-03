@@ -143,7 +143,27 @@
 - This makes the seed data endpoint idempotent while preserving the ability to track multiple batches of the same ingredient when explicitly needed (e.g., via different locations or direct DB operations).
 - All 98 API tests pass. E2E seed script now safe to run repeatedly without duplicates.
 
-### Duplicate inventory — complete three-layer fix (2026-03)
+### 005-grocery-enhancements: Product Mappings Backend (2026-03-03)
+
+- **Branch:** 005-grocery-enhancements
+- **Completed Tasks:** T001-T013 (all backend tasks for the feature)
+- Created `Product` SQLAlchemy model (`Products` table): household-scoped, maps Ingredient → purchasable product with brand, product_name, size_desc, price, shop, notes; unique constraint on (household_id, ingredient_id).
+- Added `005_grocery_products.py` migration (idempotent pattern from 004 repair migration).
+- Created Pydantic models: `CreateProduct`, `UpdateProduct`, `ProductSummary`, `ProductResponse` (includes `ingredient_name` populated via relationship).
+- Extended `GroceryItemResponse` with `ingredient_name`, `ingredient_category`, and `product: ProductSummary | None` using default values so existing serialization is backward-compatible.
+- Created `ProductService` with `list_products`, `create_product`, `update_product`, `delete_product`, `search_products` — same household-scoped pattern as `InventoryService`.
+- Extended `GroceryService` with `get_enriched_grocery_list()` that returns `(GroceryList | None, dict[UUID, Product])` — grocery list plus ingredient_id→Product lookup for enriching route responses.
+- Updated grocery route `get_grocery_list` to build enriched `GroceryItemResponse` instances manually (ingredient_name, ingredient_category, product fields).
+- Created products API router at `/api/v1/products` (GET list, POST create, PUT update, DELETE delete, GET /search).
+- Registered router in `main.py`, added `get_product_service` dependency factory.
+- Updated worker `_persist_plan()` to query Products for household, set `preferred_store` on new GroceryItems from `Product.shop` lookup.
+- 13 product endpoint tests; all 154 API tests pass, ruff clean.
+- **Key patterns learned:**
+  - After `session.flush()` + `session.refresh(product, attribute_names=["ingredient"])` the `updated_at` timestamp is NOT refreshed (TimestampMixin field). Use bare `session.refresh(product)` to reload all columns including timestamps after flush.
+  - The `/search` route must be registered BEFORE `/{product_id}` in the router to avoid path conflicts (FastAPI matches `/search` as a UUID otherwise). Keep explicit ordering in router file.
+  - For manual Pydantic construction in routes (when ORM `model_validate` is insufficient due to extra fields like `ingredient_name`), build a `_to_response(product)` helper that maps all fields explicitly.
+
+
 
 - The upsert-only fix was insufficient: existing duplicates in the live DB persisted, and the seed still accumulated quantity on repeated runs.
 - Full fix implemented in commit `14333c2`:
