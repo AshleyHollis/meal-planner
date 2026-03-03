@@ -43,3 +43,11 @@
 - The API code expects `defrost_hours` column but database schema doesn't have it yet, causing SQLAlchemy to fail on insert.
 - Migration job is configured correctly (sync-wave 1, runs before API deployment wave 2) in k8s/base-preview/migration-job.yaml.
 - Solution: Migration should run automatically on next deployment. If it continues failing, check ArgoCD/K8s logs for migration job errors.
+
+### Shared-database repair migration pattern (2026-03)
+
+- All preview environments share ONE Azure SQL database (Key Vault secret `meal-planner-sql-connection-string`). There is no per-PR database isolation.
+- Migration 003 was partially applied: `alembic_version` row shows `003` but `Leftovers` and `StapleIngredients` tables were missing. Running `alembic upgrade head` is a no-op when the version row is already correct.
+- Repair approach: create a new migration (004) with `down_revision = "003"` that checks for each object before creating it — using `INFORMATION_SCHEMA.TABLES`, `INFORMATION_SCHEMA.COLUMNS`, and `sys.indexes`. This makes the migration fully idempotent (safe on fully-applied, partially-applied, or fresh databases).
+- Helper functions `_table_exists`, `_column_exists`, `_index_exists` use `op.get_bind()` + `sa.text()` queries. The `downgrade()` is a no-op because 004 owns no new objects — 003's downgrade handles teardown.
+- All 98 API tests and 34 worker tests pass with migration 004 in place.

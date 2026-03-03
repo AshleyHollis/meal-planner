@@ -40,6 +40,23 @@ jobs:
         env:
           SWA_CLEANUP_OUTCOME: ${{ steps.swa-cleanup.outcome }}
 
+      - name: Azure Login via OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Cleanup preview database
+        id: db-cleanup
+        continue-on-error: true
+        run: scripts/workflows/cleanup-preview-db.sh
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          AZURE_SQL_SERVER: ${{ vars.AZURE_SQL_SERVER || 'sql-mealplan-prd' }}
+          AZURE_RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP || 'rg-ytsumm-prd' }}
+          KEY_VAULT_NAME: ${{ vars.KEY_VAULT_NAME || 'kv-ytsumm-prd' }}
+
       - name: Delete preview overlay from preview-overlays branch
         id: overlay-cleanup
         continue-on-error: true
@@ -91,11 +108,13 @@ jobs:
             const merged = ${{ github.event.pull_request.merged }};
             const prNumber = ${{ github.event.pull_request.number }};
             const overlayDeleted = '${{ steps.overlay-cleanup.outputs.deleted }}' === 'true';
+            const dbCleanupOutcome = '${{ steps.db-cleanup.outcome }}';
             const status = merged ? 'merged ✅' : 'closed ❌';
             const actionNote = merged
               ? 'Code has been merged to master and will be deployed to production.'
               : 'PR was closed without merging.';
             const overlayStatus = overlayDeleted ? 'Deleted ✅' : 'Not found (already cleaned)';
+            const dbStatus = dbCleanupOutcome === 'success' ? 'Deleted ✅' : dbCleanupOutcome === 'skipped' ? 'Skipped' : 'Failed ⚠️';
 
             await github.rest.issues.createComment({
               issue_number: context.issue.number,
@@ -111,6 +130,7 @@ jobs:
             | **Preview Application** | \`preview-pr-${prNumber}\` |
             | **Preview Namespace** | \`preview-pr-${prNumber}\` |
             | **Preview Overlay** | ${overlayStatus} |
+            | **Preview Database** | \`mealplanner-pr-${prNumber}\` — ${dbStatus} |
             | **SWA Staging Environment** | Being deleted |
 
             ${actionNote}
