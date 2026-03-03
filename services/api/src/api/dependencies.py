@@ -18,11 +18,11 @@ from .services.equipment_service import EquipmentService
 from .services.favorite_service import FavoriteService
 from .services.grocery_service import GroceryService
 from .services.inventory_service import InventoryService
+from .services.leftover_service import LeftoverService
 from .services.meal_history_service import MealHistoryService
 from .services.meal_plan_service import MealPlanService
 from .services.preference_service import PreferenceService
 from .services.rating_service import RatingService
-from .services.leftover_service import LeftoverService
 from .services.staple_service import StapleService
 
 

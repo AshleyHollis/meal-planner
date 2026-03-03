@@ -87,6 +87,7 @@ The team should always use the latest LLM models. Specifically: `claude-opus-4.6
 **Resolved:** 4 decisions (responsive layout, meal images, store branding, UI/UX architecture)
 
 ### Decision 4: Responsive Layout Architecture — Phase 1 (Desktop Expansion)
+
 ---
 
 ## Session 2026-03-02T0923 UI/UX Improvements

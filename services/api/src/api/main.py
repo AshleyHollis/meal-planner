@@ -15,12 +15,12 @@ from .routes.grocery import router as grocery_router
 from .routes.health import router as health_router
 from .routes.ingredients import router as ingredients_router
 from .routes.inventory import router as inventory_router
+from .routes.leftover_routes import router as leftover_router
 from .routes.meal_history import router as meal_history_router
 from .routes.meal_plans import recipes_router
 from .routes.meal_plans import router as meal_plans_router
 from .routes.preferences import router as preferences_router
 from .routes.ratings import router as ratings_router
-from .routes.leftover_routes import router as leftover_router
 from .routes.staple_routes import router as staple_router
 
 

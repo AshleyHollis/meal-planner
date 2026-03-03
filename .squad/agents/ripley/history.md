@@ -112,6 +112,7 @@
 - **Commit:** 9f45365 — Frontend gaps: plan detail, history page, favorites, auto-complete
 - **Impact on backend:** Frontend now expects all backend APIs (favorites, preferences, ratings) to return proper error details (per Decision 11 pattern)
 - **Status:** Ready for integration; frontend fully functional per Kane's scope
+
 ### Inventory POST 500 error investigation (2026-03)
 
 - Branch `002-inventory-enhancements` adds migration 003 which creates Leftovers and StapleIngredients tables and adds `defrost_hours` column to InventoryItems.
