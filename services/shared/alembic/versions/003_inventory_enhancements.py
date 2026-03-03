@@ -68,10 +68,16 @@ def upgrade() -> None:
             sa.Column("expiry_date", sa.Date(), nullable=False),
             sa.Column("used_at", sa.DateTime(), nullable=True),
             sa.Column(
-                "created_at", sa.DateTime(), nullable=False, server_default=sa.text("SYSUTCDATETIME()")
+                "created_at",
+                sa.DateTime(),
+                nullable=False,
+                server_default=sa.text("SYSUTCDATETIME()"),
             ),
             sa.Column(
-                "updated_at", sa.DateTime(), nullable=False, server_default=sa.text("SYSUTCDATETIME()")
+                "updated_at",
+                sa.DateTime(),
+                nullable=False,
+                server_default=sa.text("SYSUTCDATETIME()"),
             ),
             sa.PrimaryKeyConstraint("id"),
             sa.ForeignKeyConstraint(["meal_slot_id"], ["MealSlots.id"]),
@@ -95,15 +101,23 @@ def upgrade() -> None:
             sa.Column("min_threshold", sa.Float(), nullable=False),
             sa.Column("unit", sa.String(20), nullable=False),
             sa.Column(
-                "created_at", sa.DateTime(), nullable=False, server_default=sa.text("SYSUTCDATETIME()")
+                "created_at",
+                sa.DateTime(),
+                nullable=False,
+                server_default=sa.text("SYSUTCDATETIME()"),
             ),
             sa.Column(
-                "updated_at", sa.DateTime(), nullable=False, server_default=sa.text("SYSUTCDATETIME()")
+                "updated_at",
+                sa.DateTime(),
+                nullable=False,
+                server_default=sa.text("SYSUTCDATETIME()"),
             ),
             sa.PrimaryKeyConstraint("id"),
             sa.ForeignKeyConstraint(["household_id"], ["Households.id"]),
             sa.ForeignKeyConstraint(["ingredient_id"], ["Ingredients.id"]),
-            sa.UniqueConstraint("household_id", "ingredient_id", name="uq_staple_household_ingredient"),
+            sa.UniqueConstraint(
+                "household_id", "ingredient_id", name="uq_staple_household_ingredient"
+            ),
             sa.CheckConstraint("min_threshold > 0", name="ck_staple_threshold"),
         )
 
@@ -125,10 +139,16 @@ def upgrade() -> None:
             sa.Column("ingredient_id", UNIQUEIDENTIFIER(), nullable=True),
             sa.Column("notes", sa.String(500), nullable=True),
             sa.Column(
-                "created_at", sa.DateTime(), nullable=False, server_default=sa.text("SYSUTCDATETIME()")
+                "created_at",
+                sa.DateTime(),
+                nullable=False,
+                server_default=sa.text("SYSUTCDATETIME()"),
             ),
             sa.Column(
-                "updated_at", sa.DateTime(), nullable=False, server_default=sa.text("SYSUTCDATETIME()")
+                "updated_at",
+                sa.DateTime(),
+                nullable=False,
+                server_default=sa.text("SYSUTCDATETIME()"),
             ),
             sa.PrimaryKeyConstraint("id"),
             sa.ForeignKeyConstraint(["household_member_id"], ["HouseholdMembers.id"]),
@@ -149,7 +169,10 @@ def upgrade() -> None:
             sa.Column("household_id", UNIQUEIDENTIFIER(), nullable=False),
             sa.Column("recipe_id", UNIQUEIDENTIFIER(), nullable=False),
             sa.Column(
-                "created_at", sa.DateTime(), nullable=False, server_default=sa.text("SYSUTCDATETIME()")
+                "created_at",
+                sa.DateTime(),
+                nullable=False,
+                server_default=sa.text("SYSUTCDATETIME()"),
             ),
             sa.PrimaryKeyConstraint("id"),
             sa.ForeignKeyConstraint(["household_id"], ["Households.id"]),
@@ -170,7 +193,10 @@ def upgrade() -> None:
             sa.Column("rating", sa.Integer(), nullable=False),
             sa.Column("feedback", sa.String(500), nullable=True),
             sa.Column(
-                "created_at", sa.DateTime(), nullable=False, server_default=sa.text("SYSUTCDATETIME()")
+                "created_at",
+                sa.DateTime(),
+                nullable=False,
+                server_default=sa.text("SYSUTCDATETIME()"),
             ),
             sa.PrimaryKeyConstraint("id"),
             sa.ForeignKeyConstraint(["meal_slot_id"], ["MealSlots.id"]),
@@ -190,11 +216,18 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     conn = op.get_bind()
-    conn.execute(sa.text("IF COL_LENGTH('Recipes','cuisine_type') IS NOT NULL ALTER TABLE Recipes DROP COLUMN cuisine_type"))
+    conn.execute(
+        sa.text(
+            "IF COL_LENGTH('Recipes','cuisine_type') IS NOT NULL ALTER TABLE Recipes DROP COLUMN cuisine_type"
+        )
+    )
     conn.execute(sa.text("DROP TABLE IF EXISTS MealSlotRatings"))
     conn.execute(sa.text("DROP TABLE IF EXISTS RecipeFavorites"))
     conn.execute(sa.text("DROP TABLE IF EXISTS MemberPreferences"))
     conn.execute(sa.text("DROP TABLE IF EXISTS StapleIngredients"))
     conn.execute(sa.text("DROP TABLE IF EXISTS Leftovers"))
-    conn.execute(sa.text("IF COL_LENGTH('InventoryItems','defrost_hours') IS NOT NULL ALTER TABLE InventoryItems DROP COLUMN defrost_hours"))
-
+    conn.execute(
+        sa.text(
+            "IF COL_LENGTH('InventoryItems','defrost_hours') IS NOT NULL ALTER TABLE InventoryItems DROP COLUMN defrost_hours"
+        )
+    )
