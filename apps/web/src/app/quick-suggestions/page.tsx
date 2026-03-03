@@ -69,7 +69,8 @@ export default function QuickSuggestionsPage() {
       {!loading && !error && data && data.suggestions.length === 0 && (
         <div className="rounded-lg border border-gray-200 bg-white p-8 text-center">
           <p className="text-gray-500">
-            {data.message ?? "No suggestions available right now. Try adding more items to your inventory."}
+            {data.message ??
+              "No suggestions available right now. Try adding more items to your inventory."}
           </p>
         </div>
       )}

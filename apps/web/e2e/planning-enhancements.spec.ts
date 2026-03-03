@@ -37,7 +37,9 @@ test.describe("Quick Suggestions Page (US2)", () => {
     }
 
     // Should show either suggestion cards or empty state
-    const suggestionCard = page.locator("[data-testid='suggestion-card']").first();
+    const suggestionCard = page
+      .locator("[data-testid='suggestion-card']")
+      .first();
     const emptyState = page.getByText(/no suggestions|add.*inventory/i);
     const errorState = page.getByText(/failed|error/i);
     const getButton = page.getByRole("button", { name: /get suggestions/i });
@@ -91,19 +93,19 @@ test.describe("Recurring Meals Page (US4)", () => {
   test("recurring meals page loads with heading", async ({ page }) => {
     await page.goto("/recurring-meals");
 
-    await expect(
-      page.getByRole("heading", { name: /recurring/i }),
-    ).toBeVisible({
-      timeout: 30_000,
-    });
+    await expect(page.getByRole("heading", { name: /recurring/i })).toBeVisible(
+      {
+        timeout: 30_000,
+      },
+    );
   });
 
   test("shows add template form", async ({ page }) => {
     await page.goto("/recurring-meals");
 
-    await expect(
-      page.getByRole("heading", { name: /recurring/i }),
-    ).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByRole("heading", { name: /recurring/i })).toBeVisible(
+      { timeout: 30_000 },
+    );
 
     // Wait for page to fully load
     const spinner = page.locator('[class*="animate-spin"]');
@@ -112,7 +114,9 @@ test.describe("Recurring Meals Page (US4)", () => {
     }
 
     // Should have day-of-week selector and meal type dropdown
-    const daySelect = page.getByLabel(/day/i).or(page.locator("select").first());
+    const daySelect = page
+      .getByLabel(/day/i)
+      .or(page.locator("select").first());
     const addButton = page.getByRole("button", { name: /add|create|save/i });
 
     await expect(daySelect.or(addButton).first()).toBeVisible({
@@ -166,9 +170,9 @@ test.describe("Recurring Meals Page (US4)", () => {
           await deleteButton.click();
 
           // Verify it's removed
-          await expect(
-            page.getByText("Taco Tuesday Special"),
-          ).not.toBeVisible({ timeout: 10_000 });
+          await expect(page.getByText("Taco Tuesday Special")).not.toBeVisible({
+            timeout: 10_000,
+          });
         }
       }
     });
@@ -179,11 +183,11 @@ test.describe("Multi-Meal Plan Creation (US3)", () => {
   test("meal plan page shows meal type selector", async ({ page }) => {
     await page.goto("/meal-plan");
 
-    await expect(
-      page.getByRole("heading", { name: "Meal Plans" }),
-    ).toBeVisible({
-      timeout: 30_000,
-    });
+    await expect(page.getByRole("heading", { name: "Meal Plans" })).toBeVisible(
+      {
+        timeout: 30_000,
+      },
+    );
 
     // Wait for page load
     const spinner = page.locator('[class*="animate-spin"]');
@@ -197,9 +201,7 @@ test.describe("Multi-Meal Plan Creation (US3)", () => {
     const lunchCheckbox = page.getByLabel(/lunch/i);
 
     // At minimum, dinner should be checked by default
-    if (
-      await dinnerCheckbox.isVisible({ timeout: 5_000 }).catch(() => false)
-    ) {
+    if (await dinnerCheckbox.isVisible({ timeout: 5_000 }).catch(() => false)) {
       await expect(dinnerCheckbox).toBeChecked();
     }
 
@@ -239,9 +241,7 @@ test.describe("Multi-Meal Plan Creation (US3)", () => {
       // Enable breakfast checkbox if available
       const breakfastCheckbox = page.getByLabel(/breakfast/i);
       if (
-        await breakfastCheckbox
-          .isVisible({ timeout: 5_000 })
-          .catch(() => false)
+        await breakfastCheckbox.isVisible({ timeout: 5_000 }).catch(() => false)
       ) {
         await breakfastCheckbox.check();
       }
@@ -251,9 +251,7 @@ test.describe("Multi-Meal Plan Creation (US3)", () => {
         name: /generate/i,
       });
       if (
-        !(await generateButton
-          .isVisible({ timeout: 5_000 })
-          .catch(() => false))
+        !(await generateButton.isVisible({ timeout: 5_000 }).catch(() => false))
       ) {
         test.skip(true, "Generate button not available");
         return;
@@ -266,10 +264,7 @@ test.describe("Multi-Meal Plan Creation (US3)", () => {
           timeout: 30_000,
         });
       } catch {
-        test.skip(
-          true,
-          "Plan generation failed (backend may be unavailable)",
-        );
+        test.skip(true, "Plan generation failed (backend may be unavailable)");
         return;
       }
 
@@ -285,9 +280,9 @@ test.describe("Multi-Meal Plan Creation (US3)", () => {
       const weekLabel = page.getByText(/Week of /);
       if (await weekLabel.isVisible({ timeout: 60_000 }).catch(() => false)) {
         // At least one label should show
-        await expect(
-          breakfastLabel.or(dinnerLabel).first(),
-        ).toBeVisible({ timeout: 10_000 });
+        await expect(breakfastLabel.or(dinnerLabel).first()).toBeVisible({
+          timeout: 10_000,
+        });
       }
     });
   });
@@ -316,9 +311,7 @@ test.describe("Ingredient Substitution (US1)", () => {
       // Navigate to first plan
       const firstPlanLink = page.getByText(/Week of /).first();
       if (
-        !(await firstPlanLink
-          .isVisible({ timeout: 5_000 })
-          .catch(() => false))
+        !(await firstPlanLink.isVisible({ timeout: 5_000 }).catch(() => false))
       ) {
         test.skip(true, "No meal plans available");
         return;
@@ -332,9 +325,7 @@ test.describe("Ingredient Substitution (US1)", () => {
 
       // Click on a meal slot to expand it
       const mealCard = page.locator("[data-testid='meal-slot-card']").first();
-      if (
-        !(await mealCard.isVisible({ timeout: 5_000 }).catch(() => false))
-      ) {
+      if (!(await mealCard.isVisible({ timeout: 5_000 }).catch(() => false))) {
         // Try clicking on any recipe title
         const recipeTitle = page
           .locator("h3, h4")
@@ -354,9 +345,7 @@ test.describe("Ingredient Substitution (US1)", () => {
 
       // Look for swap buttons on ingredients
       const swapButton = page.getByRole("button", { name: /swap/i }).first();
-      if (
-        await swapButton.isVisible({ timeout: 5_000 }).catch(() => false)
-      ) {
+      if (await swapButton.isVisible({ timeout: 5_000 }).catch(() => false)) {
         await expect(swapButton).toBeVisible();
 
         // Click swap to open dialog
@@ -386,9 +375,7 @@ test.describe("Navigation", () => {
     const quickCookLink = page.getByRole("link", {
       name: /quick cook/i,
     });
-    if (
-      await quickCookLink.isVisible({ timeout: 5_000 }).catch(() => false)
-    ) {
+    if (await quickCookLink.isVisible({ timeout: 5_000 }).catch(() => false)) {
       await quickCookLink.click();
       await expect(page).toHaveURL(/quick-suggestions/);
     }
@@ -401,9 +388,7 @@ test.describe("Navigation", () => {
     const recurringLink = page.getByRole("link", {
       name: /recurring/i,
     });
-    if (
-      await recurringLink.isVisible({ timeout: 5_000 }).catch(() => false)
-    ) {
+    if (await recurringLink.isVisible({ timeout: 5_000 }).catch(() => false)) {
       await recurringLink.click();
       await expect(page).toHaveURL(/recurring-meals/);
     }

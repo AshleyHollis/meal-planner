@@ -56,8 +56,8 @@ def format_system_prompt(meal_types: list[str] | None = None) -> str:
     type_instructions = ""
     if len(effective_types) > 1:
         type_instructions = f"""
-8. For each recipe, include a "meal_type" field with one of: {', '.join(f'"{t}"' for t in effective_types)}
-9. Generate {total_recipes} total recipes: {', '.join(f'7 {t}' for t in effective_types)}
+8. For each recipe, include a "meal_type" field with one of: {", ".join(f'"{t}"' for t in effective_types)}
+9. Generate {total_recipes} total recipes: {", ".join(f"7 {t}" for t in effective_types)}
 10. Breakfast recipes should be lighter/quicker; lunch should be moderate; dinner can be more elaborate"""
 
     return f"""You are a meal planning assistant. Generate a \

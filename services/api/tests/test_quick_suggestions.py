@@ -11,8 +11,6 @@ from shared.db.models.ingredient import Ingredient
 from shared.db.models.inventory import InventoryItem
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from tests.conftest import TEST_HOUSEHOLD_ID
-
 _LLM_SUGGESTIONS_RESPONSE = """{
   "recipes": [
     {

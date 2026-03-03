@@ -66,7 +66,9 @@ describe("substituteIngredient", () => {
     });
 
     const [url, init] = fetchMock.mock.calls[1];
-    expect(url).toBe(`${API_URL}/api/v1/meal-plans/plan1/slots/slot1/substitute`);
+    expect(url).toBe(
+      `${API_URL}/api/v1/meal-plans/plan1/slots/slot1/substitute`,
+    );
     expect(init.method).toBe("POST");
     expect(JSON.parse(init.body)).toEqual({
       original_ingredient_name: "butter",
@@ -80,7 +82,10 @@ describe("substituteIngredient", () => {
     fetchMock
       .mockResolvedValueOnce(tokenResponse())
       .mockResolvedValueOnce(
-        mockResponse({ detail: "not found" }, { status: 404, statusText: "Not Found" }),
+        mockResponse(
+          { detail: "not found" },
+          { status: 404, statusText: "Not Found" },
+        ),
       );
 
     await expect(
@@ -96,10 +101,20 @@ describe("substituteIngredient includes allergen warnings", () => {
   it("returns allergen_warnings from response", async () => {
     const api = await freshApi();
     const mockResult = {
-      new_recipe: { id: "r3", title: "Nut-free Recipe", ingredients: [], steps: [] },
+      new_recipe: {
+        id: "r3",
+        title: "Nut-free Recipe",
+        ingredients: [],
+        steps: [],
+      },
       allergen_warnings: ["Contains peanuts"],
       grocery_changes: [
-        { ingredient_name: "almond milk", action: "added", quantity: 500, unit: "ml" },
+        {
+          ingredient_name: "almond milk",
+          action: "added",
+          quantity: 500,
+          unit: "ml",
+        },
       ],
     };
     fetchMock

@@ -13,9 +13,7 @@ describe("MealTypeSelector logic", () => {
   it("toggle adds a value when not present", () => {
     const selected = ["dinner"];
     const toggle = (arr: string[], value: string) =>
-      arr.includes(value)
-        ? arr.filter((v) => v !== value)
-        : [...arr, value];
+      arr.includes(value) ? arr.filter((v) => v !== value) : [...arr, value];
 
     expect(toggle(selected, "breakfast")).toEqual(["dinner", "breakfast"]);
   });
@@ -23,18 +21,14 @@ describe("MealTypeSelector logic", () => {
   it("toggle removes a value when already present", () => {
     const selected = ["dinner", "breakfast"];
     const toggle = (arr: string[], value: string) =>
-      arr.includes(value)
-        ? arr.filter((v) => v !== value)
-        : [...arr, value];
+      arr.includes(value) ? arr.filter((v) => v !== value) : [...arr, value];
 
     expect(toggle(selected, "breakfast")).toEqual(["dinner"]);
   });
 
   it("can select all meal types", () => {
     const toggle = (arr: string[], value: string) =>
-      arr.includes(value)
-        ? arr.filter((v) => v !== value)
-        : [...arr, value];
+      arr.includes(value) ? arr.filter((v) => v !== value) : [...arr, value];
 
     let selected: string[] = ["dinner"];
     selected = toggle(selected, "breakfast");
@@ -44,9 +38,7 @@ describe("MealTypeSelector logic", () => {
 
   it("can deselect all meal types", () => {
     const toggle = (arr: string[], value: string) =>
-      arr.includes(value)
-        ? arr.filter((v) => v !== value)
-        : [...arr, value];
+      arr.includes(value) ? arr.filter((v) => v !== value) : [...arr, value];
 
     let selected = ["dinner"];
     selected = toggle(selected, "dinner");

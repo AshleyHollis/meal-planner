@@ -591,7 +591,10 @@ export async function getDefrostReminders(
 export async function substituteIngredient(
   planId: string,
   slotId: string,
-  data: { original_ingredient_name: string; replacement_ingredient_name: string },
+  data: {
+    original_ingredient_name: string;
+    replacement_ingredient_name: string;
+  },
 ): Promise<SubstitutionResult> {
   return fetchApi<SubstitutionResult>(
     `/api/v1/meal-plans/${planId}/slots/${slotId}/substitute`,
@@ -607,7 +610,9 @@ export async function getQuickSuggestions(
   maxResults?: number,
 ): Promise<QuickSuggestionsResponse> {
   const params = maxResults ? `?max_results=${maxResults}` : "";
-  return fetchApi<QuickSuggestionsResponse>(`/api/v1/quick-suggestions${params}`);
+  return fetchApi<QuickSuggestionsResponse>(
+    `/api/v1/quick-suggestions${params}`,
+  );
 }
 
 // ---------------------------------------------------------------------------

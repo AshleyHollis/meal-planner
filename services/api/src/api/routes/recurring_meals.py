@@ -26,9 +26,7 @@ async def list_recurring_meals(
     return [RecurringMealTemplateResponse.model_validate(t) for t in templates]
 
 
-@router.post(
-    "", response_model=RecurringMealTemplateResponse, status_code=status.HTTP_201_CREATED
-)
+@router.post("", response_model=RecurringMealTemplateResponse, status_code=status.HTTP_201_CREATED)
 async def create_recurring_meal(
     data: CreateRecurringMealTemplate,
     service: RecurringMealService = Depends(get_recurring_meal_service),

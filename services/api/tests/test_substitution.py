@@ -12,7 +12,6 @@ from shared.db.models.meal_plan import MealPlan, MealSlot
 from shared.db.models.recipe import Recipe, RecipeIngredient, RecipeStep
 from sqlalchemy.ext.asyncio import AsyncSession
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -143,9 +142,7 @@ async def _seed_recipe_with_slot(
 @pytest.mark.asyncio
 async def test_substitute_ingredient_success(client, household, session):
     """POST substitute returns 200 with new recipe when substitution succeeds."""
-    plan, slot, recipe, chicken, pasta = await _seed_recipe_with_slot(
-        session, household.id
-    )
+    plan, slot, recipe, chicken, pasta = await _seed_recipe_with_slot(session, household.id)
 
     with patch(
         "api.services.substitution_service._call_llm",
@@ -170,9 +167,7 @@ async def test_substitute_ingredient_success(client, household, session):
 @pytest.mark.asyncio
 async def test_substitute_ingredient_not_found_in_recipe(client, household, session):
     """POST substitute returns 400 when ingredient not in recipe."""
-    plan, slot, recipe, chicken, pasta = await _seed_recipe_with_slot(
-        session, household.id
-    )
+    plan, slot, recipe, chicken, pasta = await _seed_recipe_with_slot(session, household.id)
 
     with patch(
         "api.services.substitution_service._call_llm",
@@ -193,9 +188,7 @@ async def test_substitute_ingredient_not_found_in_recipe(client, household, sess
 @pytest.mark.asyncio
 async def test_substitute_slot_not_found(client, household, session):
     """POST substitute returns 404 when slot does not exist."""
-    plan, slot, recipe, chicken, pasta = await _seed_recipe_with_slot(
-        session, household.id
-    )
+    plan, slot, recipe, chicken, pasta = await _seed_recipe_with_slot(session, household.id)
 
     fake_slot_id = uuid4()
     with patch(
@@ -214,13 +207,9 @@ async def test_substitute_slot_not_found(client, household, session):
 
 
 @pytest.mark.asyncio
-async def test_substitute_grocery_changes_include_removed_ingredient(
-    client, household, session
-):
+async def test_substitute_grocery_changes_include_removed_ingredient(client, household, session):
     """Grocery changes should flag the original ingredient as removed."""
-    plan, slot, recipe, chicken, pasta = await _seed_recipe_with_slot(
-        session, household.id
-    )
+    plan, slot, recipe, chicken, pasta = await _seed_recipe_with_slot(session, household.id)
 
     with patch(
         "api.services.substitution_service._call_llm",

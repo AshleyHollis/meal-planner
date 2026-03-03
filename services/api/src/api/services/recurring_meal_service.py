@@ -37,9 +37,7 @@ class RecurringMealService:
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
 
-    async def create_template(
-        self, data: CreateRecurringMealTemplate
-    ) -> RecurringMealTemplate:
+    async def create_template(self, data: CreateRecurringMealTemplate) -> RecurringMealTemplate:
         """Create a new recurring meal template.
 
         Raises:

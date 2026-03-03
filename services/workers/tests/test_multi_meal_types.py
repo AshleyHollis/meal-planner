@@ -186,8 +186,6 @@ class TestMultiMealValidator:
     def test_three_types_21_recipes_passes(self):
         recipes = [_make_recipe(title=f"R{i}") for i in range(21)]
         plan = _make_plan(recipes=recipes)
-        errors = validate_constraints(
-            plan, [], {}, meal_types=["breakfast", "lunch", "dinner"]
-        )
+        errors = validate_constraints(plan, [], {}, meal_types=["breakfast", "lunch", "dinner"])
         count_errors = [e for e in errors if "Expected ~21" in e]
         assert len(count_errors) == 0

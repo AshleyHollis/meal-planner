@@ -87,6 +87,7 @@ Per-plan, not persistent. Each generation starts fresh, avoids stale preferences
 ### Only One New DB Model — RecurringMealTemplate
 
 The only new table required is `RecurringMealTemplates` (US4). The other three features leverage existing schema:
+
 - **US1 (Substitution)**: Uses existing `Recipe.source_recipe_id` for lineage — substituted recipes are new Recipe rows linked to originals.
 - **US2 (Quick Suggestions)**: No persistence — synchronous LLM call, results are ephemeral.
 - **US3 (Multi-Meal)**: `MealSlot.meal_type` is already `String(20)` with a unique constraint on `(meal_plan_id, day, meal_type)`. The schema supports breakfast/lunch/dinner out of the box — only the worker hardcodes "dinner".
@@ -127,5 +128,5 @@ Next migration is `005_planning_enhancements.py`. The existing migrations are 00
 - `services/shared/shared/db/models/meal_plan.py` — MealSlot already has meal_type:String(20) with uq_slot_plan_day_type constraint
 - `services/shared/shared/db/models/recipe.py` — Recipe already has source_recipe_id for lineage
 - `services/workers/meal_plan_generator/generator.py:461` — Slot creation hardcodes meal_type="dinner"
-- `services/api/src/api/services/meal_plan_service.py` — _call_llm() pattern for synchronous LLM calls
+- `services/api/src/api/services/meal_plan_service.py` — \_call_llm() pattern for synchronous LLM calls
 - `services/workers/meal_plan_generator/prompts.py` — build_prompt() already accepts personalization kwargs

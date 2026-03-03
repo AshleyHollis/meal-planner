@@ -87,7 +87,9 @@ describe("listRecurringMeals", () => {
       .mockResolvedValueOnce(mockResponse([mockTemplate]));
 
     const result = await api.listRecurringMeals();
-    expect(fetchMock.mock.calls[1][0]).toBe(`${API_URL}/api/v1/recurring-meals`);
+    expect(fetchMock.mock.calls[1][0]).toBe(
+      `${API_URL}/api/v1/recurring-meals`,
+    );
     expect(result).toHaveLength(1);
     expect(result[0].id).toBe("rt1");
   });

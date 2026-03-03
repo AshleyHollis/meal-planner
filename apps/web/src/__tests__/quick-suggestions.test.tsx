@@ -71,7 +71,9 @@ describe("getQuickSuggestions", () => {
       .mockResolvedValueOnce(mockResponse(mockData));
 
     const result = await api.getQuickSuggestions();
-    expect(fetchMock.mock.calls[1][0]).toBe(`${API_URL}/api/v1/quick-suggestions`);
+    expect(fetchMock.mock.calls[1][0]).toBe(
+      `${API_URL}/api/v1/quick-suggestions`,
+    );
     expect(result.suggestions).toHaveLength(1);
     expect(result.suggestions[0].title).toBe("Quick Pasta");
   });

@@ -8,7 +8,10 @@ interface QuickSuggestionCardProps {
   onCookThis: (suggestion: QuickSuggestion) => void;
 }
 
-function QuickSuggestionCard({ suggestion, onCookThis }: QuickSuggestionCardProps) {
+function QuickSuggestionCard({
+  suggestion,
+  onCookThis,
+}: QuickSuggestionCardProps) {
   return (
     <div className="flex flex-col overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
       <div className="p-4">
@@ -38,7 +41,9 @@ function QuickSuggestionCard({ suggestion, onCookThis }: QuickSuggestionCardProp
                   >
                     {ing.on_hand ? "✓" : "✗"}
                   </span>
-                  <span className={ing.on_hand ? "text-gray-700" : "text-gray-400"}>
+                  <span
+                    className={ing.on_hand ? "text-gray-700" : "text-gray-400"}
+                  >
                     {ing.quantity} {ing.unit} {ing.name}
                   </span>
                 </li>

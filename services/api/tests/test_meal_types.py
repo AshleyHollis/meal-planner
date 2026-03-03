@@ -6,10 +6,9 @@ from datetime import UTC, datetime, timedelta
 from unittest.mock import patch
 
 import pytest
-from sqlalchemy.ext.asyncio import AsyncSession
-
 from api.models.meal_plan import CreateMealPlan
 from api.services.meal_plan_service import MealPlanService
+from sqlalchemy.ext.asyncio import AsyncSession
 
 
 def _next_monday() -> datetime:
@@ -92,12 +91,8 @@ class TestMealTypesInQueueMessage:
         assert "meal_types" not in call_args
 
     @patch("api.services.meal_plan_service.enqueue_message")
-    async def test_meal_types_single_dinner(
-        self, mock_enqueue, session: AsyncSession, household
-    ):
+    async def test_meal_types_single_dinner(self, mock_enqueue, session: AsyncSession, household):
         svc = MealPlanService(session, household.id)
-        await svc.create_plan(
-            CreateMealPlan(week_start_date=_next_monday(), meal_types=["dinner"])
-        )
+        await svc.create_plan(CreateMealPlan(week_start_date=_next_monday(), meal_types=["dinner"]))
         call_args = mock_enqueue.call_args[0][0]
         assert call_args["meal_types"] == ["dinner"]

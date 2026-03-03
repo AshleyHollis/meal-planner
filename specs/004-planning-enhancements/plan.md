@@ -29,17 +29,17 @@ This feature adds 1 new model (RecurringMealTemplate) — well within complexity
 
 ### RecurringMealTemplate (new table: `RecurringMealTemplates`)
 
-| Column         | Type                      | Constraints                                |
-| -------------- | ------------------------- | ------------------------------------------ |
-| `id`           | `UUID` (UNIQUEIDENTIFIER) | PK, default `uuid4()`                      |
-| `household_id` | `UUID`                    | FK → `Households.id`, NOT NULL             |
-| `day`          | `Integer`                 | NOT NULL, CHECK 0-6 (Mon=0 through Sun=6)  |
-| `meal_type`    | `String(20)`              | NOT NULL, e.g., "breakfast", "lunch", "dinner" |
-| `recipe_id`    | `UUID`                    | FK → `Recipes.id`, NULLABLE                |
+| Column         | Type                      | Constraints                                      |
+| -------------- | ------------------------- | ------------------------------------------------ |
+| `id`           | `UUID` (UNIQUEIDENTIFIER) | PK, default `uuid4()`                            |
+| `household_id` | `UUID`                    | FK → `Households.id`, NOT NULL                   |
+| `day`          | `Integer`                 | NOT NULL, CHECK 0-6 (Mon=0 through Sun=6)        |
+| `meal_type`    | `String(20)`              | NOT NULL, e.g., "breakfast", "lunch", "dinner"   |
+| `recipe_id`    | `UUID`                    | FK → `Recipes.id`, NULLABLE                      |
 | `recipe_title` | `String(300)`             | NULLABLE — free-text hint when recipe_id is NULL |
-| `is_active`    | `Boolean`                 | NOT NULL, default `True`                   |
-| `created_at`   | `DateTime`                | NOT NULL, default `sysutcdatetime()`        |
-| `updated_at`   | `DateTime`                | NOT NULL, default `sysutcdatetime()`, onupdate |
+| `is_active`    | `Boolean`                 | NOT NULL, default `True`                         |
+| `created_at`   | `DateTime`                | NOT NULL, default `sysutcdatetime()`             |
+| `updated_at`   | `DateTime`                | NOT NULL, default `sysutcdatetime()`, onupdate   |
 
 **Constraints**: `UNIQUE(household_id, day, meal_type)` — one template per day/meal-type per household.
 **Indexes**: `ix_recurring_templates_household` on `household_id`.
@@ -102,11 +102,12 @@ class QuickSuggestionsResponse(BaseModel):
 
 ### Ingredient Substitution — `/api/v1/meal-plans/{plan_id}/slots/{slot_id}/substitute`
 
-| Method | Path                                                        | Description                          | Request Body           | Response                  |
-| ------ | ----------------------------------------------------------- | ------------------------------------ | ---------------------- | ------------------------- |
-| `POST` | `/api/v1/meal-plans/{plan_id}/slots/{slot_id}/substitute`   | Substitute an ingredient in a recipe | `SubstitutionRequest`  | `SubstitutionResponse`    |
+| Method | Path                                                      | Description                          | Request Body          | Response               |
+| ------ | --------------------------------------------------------- | ------------------------------------ | --------------------- | ---------------------- |
+| `POST` | `/api/v1/meal-plans/{plan_id}/slots/{slot_id}/substitute` | Substitute an ingredient in a recipe | `SubstitutionRequest` | `SubstitutionResponse` |
 
 **Logic**:
+
 1. Load recipe from slot, validate `original_ingredient_name` exists.
 2. Build substitution prompt with full recipe context + allergy constraints.
 3. Call LLM synchronously (like adapt_recipe pattern in meal_plan_service.py).
@@ -119,11 +120,12 @@ class QuickSuggestionsResponse(BaseModel):
 
 ### What Can I Make — `/api/v1/quick-suggestions`
 
-| Method | Path                        | Description                              | Query Params           | Response                     |
-| ------ | --------------------------- | ---------------------------------------- | ---------------------- | ---------------------------- |
-| `GET`  | `/api/v1/quick-suggestions` | Get recipe suggestions from inventory    | `max_results` (default 5) | `QuickSuggestionsResponse`   |
+| Method | Path                        | Description                           | Query Params              | Response                   |
+| ------ | --------------------------- | ------------------------------------- | ------------------------- | -------------------------- |
+| `GET`  | `/api/v1/quick-suggestions` | Get recipe suggestions from inventory | `max_results` (default 5) | `QuickSuggestionsResponse` |
 
 **Logic**:
+
 1. Load household inventory (with ingredients and expiry dates).
 2. Build suggestion prompt — "suggest recipes using these ingredients, prioritize expiring items."
 3. Call LLM synchronously via existing `_call_llm()` pattern.
@@ -134,33 +136,37 @@ class QuickSuggestionsResponse(BaseModel):
 
 ### Recurring Templates — `/api/v1/recurring-meals`
 
-| Method   | Path                              | Description                    | Request Body                   | Response                            |
-| -------- | --------------------------------- | ------------------------------ | ------------------------------ | ----------------------------------- |
-| `GET`    | `/api/v1/recurring-meals`         | List household templates       | —                              | `list[RecurringMealTemplateResponse]` |
-| `POST`   | `/api/v1/recurring-meals`         | Create a template              | `CreateRecurringMealTemplate`  | `RecurringMealTemplateResponse` (201) |
-| `PATCH`  | `/api/v1/recurring-meals/{id}`    | Update a template              | `UpdateRecurringMealTemplate`  | `RecurringMealTemplateResponse`      |
-| `DELETE` | `/api/v1/recurring-meals/{id}`    | Delete a template              | —                              | 204 No Content                      |
+| Method   | Path                           | Description              | Request Body                  | Response                              |
+| -------- | ------------------------------ | ------------------------ | ----------------------------- | ------------------------------------- |
+| `GET`    | `/api/v1/recurring-meals`      | List household templates | —                             | `list[RecurringMealTemplateResponse]` |
+| `POST`   | `/api/v1/recurring-meals`      | Create a template        | `CreateRecurringMealTemplate` | `RecurringMealTemplateResponse` (201) |
+| `PATCH`  | `/api/v1/recurring-meals/{id}` | Update a template        | `UpdateRecurringMealTemplate` | `RecurringMealTemplateResponse`       |
+| `DELETE` | `/api/v1/recurring-meals/{id}` | Delete a template        | —                             | 204 No Content                        |
 
 **Service**: `RecurringMealService(session, household_id)` — CRUD with unique constraint enforcement.
 
 ### Pydantic Models (new in `services/api/src/api/models/`)
 
 **`substitution.py`**:
+
 - `SubstitutionRequest`: `original_ingredient_name: str`, `replacement_ingredient_name: str`
 - `SubstitutionResponse`: `new_recipe: RecipeResponse`, `allergen_warnings: list[str]`, `grocery_changes: list[GroceryChangeItem]`
 - `GroceryChangeItem`: `ingredient_name: str`, `action: str`, `quantity: float`, `unit: str`
 
 **`quick_suggestion.py`**:
+
 - `QuickSuggestion`: `title`, `description`, `prep_time_min`, `cook_time_min`, `servings`, `ingredients: list[SuggestionIngredient]`
 - `SuggestionIngredient`: `name`, `quantity`, `unit`, `on_hand: bool`
 - `QuickSuggestionsResponse`: `suggestions: list[QuickSuggestion]`, `message: str | None`
 
 **`recurring_meal.py`**:
+
 - `CreateRecurringMealTemplate`: `day: int` (0-6), `meal_type: str`, `recipe_id: UUID | None`, `recipe_title: str | None`
 - `UpdateRecurringMealTemplate`: all fields optional
 - `RecurringMealTemplateResponse`: all fields + `id`, `is_active`, `created_at`
 
 **`meal_plan.py`** (modify existing):
+
 - Add `meal_types: list[str] | None = None` to `CreateMealPlan`
 
 ## Worker Changes
@@ -181,6 +187,7 @@ def build_substitution_prompt(
 ```
 
 Returns a prompt instructing the AI to:
+
 1. Replace `original_ingredient` with `replacement_ingredient`
 2. Adjust quantities for the new ingredient
 3. Update all cooking steps that reference the original ingredient
@@ -221,6 +228,7 @@ When `meal_types=["breakfast", "dinner"]`, the prompt says "7-day breakfast and 
 ### Generator (`generator.py`)
 
 Extend `generate_meal_plan()`:
+
 1. Read `meal_types` from queue message (default `["dinner"]`).
 2. Load recurring templates for the household.
 3. Pre-fill slots from recurring templates.
@@ -228,6 +236,7 @@ Extend `generate_meal_plan()`:
 5. Parse response — create slots with correct `meal_type` per recipe.
 
 Extend `_persist_plan()`:
+
 1. Accept `meal_types` parameter.
 2. Create MealSlot with correct `meal_type` for each recipe.
 3. For multi-meal plans: iterate by meal type then by day.
@@ -235,6 +244,7 @@ Extend `_persist_plan()`:
 ### Validator (`validator.py`)
 
 Extend `validate_constraints()`:
+
 1. When `meal_types` specified, verify recipe count matches `len(meal_types) * 7` (±2 tolerance).
 2. Verify each recipe has appropriate `cuisine_type` or `meal_type_hint` from the AI.
 
@@ -254,6 +264,7 @@ class QuickSuggestionPlan(BaseModel):
 ### New Pages
 
 **`/quick-suggestions`** — What Can I Make Right Now:
+
 - Button on dashboard "What can I make?" or dedicated page
 - Shows loading state while LLM processes
 - Displays 3-5 recipe cards with ingredients (flagged on-hand vs. need-to-buy)
@@ -263,6 +274,7 @@ class QuickSuggestionPlan(BaseModel):
 ### New Components
 
 **`SubstitutionDialog.tsx`**:
+
 - Modal/dialog triggered from recipe ingredient list
 - Select ingredient to replace, type replacement ingredient name
 - Shows loading state during AI processing
@@ -271,16 +283,19 @@ class QuickSuggestionPlan(BaseModel):
 - Allergen warning banner if applicable
 
 **`QuickSuggestionCard.tsx`**:
+
 - Recipe card showing title, description, prep/cook time
 - Ingredient list with on-hand checkmarks
 - "Cook This" action button
 
 **`RecurringMealManager.tsx`**:
+
 - List of recurring templates (day, meal_type, recipe title)
 - Add/edit/delete template UI
 - Day-of-week selector, meal type dropdown, recipe search/free-text
 
 **`MealTypeSelector.tsx`**:
+
 - Multi-checkbox in plan creation flow: ☑ Breakfast ☑ Lunch ☑ Dinner
 - Default: only Dinner checked
 - Passes `meal_types` array to `createMealPlan()`
@@ -288,16 +303,19 @@ class QuickSuggestionPlan(BaseModel):
 ### Modified Components
 
 **`MealSlotCard.tsx`**:
+
 - Add "Substitute Ingredient" button/menu on each ingredient row
 - Trigger SubstitutionDialog on click
 - After substitution, refresh slot data
 
 **`WeeklyPlanView.tsx`**:
+
 - Group slots by meal type within each day when multiple meal types present
 - Show meal type label ("🌅 Breakfast", "🍽️ Lunch", "🌙 Dinner")
 - Handle 1-3 rows per day depending on requested meal types
 
 **`CreateMealPlan` flow** (existing plan creation UI):
+
 - Add MealTypeSelector component
 - Pass `meal_types` in request body
 

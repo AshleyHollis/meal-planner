@@ -51,8 +51,9 @@ Wrote `specs/004-planning-enhancements/` artifacts (spec.md, plan.md, tasks.md) 
 Artifacts staged. Decision 5 committed to decisions.md. Orchestration log at 2026-03-03T1121-dallas.md.
 
 Key file paths:
+
 - `services/shared/shared/db/models/meal_plan.py` — MealSlot already has meal_type:String(20) with uq_slot_plan_day_type constraint
 - `services/shared/shared/db/models/recipe.py` — Recipe already has source_recipe_id for lineage
 - `services/workers/meal_plan_generator/generator.py:461` — Slot creation hardcodes meal_type="dinner"
-- `services/api/src/api/services/meal_plan_service.py` — _call_llm() pattern for synchronous LLM calls
+- `services/api/src/api/services/meal_plan_service.py` — \_call_llm() pattern for synchronous LLM calls
 - `services/workers/meal_plan_generator/prompts.py` — build_prompt() already accepts personalization kwargs

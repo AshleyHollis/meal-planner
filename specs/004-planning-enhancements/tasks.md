@@ -20,7 +20,7 @@
 **Purpose**: Create SQLAlchemy model and Alembic migration for RecurringMealTemplate — foundation for US4 recurring meals.
 
 - [ ] T001 [US4] Create RecurringMealTemplate SQLAlchemy model in `services/shared/shared/db/models/recurring_meal.py` — UUID PK, household_id FK (Households), day (Integer CHECK 0-6), meal_type (String(20)), recipe_id FK (Recipes, nullable), recipe_title (String(300), nullable), is_active (Boolean, default True), TimestampMixin. UNIQUE(household_id, day, meal_type). Index on household_id. Relationship: `recipe` → Recipe (nullable, lazy="selectin").
-- [ ] T002 [US4] Export RecurringMealTemplate in `services/shared/shared/db/models/__init__.py` — add import and __all__ entry.
+- [ ] T002 [US4] Export RecurringMealTemplate in `services/shared/shared/db/models/__init__.py` — add import and **all** entry.
 - [ ] T003 [US4] Create Alembic migration `services/shared/alembic/versions/005_planning_enhancements.py` — create RecurringMealTemplates table with all columns, FKs, unique constraint on (household_id, day, meal_type), CHECK on day (0-6), index on household_id. Downgrade drops the table.
 
 ### V1 — Model & Migration Checkpoint
@@ -42,7 +42,7 @@
 
 ### Service Layer
 
-- [ ] T005 [US1] Create SubstitutionService in `services/api/src/api/services/substitution_service.py` — `substitute_ingredient(plan_id, slot_id, request)` method: (1) load recipe from slot, validate original_ingredient exists; (2) check allergens via MemberPreference query — if replacement matches any household allergy, add warning; (3) build substitution prompt (call to worker prompts.py function); (4) call LLM via _call_llm pattern from meal_plan_service.py; (5) parse response into new Recipe with source_recipe_id=original; (6) persist new recipe + ingredients + steps; (7) update MealSlot.recipe_id; (8) recalculate grocery list differences; (9) return SubstitutionResponse.
+- [ ] T005 [US1] Create SubstitutionService in `services/api/src/api/services/substitution_service.py` — `substitute_ingredient(plan_id, slot_id, request)` method: (1) load recipe from slot, validate original_ingredient exists; (2) check allergens via MemberPreference query — if replacement matches any household allergy, add warning; (3) build substitution prompt (call to worker prompts.py function); (4) call LLM via \_call_llm pattern from meal_plan_service.py; (5) parse response into new Recipe with source_recipe_id=original; (6) persist new recipe + ingredients + steps; (7) update MealSlot.recipe_id; (8) recalculate grocery list differences; (9) return SubstitutionResponse.
 
 ### Prompt Builder
 
@@ -87,7 +87,7 @@
 
 ### Service Layer
 
-- [ ] T015 [US2] Create QuickSuggestionService in `services/api/src/api/services/quick_suggestion_service.py` — `get_suggestions(max_results)` method: (1) load household inventory with ingredients; (2) identify expiring items (sorted soonest first); (3) load member preferences + allergens; (4) build suggestion prompt; (5) call LLM synchronously via _call_llm pattern; (6) parse response; (7) flag each ingredient as on_hand by matching against inventory; (8) handle empty inventory case with message. Return QuickSuggestionsResponse.
+- [ ] T015 [US2] Create QuickSuggestionService in `services/api/src/api/services/quick_suggestion_service.py` — `get_suggestions(max_results)` method: (1) load household inventory with ingredients; (2) identify expiring items (sorted soonest first); (3) load member preferences + allergens; (4) build suggestion prompt; (5) call LLM synchronously via \_call_llm pattern; (6) parse response; (7) flag each ingredient as on_hand by matching against inventory; (8) handle empty inventory case with message. Return QuickSuggestionsResponse.
 
 ### Routes
 
@@ -342,16 +342,16 @@ Phases 1-4 can all proceed in parallel (different files, no conflicts). Phase 5 
 
 ## Task Summary
 
-| Phase                                    | Tasks     | Tests      | Checkpoints |
-| ---------------------------------------- | --------- | ---------- | ----------- |
-| 1. Model & Migration (US4)               | T001–T003 | —          | V001–V002   |
-| 2. Substitution API (US1)                | T004–T011 | T010–T011  | V003–V005   |
-| 3. Quick Suggestions API (US2)           | T012–T020 | T019–T020  | V006–V008   |
-| 4. Multi-Meal Planning (US3)             | T021–T032 | T029–T032  | V009–V010   |
-| 5. Recurring Meals API (US4)             | T033–T043 | T041–T043  | V011–V012   |
-| 6. Frontend Substitution (US1)           | T044–T048 | T048       | V013–V015   |
-| 7. Frontend Quick Suggestions (US2)      | T049–T053 | T053       | V016–V018   |
+| Phase                                        | Tasks     | Tests     | Checkpoints |
+| -------------------------------------------- | --------- | --------- | ----------- |
+| 1. Model & Migration (US4)                   | T001–T003 | —         | V001–V002   |
+| 2. Substitution API (US1)                    | T004–T011 | T010–T011 | V003–V005   |
+| 3. Quick Suggestions API (US2)               | T012–T020 | T019–T020 | V006–V008   |
+| 4. Multi-Meal Planning (US3)                 | T021–T032 | T029–T032 | V009–V010   |
+| 5. Recurring Meals API (US4)                 | T033–T043 | T041–T043 | V011–V012   |
+| 6. Frontend Substitution (US1)               | T044–T048 | T048      | V013–V015   |
+| 7. Frontend Quick Suggestions (US2)          | T049–T053 | T053      | V016–V018   |
 | 8. Frontend Multi-Meal & Recurring (US3,US4) | T054–T063 | T062–T063 | V019–V021   |
-| 9. E2E + Polish                          | T064–T068 | T064–T068  | V022–V026   |
+| 9. E2E + Polish                              | T064–T068 | T064–T068 | V022–V026   |
 
 **Total: 68 tasks + 26 verification checkpoints = 94 items**

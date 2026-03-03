@@ -136,7 +136,11 @@ function WeeklyPlanView({
         {DAY_LABELS.map((label, dayIndex) => {
           const daySlots = slotsByDay.get(dayIndex) ?? [];
           // Sort by meal_type order: breakfast, lunch, dinner
-          const ORDER: Record<string, number> = { breakfast: 0, lunch: 1, dinner: 2 };
+          const ORDER: Record<string, number> = {
+            breakfast: 0,
+            lunch: 1,
+            dinner: 2,
+          };
           const sorted = [...daySlots].sort(
             (a, b) => (ORDER[a.meal_type] ?? 3) - (ORDER[b.meal_type] ?? 3),
           );
@@ -184,10 +188,14 @@ function WeeklyPlanView({
                               </p>
                               <div className="mt-0.5 flex items-center gap-3 text-xs text-gray-600">
                                 {recipe.prep_time_min !== null && (
-                                  <span>Prep: {formatTime(recipe.prep_time_min)}</span>
+                                  <span>
+                                    Prep: {formatTime(recipe.prep_time_min)}
+                                  </span>
                                 )}
                                 {recipe.cook_time_min !== null && (
-                                  <span>Cook: {formatTime(recipe.cook_time_min)}</span>
+                                  <span>
+                                    Cook: {formatTime(recipe.cook_time_min)}
+                                  </span>
                                 )}
                               </div>
                               {equipmentTags.length > 0 && (

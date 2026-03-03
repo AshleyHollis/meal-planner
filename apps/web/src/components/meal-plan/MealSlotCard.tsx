@@ -295,7 +295,8 @@ function MealSlotCard({
                           onClick={() =>
                             setSwapDialog({
                               open: true,
-                              ingredientName: ing.ingredient_name || "ingredient",
+                              ingredientName:
+                                ing.ingredient_name || "ingredient",
                             })
                           }
                           className="ml-1 shrink-0 rounded px-1 py-0.5 text-xs text-blue-500 hover:bg-blue-50 hover:text-blue-700"

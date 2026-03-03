@@ -82,7 +82,9 @@ function RecurringMealManager({ initialTemplates }: RecurringMealManagerProps) {
     setSubmitting(true);
     setError(null);
     try {
-      const updated = await updateRecurringMeal(id, { recipe_title: editTitle });
+      const updated = await updateRecurringMeal(id, {
+        recipe_title: editTitle,
+      });
       setTemplates((prev) => prev.map((t) => (t.id === id ? updated : t)));
       setEditingId(null);
     } catch (err) {
@@ -113,7 +115,10 @@ function RecurringMealManager({ initialTemplates }: RecurringMealManagerProps) {
       {templates.length > 0 && (
         <ul className="divide-y divide-gray-200 rounded-lg border border-gray-200 bg-white">
           {templates.map((t) => (
-            <li key={t.id} className="flex items-center justify-between gap-3 px-4 py-3">
+            <li
+              key={t.id}
+              className="flex items-center justify-between gap-3 px-4 py-3"
+            >
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium text-gray-900">
                   {DAY_NAMES[t.day] ?? `Day ${t.day}`} —{" "}

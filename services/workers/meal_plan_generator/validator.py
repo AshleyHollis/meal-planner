@@ -85,7 +85,11 @@ def validate_constraints(
                     errors.append(f"{label}: contains allergen ingredient '{ing.ingredient_name}'")
 
         # 6. Track cuisine matches for validation
-        if cuisine_preferences and recipe.cuisine_type and recipe.cuisine_type in cuisine_preferences:
+        if (
+            cuisine_preferences
+            and recipe.cuisine_type
+            and recipe.cuisine_type in cuisine_preferences
+        ):
             cuisine_matches += 1
 
     # 7. Cuisine match check — at least 70% should match when preferences specified
