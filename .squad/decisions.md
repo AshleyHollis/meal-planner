@@ -182,3 +182,96 @@ The meal planner needs visual richness: meal photos, store branding in grocery l
 - Coverage: Validates minimum threshold, no maximum
 
 **Impact:** All 29 worker tests now pass. CI unblocked. Test suite accurate to constraints.
+
+---
+
+## Session 2026-03-03T0702 Duplicate Inventory Fix & E2E Hardening
+
+**Resolved:** 4 decisions (inventory duplicates three-layer fix, E2E hardening, SWA cleanup, model directive)
+
+### Decision 9: Duplicate Inventory — Complete Three-Layer Fix
+
+**Author:** Ripley (Backend Dev)  
+**Date:** 2026-03-02  
+**Status:** Implemented  
+**Commit:** `14333c2`
+
+**Problem:** Duplicate inventory items persisted despite previous upsert attempt. Root causes: (1) Existing duplicates in shared DB never cleaned, (2) E2E seed script accumulated state across runs, (3) No DB-level constraint.
+
+**Solution: Three-layer approach**
+
+1. **Layer 1 — Migration 005 with dedup & unique constraint:**
+   - CTE deduplication: keeps latest row per (household_id, ingredient_id, location)
+   - Idempotent unique constraint via `sys.indexes` check
+   - Safe downgrade (idempotent constraint drop)
+
+2. **Layer 2 — SQLAlchemy model sync:**
+   - Added `UniqueConstraint` to `InventoryItem.__table_args__`
+   - Keeps Python model in sync with DB for Alembic autogenerate
+
+3. **Layer 3 — E2E seed idempotency:**
+   - Before seeding: `GET /api/v1/inventory` then `DELETE` each item
+   - Clean slate every pipeline run
+
+4. **Layer 0 (existing) — Upsert guard:**
+   - Pre-existing `add_item()` upsert remains as belt-and-suspenders
+
+**Impact:** 98 API tests pass, 37 frontend tests pass, no test modifications needed. Shared-DB preview environments now have hard guarantees against duplicates.
+
+### Decision 10: E2E Test Suite Hardening and Feature Coverage
+
+**Author:** Lambert (Tester)  
+**Date:** 2026-03-02  
+**Status:** Implemented
+
+**Problem:** Test suite reported "27 passed, 9 skipped" while preview was broken with 500s. Tests hid real bugs via silent seed failures and defensive skip logic.
+
+**Solution:**
+
+1. **Seed-data must fail hard:** Changed `console.warn()` to `expect()` assertions. Seed failures now cascade visibly.
+2. **API errors must fail tests:** Removed defensive error checks that skipped instead of throwing.
+3. **New feature E2E coverage:** Added 8 tests (5 inventory, 3 meal-plan) for freezer, leftovers, staples, auto-deduct.
+4. **Real user journeys:** Changed pattern from "element exists?" to "workflow succeeds?"
+
+**Validation:** TypeScript compiles, 37 unit tests pass, Playwright syntax valid. (Full E2E validation requires running against healthy backend.)
+
+**Files changed:** `seed-data.setup.ts`, `inventory.spec.ts`, `meal-plan.spec.ts`
+
+### Decision 11: SWA Preview Environment Cleanup Threshold
+
+**Author:** Parker (DevOps)  
+**Date:** 2026-03-03  
+**Status:** ✅ Implemented
+
+**Problem:** Concurrent PR deployments deleted each other's preview environments. Root cause: cleanup action with `min-age-hours: "1"` too aggressive.
+
+**Solution:** Increase threshold to `min-age-hours: "24"` in `.github/workflows/deploy-frontend-swa.yml`.
+
+**Rationale:** 24-hour window allows concurrent deployments without interference. Typical PR lifetime 1-7 days.
+
+**Note:** Replaced in parallel work (Decision 12) with PR-aware cleanup that checks open/closed status.
+
+### Decision 12: Local Closed-PR-Aware SWA Cleanup Action
+
+**Author:** Parker (DevOps)  
+**Date:** 2026-03-03  
+**Status:** Implemented
+
+**Problem:** Age-based cleanup (Decision 11) was a band-aid. Fundamental issue: cleanup doesn't account for PR open/closed status.
+
+**Solution:** Replaced shared-infra reference with local composite action (`.github/actions/cleanup-stale-swa-environments/`) that checks PR status before deleting. Only closed/merged PR environments deleted.
+
+**Trade-offs:**
+- ✅ Eliminates cross-branch deletion race condition
+- ⚠️ This repo now owns cleanup logic (not shared)
+- Requires `gh` + Azure CLI (available on `ubuntu-latest`)
+
+### Decision 13: User Directive — Always Use Configured Models
+
+**Author:** Ashley Hollis (via Copilot)  
+**Date:** 2026-03-03  
+**Status:** Captured
+
+**What:** Team members must be spawned with exact models specified in team.md (Dallas=claude-opus-4.6, Ripley/Kane=claude-sonnet-4.6, Parker/Lambert/Scribe=claude-haiku-4.5). Charters must have explicit Preferred model values.
+
+**Why:** Models were configured but coordinator kept using wrong versions. User request enforces source-of-truth compliance.

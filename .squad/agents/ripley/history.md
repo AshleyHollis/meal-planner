@@ -51,3 +51,25 @@
 - Repair approach: create a new migration (004) with `down_revision = "003"` that checks for each object before creating it — using `INFORMATION_SCHEMA.TABLES`, `INFORMATION_SCHEMA.COLUMNS`, and `sys.indexes`. This makes the migration fully idempotent (safe on fully-applied, partially-applied, or fresh databases).
 - Helper functions `_table_exists`, `_column_exists`, `_index_exists` use `op.get_bind()` + `sa.text()` queries. The `downgrade()` is a no-op because 004 owns no new objects — 003's downgrade handles teardown.
 - All 98 API tests and 34 worker tests pass with migration 004 in place.
+
+### Inventory duplicate prevention with upsert logic (2026-03)
+
+- Preview environment showed duplicate inventory items after multiple E2E test runs.
+- Root cause: `POST /api/v1/inventory` had no duplicate prevention. Each E2E seed run created new items for the same ingredient+location, causing accumulation across deployments.
+- The InventoryItems table has no unique constraint on `(household_id, ingredient_id, location)` — by design, it allows multiple entries per ingredient (e.g., two cartons of milk with different expiry dates).
+- Solution: Modified `InventoryService.add_item()` to implement upsert logic:
+  - Check for existing item with same `household_id`, `ingredient_id`, and `location`
+  - If exists: add quantities, keep later expiry date, update defrost_hours
+  - If not: create new item
+- This makes the seed data endpoint idempotent while preserving the ability to track multiple batches of the same ingredient when explicitly needed (e.g., via different locations or direct DB operations).
+- All 98 API tests pass. E2E seed script now safe to run repeatedly without duplicates.
+
+### Duplicate inventory — complete three-layer fix (2026-03)
+
+- The upsert-only fix was insufficient: existing duplicates in the live DB persisted, and the seed still accumulated quantity on repeated runs.
+- Full fix implemented in commit `14333c2`:
+  1. **Migration 005**: CTE-based dedup (keeps latest `created_at` per group), then idempotent `UNIQUE CONSTRAINT` on `(household_id, ingredient_id, location)`.
+  2. **Model**: Added `UniqueConstraint` to `InventoryItem.__table_args__` so SQLAlchemy schema matches the DB.
+  3. **E2E seed**: Added cleanup step before seeding — GET all inventory, DELETE each item — gives a clean slate on every pipeline run.
+- All 98 API tests and 37 frontend tests pass after the change.
+- Pattern: for shared-DB environments, seed scripts must actively clean up before seeding; upsert alone is not enough when accumulated state from prior runs is undesirable.
