@@ -25,8 +25,7 @@ def _column_exists(table: str, column: str) -> bool:
     conn = op.get_bind()
     result = conn.execute(
         sa.text(
-            "SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS "
-            "WHERE TABLE_NAME = :t AND COLUMN_NAME = :c"
+            "SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = :t AND COLUMN_NAME = :c"
         ),
         {"t": table, "c": column},
     )
@@ -36,9 +35,7 @@ def _column_exists(table: str, column: str) -> bool:
 def _table_exists(table: str) -> bool:
     conn = op.get_bind()
     result = conn.execute(
-        sa.text(
-            "SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = :t"
-        ),
+        sa.text("SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = :t"),
         {"t": table},
     )
     return result.fetchone() is not None
@@ -47,9 +44,7 @@ def _table_exists(table: str) -> bool:
 def _index_exists(index: str) -> bool:
     conn = op.get_bind()
     result = conn.execute(
-        sa.text(
-            "SELECT 1 FROM sys.indexes WHERE name = :n"
-        ),
+        sa.text("SELECT 1 FROM sys.indexes WHERE name = :n"),
         {"n": index},
     )
     return result.fetchone() is not None

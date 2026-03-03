@@ -496,7 +496,14 @@ jobs:
       needs.check-concurrency.result == 'success' &&
       needs.check-concurrency.outputs.can_deploy == 'true' &&
       needs.patch-db-overlay.result == 'success'
-    needs: [patch-db-overlay, update-overlay, check-concurrency, get-ingress, detect-changes]
+    needs:
+      [
+        patch-db-overlay,
+        update-overlay,
+        check-concurrency,
+        get-ingress,
+        detect-changes,
+      ]
     with:
       environment: preview
       namespace: preview-pr-${{ needs.detect-changes.outputs.pr_number }}
