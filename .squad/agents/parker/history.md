@@ -18,12 +18,14 @@
 **Problem:** PR #3 preview environment on Azure Static Web Apps returned 404 and was repeatedly deleted.
 
 **Root Cause Analysis:**
-- `deploy-frontend-swa.yml` cleanup step ran with `min-age-hours: "1"` 
+
+- `deploy-frontend-swa.yml` cleanup step ran with `min-age-hours: "1"`
 - When ANY other PR (e.g., PR #003) triggered a preview deploy, its cleanup action deleted PR #3's SWA environment because it was >1 hour old
 - Even re-deploying didn't fix it because environment creation timestamp wasn't reset
 - Additionally, `staticwebapp.config.json` lacked `navigationFallback` for Next.js routing
 
 **Solution Applied:**
+
 1. Increased `min-age-hours` from `"1"` to `"24"` in deploy-frontend-swa.yml (line 143)
    - Preview environments now live 24 hours before cleanup considers them stale
    - Provides safe buffer between concurrent PR preview deployments
@@ -32,6 +34,7 @@
    - Excludes static assets (css, js, images) from fallback to preserve cache headers
 
 **Files Changed:**
+
 - `.github/workflows/deploy-frontend-swa.yml`: min-age-hours "1" → "24"
 - `apps/web/staticwebapp.config.json`: Added navigationFallback config
 
