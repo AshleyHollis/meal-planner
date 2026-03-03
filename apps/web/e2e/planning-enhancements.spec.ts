@@ -100,7 +100,7 @@ test.describe("Recurring Meals Page (US4)", () => {
     );
   });
 
-  test("shows add template form", async ({ page }) => {
+  test("shows add template button and form toggle", async ({ page }) => {
     await page.goto("/recurring-meals");
 
     await expect(page.getByRole("heading", { name: /recurring/i })).toBeVisible(
@@ -113,15 +113,20 @@ test.describe("Recurring Meals Page (US4)", () => {
       await expect(spinner.first()).not.toBeVisible({ timeout: 30_000 });
     }
 
-    // Should have day-of-week selector and meal type dropdown
-    const daySelect = page
-      .getByLabel(/day/i)
-      .or(page.locator("select").first());
-    const addButton = page.getByRole("button", { name: /add|create|save/i });
-
-    await expect(daySelect.or(addButton).first()).toBeVisible({
-      timeout: 10_000,
+    // The "+ Add Recurring Meal" button should be visible by default
+    const addButton = page.getByRole("button", {
+      name: /add recurring meal/i,
     });
+    await expect(addButton).toBeVisible({ timeout: 10_000 });
+
+    // Click to reveal the form
+    await addButton.click();
+
+    // Day-of-week selector and meal type should now be visible
+    const dayLabel = page.getByText("Day of week");
+    const mealTypeLabel = page.getByText("Meal type");
+    await expect(dayLabel).toBeVisible({ timeout: 5_000 });
+    await expect(mealTypeLabel).toBeVisible({ timeout: 5_000 });
   });
 
   test.describe("CRUD Operations (Requires Backend)", () => {
@@ -402,26 +407,26 @@ test.describe("Ingredient Substitution (US1)", () => {
 test.describe("Navigation", () => {
   test("quick suggestions nav link works", async ({ page }) => {
     await page.goto("/");
-    await expect(page.locator("nav")).toBeVisible({ timeout: 30_000 });
+    await expect(page.locator("nav").first()).toBeVisible({ timeout: 30_000 });
 
     const quickCookLink = page.getByRole("link", {
       name: /quick cook/i,
     });
-    if (await quickCookLink.isVisible({ timeout: 5_000 }).catch(() => false)) {
-      await quickCookLink.click();
+    if (await quickCookLink.first().isVisible({ timeout: 5_000 }).catch(() => false)) {
+      await quickCookLink.first().click();
       await expect(page).toHaveURL(/quick-suggestions/);
     }
   });
 
   test("recurring meals nav link works", async ({ page }) => {
     await page.goto("/");
-    await expect(page.locator("nav")).toBeVisible({ timeout: 30_000 });
+    await expect(page.locator("nav").first()).toBeVisible({ timeout: 30_000 });
 
     const recurringLink = page.getByRole("link", {
       name: /recurring/i,
     });
-    if (await recurringLink.isVisible({ timeout: 5_000 }).catch(() => false)) {
-      await recurringLink.click();
+    if (await recurringLink.first().isVisible({ timeout: 5_000 }).catch(() => false)) {
+      await recurringLink.first().click();
       await expect(page).toHaveURL(/recurring-meals/);
     }
   });
