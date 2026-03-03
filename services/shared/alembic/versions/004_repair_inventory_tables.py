@@ -16,7 +16,7 @@ from alembic import op
 from sqlalchemy.dialects.mssql import UNIQUEIDENTIFIER
 
 revision = "004"
-down_revision = "003"
+down_revision = "003b"
 branch_labels = None
 depends_on = None
 

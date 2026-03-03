@@ -22,6 +22,9 @@ import type {
   StapleIngredient,
   StapleSuggestion,
   DefrostReminder,
+  SubstitutionResult,
+  QuickSuggestionsResponse,
+  RecurringMealTemplate,
 } from "@/types";
 
 // ---------------------------------------------------------------------------
@@ -172,6 +175,7 @@ export interface CreateEquipmentBody {
 export interface CreateMealPlanBody {
   week_start_date: string;
   cuisine_preferences?: string[];
+  meal_types?: string[];
 }
 
 export interface UpdatePlanStatusBody {
@@ -578,4 +582,69 @@ export async function getDefrostReminders(
   return fetchApi<DefrostReminder[]>(
     `/api/v1/inventory/defrost-reminders?days_ahead=${daysAhead}`,
   );
+}
+
+// ---------------------------------------------------------------------------
+// Substitution
+// ---------------------------------------------------------------------------
+
+export async function substituteIngredient(
+  planId: string,
+  slotId: string,
+  data: {
+    original_ingredient_name: string;
+    replacement_ingredient_name: string;
+  },
+): Promise<SubstitutionResult> {
+  return fetchApi<SubstitutionResult>(
+    `/api/v1/meal-plans/${planId}/slots/${slotId}/substitute`,
+    { method: "POST", body: JSON.stringify(data) },
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Quick Suggestions
+// ---------------------------------------------------------------------------
+
+export async function getQuickSuggestions(
+  maxResults?: number,
+): Promise<QuickSuggestionsResponse> {
+  const params = maxResults ? `?max_results=${maxResults}` : "";
+  return fetchApi<QuickSuggestionsResponse>(
+    `/api/v1/quick-suggestions${params}`,
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Recurring Meals
+// ---------------------------------------------------------------------------
+
+export async function listRecurringMeals(): Promise<RecurringMealTemplate[]> {
+  return fetchApi<RecurringMealTemplate[]>("/api/v1/recurring-meals");
+}
+
+export async function createRecurringMeal(data: {
+  day: number;
+  meal_type: string;
+  recipe_id?: string;
+  recipe_title?: string;
+}): Promise<RecurringMealTemplate> {
+  return fetchApi<RecurringMealTemplate>("/api/v1/recurring-meals", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function updateRecurringMeal(
+  id: string,
+  data: Record<string, unknown>,
+): Promise<RecurringMealTemplate> {
+  return fetchApi<RecurringMealTemplate>(`/api/v1/recurring-meals/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deleteRecurringMeal(id: string): Promise<void> {
+  return fetchApi<void>(`/api/v1/recurring-meals/${id}`, { method: "DELETE" });
 }

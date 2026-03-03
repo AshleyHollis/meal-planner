@@ -100,6 +100,8 @@ class MealPlanService:
         }
         if data.cuisine_preferences:
             message["cuisine_preferences"] = data.cuisine_preferences
+        if data.meal_types:
+            message["meal_types"] = data.meal_types
 
         enqueue_message(message)
 

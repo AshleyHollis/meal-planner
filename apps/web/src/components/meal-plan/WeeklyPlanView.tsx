@@ -113,12 +113,12 @@ function WeeklyPlanView({
 }: WeeklyPlanViewProps) {
   const modeLookup = buildEquipmentModeLookup(equipment);
 
-  // Build a map of day number -> dinner slot
-  const slotsByDay = new Map<number, MealSlot>();
+  // Build a map of day number -> slots (all meal types)
+  const slotsByDay = new Map<number, MealSlot[]>();
   for (const slot of plan.slots) {
-    if (slot.meal_type === "dinner") {
-      slotsByDay.set(slot.day, slot);
-    }
+    const existing = slotsByDay.get(slot.day) ?? [];
+    existing.push(slot);
+    slotsByDay.set(slot.day, existing);
   }
 
   return (
@@ -134,72 +134,92 @@ function WeeklyPlanView({
 
       <ul className="divide-y divide-gray-200 rounded-lg border border-gray-200 lg:grid lg:grid-cols-2 lg:divide-y-0 xl:grid-cols-3">
         {DAY_LABELS.map((label, dayIndex) => {
-          const slot = slotsByDay.get(dayIndex);
-          const recipe = slot?.recipe ?? null;
-          const equipmentTags = slot ? getEquipmentTags(slot, modeLookup) : [];
+          const daySlots = slotsByDay.get(dayIndex) ?? [];
+          // Sort by meal_type order: breakfast, lunch, dinner
+          const ORDER: Record<string, number> = {
+            breakfast: 0,
+            lunch: 1,
+            dinner: 2,
+          };
+          const sorted = [...daySlots].sort(
+            (a, b) => (ORDER[a.meal_type] ?? 3) - (ORDER[b.meal_type] ?? 3),
+          );
+          // Use the first slot with a recipe for the thumbnail
+          const heroSlot = sorted.find((s) => s.recipe) ?? sorted[0];
+          const heroRecipe = heroSlot?.recipe ?? null;
+
+          const MEAL_LABELS: Record<string, string> = {
+            breakfast: "🌅 Breakfast",
+            lunch: "🍽️ Lunch",
+            dinner: "🌙 Dinner",
+          };
 
           return (
             <li
               key={dayIndex}
               className="overflow-hidden px-0 py-0 lg:border-b lg:border-r lg:border-gray-200"
             >
-              {/* Thumbnail image */}
-              {recipe && <MealImage title={recipe.title} />}
+              {/* Thumbnail image for hero slot */}
+              {heroRecipe && <MealImage title={heroRecipe.title} />}
 
               <div className="px-4 py-3">
-                <div className="flex items-start justify-between gap-3">
-                  {/* Left: day + recipe info */}
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-gray-500">
-                      {label}
-                    </p>
+                <p className="mb-2 text-sm font-semibold text-gray-500">
+                  {label}
+                </p>
 
-                    {recipe ? (
-                      <>
-                        <p className="mt-1 truncate font-medium text-gray-900">
-                          {recipe.title}
+                {sorted.length === 0 && (
+                  <p className="text-sm text-gray-400">Nothing planned</p>
+                )}
+
+                <div className="space-y-2">
+                  {sorted.map((slot) => {
+                    const recipe = slot.recipe;
+                    const equipmentTags = getEquipmentTags(slot, modeLookup);
+                    return (
+                      <div key={slot.id}>
+                        <p className="text-xs font-medium text-gray-400">
+                          {MEAL_LABELS[slot.meal_type] ?? slot.meal_type}
                         </p>
-
-                        {/* Times */}
-                        <div className="mt-1 flex items-center gap-3 text-sm text-gray-600">
-                          {recipe.prep_time_min !== null && (
-                            <span>
-                              Prep: {formatTime(recipe.prep_time_min)}
-                            </span>
-                          )}
-                          {recipe.cook_time_min !== null && (
-                            <span>
-                              Cook: {formatTime(recipe.cook_time_min)}
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Equipment tags */}
-                        {equipmentTags.length > 0 && (
-                          <div className="mt-1.5 flex flex-wrap gap-1">
-                            {equipmentTags.map((mode) => (
-                              <Badge key={mode.id} variant="info">
-                                {mode.name}
-                              </Badge>
-                            ))}
+                        {recipe ? (
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-sm font-medium text-gray-900">
+                                {recipe.title}
+                              </p>
+                              <div className="mt-0.5 flex items-center gap-3 text-xs text-gray-600">
+                                {recipe.prep_time_min !== null && (
+                                  <span>
+                                    Prep: {formatTime(recipe.prep_time_min)}
+                                  </span>
+                                )}
+                                {recipe.cook_time_min !== null && (
+                                  <span>
+                                    Cook: {formatTime(recipe.cook_time_min)}
+                                  </span>
+                                )}
+                              </div>
+                              {equipmentTags.length > 0 && (
+                                <div className="mt-1 flex flex-wrap gap-1">
+                                  {equipmentTags.map((mode) => (
+                                    <Badge key={mode.id} variant="info">
+                                      {mode.name}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                            <FavoriteButton
+                              recipeId={recipe.id}
+                              isFavorited={favoriteRecipeIds.has(recipe.id)}
+                              onToggle={onFavoriteToggle}
+                            />
                           </div>
+                        ) : (
+                          <p className="text-xs text-gray-400">Not planned</p>
                         )}
-                      </>
-                    ) : (
-                      <p className="mt-1 text-sm text-gray-400">
-                        No dinner planned
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Right: favorite button */}
-                  {recipe && (
-                    <FavoriteButton
-                      recipeId={recipe.id}
-                      isFavorited={favoriteRecipeIds.has(recipe.id)}
-                      onToggle={onFavoriteToggle}
-                    />
-                  )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </li>
