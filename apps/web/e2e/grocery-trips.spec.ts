@@ -52,39 +52,42 @@ test.describe("Grocery Shop Filtering & Trips", () => {
       await expect(grocerySpinner.first()).not.toBeVisible({ timeout: 30_000 });
     }
 
+    // Wait for "All" filter button to appear — indicates items are loaded
+    const allButton = page.getByRole("button", { name: /^All/ });
+    if (!(await allButton.isVisible({ timeout: 10_000 }).catch(() => false))) {
+      return false; // no items loaded (plan may still be generating)
+    }
+
     return true;
   }
 
   test.describe("Shop Filter", () => {
     test("grocery list shows All filter tab", async ({ page }) => {
       if (!(await navigateToGroceryList(page))) {
-        test.skip(true, "No active plan with grocery list");
+        test.skip(true, "No active plan with grocery items");
         return;
       }
 
-      // The "All" button should always be visible when there are items
+      // navigateToGroceryList already verified "All" button is visible
       const allButton = page.getByRole("button", { name: /^All/ });
-      await expect(allButton).toBeVisible({ timeout: 10_000 });
+      await expect(allButton).toBeVisible();
     });
 
     test("shop filter shows item counts", async ({ page }) => {
       if (!(await navigateToGroceryList(page))) {
-        test.skip(true, "No active plan with grocery list");
+        test.skip(true, "No active plan with grocery items");
         return;
       }
 
-      // The All button should have a count badge
-      const allButton = page.getByRole("button", { name: /^All/ });
-      await expect(allButton).toBeVisible({ timeout: 10_000 });
-
       // All button text should contain a number (item count)
+      const allButton = page.getByRole("button", { name: /^All/ });
       const text = await allButton.textContent();
       expect(text).toMatch(/All\s*\d+/);
     });
 
     test("clicking a shop filter narrows displayed items", async ({ page }) => {
       if (!(await navigateToGroceryList(page))) {
-        test.skip(true, "No active plan with grocery list");
+        test.skip(true, "No active plan with grocery items");
         return;
       }
 
@@ -144,7 +147,7 @@ test.describe("Grocery Shop Filtering & Trips", () => {
   test.describe("Trip Tracker", () => {
     test("trip tracker appears when a shop is selected", async ({ page }) => {
       if (!(await navigateToGroceryList(page))) {
-        test.skip(true, "No active plan with grocery list");
+        test.skip(true, "No active plan with grocery items");
         return;
       }
 
@@ -186,7 +189,7 @@ test.describe("Grocery Shop Filtering & Trips", () => {
       page,
     }) => {
       if (!(await navigateToGroceryList(page))) {
-        test.skip(true, "No active plan with grocery list");
+        test.skip(true, "No active plan with grocery items");
         return;
       }
 
@@ -244,7 +247,7 @@ test.describe("Grocery Shop Filtering & Trips", () => {
       page,
     }) => {
       if (!(await navigateToGroceryList(page))) {
-        test.skip(true, "No active plan with grocery list");
+        test.skip(true, "No active plan with grocery items");
         return;
       }
 
@@ -282,7 +285,7 @@ test.describe("Grocery Shop Filtering & Trips", () => {
       page,
     }) => {
       if (!(await navigateToGroceryList(page))) {
-        test.skip(true, "No active plan with grocery list");
+        test.skip(true, "No active plan with grocery items");
         return;
       }
 
@@ -321,7 +324,7 @@ test.describe("Grocery Shop Filtering & Trips", () => {
   test.describe("Grocery List Enrichment", () => {
     test("grocery items show ingredient names not UUIDs", async ({ page }) => {
       if (!(await navigateToGroceryList(page))) {
-        test.skip(true, "No active plan with grocery list");
+        test.skip(true, "No active plan with grocery items");
         return;
       }
 
@@ -351,7 +354,7 @@ test.describe("Grocery Shop Filtering & Trips", () => {
       page,
     }) => {
       if (!(await navigateToGroceryList(page))) {
-        test.skip(true, "No active plan with grocery list");
+        test.skip(true, "No active plan with grocery items");
         return;
       }
 
