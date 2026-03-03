@@ -42,15 +42,15 @@ test.describe("Preferences Management", () => {
       }
 
       // Form should have preference type selector
-      await expect(
-        page.getByLabel(/Type|Preference Type/i),
-      ).toBeVisible({ timeout: 10_000 });
+      await expect(page.getByLabel(/Type|Preference Type/i)).toBeVisible({
+        timeout: 10_000,
+      });
 
       // Form should have value input or dietary restriction dropdown
       // (depends on whether dietary types API returns data)
-      await expect(
-        page.getByLabel(/Value|Dietary Restriction/i),
-      ).toBeVisible({ timeout: 10_000 });
+      await expect(page.getByLabel(/Value|Dietary Restriction/i)).toBeVisible({
+        timeout: 10_000,
+      });
 
       // Form should have add/submit button
       await expect(

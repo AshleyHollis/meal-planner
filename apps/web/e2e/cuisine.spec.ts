@@ -41,15 +41,11 @@ test.describe("Cuisine Selection Flow", () => {
       });
 
       // Cuisine toggle buttons should be visible on the page
-      await expect(
-        page.getByRole("button", { name: "Mexican" }),
-      ).toBeVisible({ timeout: 10_000 });
-      await expect(
-        page.getByRole("button", { name: "Italian" }),
-      ).toBeVisible();
-      await expect(
-        page.getByRole("button", { name: "Asian" }),
-      ).toBeVisible();
+      await expect(page.getByRole("button", { name: "Mexican" })).toBeVisible({
+        timeout: 10_000,
+      });
+      await expect(page.getByRole("button", { name: "Italian" })).toBeVisible();
+      await expect(page.getByRole("button", { name: "Asian" })).toBeVisible();
     });
   });
 
@@ -108,9 +104,7 @@ test.describe("Cuisine Selection Flow", () => {
       await mexicanButton.click();
 
       // Click Generate New Plan button to submit
-      await page
-        .getByRole("button", { name: "Generate New Plan" })
-        .click();
+      await page.getByRole("button", { name: "Generate New Plan" }).click();
 
       // Wait for request to be sent
       await page.waitForTimeout(2000);
@@ -200,9 +194,7 @@ test.describe("Cuisine Selection Flow", () => {
       }
 
       // Click Generate New Plan button
-      await page
-        .getByRole("button", { name: "Generate New Plan" })
-        .click();
+      await page.getByRole("button", { name: "Generate New Plan" }).click();
 
       // Should navigate to plan detail page or show generating state
       try {
