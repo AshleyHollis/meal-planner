@@ -11,6 +11,7 @@ User reported unclear error message when meal plan generation failed. Frontend w
 ## Root Cause
 
 Frontend error handler wasn't extracting the `detail` field from FastAPI error responses. The API correctly returns:
+
 ```json
 { "detail": "Household already has an active or in-progress meal plan" }
 ```

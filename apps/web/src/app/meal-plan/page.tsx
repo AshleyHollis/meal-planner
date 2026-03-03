@@ -5,7 +5,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import type { MealPlan } from "@/types";
-import { listMealPlans, createMealPlan, updatePlanStatus } from "@/services/api";
+import {
+  listMealPlans,
+  createMealPlan,
+  updatePlanStatus,
+} from "@/services/api";
 import { Spinner } from "@/components/ui/Spinner";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";

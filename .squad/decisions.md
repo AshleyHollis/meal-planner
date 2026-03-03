@@ -52,6 +52,7 @@ The app was locked at `max-w-2xl` on all screen sizes. Implemented single respon
 - **Desktop (lg:):** Fixed left sidebar (w-64), hidden top header, hidden bottom nav, content offset by `lg:pl-64`
 
 **Implementation:**
+
 - `DesktopSidebar` component reuses `navItems` array (single source of truth)
 - All `<main>` containers: `max-w-2xl lg:max-w-7xl mx-auto`
 - Dashboard: `grid-cols-1 sm:grid-cols-2 lg:grid-cols-3`
@@ -68,11 +69,13 @@ The app was locked at `max-w-2xl` on all screen sizes. Implemented single respon
 **Status:** Implemented
 
 **Images:** Unsplash CDN with hardcoded photo IDs (not API calls) — zero rate limits, deterministic, highly available.
+
 - `src/lib/meal-images.ts`: CATEGORY_PHOTOS map (20+ categories), getMealImageUrl(), FALLBACK_GRADIENTS
 - `next.config.ts`: Updated `images.remotePatterns` for `images.unsplash.com`
 - Components: `MealSlotCard`, `WeeklyPlanView`, Dashboard hero — all use `next/image` with `fill` layout
 
 **Store Branding:** Colored circle avatars with store initials + brand colors.
+
 - `src/lib/store-branding.ts`: STORE_BRANDS map (Costco, Woolworths, Coles, Aldi, IGA, Trader Joe's, default)
 - GroceryList: Store section headers with colored left border, store avatar circle, store name
 - GroceryItem: Optional small store dot indicator
@@ -90,6 +93,7 @@ The app was locked at `max-w-2xl` on all screen sizes. Implemented single respon
 Comprehensive architecture for responsive layout, meal images, and store branding across all pages:
 
 **Scope:**
+
 - Single responsive codebase (reject two-version approach)
 - Tailwind breakpoint strategy: `<1024px` mobile-first (default), `≥1024px` sidebar + multi-column
 - Meal images via Unsplash CDN (hardcoded photo IDs, not API)
@@ -97,6 +101,7 @@ Comprehensive architecture for responsive layout, meal images, and store brandin
 - Page-level layout upgrades: Dashboard hero, Meal plan 7-column calendar (desktop), Grocery 2-column grid per store, Inventory card grid
 
 **Implementation order:**
+
 - P1: Responsive layout (1 day)
 - P2: Meal images (1 day, depends on P1)
 - P3: Store branding (0.5 day, depends on P1)
@@ -115,6 +120,7 @@ Comprehensive architecture for responsive layout, meal images, and store brandin
 Feature spec for 003-personalization-ai (4 user stories, 22 functional requirements, 8 success criteria):
 
 **Key design choices:**
+
 1. **Single polymorphic MemberPreference model** with `type` discriminator (allergy, dislike, like, dietary_restriction) — simpler CRUD, unified API
 2. **Ratings per MealSlot, not Recipe** — captures context (same recipe, different week/sides = different rating)
 3. **Allergy = hard block, Dislike = soft preference** — allergies never relaxed (safety), dislikes relaxed as fallback
@@ -187,12 +193,14 @@ Designed and implemented 3 new SQLAlchemy models for Phase 1:
 Implemented complete CRUD API for member preferences (Phase 2):
 
 **Endpoints:**
+
 - GET `/api/v1/members/{member_id}/preferences` — list all preferences (newest first)
 - POST `/api/v1/members/{member_id}/preferences` — create (201), 409 on duplicate, 403 on non-household member
 - DELETE `/api/v1/members/{member_id}/preferences/{preference_id}` — delete (204), 404 if not found, 403 on non-household member
 - GET `/api/v1/preferences/dietary-types` — static list of 8 dietary types
 
 **Models & Services:**
+
 - Pydantic models: CreateMemberPreference, MemberPreferenceResponse
 - PreferenceService: list, add (with IntegrityError→409 mapping), delete, member ownership validation
 - Registered router in main.py, dependency factory in dependencies.py
@@ -210,6 +218,7 @@ Implemented complete CRUD API for member preferences (Phase 2):
 User reported "Failed to generate meal plan" but couldn't understand why. Frontend was catching API errors but displaying generic message instead of actual error detail from API response.
 
 **Root cause:** FastAPI returns structured errors with `detail` field:
+
 ```json
 { "detail": "Household already has an active or in-progress meal plan" }
 ```
@@ -217,6 +226,7 @@ User reported "Failed to generate meal plan" but couldn't understand why. Fronte
 Frontend ApiError class captures this in `body` property but wasn't extracting it.
 
 **Decision:** Always extract and display API error details in frontend catch blocks. Pattern:
+
 ```typescript
 catch (err) {
   const message =
