@@ -84,3 +84,22 @@
   - Use `IntegrityError` catch for duplicate detection, map to 409 status
   - Fixed deprecation: use `HTTP_422_UNPROCESSABLE_CONTENT` not `HTTP_422_UNPROCESSABLE_ENTITY`
 - **Ready for:** Phase 3 (Favorites API) and subsequent phases
+
+### Meal plan generation error message fix (2026-03-03)
+
+- **Issue:** User reported "Failed to generate meal plan" error but couldn't tell why
+- **Root cause:** Frontend catch block was swallowing API error details and showing generic message
+- **Analysis:** The meal plan generation flow works correctly:
+  - Frontend calls `POST /api/v1/meal-plans` with week_start_date and optional cuisine_preferences
+  - API creates draft plan, enqueues message to Azure Queue Storage for worker
+  - Worker loads context (inventory, equipment, preferences, ratings, favorites, recent meals)
+  - Worker calls LLM, validates constraints (allergens, equipment, recipe count, cuisines), retries up to 3x
+  - Worker persists recipes, ingredients, steps, slots, grocery list, sets plan status to "active"
+  - API enforces one active/draft plan per household (409 conflict if another exists)
+- **Fix:** Updated meal-plan/page.tsx error handler to extract `detail` field from ApiError body
+- **Impact:** Users now see helpful error messages like "Household already has an active or in-progress meal plan" instead of generic failure message
+- **Tests verified:** 117 API tests pass, 56 worker tests pass, Next.js build succeeds
+- **Key files:** apps/web/src/app/meal-plan/page.tsx (error handling), services/api/src/api/routes/meal_plans.py (endpoints), services/api/src/api/services/meal_plan_service.py (create_plan logic), services/workers/meal_plan_generator/generator.py (worker orchestrator)
+- **Pattern:** Always extract and display API error details in frontend catch blocks for better UX
+- **Decision logged:** Decision 11 in team decisions.md. Apply pattern to all frontend API calls (inventory, preferences, etc.)
+- **Commit:** 5ed1955 — "fix: show actual API error message for meal plan generation failures"

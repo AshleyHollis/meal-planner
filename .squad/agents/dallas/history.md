@@ -21,9 +21,9 @@
 
 **Key insight:** When debugging CORS in Starlette/FastAPI, always check whether the underlying request returns a successful response first. A 500 that bypasses error handlers also bypasses CORSMiddleware, making it look like a CORS config problem when it's actually an application error.
 
-### 2026-03-02: PR #1 Description Finalized
+### Meal plan generation error message fix (2026-03-03)
 
-Updated PR #1 body with final AC checklist (8 items, all checked), updated test plan (CI + pre-commit.ci checked, E2E summary added), and Known Limitations section (3 items). Used `gh pr edit --body-file` via temp file for clean markdown. PR is now review-ready with full traceability.
+Ripley fixed the frontend error display pattern. Users now see actual API error details (e.g., "Household already has an active or in-progress meal plan") instead of generic "Failed to generate meal plan" message. Pattern documented in Decision 11 — apply to all frontend API interactions. Commit 5ed1955.
 
 ### 2026-03-02: 003-personalization-ai Spec Created
 

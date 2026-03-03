@@ -13,9 +13,9 @@
 
 ## Learnings
 
-### Phase 10 E2E Test Implementation (T073-T077)
+### UI/UX Phase Updates (2026-03-02 to 2026-03-03)
 
-**Completed Tasks:**
+All Phase 1–3 UI/UX work completed per Dallas's architecture (Decisions 4–6). Kane implemented responsive layout (desktop sidebar, multi-column grids), meal images (Unsplash CDN), and store branding (colored badges). Build clean, 37 tests pass, no regressions. Ripley fixed frontend error display pattern (Decision 11) — apply to all API interactions. All decisions merged into team decisions.md.
 
 - **T073**: Created `apps/web/e2e/preferences.spec.ts` — Tests preferences page CRUD flow (add dietary restrictions, allergies, dislikes; verify grouping; delete preferences)
 - **T074**: Created `apps/web/e2e/favorites.spec.ts` — Tests favoriting recipes from meal plans and managing favorites page
