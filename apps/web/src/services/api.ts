@@ -22,6 +22,7 @@ import type {
   StapleIngredient,
   StapleSuggestion,
   DefrostReminder,
+  Product,
 } from "@/types";
 
 // ---------------------------------------------------------------------------
@@ -213,6 +214,27 @@ export interface CreateStapleBody {
   ingredient_id: string;
   min_threshold: number;
   unit: string;
+}
+
+// --- Product request bodies ---
+
+export interface CreateProductBody {
+  ingredient_id: string;
+  brand: string;
+  product_name: string;
+  size_desc?: string | null;
+  price?: number | null;
+  shop?: string | null;
+  notes?: string | null;
+}
+
+export interface UpdateProductBody {
+  brand?: string | null;
+  product_name?: string | null;
+  size_desc?: string | null;
+  price?: number | null;
+  shop?: string | null;
+  notes?: string | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -577,5 +599,42 @@ export async function getDefrostReminders(
 ): Promise<DefrostReminder[]> {
   return fetchApi<DefrostReminder[]>(
     `/api/v1/inventory/defrost-reminders?days_ahead=${daysAhead}`,
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Products
+// ---------------------------------------------------------------------------
+
+export async function getProducts(): Promise<Product[]> {
+  return fetchApi<Product[]>("/api/v1/products");
+}
+
+export async function createProduct(body: CreateProductBody): Promise<Product> {
+  return fetchApi<Product>("/api/v1/products", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+export async function updateProduct(
+  productId: string,
+  body: UpdateProductBody,
+): Promise<Product> {
+  return fetchApi<Product>(`/api/v1/products/${productId}`, {
+    method: "PUT",
+    body: JSON.stringify(body),
+  });
+}
+
+export async function deleteProduct(productId: string): Promise<void> {
+  return fetchApi<void>(`/api/v1/products/${productId}`, {
+    method: "DELETE",
+  });
+}
+
+export async function searchProducts(query: string): Promise<Product[]> {
+  return fetchApi<Product[]>(
+    `/api/v1/products/search?q=${encodeURIComponent(query)}`,
   );
 }

@@ -1,8 +1,13 @@
 "use client";
 
+import { useState } from "react";
+
 import type { GroceryList as GroceryListType } from "@/types";
 import { GroceryItem } from "./GroceryItem";
 import { getStoreBrand } from "@/lib/store-branding";
+import { ShopFilter } from "@/components/ShopFilter";
+import { TripTracker } from "@/components/TripTracker";
+import { getTripState } from "@/services/tripStorage";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -24,6 +29,21 @@ function groupByStore(
   return groups;
 }
 
+function filterByShop(
+  items: GroceryListType["items"],
+  selectedShop: string | null,
+): GroceryListType["items"] {
+  if (selectedShop === null) return items;
+  if (selectedShop === "__other__") {
+    return items.filter((item) => !item.product?.shop);
+  }
+  return items.filter(
+    (item) =>
+      item.product?.shop?.toLowerCase().trim() ===
+      selectedShop.toLowerCase().trim(),
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Props
 // ---------------------------------------------------------------------------
@@ -31,14 +51,47 @@ function groupByStore(
 interface GroceryListProps {
   groceryList: GroceryListType;
   onChanged?: () => void;
+  onProductLinked?: () => void;
 }
 
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
-function GroceryList({ groceryList, onChanged }: GroceryListProps) {
+function GroceryList({ groceryList, onChanged, onProductLinked }: GroceryListProps) {
   const { items } = groceryList;
+  const [selectedShop, setSelectedShop] = useState<string | null>(null);
+  const [tripCheckedIds, setTripCheckedIds] = useState<Set<string>>(() => {
+    if (typeof window === "undefined") return new Set();
+    // Restore trip state for selected shop on mount
+    return new Set<string>();
+  });
+
+  function handleItemTripCheck(itemId: string, checked: boolean) {
+    setTripCheckedIds((prev) => {
+      const next = new Set(prev);
+      if (checked) next.add(itemId);
+      else next.delete(itemId);
+      return next;
+    });
+  }
+
+  function handleShopChange(shop: string | null) {
+    setSelectedShop(shop);
+    // Restore trip state for this shop
+    if (shop && shop !== "__other__") {
+      const state = getTripState(groceryList.id, shop);
+      setTripCheckedIds(new Set(state?.checkedItemIds ?? []));
+    } else {
+      setTripCheckedIds(new Set());
+    }
+  }
+
+  function handleTripComplete() {
+    setSelectedShop(null);
+    setTripCheckedIds(new Set());
+    onChanged?.();
+  }
 
   if (items.length === 0) {
     return (
@@ -48,11 +101,28 @@ function GroceryList({ groceryList, onChanged }: GroceryListProps) {
     );
   }
 
-  const grouped = groupByStore(items);
+  const filteredItems = filterByShop(items, selectedShop);
+  const grouped = groupByStore(filteredItems);
   const storeNames = Object.keys(grouped).sort();
 
   return (
     <div className="space-y-6">
+      <ShopFilter
+        items={items}
+        selectedShop={selectedShop}
+        onFilterChange={handleShopChange}
+      />
+
+      {selectedShop && selectedShop !== "__other__" && (
+        <TripTracker
+          groceryListId={groceryList.id}
+          shop={selectedShop}
+          items={filteredItems}
+          onTripComplete={handleTripComplete}
+          onItemTripCheck={handleItemTripCheck}
+        />
+      )}
+
       {storeNames.map((store) => {
         const brand = getStoreBrand(store);
         return (
@@ -67,7 +137,16 @@ function GroceryList({ groceryList, onChanged }: GroceryListProps) {
             </div>
             <ul className="divide-y divide-gray-200 rounded-lg border border-gray-200 lg:grid lg:grid-cols-2 lg:divide-y-0">
               {grouped[store].map((item) => (
-                <GroceryItem key={item.id} item={item} onChanged={onChanged} />
+                <GroceryItem
+                  key={item.id}
+                  item={item}
+                  onChanged={onProductLinked ?? onChanged}
+                  tripChecked={
+                    selectedShop && selectedShop !== "__other__"
+                      ? tripCheckedIds.has(item.id)
+                      : undefined
+                  }
+                />
               ))}
             </ul>
           </section>
@@ -79,3 +158,4 @@ function GroceryList({ groceryList, onChanged }: GroceryListProps) {
 
 export { GroceryList };
 export type { GroceryListProps };
+

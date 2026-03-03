@@ -128,6 +128,9 @@ export interface GroceryItem {
   unit: string;
   is_checked: boolean;
   preferred_store: string | null;
+  ingredient_name?: string;
+  ingredient_category?: string;
+  product?: ProductSummary | null;
 }
 
 export interface GroceryList {
@@ -135,6 +138,41 @@ export interface GroceryList {
   meal_plan_id: string;
   created_at: string;
   items: GroceryItem[];
+}
+
+// --- Products ---
+
+export interface ProductSummary {
+  id: string;
+  brand: string;
+  product_name: string;
+  size_desc: string | null;
+  price: number | null;
+  shop: string | null;
+}
+
+export interface Product {
+  id: string;
+  household_id: string;
+  ingredient_id: string;
+  brand: string;
+  product_name: string;
+  size_desc: string | null;
+  price: number | null;
+  shop: string | null;
+  notes: string | null;
+  ingredient_name: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// --- Trip State ---
+
+export interface TripState {
+  groceryListId: string;
+  shop: string;
+  checkedItemIds: string[];
+  startedAt: string;
 }
 
 // --- Meal History ---
