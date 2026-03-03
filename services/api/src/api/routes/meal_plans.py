@@ -10,6 +10,7 @@ from ..dependencies import get_meal_plan_service
 from ..models.meal_plan import (
     AdaptRequest,
     CreateMealPlan,
+    DeductionItem,
     MealPlanDetailResponse,
     MealPlanResponse,
     MealSlotResponse,
@@ -119,10 +120,13 @@ async def update_slot_status(
     service: MealPlanService = Depends(get_meal_plan_service),  # noqa: B008
 ) -> MealSlotResponse:
     """Mark a meal slot as cooked or skipped."""
-    slot = await service.update_slot_status(plan_id, slot_id, body)
+    slot, deductions = await service.update_slot_status(plan_id, slot_id, body)
     if slot is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Meal slot not found")
-    return MealSlotResponse.model_validate(slot)
+    response = MealSlotResponse.model_validate(slot)
+    if deductions is not None:
+        response.deductions = [DeductionItem(**d) for d in deductions]
+    return response
 
 
 @recipes_router.post("/{recipe_id}/save-variation")

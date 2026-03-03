@@ -4,7 +4,7 @@ import { use, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 
 import type { GroceryList as GroceryListType, GroceryItem } from "@/types";
-import { getGroceryList } from "@/services/api";
+import { getGroceryList, ApiError } from "@/services/api";
 import { Spinner } from "@/components/ui/Spinner";
 import { GroceryList } from "@/components/grocery/GroceryList";
 import { CompleteShoppingDialog } from "@/components/grocery/CompleteShoppingDialog";
@@ -25,7 +25,11 @@ export default function GroceryListPage({ params }: GroceryListPageProps) {
       setError(null);
       const data = await getGroceryList(id);
       setGroceryList(data);
-    } catch {
+    } catch (err) {
+      if (err instanceof ApiError && err.isAuthError) {
+        window.location.href = "/api/auth/login";
+        return;
+      }
       setError("Failed to load grocery list. Please try again.");
     } finally {
       setLoading(false);

@@ -111,6 +111,7 @@ class DatabaseConnection:
                 max_overflow=self._max_overflow,
                 pool_timeout=DEFAULT_POOL_TIMEOUT,
                 pool_recycle=DEFAULT_POOL_RECYCLE,
+                pool_pre_ping=True,
                 echo=self._echo,
             )
         return self._engine

@@ -36,8 +36,8 @@
 
 ## Model
 
-- **Preferred:** auto
-- **Rationale:** Writing code — sonnet tier for quality
+- **Preferred:** claude-sonnet-4.6
+- **Rationale:** Writing code — newest sonnet for quality and accuracy
 
 ## Collaboration
 

@@ -19,6 +19,10 @@ export default function GroceryListIndexPage() {
         const plan = await getActiveMealPlan();
         router.replace(`/grocery-list/${plan.id}`);
       } catch (err) {
+        if (err instanceof ApiError && err.isAuthError) {
+          window.location.href = "/api/auth/login";
+          return;
+        }
         if (err instanceof ApiError && err.status === 404) {
           setNoPlan(true);
         }

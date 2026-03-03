@@ -22,6 +22,8 @@ from .services.meal_history_service import MealHistoryService
 from .services.meal_plan_service import MealPlanService
 from .services.preference_service import PreferenceService
 from .services.rating_service import RatingService
+from .services.leftover_service import LeftoverService
+from .services.staple_service import StapleService
 
 
 def get_inventory_service(
@@ -86,3 +88,19 @@ def get_rating_service(
 ) -> RatingService:
     """Dependency: household-scoped rating service."""
     return RatingService(session, household_id)
+
+
+def get_leftover_service(
+    session: AsyncSession = Depends(get_session),  # noqa: B008
+    household_id: UUID = Depends(get_current_household_id),  # noqa: B008
+) -> LeftoverService:
+    """Dependency: household-scoped leftover service."""
+    return LeftoverService(session, household_id)
+
+
+def get_staple_service(
+    session: AsyncSession = Depends(get_session),  # noqa: B008
+    household_id: UUID = Depends(get_current_household_id),  # noqa: B008
+) -> StapleService:
+    """Dependency: household-scoped staple service."""
+    return StapleService(session, household_id)

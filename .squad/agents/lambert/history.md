@@ -68,6 +68,57 @@ All new E2E tests follow the exact patterns established in existing specs:
 - `npx tsc --noEmit` passes (0 errors)
 - `npm run lint` passes (4 pre-existing warnings unrelated to new tests)
 - All test files compile and are ready for execution against deployed environment
+- **Branch:** 002-inventory-enhancements (enhanced inventory features)
+- **State:** E2E test suite hardened and expanded. Tests now fail on real errors instead of hiding them as skips.
+- **Test files:** smoke.spec.ts, inventory.spec.ts (expanded), meal-plan.spec.ts (expanded), grocery.spec.ts
+- **Playwright config:** 3-project chain: auth-setup → seed-data → chromium
+
+## Learnings
+
+### Session 2026-03-02: E2E Test Suite Hardening (Branch 002)
+
+**Problem:** Tests were hiding real bugs by skipping on errors instead of failing. Preview environment showed 500 errors but tests reported "27 passed, 9 skipped, 0 failed".
+
+**Fixes Applied:**
+
+1. **seed-data.setup.ts**: Changed from warning-and-return to hard failures using `expect()` assertions
+   - Access token failures now fail the setup (was: console.warn + return)
+   - No ingredients found now fails the setup (was: console.warn + return)
+   - Meal plan creation failures now fail the setup (was: console.warn + return)
+   - Result: Tests depending on seed-data will now show as FAILED instead of SKIPPED when backend is broken
+
+2. **inventory.spec.ts**: Changed defensive skip logic to throw errors on API failures
+   - "Failed to load inventory" now throws error instead of skipping (2 test locations)
+   - Added freezer location to form test (was missing from location selector test)
+   - Added 3 new test suites for new features:
+     - Freezer Storage: tests freezer location option, defrost hours field visibility
+     - Staples Feature: tests staples management UI presence
+   - Result: Real API failures surface as test failures, not hidden skips
+
+3. **meal-plan.spec.ts**: Added 2 new test suites for new features
+   - Leftover Recording: tests "Record Leftovers" button, form fields (portions, storage location, expiry)
+   - Auto-Deduct Inventory: tests deduction information display after marking meal as cooked
+   - Result: Coverage for P5, P14, P15 features
+
+**Test Coverage Summary:**
+
+- inventory.spec.ts: Added 5 new tests (freezer, staples, defrost hours)
+- meal-plan.spec.ts: Added 3 new tests (leftovers, auto-deduct)
+- Total: 8 new E2E tests for branch 002 features
+
+**Key Learnings:**
+
+- Setup failures should fail loudly (use `expect()` assertions) not silently skip
+- Distinguish between legitimate skips (feature flag not set) vs bugs (API returns error)
+- Test actual user journeys (add→verify, cook→verify deduct) not just "does page load"
+- New features need E2E coverage BEFORE merge, not after bugs are found
+
+**File Paths:**
+
+- E2E tests: `apps/web/e2e/`
+- Seed data setup: `apps/web/e2e/seed-data.setup.ts`
+- Inventory tests: `apps/web/e2e/inventory.spec.ts`
+- Meal plan tests: `apps/web/e2e/meal-plan.spec.ts`
 
 ### Complete Skip Map (12 Tests)
 

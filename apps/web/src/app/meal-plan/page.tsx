@@ -9,6 +9,7 @@ import {
   listMealPlans,
   createMealPlan,
   updatePlanStatus,
+  ApiError,
 } from "@/services/api";
 import { Spinner } from "@/components/ui/Spinner";
 import { Button } from "@/components/ui/Button";
@@ -43,7 +44,11 @@ export default function MealPlanListPage() {
       setError(null);
       const data = await listMealPlans();
       setPlans(data);
-    } catch {
+    } catch (err) {
+      if (err instanceof ApiError && err.isAuthError) {
+        window.location.href = "/api/auth/login";
+        return;
+      }
       setError("Failed to load meal plans.");
     } finally {
       setLoading(false);
@@ -74,6 +79,10 @@ export default function MealPlanListPage() {
       });
       router.push(`/meal-plan/${plan.id}`);
     } catch (err) {
+      if (err instanceof ApiError && err.isAuthError) {
+        window.location.href = "/api/auth/login";
+        return;
+      }
       // Extract API error detail or fall back to generic message
       const message =
         (err && typeof err === "object" && "body" in err

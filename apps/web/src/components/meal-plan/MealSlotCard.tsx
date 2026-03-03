@@ -17,6 +17,7 @@ import {
   getMealCategory,
   getCategoryColor,
 } from "@/lib/meal-images";
+import { LeftoverForm } from "../leftover/LeftoverForm";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -60,6 +61,7 @@ interface MealSlotCardProps {
   onRated?: (rating: MealSlotRating) => void;
   onFavoriteToggle?: (recipeId: string, isFavorited: boolean) => void;
   isFavorited?: boolean;
+  onLeftoverRecorded?: () => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -77,7 +79,10 @@ function MealSlotCard({
   onRated,
   onFavoriteToggle,
   isFavorited = false,
+  onLeftoverRecorded,
 }: MealSlotCardProps) {
+  const [showLeftoverForm, setShowLeftoverForm] = useState(false);
+
   const recipe = slot.recipe;
   const statusCfg = STATUS_CONFIG[slot.status] ?? STATUS_CONFIG.planned;
   const isDone = slot.status === "cooked" || slot.status === "skipped";
@@ -172,6 +177,28 @@ function MealSlotCard({
                 {mode.name}
               </Badge>
             ))}
+          </div>
+        )}
+
+        {/* Deductions */}
+        {isCooked && slot.deductions && slot.deductions.length > 0 && (
+          <div className="mt-3 rounded-lg bg-gray-50 p-3">
+            <p className="mb-1 text-xs font-semibold text-gray-700">
+              Ingredients Deducted:
+            </p>
+            <ul className="space-y-1">
+              {slot.deductions.map((deduction, idx) => (
+                <li key={idx} className="text-xs text-gray-600">
+                  {deduction.ingredient_name}: {deduction.deducted}{" "}
+                  {deduction.unit}
+                  {deduction.unit_mismatch && (
+                    <span className="ml-1 text-yellow-600">
+                      (unit mismatch)
+                    </span>
+                  )}
+                </li>
+              ))}
+            </ul>
           </div>
         )}
 
@@ -306,7 +333,34 @@ function MealSlotCard({
             />
           </div>
         )}
+
+        {/* Record Leftovers button (after cooked) */}
+        {isCooked && planId && (
+          <div className="mt-3">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setShowLeftoverForm(!showLeftoverForm)}
+            >
+              {showLeftoverForm ? "Cancel" : "Record Leftovers"}
+            </Button>
+          </div>
+        )}
       </div>
+
+      {/* Leftover Form (inline below card) */}
+      {showLeftoverForm && isCooked && planId && (
+        <div className="border-t border-gray-200 bg-gray-50 p-4">
+          <LeftoverForm
+            planId={planId}
+            slotId={slot.id}
+            onSuccess={() => {
+              setShowLeftoverForm(false);
+              onLeftoverRecorded?.();
+            }}
+          />
+        </div>
+      )}
     </div>
   );
 }

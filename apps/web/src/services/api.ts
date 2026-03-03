@@ -18,6 +18,10 @@ import type {
   RecipeFavorite,
   MemberPreference,
   CreateMemberPreference,
+  Leftover,
+  StapleIngredient,
+  StapleSuggestion,
+  DefrostReminder,
 } from "@/types";
 
 // ---------------------------------------------------------------------------
@@ -145,6 +149,7 @@ export interface CreateInventoryItemBody {
   unit: UnitType;
   location: StorageLocation;
   expiry_date?: string | null;
+  defrost_hours?: number | null;
 }
 
 export interface UpdateInventoryItemBody {
@@ -196,6 +201,18 @@ export interface PurchasedItem {
 
 export interface CompleteShoppingBody {
   purchased_items: PurchasedItem[];
+}
+
+export interface CreateLeftoverBody {
+  portions: number;
+  storage_location: StorageLocation;
+  expiry_date: string;
+}
+
+export interface CreateStapleBody {
+  ingredient_id: string;
+  min_threshold: number;
+  unit: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -491,5 +508,74 @@ export async function getMealHistory(
   const qs = params.toString();
   return fetchApi<MealHistoryItem[]>(
     `/api/v1/meal-history${qs ? `?${qs}` : ""}`,
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Leftovers
+// ---------------------------------------------------------------------------
+
+export async function createLeftover(
+  planId: string,
+  slotId: string,
+  body: CreateLeftoverBody,
+): Promise<Leftover> {
+  return fetchApi<Leftover>(
+    `/api/v1/meal-plans/${planId}/slots/${slotId}/leftovers`,
+    {
+      method: "POST",
+      body: JSON.stringify(body),
+    },
+  );
+}
+
+export async function listLeftovers(includeUsed = false): Promise<Leftover[]> {
+  const params = includeUsed ? "?include_used=true" : "";
+  return fetchApi<Leftover[]>(`/api/v1/leftovers${params}`);
+}
+
+export async function markLeftoverUsed(leftoverId: string): Promise<Leftover> {
+  return fetchApi<Leftover>(`/api/v1/leftovers/${leftoverId}`, {
+    method: "PATCH",
+    body: JSON.stringify({}),
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Staples
+// ---------------------------------------------------------------------------
+
+export async function listStaples(): Promise<StapleIngredient[]> {
+  return fetchApi<StapleIngredient[]>("/api/v1/staples");
+}
+
+export async function addStaple(
+  body: CreateStapleBody,
+): Promise<StapleIngredient> {
+  return fetchApi<StapleIngredient>("/api/v1/staples", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+export async function removeStaple(stapleId: string): Promise<void> {
+  return fetchApi<void>(`/api/v1/staples/${stapleId}`, {
+    method: "DELETE",
+  });
+}
+
+export async function getStapleSuggestions(): Promise<StapleSuggestion[]> {
+  return fetchApi<StapleSuggestion[]>("/api/v1/staples/suggestions");
+}
+
+// ---------------------------------------------------------------------------
+// Defrost
+// ---------------------------------------------------------------------------
+
+export async function getDefrostReminders(
+  daysAhead = 7,
+): Promise<DefrostReminder[]> {
+  return fetchApi<DefrostReminder[]>(
+    `/api/v1/inventory/defrost-reminders?days_ahead=${daysAhead}`,
   );
 }

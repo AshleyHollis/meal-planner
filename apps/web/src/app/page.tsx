@@ -58,7 +58,11 @@ export default function DashboardPage() {
           setPlan(null);
         }
       }
-    } catch {
+    } catch (err) {
+      if (err instanceof ApiError && err.isAuthError) {
+        window.location.href = "/api/auth/login";
+        return;
+      }
       setError("Failed to load dashboard data.");
     } finally {
       setLoading(false);
@@ -79,7 +83,11 @@ export default function DashboardPage() {
           cuisinePreferences.length > 0 ? cuisinePreferences : undefined,
       });
       router.push(`/meal-plan/${newPlan.id}`);
-    } catch {
+    } catch (err) {
+      if (err instanceof ApiError && err.isAuthError) {
+        window.location.href = "/api/auth/login";
+        return;
+      }
       setError("Failed to generate meal plan.");
       setGenerating(false);
     }
