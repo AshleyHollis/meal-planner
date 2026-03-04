@@ -617,3 +617,157 @@ The team should always use the latest LLM models. Specifically: `claude-opus-4.6
 - [ ] Capture screenshots/snapshots as evidence
 
 **Rationale:** Automated tests verify behavior in isolation. Visual smoke tests verify the integrated experience as a real user would see it. Both are necessary. This directive closes the gap between "tests pass" and "feature works."
+
+---
+
+## Session 2026-03-04T01-30 Inventory Validation & Product Serialization
+
+**Resolved:** 4 decisions (relax inventory validation, product serialization, shop filter sentinel, visual smoke testing directive)
+
+### Decision 16: Inventory Validation is Guidance, Not a Gate
+
+**Author:** Ripley (Backend Dev)  
+**Date:** 2026-03-04  
+**Status:** Implemented  
+**Commit:** da7bcba — `fix(validator): relax inventory constraint to allow grocery list items`
+
+## Context
+
+Meal plan generation was failing with:
+- `"Expected ~21 recipes for 3 meal types (±2), got 13"`
+- Many `"ingredient X not in inventory"` errors
+
+The validator's check #4 required every recipe ingredient to exist in the household inventory. With multi-meal-type generation (breakfast + lunch + dinner), the LLM naturally includes ingredients not yet stocked — which is correct behaviour, since the grocery list is supposed to surface exactly those items.
+
+## Decision
+
+**Remove the inventory ingredient check from the validator entirely.**
+
+The `inventory` parameter is retained in the function signature for backward compatibility, but the check body is replaced with a comment explaining the rationale.
+
+Additionally, requirement 6 in both the `SYSTEM_PROMPT` constant and `format_system_prompt()` was updated from:
+
+> "Use ingredient names that match the provided inventory list"
+
+to:
+
+> "Prioritize using ingredients from the provided inventory, especially items expiring soon. Recipes MAY include ingredients not in inventory — those will be added to the grocery list."
+
+## Rationale
+
+Hard validation gates belong only to:
+1. **Safety constraints** — allergen ingredients (never relax)
+2. **Structural constraints** — servings must be 2, recipe count within tolerance, equipment modes must exist
+
+Inventory awareness is a **prompt-level guidance**, not a validator gate. The LLM still prioritises in-stock items and expiring items; it just isn't blocked from including others.
+
+## Impact
+
+- All 97 worker tests pass  
+- All 187 API tests pass  
+- Next.js build succeeds  
+- No test changes were required
+
+### Decision 17: Product Mapping Routes — Manual Serialization Pattern
+
+**Author:** Ripley (Backend Dev)  
+**Date:** 2026-03-04  
+**Status:** Implemented
+
+## Context
+
+The `ProductResponse` Pydantic model includes an `ingredient_name: str` field that is not a column on the `Product` ORM model — it must be populated from the eagerly-loaded `ingredient` relationship.
+
+`model_validate(product)` with `from_attributes=True` cannot populate `ingredient_name` because it's not an ORM attribute. Passing `**product.__dict__` also fails because SQLAlchemy's internal state dict (`_sa_instance_state`, unloaded attributes) is unreliable for direct dict unpacking.
+
+## Decision
+
+Use a `_to_response(product: Product) -> ProductResponse` helper that explicitly maps every field:
+
+```python
+def _to_response(product: Product) -> ProductResponse:
+    return ProductResponse(
+        id=product.id,
+        household_id=product.household_id,
+        ...
+        ingredient_name=product.ingredient.name if product.ingredient else "",
+        created_at=product.created_at,
+        updated_at=product.updated_at,
+    )
+```
+
+Also: after `session.flush()`, call bare `session.refresh(product)` (not with `attribute_names`) to ensure `updated_at` is reloaded from the DB server default before the route handler accesses it.
+
+## Rationale
+
+- Explicit is better than implicit — no hidden ORM state bugs
+- `ingredient` is `lazy="selectin"` so it's always loaded; safe to access directly
+- The `refresh()` pattern ensures server-side timestamps are available without greenlet errors
+
+## Impact
+
+- Pattern to use in any future route where a response model includes derived/joined fields
+- Applies to: ProductResponse; may apply to future response models that embed joined data
+
+### Decision 18: Shop Filter Uses `__other__` Sentinel for Unassigned Items
+
+**Author:** Kane (Frontend Dev)  
+**Date:** 2026-03-04  
+**Status:** Implemented
+
+## Context
+
+The ShopFilter component needs to handle grocery items that have no product linked (or have a product with no shop). These can't map to a real shop name.
+
+## Decision
+
+Use the string sentinel `"__other__"` as the `selectedShop` value when the "Other" tab is active. `filterByShop()` in GroceryList treats this value specially: it filters for items where `!item.product?.shop`.
+
+## Rationale
+
+- Avoids a separate boolean flag or discriminated union for "Other" state
+- Keeps `selectedShop: string | null` simple (null = All, string = shop name or sentinel)
+- TripTracker is not shown when `selectedShop === "__other__"` (no meaningful trip tracking for unassigned items)
+
+## Scope
+
+Frontend only. No API or backend impact. Components: ShopFilter.tsx, GroceryList.tsx.
+
+### Decision 19: User Directive — Mandatory Visual Smoke Testing Before Feature Completion
+
+**Author:** Ashley Hollis (via Copilot)  
+**Date:** 2026-03-04  
+**Status:** Active (Permanent directive)
+
+**What:** Every feature MUST undergo visual smoke testing in the Azure preview environment using Playwright MCP browser tools BEFORE the feature can be marked complete or the PR merged. E2E tests alone are NOT sufficient.
+
+**Why:** During 005-grocery-enhancements, automated E2E tests (52 passed, 0 failed) gave a false sense of confidence. Manual visual smoke testing revealed:
+
+1. **Untestable flows** — Grocery list with shop filter and TripTracker couldn't be tested because no active meal plan with grocery items existed in the interactive user's context (E2E tests use isolated seed data)
+2. **Pre-existing bugs hidden by E2E** — Meal plan generation returns 422 + frontend crashes with React error #31 (renders error object as React child). E2E tests never exercise this path because they seed data directly.
+3. **Visual rendering gaps** — E2E headless tests can't catch layout issues, missing badges, broken responsive behavior, or visual regressions that only appear in a real browser
+
+**Directive — applies to ALL future features:**
+
+1. **Phase gate**: Tasks.md for every feature MUST include a "Visual Smoke Testing" phase as the FINAL phase before feature completion
+2. **Scope**: Test every user story's primary UI flows in the deployed Azure preview environment
+3. **Tooling**: Use Playwright MCP browser tools (navigate, snapshot, click, type) to interact with the live preview
+4. **Auth**: Test both authenticated and unauthenticated states
+5. **Regression**: Verify existing pages have no visual regressions
+6. **Evidence**: Capture accessibility snapshots or screenshots of key screens
+7. **Blocker policy**: Any visual bug found during smoke testing MUST be fixed before merge — it is a blocker, not a nice-to-have
+8. **Owner**: Lambert (Tester) owns the smoke test checklist; Kane (Frontend Dev) fixes any visual bugs found
+
+**Smoke Test Checklist Template** (adapt per feature):
+
+- [ ] Navigate to preview URL (from GitHub Actions deployment)
+- [ ] Test unauthenticated state (landing page, login link)
+- [ ] Log in and verify authenticated state
+- [ ] Test each user story's primary UI flow visually
+- [ ] Verify data displays correctly (not raw IDs, proper formatting)
+- [ ] Test responsive layout (if applicable)
+- [ ] Check for console errors in browser
+- [ ] Verify no visual regressions on existing pages
+- [ ] Capture screenshots/snapshots as evidence
+
+**Rationale:** Automated tests verify behavior in isolation. Visual smoke tests verify the integrated experience as a real user would see it. Both are necessary. This directive closes the gap between "tests pass" and "feature works."

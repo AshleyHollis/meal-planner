@@ -170,3 +170,14 @@
   3. **E2E seed**: Added cleanup step before seeding — GET all inventory, DELETE each item — gives a clean slate on every pipeline run.
 - All 98 API tests and 37 frontend tests pass after the change.
 - Pattern: for shared-DB environments, seed scripts must actively clean up before seeding; upsert alone is not enough when accumulated state from prior runs is undesirable.
+
+### Relax inventory constraint — grocery list items (2026-03-04)
+
+- **Branch:** 005-grocery-enhancements
+- **Commit:** da7bcba — `fix(validator): relax inventory constraint to allow grocery list items`
+- **Root cause:** `validate_constraints()` rejected any recipe ingredient not present in the household inventory. With 3 meal types (breakfast/lunch/dinner), ~21 recipes are generated and the LLM naturally uses ingredients not yet stocked — producing 13+ errors per run and blocking generation entirely.
+- **Fix:** Removed the ingredient-vs-inventory loop from `validator.py` (check #4). Kept the `inventory` parameter in the function signature for backward compatibility. Updated requirement 6 in both `SYSTEM_PROMPT` constant and `format_system_prompt()` in `prompts.py`: from "Use ingredient names that match the provided inventory list" to "Prioritize using ingredients from the provided inventory … Recipes MAY include ingredients not in inventory — those will be added to the grocery list."
+- **Design principle:** Inventory check is GUIDANCE (prompt), not a GATE (validator). Hard gates belong only to safety constraints (allergens, equipment modes) and structural constraints (servings, recipe count). The grocery list exists precisely to handle ingredients not yet in stock.
+- **Tests:** No test changes needed. Default test ingredients ("chicken breast", "rice") match `default_inventory` — removing the check only reduces possible errors, not adds them. 97 worker tests + 187 API tests + Next.js build all pass.
+- **Decision logged:** Decision 16 in team decisions.md.
+- **Status:** Ready for feature testing and merge.
