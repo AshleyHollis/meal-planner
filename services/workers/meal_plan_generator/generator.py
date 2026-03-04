@@ -644,9 +644,7 @@ async def _mark_failed(db: Any, meal_plan_id: str, error_message: str) -> None:
             result = await session.execute(select(MealPlan).where(MealPlan.id == meal_plan_id))
             meal_plan = result.scalar_one_or_none()
             if meal_plan is None:
-                logger.warning(
-                    "mark_failed_skipped", meal_plan_id=meal_plan_id, reason="not_found"
-                )
+                logger.warning("mark_failed_skipped", meal_plan_id=meal_plan_id, reason="not_found")
                 return
             meal_plan.status = "failed"
             meal_plan.error_message = error_message

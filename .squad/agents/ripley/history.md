@@ -246,5 +246,5 @@
 - **Local venv issue diagnosed:** The API service venv had a stale install of meal-planner-shared that was missing `recurring_meal.py` (added in a prior sprint). This caused 2 test collection errors blocking the entire test suite. Fix: `uv sync --all-extras` rebuilds the shared package correctly. Root cause: uv caches built wheels and doesn't auto-detect source file additions.
 - **Key pattern:** Always run `uv sync --all-extras` after adding new model files to the shared package, not just `uv pip install`.
 - **Race condition noted (not fixed):** Two concurrent `POST /api/v1/meal-plans` requests could both pass the draft/active check before either flushes. No DB-level unique constraint on (household_id, status IN ['draft','active']). Current risk is low (single worker, household-scoped usage). Mitigating with DB constraint is future work.
-- **No logic issues found in generation flow:** create_plan → enqueue_message → generator._load_context → _generate_with_retries (3 retries) → _persist_plan → status=active. Path is solid.
+- **No logic issues found in generation flow:** create_plan → enqueue_message → generator.\_load_context → \_generate_with_retries (3 retries) → \_persist_plan → status=active. Path is solid.
 - **Test results:** 193 API tests pass, 97 worker tests pass, ruff clean.

@@ -293,11 +293,13 @@ All new E2E tests follow the exact patterns established in existing specs:
 **Problem:** Dashboard "Generate Plan" action failing in production but E2E tests didn't catch it. Coverage gaps identified for dashboard flows and history page.
 
 **Audit Results:**
+
 - Reviewed all 11 E2E test files: 87 existing tests across navigation, meal plans, inventory, grocery, products, preferences, favorites, cuisine, ratings
 - Identified 6 critical gaps: Dashboard generate, dashboard cuisine+generate, dashboard stats nav, history view, history expand, history details
 - All other 27 flows had coverage (100% flow coverage after new tests)
 
 **New Tests Added:**
+
 1. **dashboard.spec.ts** (13 tests):
    - Page load & content: heading, active plan section, quick links (3 tests)
    - Generate plan: button click, navigation, completion state (3 tests)
@@ -310,6 +312,7 @@ All new E2E tests follow the exact patterns established in existing specs:
    - Viewing details: expanded content, links, status display (4 tests)
 
 **Test Patterns Established:**
+
 - Frontend tests (page structure) run without backend
 - Backend-dependent tests skip gracefully with `USE_EXTERNAL_SERVER` flag (no confusing failures)
 - Plan generation tests marked with `test.slow()` (90s timeout for LLM calls)
@@ -318,11 +321,13 @@ All new E2E tests follow the exact patterns established in existing specs:
 - Edge cases: empty state, error state, happy path all tested
 
 **TypeScript Verification:**
+
 - All new tests compile clean (`npx tsc --noEmit` = 0 errors)
 - No regression: existing 87 tests unchanged
 - File paths: `apps/web/e2e/dashboard.spec.ts`, `apps/web/e2e/history.spec.ts`
 
 **Key Learnings:**
+
 1. Dashboard is the entry point for most user flows — every action button needs E2E coverage
 2. History pages with expand/collapse are real user interactions that can break with state management bugs
 3. Skip guards with clear reasons prevent test failure confusion on preview environments (especially important for slow LLM-dependent tests)
@@ -330,6 +335,7 @@ All new E2E tests follow the exact patterns established in existing specs:
 5. Slow tests need marking with `test.slow()` to prevent unexpected timeout during CI runs
 
 **Prevention:** Next time Generate Plan breaks, these tests will catch it immediately because:
+
 - ✅ Testing exact action: dashboard → click Generate → verify navigation
 - ✅ Testing with real backend: `USE_EXTERNAL_SERVER=true` hits actual API
 - ✅ Testing generation completion: waits for plan status change (catches LLM failures)

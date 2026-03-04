@@ -125,9 +125,9 @@ test.describe("Dashboard", () => {
         const dialog = page.getByRole("dialog").first();
         const spinner = page.locator('[class*="animate-spin"]');
 
-        await expect(
-          dialog.or(spinner).first(),
-        ).toBeVisible({ timeout: 10_000 });
+        await expect(dialog.or(spinner).first()).toBeVisible({
+          timeout: 10_000,
+        });
       }
     });
 
@@ -161,10 +161,7 @@ test.describe("Dashboard", () => {
         const generatingText = page.getByText(/generating|creating/i);
 
         await expect(
-          backLink
-            .or(failedText)
-            .or(generatingText)
-            .first(),
+          backLink.or(failedText).or(generatingText).first(),
         ).toBeVisible({ timeout: 90_000 });
       } catch {
         test.skip(true, "Plan generation or navigation failed");
@@ -192,16 +189,14 @@ test.describe("Dashboard", () => {
       }
 
       // Cuisine section should be visible (if implemented on dashboard)
-      const cuisineSection = page
-        .getByText(/Cuisine|Preferences/i)
-        .first();
+      const cuisineSection = page.getByText(/Cuisine|Preferences/i).first();
       const cuisineButton = page
         .getByRole("button", { name: /Mexican|Italian|Asian/i })
         .first();
 
-      await expect(
-        cuisineSection.or(cuisineButton),
-      ).toBeVisible({ timeout: 10_000 });
+      await expect(cuisineSection.or(cuisineButton)).toBeVisible({
+        timeout: 10_000,
+      });
     });
 
     test.skip(
@@ -234,7 +229,9 @@ test.describe("Dashboard", () => {
         name: /Mexican/i,
       });
 
-      if (await cuisineButton.isVisible({ timeout: 5_000 }).catch(() => false)) {
+      if (
+        await cuisineButton.isVisible({ timeout: 5_000 }).catch(() => false)
+      ) {
         await cuisineButton.click();
 
         // Verify selection is highlighted
@@ -307,9 +304,7 @@ test.describe("Dashboard", () => {
         .filter({ hasText: /Meal Plans|Plans Created|Total Plans/ })
         .first();
 
-      if (
-        await mealPlanStat.isVisible({ timeout: 5_000 }).catch(() => false)
-      ) {
+      if (await mealPlanStat.isVisible({ timeout: 5_000 }).catch(() => false)) {
         await mealPlanStat.click();
 
         // Should navigate to meal-plan page

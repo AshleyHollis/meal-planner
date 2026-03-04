@@ -45,7 +45,9 @@ test.describe("History Page", () => {
       const emptyState = page.getByText(
         /No history|No past plans|No meal plans/i,
       );
-      const historyItem = page.getByText(/Week of |Completed|Finished/i).first();
+      const historyItem = page
+        .getByText(/Week of |Completed|Finished/i)
+        .first();
       const errorMessage = page.getByText(/Failed to load/i);
 
       await expect(
@@ -103,9 +105,7 @@ test.describe("History Page", () => {
         .filter({ hasText: /Week of |Completed/ })
         .first();
 
-      if (
-        await expandButton.isVisible({ timeout: 5_000 }).catch(() => false)
-      ) {
+      if (await expandButton.isVisible({ timeout: 5_000 }).catch(() => false)) {
         // Check if it's currently collapsed (aria-expanded or similar)
         const isExpanded = await expandButton
           .getAttribute("aria-expanded")
@@ -144,9 +144,7 @@ test.describe("History Page", () => {
       }
 
       // Find first expandable item
-      const items = page.locator("[role='button']").or(
-        page.locator("button"),
-      );
+      const items = page.locator("[role='button']").or(page.locator("button"));
       const itemCount = await items.count();
 
       if (itemCount === 0) {
@@ -208,9 +206,7 @@ test.describe("History Page", () => {
         .filter({ hasText: /Week of |Completed/ })
         .first();
 
-      if (
-        !(await firstItem.isVisible({ timeout: 5_000 }).catch(() => false))
-      ) {
+      if (!(await firstItem.isVisible({ timeout: 5_000 }).catch(() => false))) {
         test.skip(true, "No expandable items");
         return;
       }

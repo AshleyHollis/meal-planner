@@ -19,32 +19,33 @@
 ## Coverage Audit Results
 
 ### Test Files Reviewed (11 total)
-| File | Tests | Scope |
-|------|-------|-------|
-| **smoke.spec.ts** | 8 | Navigation, auth, core page loads |
-| **meal-plan.spec.ts** | 26 | Plan CRUD, generation, status filters, leftovers, deduction |
-| **planning-enhancements.spec.ts** | 9 | Quick cook, recurring meals, ingredient swap, multi-meal |
-| **inventory.spec.ts** | 10 | Add/list items, multi-location storage, expiry badges |
-| **grocery.spec.ts** | 3 | Grocery list page load and item management |
-| **grocery-trips.spec.ts** | 6 | Shop filter tabs, trip tracking |
-| **products.spec.ts** | 8 | Product CRUD, search, detail view |
-| **preferences.spec.ts** | 6 | Dietary restrictions, allergies, likes/dislikes |
-| **favorites.spec.ts** | 4 | Favorite/unfavorite recipes |
-| **cuisine.spec.ts** | 4 | Cuisine selector, generation |
-| **ratings.spec.ts** | 3 | Rate cooked meals with feedback |
-| **dashboard.spec.ts** ⭐ | 13 | **Dashboard flows (NEW)** |
-| **history.spec.ts** ⭐ | 10 | **History page flows (NEW)** |
+
+| File                              | Tests | Scope                                                       |
+| --------------------------------- | ----- | ----------------------------------------------------------- |
+| **smoke.spec.ts**                 | 8     | Navigation, auth, core page loads                           |
+| **meal-plan.spec.ts**             | 26    | Plan CRUD, generation, status filters, leftovers, deduction |
+| **planning-enhancements.spec.ts** | 9     | Quick cook, recurring meals, ingredient swap, multi-meal    |
+| **inventory.spec.ts**             | 10    | Add/list items, multi-location storage, expiry badges       |
+| **grocery.spec.ts**               | 3     | Grocery list page load and item management                  |
+| **grocery-trips.spec.ts**         | 6     | Shop filter tabs, trip tracking                             |
+| **products.spec.ts**              | 8     | Product CRUD, search, detail view                           |
+| **preferences.spec.ts**           | 6     | Dietary restrictions, allergies, likes/dislikes             |
+| **favorites.spec.ts**             | 4     | Favorite/unfavorite recipes                                 |
+| **cuisine.spec.ts**               | 4     | Cuisine selector, generation                                |
+| **ratings.spec.ts**               | 3     | Rate cooked meals with feedback                             |
+| **dashboard.spec.ts** ⭐          | 13    | **Dashboard flows (NEW)**                                   |
+| **history.spec.ts** ⭐            | 10    | **History page flows (NEW)**                                |
 
 ### Previously Untested Flows (6 gaps) — NOW FIXED ✅
 
-| Flow | Gap Reason | Solution |
-|------|-----------|----------|
-| **Dashboard → Generate Plan** | ⚠️ THE BROKEN ONE | dashboard.spec.ts: 8 tests covering button click, flow entry, plan completion |
-| **Dashboard → Customize Cuisine → Generate** | No tests at dashboard level | dashboard.spec.ts: 3 tests for cuisine selection then generation |
-| **Dashboard stats → Navigate to pages** | No stat card navigation tests | dashboard.spec.ts: 2 tests verifying stat cards clickable and navigate |
-| **History → View past plans** | History page not tested | history.spec.ts: 3 tests for page load, empty state, list display |
-| **History → Expand items** | No expand/collapse tests | history.spec.ts: 3 tests for expansion, collapse, state management |
-| **History → View details** | No detail view tests | history.spec.ts: 4 tests for expanded content, links, status display |
+| Flow                                         | Gap Reason                    | Solution                                                                      |
+| -------------------------------------------- | ----------------------------- | ----------------------------------------------------------------------------- |
+| **Dashboard → Generate Plan**                | ⚠️ THE BROKEN ONE             | dashboard.spec.ts: 8 tests covering button click, flow entry, plan completion |
+| **Dashboard → Customize Cuisine → Generate** | No tests at dashboard level   | dashboard.spec.ts: 3 tests for cuisine selection then generation              |
+| **Dashboard stats → Navigate to pages**      | No stat card navigation tests | dashboard.spec.ts: 2 tests verifying stat cards clickable and navigate        |
+| **History → View past plans**                | History page not tested       | history.spec.ts: 3 tests for page load, empty state, list display             |
+| **History → Expand items**                   | No expand/collapse tests      | history.spec.ts: 3 tests for expansion, collapse, state management            |
+| **History → View details**                   | No detail view tests          | history.spec.ts: 4 tests for expanded content, links, status display          |
 
 ---
 
@@ -53,23 +54,28 @@
 ### dashboard.spec.ts (13 tests)
 
 **Page Load & Content (3 tests):**
+
 - ✅ Dashboard loads with heading and primary content
 - ✅ Shows active plan section or "no active plan" message
 - ✅ Shows quick link cards for navigation
 
 **Generate Plan from Dashboard (3 tests):**
+
 - ✅ Clicking Generate Plan button navigates to generation flow (backend-dependent)
 - ✅ Plan generation completes or shows appropriate state (slow test, 90s timeout)
 
 **Cuisine Preferences Before Generation (2 tests):**
+
 - ✅ Cuisine preferences section visible on dashboard
 - ✅ Can set cuisine preferences and then generate plan (backend-dependent)
 
 **Dashboard Stats Navigation (2 tests):**
+
 - ✅ Stat cards are visible
 - ✅ Clicking stat card navigates to relevant page
 
 **Test Pattern:**
+
 - All backend-dependent tests use `test.skip()` guards with `USE_EXTERNAL_SERVER` flag
 - Graceful degradation: tests skip if data unavailable, don't fail with confusing errors
 - 90-second timeout for plan generation (LLM calls slow)
@@ -78,21 +84,25 @@
 ### history.spec.ts (10 tests)
 
 **Page Load & Content (3 tests):**
+
 - ✅ History page loads with heading
 - ✅ Shows empty state or history list after loading
 - ✅ Shows back navigation link
 
 **Expanding History Items (3 tests):**
+
 - ✅ History items are expandable (backend-dependent)
 - ✅ Can expand and collapse history items
 - ✅ Expanded items show meal details
 
 **Viewing History Details (4 tests):**
+
 - ✅ Expanded history items show meal details (backend-dependent)
 - ✅ Can click history item to view full plan details
 - ✅ History items display completion status or date
 
 **Test Pattern:**
+
 - Frontend tests (page load, expandability) run without backend
 - Backend-dependent tests skip gracefully with clear messages
 - Handle both "week of" and "completed" status displays
@@ -115,6 +125,7 @@
 ### Existing Tests: Still Solid
 
 No regressions. Existing 87 tests remain unchanged with same patterns:
+
 - No skipped tests that should be running
 - All cover both happy path and error states
 - Multi-location inventory tests verify realistic data
@@ -125,12 +136,14 @@ No regressions. Existing 87 tests remain unchanged with same patterns:
 ## Remaining Work & Future Considerations
 
 ### Gaps Closed in This Session
+
 ✅ All 6 untested flows now have E2E coverage
 ✅ Dashboard generate plan (the broken one!) now tested
 ✅ History page fully tested with expand/collapse/detail views
 ✅ TypeScript compiles clean (0 errors)
 
 ### Future Enhancements (Out of scope for this task)
+
 - **Visual regression testing:** Playwright's visual comparisons for dashboard layout
 - **Performance testing:** Dashboard load time, plan generation duration baselines
 - **A/B test support:** If dashboard UI variations are tested
@@ -138,7 +151,9 @@ No regressions. Existing 87 tests remain unchanged with same patterns:
 - **Accessibility testing:** WCAG 2.1 AA compliance for dashboard and history
 
 ### Seed Data Considerations
+
 Current seed data (30 ingredients, 23 product mappings, 10 expiry variants) is sufficient for:
+
 - History page tests (completed plans exist)
 - Dashboard stat tests (plans created)
 - Multi-meal generation tests
@@ -163,10 +178,12 @@ No additional seed data needed for new tests.
 ## Files Changed
 
 **New test files:**
+
 - `apps/web/e2e/dashboard.spec.ts` — 13 tests for dashboard flows
 - `apps/web/e2e/history.spec.ts` — 10 tests for history page flows
 
 **No changes to:**
+
 - Playwright config
 - Seed data setup
 - Auth setup
@@ -187,11 +204,13 @@ No additional seed data needed for new tests.
 ## How This Prevents Future Bugs
 
 The "Generate Plan broken in production" incident occurred because:
+
 - Dashboard's Generate button wasn't tested
 - No E2E verification that the button flow works end-to-end
 - UI tests may pass but endpoint integration fails silently
 
 **New coverage prevents this by:**
+
 - ✅ Testing the exact action: dashboard → click Generate → verify navigation/generation
 - ✅ Testing with real backend: `USE_EXTERNAL_SERVER=true` runs against actual API
 - ✅ Testing UI state: verifies button exists, clickable, and triggers correct flow
