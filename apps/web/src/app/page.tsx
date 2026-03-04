@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -8,8 +8,10 @@ import { useRouter } from "next/navigation";
 import type { InventoryItem, MealPlanDetail, MealHistoryItem } from "@/types";
 import {
   listInventory,
+  listMealPlans,
   getActiveMealPlan,
   createMealPlan,
+  updatePlanStatus,
   getMealHistory,
 } from "@/services/api";
 import { ApiError } from "@/services/api";
@@ -18,6 +20,14 @@ import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { getMealImageUrl } from "@/lib/meal-images";
 import { CuisineSelector } from "@/components/CuisineSelector";
+import { MealTypeSelector } from "@/components/MealTypeSelector";
+import { useToast } from "@/components/ui/Toast";
+
+const GENERATION_STEPS = [
+  "Creating plan...",
+  "Generating recipes...",
+  "Building grocery list...",
+];
 
 function getNextMonday(): string {
   const today = new Date();
@@ -30,14 +40,39 @@ function getNextMonday(): string {
 
 export default function DashboardPage() {
   const router = useRouter();
+  const { showToast } = useToast();
   const [plan, setPlan] = useState<MealPlanDetail | null>(null);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [history, setHistory] = useState<MealHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
+  const [generationStep, setGenerationStep] = useState(0);
   const [error, setError] = useState<string | null>(null);
-  const [showCuisineSelector, setShowCuisineSelector] = useState(false);
   const [cuisinePreferences, setCuisinePreferences] = useState<string[]>([]);
+  const [mealTypes, setMealTypes] = useState<string[]>([
+    "breakfast",
+    "lunch",
+    "dinner",
+  ]);
+  const stepIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Cycle through generation steps while generating
+  useEffect(() => {
+    if (generating) {
+      setGenerationStep(0);
+      stepIntervalRef.current = setInterval(() => {
+        setGenerationStep((prev) =>
+          prev < GENERATION_STEPS.length - 1 ? prev + 1 : prev,
+        );
+      }, 2000);
+    } else {
+      if (stepIntervalRef.current) clearInterval(stepIntervalRef.current);
+      setGenerationStep(0);
+    }
+    return () => {
+      if (stepIntervalRef.current) clearInterval(stepIntervalRef.current);
+    };
+  }, [generating]);
 
   const fetchData = useCallback(async () => {
     try {
@@ -82,10 +117,22 @@ export default function DashboardPage() {
     try {
       setGenerating(true);
       setError(null);
+
+      // Auto-complete any existing active or draft plan before creating a new one.
+      // This prevents the API returning 409 Conflict.
+      const allPlans = await listMealPlans();
+      const existing = allPlans.find(
+        (p) => p.status === "active" || p.status === "draft",
+      );
+      if (existing) {
+        await updatePlanStatus(existing.id, { status: "completed" });
+      }
+
       const newPlan = await createMealPlan({
         week_start_date: getNextMonday(),
         cuisine_preferences:
           cuisinePreferences.length > 0 ? cuisinePreferences : undefined,
+        meal_types: mealTypes.length > 0 ? mealTypes : undefined,
       });
       router.push(`/meal-plan/${newPlan.id}`);
     } catch (err) {
@@ -93,7 +140,12 @@ export default function DashboardPage() {
         window.location.href = "/api/auth/login";
         return;
       }
-      setError("Failed to generate meal plan.");
+      const message =
+        (err && typeof err === "object" && "body" in err
+          ? (err.body as { detail?: string })?.detail
+          : null) ?? "Failed to generate meal plan. Please try again.";
+      setError(message);
+      showToast(message, "error");
       setGenerating(false);
     }
   };
@@ -208,31 +260,26 @@ export default function DashboardPage() {
           </div>
         </section>
       ) : (
-        <section className="mb-6 rounded-xl border border-gray-100 bg-white p-6 shadow-sm text-center">
-          <div className="mb-4 text-5xl">🍽️</div>
-          <h3 className="mb-2 text-lg font-semibold text-gray-800">
-            Plan Your Week
-          </h3>
-          <p className="mb-6 text-sm text-gray-600">
-            Generate a meal plan to get started
-          </p>
-          {showCuisineSelector && (
-            <div className="mb-4">
-              <CuisineSelector
-                selected={cuisinePreferences}
-                onChange={setCuisinePreferences}
-              />
+      <section className="mb-6 rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
+          <div className="mb-4 flex items-center gap-3">
+            <div className="text-4xl">🍽️</div>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-800">
+                Plan Your Week
+              </h3>
+              <p className="text-sm text-gray-600">
+                Customize and generate your meal plan
+              </p>
             </div>
-          )}
-          <div className="flex justify-center gap-3">
-            {!showCuisineSelector && (
-              <Button
-                variant="secondary"
-                onClick={() => setShowCuisineSelector(true)}
-              >
-                Customize Cuisine
-              </Button>
-            )}
+          </div>
+          <CuisineSelector
+            selected={cuisinePreferences}
+            onChange={setCuisinePreferences}
+          />
+          <div className="mt-4">
+            <MealTypeSelector selected={mealTypes} onChange={setMealTypes} />
+          </div>
+          <div className="mt-4">
             <Button
               onClick={() => void handleGenerate()}
               loading={generating}
@@ -241,6 +288,43 @@ export default function DashboardPage() {
               Generate Plan
             </Button>
           </div>
+
+          {/* Generation progress indicator */}
+          {generating && (
+            <div className="mt-5 rounded-lg border border-blue-100 bg-blue-50 p-4">
+              <div className="mb-3 flex items-center gap-2">
+                <Spinner size="sm" />
+                <span className="text-sm font-medium text-blue-700">
+                  {GENERATION_STEPS[generationStep]}
+                </span>
+              </div>
+              <div className="flex gap-2">
+                {GENERATION_STEPS.map((step, i) => (
+                  <div
+                    key={step}
+                    className="flex flex-1 flex-col items-center gap-1"
+                  >
+                    <div
+                      className={`h-1.5 w-full rounded-full transition-all duration-500 ${
+                        i <= generationStep ? "bg-blue-500" : "bg-blue-200"
+                      }`}
+                    />
+                    <span
+                      className={`text-xs transition-colors duration-300 ${
+                        i === generationStep
+                          ? "font-medium text-blue-600"
+                          : i < generationStep
+                            ? "text-blue-400"
+                            : "text-gray-400"
+                      }`}
+                    >
+                      {i === 0 ? "Creating" : i === 1 ? "Recipes" : "Grocery"}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </section>
       )}
 
