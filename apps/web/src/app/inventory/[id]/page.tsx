@@ -33,6 +33,7 @@ export default function InventoryDetailPage({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    document.title = "Inventory | Meal Planner";
     async function fetchItem() {
       try {
         setError(null);

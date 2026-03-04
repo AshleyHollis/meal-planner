@@ -9,6 +9,7 @@ import { Spinner } from "@/components/ui/Spinner";
 import { GroceryList } from "@/components/grocery/GroceryList";
 import { CompleteShoppingDialog } from "@/components/grocery/CompleteShoppingDialog";
 import { clearTripsForList, isNewList } from "@/services/tripStorage";
+import { formatCurrency } from "@/lib/format-currency";
 
 interface GroceryListPageProps {
   params: Promise<{ id: string }>;
@@ -36,6 +37,10 @@ export default function GroceryListPage({ params }: GroceryListPageProps) {
       setLoading(false);
     }
   }, [id]);
+
+  useEffect(() => {
+    document.title = "Grocery List | Meal Planner";
+  }, []);
 
   useEffect(() => {
     void fetchList();
@@ -89,7 +94,7 @@ export default function GroceryListPage({ params }: GroceryListPageProps) {
         <h1 className="text-2xl font-bold text-gray-900">Grocery List</h1>
         {estimatedCost > 0 && (
           <span className="text-lg font-semibold text-green-700">
-            Est. ${estimatedCost.toFixed(2)}
+            Est. {formatCurrency(estimatedCost)}
           </span>
         )}
       </div>

@@ -6,6 +6,7 @@ import type { GroceryItem as GroceryItemType, Product } from "@/types";
 import { checkGroceryItem } from "@/services/api";
 import { ProductMappingForm } from "@/components/ProductMappingForm";
 import { useToast } from "@/components/ui/Toast";
+import { formatCurrency } from "@/lib/format-currency";
 
 interface GroceryItemProps {
   item: GroceryItemType;
@@ -72,10 +73,7 @@ function GroceryItem({ item, onChanged, tripChecked }: GroceryItemProps) {
             </span>
             {linkedProduct.price != null && (
               <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
-                {new Intl.NumberFormat("en-AU", {
-                  style: "currency",
-                  currency: "AUD",
-                }).format(linkedProduct.price)}
+                {formatCurrency(linkedProduct.price)}
               </span>
             )}
             {linkedProduct.shop && (

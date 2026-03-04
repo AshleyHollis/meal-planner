@@ -688,6 +688,21 @@ export async function getQuickSuggestions(
   );
 }
 
+export interface CookSuggestionResponse {
+  title: string;
+  deductions: Record<string, unknown>[];
+}
+
+export async function cookSuggestion(suggestion: {
+  title: string;
+  ingredients: { name: string; quantity: number; unit: string; on_hand: boolean }[];
+}): Promise<CookSuggestionResponse> {
+  return fetchApi<CookSuggestionResponse>("/api/v1/quick-suggestions/cook", {
+    method: "POST",
+    body: JSON.stringify(suggestion),
+  });
+}
+
 // ---------------------------------------------------------------------------
 // Recurring Meals
 // ---------------------------------------------------------------------------

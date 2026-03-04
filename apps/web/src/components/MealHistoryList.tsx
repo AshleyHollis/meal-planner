@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { getMealImageUrl } from "@/lib/meal-images";
+import { DAY_LABELS_LONG } from "@/lib/date-utils";
 
 interface MealHistoryListProps {
   items: MealHistoryItem[];
@@ -25,16 +26,6 @@ function MealHistoryList({
   const toggleExpanded = (slotId: string) => {
     setExpandedId((prev) => (prev === slotId ? null : slotId));
   };
-
-  const DAY_LABELS = [
-    "Monday",
-    "Tuesday",
-    "Wednesday",
-    "Thursday",
-    "Friday",
-    "Saturday",
-    "Sunday",
-  ];
 
   return (
     <div className="space-y-4">
@@ -134,7 +125,7 @@ function MealHistoryList({
                               {item.recipe_title}
                             </h3>
                             <p className="mt-1 text-sm text-gray-600">
-                              {DAY_LABELS[item.day] ?? `Day ${item.day}`}
+                              {DAY_LABELS_LONG[item.day] ?? `Day ${item.day}`}
                             </p>
                           </div>
 

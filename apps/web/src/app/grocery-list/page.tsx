@@ -14,6 +14,7 @@ export default function GroceryListIndexPage() {
   const [noPlan, setNoPlan] = useState(false);
 
   useEffect(() => {
+    document.title = "Grocery Lists | Meal Planner";
     async function redirect() {
       try {
         const plan = await getActiveMealPlan();

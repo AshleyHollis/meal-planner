@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
 import { ProductMappingForm } from "@/components/ProductMappingForm";
 import { getMealImageUrl } from "@/lib/meal-images";
+import { formatCurrency } from "@/lib/format-currency";
 
 interface ProductDetailPageProps {
   params: Promise<{ id: string }>;
@@ -29,6 +30,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
+    document.title = "Products | Meal Planner";
     async function fetchProduct() {
       try {
         setError(null);
@@ -193,10 +195,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                   </p>
                   <p className="mt-1 text-sm font-medium text-gray-900">
                     <Badge variant="success">
-                      {new Intl.NumberFormat("en-AU", {
-                        style: "currency",
-                        currency: "AUD",
-                      }).format(product.price)}
+                      {formatCurrency(product.price)}
                     </Badge>
                   </p>
                 </div>

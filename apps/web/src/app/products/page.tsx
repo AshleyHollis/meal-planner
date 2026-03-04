@@ -13,6 +13,7 @@ import {
 import { Spinner } from "@/components/ui/Spinner";
 import { ProductMappingForm } from "@/components/ProductMappingForm";
 import { useToast } from "@/components/ui/Toast";
+import { formatCurrency } from "@/lib/format-currency";
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -26,7 +27,11 @@ export default function ProductsPage() {
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const { showToast } = useToast();
 
-  const fetchProducts = useCallback(async () => {
+  useEffect(() => {
+    document.title = "Products | Meal Planner";
+  }, []);
+
+  const fetchProducts= useCallback(async () => {
     try {
       setError(null);
       const data = await getProducts();
@@ -279,10 +284,7 @@ export default function ProductsPage() {
                           )}
                           {product.price != null && (
                             <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
-                              {new Intl.NumberFormat("en-AU", {
-                                style: "currency",
-                                currency: "AUD",
-                              }).format(product.price)}
+                              {formatCurrency(product.price)}
                             </span>
                           )}
                           {product.shop && (

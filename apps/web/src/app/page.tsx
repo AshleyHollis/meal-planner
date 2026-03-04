@@ -19,7 +19,7 @@ import { Spinner } from "@/components/ui/Spinner";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { getMealImageUrl } from "@/lib/meal-images";
-import { getNextMonday } from "@/lib/date-utils";
+import { getNextMonday, DAY_LABELS_SHORT, DAY_LABELS_LONG } from "@/lib/date-utils";
 import { CuisineSelector } from "@/components/CuisineSelector";
 import { MealTypeSelector } from "@/components/MealTypeSelector";
 import { useToast } from "@/components/ui/Toast";
@@ -49,6 +49,10 @@ export default function DashboardPage() {
   const stepIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Cycle through generation steps while generating
+  useEffect(() => {
+    document.title = "Dashboard | Meal Planner";
+  }, []);
+
   useEffect(() => {
     if (generating) {
       setGenerationStep(0);
@@ -493,15 +497,6 @@ export default function DashboardPage() {
               .filter((s) => s.recipe)
               .slice(0, 6)
               .map((slot) => {
-                const DAY_LABELS = [
-                  "Mon",
-                  "Tue",
-                  "Wed",
-                  "Thu",
-                  "Fri",
-                  "Sat",
-                  "Sun",
-                ];
                 return (
                   <Link
                     key={slot.id}
@@ -522,7 +517,7 @@ export default function DashboardPage() {
                           {slot.recipe!.title}
                         </p>
                         <p className="text-xs text-white/70">
-                          {DAY_LABELS[slot.day]} · {slot.meal_type}
+                          {DAY_LABELS_SHORT[slot.day]} · {slot.meal_type}
                         </p>
                       </div>
                       {slot.status === "cooked" && (
@@ -554,15 +549,6 @@ export default function DashboardPage() {
           </div>
           <div className="rounded-xl border border-gray-100 bg-white shadow-sm divide-y divide-gray-100">
             {history.map((h) => {
-              const DAY_LABELS = [
-                "Monday",
-                "Tuesday",
-                "Wednesday",
-                "Thursday",
-                "Friday",
-                "Saturday",
-                "Sunday",
-              ];
               return (
                 <Link
                   key={h.slot_id}
@@ -583,7 +569,7 @@ export default function DashboardPage() {
                       {h.recipe_title}
                     </p>
                     <p className="text-xs text-gray-500">
-                      {DAY_LABELS[h.day] ?? `Day ${h.day}`} · {h.meal_type}
+                      {DAY_LABELS_LONG[h.day] ?? `Day ${h.day}`} · {h.meal_type}
                       {h.rating != null && (
                         <span className="ml-2 text-yellow-500">
                           {"★".repeat(h.rating)}

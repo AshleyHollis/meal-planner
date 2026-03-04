@@ -5,16 +5,9 @@ import type { MealSlot } from "@/types";
 import { Dialog } from "../ui/Dialog";
 import { Button } from "../ui/Button";
 import { updateMealSlot } from "@/services/api";
+import { DAY_LABELS_LONG } from "@/lib/date-utils";
 
-const DAY_LABELS = [
-  "Monday",
-  "Tuesday",
-  "Wednesday",
-  "Thursday",
-  "Friday",
-  "Saturday",
-  "Sunday",
-];
+const DAY_LABELS = DAY_LABELS_LONG;
 
 interface SwapDialogProps {
   open: boolean;

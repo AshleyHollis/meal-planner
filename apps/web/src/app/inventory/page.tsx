@@ -7,11 +7,16 @@ import { listInventory, ApiError } from "@/services/api";
 import { Spinner } from "@/components/ui/Spinner";
 import { AddItemForm } from "@/components/inventory/AddItemForm";
 import { InventoryList } from "@/components/inventory/InventoryList";
+import { StapleSuggestions } from "@/components/staples/StapleSuggestions";
 
 export default function InventoryPage() {
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    document.title = "Inventory | Meal Planner";
+  }, []);
 
   const fetchItems = useCallback(async () => {
     try {
@@ -71,6 +76,10 @@ export default function InventoryPage() {
             <InventoryList items={items} onChanged={handleChanged} />
           )}
         </div>
+      </div>
+
+      <div className="mt-8">
+        <StapleSuggestions onChanged={handleChanged} />
       </div>
     </main>
   );

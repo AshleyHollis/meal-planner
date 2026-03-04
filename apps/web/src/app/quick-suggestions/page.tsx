@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import type { QuickSuggestion, QuickSuggestionsResponse } from "@/types";
-import { getQuickSuggestions, ApiError } from "@/services/api";
+import { getQuickSuggestions, cookSuggestion, ApiError } from "@/services/api";
 import { Spinner } from "@/components/ui/Spinner";
 import { QuickSuggestionCard } from "@/components/QuickSuggestionCard";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -13,6 +13,10 @@ export default function QuickSuggestionsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { showToast } = useToast();
+
+  useEffect(() => {
+    document.title = "Quick Suggestions | Meal Planner";
+  }, []);
 
   const fetchSuggestions = useCallback(async () => {
     try {
@@ -35,8 +39,17 @@ export default function QuickSuggestionsPage() {
     void fetchSuggestions();
   }, [fetchSuggestions]);
 
-  const handleCookThis = (suggestion: QuickSuggestion) => {
-    showToast(`"${suggestion.title}" — coming soon!`, "info");
+  const handleCookThis = async (suggestion: QuickSuggestion) => {
+    try {
+      await cookSuggestion({ title: suggestion.title, ingredients: suggestion.ingredients });
+      showToast(`"${suggestion.title}" cooked! Inventory updated.`, "success");
+    } catch (err) {
+      if (err instanceof ApiError && err.isAuthError) {
+        window.location.href = "/api/auth/login";
+        return;
+      }
+      showToast(`Failed to mark "${suggestion.title}" as cooked.`, "error");
+    }
   };
 
   return (

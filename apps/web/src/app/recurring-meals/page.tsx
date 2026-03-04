@@ -11,6 +11,10 @@ export default function RecurringMealsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    document.title = "Recurring Meals | Meal Planner";
+  }, []);
+
   const fetchTemplates = useCallback(async () => {
     try {
       setError(null);

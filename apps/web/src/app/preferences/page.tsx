@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { PreferencesPanel } from "@/components/preferences/PreferencesPanel";
 
 // In a real implementation, this would fetch the current user's member ID
@@ -7,6 +8,10 @@ import { PreferencesPanel } from "@/components/preferences/PreferencesPanel";
 const CURRENT_MEMBER_ID = "current";
 
 export default function PreferencesPage() {
+  useEffect(() => {
+    document.title = "Preferences | Meal Planner";
+  }, []);
+
   return (
     <main className="mx-auto max-w-2xl px-4 py-8 lg:max-w-4xl">
       <div className="mb-6">

@@ -15,20 +15,11 @@ import {
   removeFavorite,
 } from "@/services/api";
 import type { MealSlot } from "@/types";
+import { DAY_LABELS_LONG } from "@/lib/date-utils";
 
 interface MealPlanDetailPageProps {
   params: Promise<{ id: string }>;
 }
-
-const DAY_LABELS = [
-  "Monday",
-  "Tuesday",
-  "Wednesday",
-  "Thursday",
-  "Friday",
-  "Saturday",
-  "Sunday",
-];
 
 const MEAL_TYPE_LABELS: Record<string, string> = {
   breakfast: "🌅 Breakfast",
@@ -45,6 +36,10 @@ export default function MealPlanDetailPage({
     enabled: true,
   });
   const { showToast } = useToast();
+
+  useEffect(() => {
+    document.title = "Meal Plan Details | Meal Planner";
+  }, []);
 
   const [favoriteRecipeIds, setFavoriteRecipeIds] = useState<Set<string>>(
     new Set(),
@@ -196,7 +191,7 @@ export default function MealPlanDetailPage({
           </div>
 
           <div className="space-y-8">
-            {DAY_LABELS.map((label, day) => {
+            {DAY_LABELS_LONG.map((label, day) => {
               const daySlots = slotsByDay[day] ?? [];
 
               // Calculate total prep + cook time for the day

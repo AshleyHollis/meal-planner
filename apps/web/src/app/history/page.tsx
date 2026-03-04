@@ -18,7 +18,11 @@ export default function HistoryPage() {
 
   const PAGE_SIZE = 20;
 
-  const loadInitial = useCallback(async () => {
+  useEffect(() => {
+    document.title = "Cooking History | Meal Planner";
+  }, []);
+
+  const loadInitial= useCallback(async () => {
     try {
       setInitialLoading(true);
       setError(null);

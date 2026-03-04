@@ -39,6 +39,11 @@ const GENERATION_STEPS = [
 export default function MealPlanListPage() {
   const router = useRouter();
   const { showToast } = useToast();
+
+  useEffect(() => {
+    document.title = "Meal Plans | Meal Planner";
+  }, []);
+
   const [plans, setPlans] = useState<MealPlan[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -291,15 +296,32 @@ export default function MealPlanListPage() {
                 className={`rounded-xl border border-gray-100 bg-white shadow-sm transition-all duration-200 hover:scale-[1.01] hover:shadow-md active:scale-[0.99] ${STATUS_COLORS[plan.status] || ""}`}
               >
                 <Link href={`/meal-plan/${plan.id}`} className="block p-6">
-                  <div className="mb-3 flex items-start justify-between">
-                    <div className="flex-1">
-                      <p className="text-lg font-semibold text-gray-900">
-                        Week of{" "}
+                  {/* Decorative status banner */}
+                  <div className={`-mx-6 -mt-6 mb-4 flex items-center gap-3 rounded-t-xl px-6 py-3 ${
+                    plan.status === "active" ? "bg-green-50" :
+                    plan.status === "completed" ? "bg-blue-50" :
+                    plan.status === "failed" ? "bg-red-50" :
+                    "bg-gray-50"
+                  }`}>
+                    <span className="text-2xl">
+                      {plan.status === "active" ? "🍽️" :
+                       plan.status === "completed" ? "✅" :
+                       plan.status === "failed" ? "❌" : "📋"}
+                    </span>
+                    <div>
+                      <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                        Week of
+                      </p>
+                      <p className="text-sm font-semibold text-gray-900">
                         {new Date(plan.week_start_date).toLocaleDateString(
                           undefined,
                           { month: "long", day: "numeric", year: "numeric" },
                         )}
                       </p>
+                    </div>
+                  </div>
+                  <div className="mb-3 flex items-start justify-between">
+                    <div className="flex-1">
                       <p className="mt-1 text-xs text-gray-500">
                         {formatRelativeDate(plan.created_at)}
                       </p>
