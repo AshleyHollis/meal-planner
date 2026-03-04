@@ -15,6 +15,7 @@ How to decide who handles what.
 | Code review                              | Dallas   | Review PRs, check quality, approve/reject                 |
 | Testing strategy                         | Lambert  | Test coverage, edge cases, verify fixes                   |
 | Scope & priorities                       | Dallas   | What to build next, trade-offs, decisions                 |
+| UX completeness, feature feel, visual consistency | Ash | Feature feels incomplete, missing interactions, inconsistent UI |
 | Session logging                          | Scribe   | Automatic — never needs routing                           |
 
 ## Rules
@@ -28,3 +29,5 @@ How to decide who handles what.
 7. **CORS/API issues** — Ripley owns the fix, Dallas reviews, Parker verifies deployment.
 8. **E2E test failures** — Lambert diagnoses, Ripley fixes API-side, Parker fixes infra-side.
 9. **Visual smoke test gate** — After E2E tests pass and preview is green, Lambert MUST run visual smoke tests using Playwright MCP browser tools before the feature is marked complete. Kane fixes any visual bugs found. Feature is blocked until smoke tests pass. (Decision 15)
+10. **UX completeness gate** — After Kane completes a user story, Ash MUST review for feature completeness using the `ux-completeness` skill. Issues filed by Ash are blocking — feature is not done until Ash approves.
+11. **Anticipate UX review** — When spawning Kane for frontend work, also spawn Ash to prepare for review. Ash reads the user story and skill standards while Kane implements.

@@ -66,3 +66,29 @@
 6. File blocking issues for any visual bugs found — feature is NOT complete until resolved
 
 **Gate:** Feature cannot be marked complete or PR merged until this ceremony passes. Any visual bugs are blocking.
+
+---
+
+## Feature Completeness Review
+
+| Field            | Value                                                  |
+| ---------------- | ------------------------------------------------------ |
+| **Trigger**      | auto                                                   |
+| **When**         | after                                                  |
+| **Condition**    | all tasks in a user story are marked complete          |
+| **Facilitator**  | ux-reviewer                                            |
+| **Participants** | ux-reviewer, lead, frontend-dev                        |
+| **Time budget**  | focused                                                |
+| **Enabled**      | yes                                                    |
+
+**Agenda:**
+
+1. Walk through the feature as a user would — not as a developer
+2. Check: Is every data entity clickable? Do images appear consistently across all pages?
+3. Check: Are there dead ends, missing actions, fake buttons, or confusing flows?
+4. Check: Does this feature meet the `ux-completeness` skill standards?
+5. Check: Are empty states, loading states, and error states properly designed?
+6. Check: Is formatting consistent (currency, dates, labels) across all pages?
+7. File blocking issues for anything that falls short — assign to Kane or Ripley
+
+**Gate:** Feature cannot be marked complete until Ash (UX Reviewer) approves. UX issues are blocking.

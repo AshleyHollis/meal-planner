@@ -1549,3 +1549,68 @@ The dashboard's "Generate Plan" button fails with HTTP 409 because it **does not
 **By:** Ashley Hollis (via Copilot)
 **What:** "We need to build much higher quality. Everything being built seems like a very low standard. We need to ensure that our E2E test coverage covers everything." The team must build to production quality, not MVP. Every feature must be polished, consistent, and thoroughly tested. E2E tests must cover all user-facing flows — no gaps.
 **Why:** User request — captured for team memory. The app feels basic/MVP when it should feel professional and complete.
+
+## Session 2026-03-04T120000Z — Squad Quality Improvements
+
+### Decision: Add Ash (UX Reviewer) to the Team
+
+**Author:** Ashley Hollis (via Claude Code)
+**Date:** 2026-03-04
+**Status:** Active
+
+**What:** Added a new agent "Ash" (UX Reviewer) to the squad. Ash reviews every completed user story for feature completeness before it can be marked done. Ash does not write code — files specific, actionable issues for Kane (frontend) or Ripley (backend) to fix.
+
+**Why:** Features were being built to technical spec but felt incomplete to users. No agent was responsible for evaluating features from the user's perspective. Ash fills this gap.
+
+**Impact:** Every user story now has a UX completeness gate. Feature is blocked until Ash approves.
+
+### Decision: UX Completeness Skill — All Agents Must Follow
+
+**Author:** Ashley Hollis (via Claude Code)
+**Date:** 2026-03-04
+**Status:** Active
+
+**What:** Created `.squad/skills/ux-completeness/SKILL.md` with 9 core principles:
+1. Every data entity is clickable
+2. Images everywhere (consistent across all views)
+3. Consistent interaction patterns
+4. No dead ends
+5. Progressive disclosure
+6. Empty states are designed
+7. Loading states exist
+8. Error states are helpful
+9. Feedback for every action
+
+**Why:** The team had no shared standard for what "complete" means from a UX perspective. Agents optimized for technical correctness, not user satisfaction.
+
+**Impact:** Kane must apply these standards to all frontend work. Ash uses them as a review checklist.
+
+### Decision: Feature Completeness Review Ceremony Added
+
+**Author:** Ashley Hollis (via Claude Code)
+**Date:** 2026-03-04
+**Status:** Active
+
+**What:** New ceremony: after all tasks in a user story are complete, Ash (UX Reviewer) walks through the feature as a user would and checks against the `ux-completeness` skill standards. Issues are blocking — feature cannot be marked done until Ash approves.
+
+**Why:** Existing ceremonies (Design Review, Retrospective, Visual Smoke Test) focused on technical correctness and visual bugs but did not evaluate feature completeness from a user perspective.
+
+### Decision: Kane Charter Updated — "Complete" Replaces "Minimal"
+
+**Author:** Ashley Hollis (via Claude Code)
+**Date:** 2026-03-04
+**Status:** Active
+
+**What:** Removed "Keep component changes minimal and surgical" from Kane's charter. Replaced with directives to build features that feel complete to users, ensure clickability and images everywhere, and think about what users would naturally expect beyond explicit tasks.
+
+**Why:** "Minimal and surgical" was the root cause of features feeling like they did the least amount of work. Kane was correctly following instructions — the instructions were wrong.
+
+### Decision: Team Wisdom Populated with Learned Patterns
+
+**Author:** Ashley Hollis (via Claude Code)
+**Date:** 2026-03-04
+**Status:** Active
+
+**What:** Populated `.squad/identity/wisdom.md` with 7 patterns and 4 anti-patterns learned from the project's history, including: consistent images, complete features, shared logic, proper error handling, E2E coverage for all actions, no fake buttons, and DRY utilities.
+
+**Why:** Wisdom.md was empty — the team wasn't learning from mistakes across sessions.
