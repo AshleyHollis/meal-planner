@@ -5,11 +5,11 @@
 - **Project:** Meal Planner MVP — AI meal planner with inventory, weekly plans, grocery lists
 - **Stack:** Next.js 16 + FastAPI + SQLAlchemy + Azure (AKS, SQL, SWA) + Auth0
 - **Owner:** Ashley Hollis
-- **Branch:** 003-personalization-ai
-- **State:** 40 E2E test files total (smoke, inventory, meal-plan, grocery, preferences, favorites, ratings, cuisine)
-- **New Tests:** Phase 10 E2E tests covering personalization features (preferences CRUD, favorites toggle, recipe ratings, cuisine selection)
+- **Branch:** 005-grocery-enhancements
+- **State:** E2E test suite expanded with 4 new tests + seed data coverage increased from 5 to 30 ingredients
+- **Seed Data:** 30 ingredients, 23 product mappings (Coles, Woolworths, Aldi), 10 expiry variants
 - **Playwright config:** 3-project chain: auth-setup → seed-data → chromium
-- **Status:** TypeScript compiles, lint passes (4 pre-existing warnings in layout.tsx)
+- **Status:** TypeScript compiles, all changes committed (df7698b)
 
 ## Learnings
 
@@ -193,3 +193,35 @@ All new E2E tests follow the exact patterns established in existing specs:
 - Worker must transition plan from draft → active
 - Requires Azure OpenAI configured in K8s preview environment
 - OR pre-seeding a completed plan via direct DB insert
+
+### Session 2025-01-XX: Expanded Seed Data & E2E Tests (Branch 005-grocery-enhancements)
+
+**Task**: Expand seed data from 5 to 25+ ingredients with realistic product mappings across 3 Australian shops (Coles, Woolworths, Aldi). Add 4 new E2E tests to verify multi-shop filtering and inventory/non-inventory ingredient handling.
+
+**Changes Made**:
+
+1. **seed-data.setup.ts** — Expanded test data:
+   - Ingredient lookup expanded from 5 to 30 ingredients covering meat, dairy, produce, pantry, grains, spices, and condiments
+   - Added category-aware expiry variants: pantry items (90-365 days), fresh produce (3-14 days), dairy (7-30 days), meat (2-5 days)
+   - Product mappings expanded from 4 to 23 across Coles, Woolworths, and Aldi with realistic Australian brands and pricing
+   - Ingredient names match EXACTLY with database (case-insensitive search): "chicken breast", "eggs", "beef mince", "salmon fillet", "bacon rashers", "milk", "butter", "tasty cheese", "greek yoghurt", "parmesan", "spaghetti", "bread (sliced)", "plain flour", "potato", "onion", "tomato", "carrot", "spinach", "capsicum", "lemon", "salt", "black pepper", "soy sauce", "diced tomatoes (canned)", "chicken stock"
+
+2. **New E2E Tests**:
+   - `meal-plan.spec.ts` → "generated plan recipes use both inventory and non-inventory ingredients" (verifies relaxed validator from Decision 16)
+   - `grocery.spec.ts` → "grocery list contains items not in inventory" (verifies system generates grocery items for non-inventory ingredients)
+   - `grocery-trips.spec.ts` → "multiple shop filter tabs appear with expanded product mappings" (verifies multi-shop filtering with ≥2 shop tabs)
+   - `inventory.spec.ts` → "expanded inventory shows items across multiple storage locations" (verifies items appear in both Fridge and Pantry)
+
+**Key Learnings**:
+
+- Ingredient names in seed script must match database EXACTLY (case-insensitive but must be recognizable substrings)
+- Australian naming conventions: "tasty cheese" (not "cheddar"), "capsicum" (not "bell pepper"), "bacon rashers" (not "bacon strips")
+- Product mappings enable shop filter functionality — without them, grocery list shows "Other" only
+- New tests follow existing patterns: `USE_EXTERNAL_SERVER` skip guards, graceful degradation with `test.skip()`, timeout handling
+- All 4 new tests are backend-dependent and will skip gracefully when backend unavailable
+
+**Verification**:
+
+- TypeScript compiles (`npx tsc --noEmit` passes)
+- Commit: df7698b
+- Branch: 005-grocery-enhancements
