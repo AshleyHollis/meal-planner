@@ -181,9 +181,11 @@ def _call_azure_openai(prompt: str, settings: object, timeout: int, temperature:
     # Disable SDK retries — each retry re-sends the full prompt and Azure
     # counts input tokens against the 20K tokens/min rate limit even for 429s.
     # We handle retries ourselves with 60s+ waits in the generator layer.
+    # 300s read timeout: at 20K tokens/min rate limit, a 10K-token response
+    # takes ~30s of model time but can be throttled to 2-3+ minutes.
     http_client = httpx.Client(
         verify=ca_bundle,
-        timeout=httpx.Timeout(120.0, connect=10.0),
+        timeout=httpx.Timeout(300.0, connect=10.0),
     )
 
     client = openai.AzureOpenAI(
