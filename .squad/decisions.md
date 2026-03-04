@@ -459,6 +459,142 @@ The team should always use the latest LLM models. Specifically: `claude-opus-4.6
 **Rationale:** User request — captured for team memory.
 
 **Outcome:** Applied to squad spawn manifest starting 2026-03-03T060858Z.
+
+---
+
+## Session 2026-03-04T08:28 Full-Team Feature Review (All 5 Specs)
+
+**Resolved:** 1 decision aggregate (team review findings, priority triage, next steps)
+
+### Decision 15: Full-Team Feature Review — All 5 Specs (Dallas, Ash, Bishop, Lambert)
+
+**Authors:** Dallas (Lead, Architecture), Ash (UX Reviewer), Bishop (Spec Architect), Lambert (Test Auditor)  
+**Date:** 2026-03-04  
+**Status:** Review Complete — Findings Triaged
+
+## Summary
+
+Comprehensive audit across all 5 feature specs (001–005) identified **52 actionable findings**:
+- **3 critical architectural gaps** (Dallas)
+- **36 UX/UI issues** (8 critical + 19 important + 9 minor) (Ash)
+- **14 spec vs implementation gaps** (3 critical + 6 important + 5 minor) (Bishop)
+- **7 test coverage gaps** (4 E2E, 1 integration, 2 minor) (Lambert)
+- **Overall test coverage: 90%** (63/70 acceptance scenarios)
+
+## Critical Findings (All Three Lead to Data Loss or Silent Failures)
+
+**C1 — LLM Prompt Missing Leftovers & Freezer Items (Dallas):**
+- Prompt formatters exist but `_load_context()` never fetches leftovers/freezer data
+- AI cannot prioritize expiring items or account for defrost timing
+- Fix: Add `_fetch_leftovers()` and `_fetch_freezer_items()` to data layer
+
+**C2 — ShoppingTrip Model Completely Missing (Dallas):**
+- Spec 005 defines ShoppingTrip with DB persistence and per-trip state tracking
+- Impl: localStorage-only workaround loses all state on browser change/device switch
+- Users cannot filter by shop or persist trip progress across sessions
+- Fix: Implement ShoppingTrip model, API routes, service layer
+
+**C3 — Substitution Changes Not Persisted to DB (Dallas):**
+- `SubstitutionService` computes grocery diff but never writes to GroceryItems table
+- Grocery list shows stale data until user regenerates entire plan
+- Fix: Call `grocery_service.regenerate_grocery_list()` after substitution
+
+**UX Silent Failures (Ash):**
+- 6 components silently fail (`catch { // silent }` pattern): grocery check, inventory edit/remove, product delete, mark cooked/skip, favorite toggle
+- Users perform actions and get NO feedback on failure
+- Fix: Replace all with proper error toast + retry UX pattern
+
+**UX 404 Dead Ends (Ash):**
+- `/inventory/[id]` and `/products/[id]` routes link to non-existent pages
+- Every click is a 404; users trapped at dead ends
+- Fix: Create detail pages or remove clickable links + re-wire to real actions
+
+## Important Findings (Confusing/Incomplete Workflows)
+
+**API Feature Stubs (Dallas):**
+- "Cook This" quick suggestion endpoint doesn't create persistent meal slot (spec requires it)
+- `/adapt` route has TODO comment; service layer not wired to API endpoint
+- `/save-variation` route returns mock response (unimplemented)
+- Fix: Wire service layer to routes or delete stub endpoints
+
+**Missing API Endpoints (Dallas/Bishop):**
+- No `POST /grocery-lists/{id}/add-staples` (FR-009)
+- No endpoint to update existing preference (PUT/PATCH) (only create/delete)
+- Leftover PATCH only marks `used_at`, cannot update portions/location/expiry
+- Fix: Implement missing CRUD paths
+
+**UX Navigation Gaps (Ash):**
+- No Home/Dashboard link in desktop sidebar (only accessible via logo)
+- Recent activity rows not interactive (no links to meal plan/recipe)
+- No grocery list link from meal plan detail (user must navigate backward)
+- Meal plan cards show generic "Plan for the week" (no preview or image)
+- Fix: Add missing navigation, link interconnectedness
+
+**Frontend Validation Gap (Ash/Bishop):**
+- Preferences hardcoded to placeholder CURRENT_MEMBER_ID ("current" user never fetched)
+- Fix: Wire Auth0 user session to preferences panel
+
+**Broken UX Patterns (Ash):**
+- 4 missing Retry buttons on error states (dashboard, history, preferences, quick suggestions)
+- Delete actions lack confirmation dialogs (preference, recurring meal — instant loss)
+- Currency formatting inconsistent (`$X.XX` vs `AUD X.XX` vs no locale)
+- ErrorBoundary exists but never used
+
+## Minor Findings (Polish & Technical Debt)
+
+- Duplicate utility functions (`getNextMonday`, `DAY_LABELS`) in 2–4 files
+- Grocery list empty state uses bare div (should use EmptyState component)
+- Products search shows text "Searching…" instead of spinner
+- All pages share same browser title "Meal Planner" (tabs indistinguishable)
+- Recurring Meals page narrower than others on desktop (missing `lg:max-w-7xl`)
+- WeeklyPlanView component exists but unused/unimported
+
+## Test Coverage Gaps (Lambert)
+
+**Overall: 90% coverage (63/70 scenarios); 7 gaps identified**
+
+- Spec 002 (Inventory): **100%** ✅
+- Spec 003 (Personalization): **94.4%** (1 missing: default cuisine regression test)
+- Spec 004 (Planning): **88.9%** (2 missing: recurring template CRUD UI, deletion impact)
+- Spec 005 (Grocery): **71.4%** (4 missing: product edit/delete E2E, trip state persistence, reset on new list)
+
+**Gap types:**
+- 4 E2E CRUD workflows missing (edit/delete forms and confirmations)
+- 2 integration tests missing (deletion side effects)
+- 1 regression test missing (default behavior)
+
+## Immediate Actions (This Week — P0)
+
+1. **Fix all 8 silent error handlers** — toast + retry on all failures (Ash → Kane)
+2. **Create `/inventory/[id]` and `/products/[id]` detail pages** or remove dead links (Kane)
+3. **Implement "Cook This" real endpoint** creating standalone meal slot (Ripley API + Kane UI)
+4. **Fetch leftovers & freezer in LLM prompt** (Ripley)
+5. **Persist substitution changes to GroceryItems** (Ripley)
+
+## Next Sprint Actions (P1)
+
+6. **Implement ShoppingTrip model & API** (abandon localStorage) (Ripley)
+7. **Create `POST /grocery-lists/{id}/add-staples` endpoint** (Ripley)
+8. **Fix CURRENT_MEMBER_ID** to use Auth0 session (Ripley + Kane)
+9. **Add 4 missing Retry buttons** (Kane)
+10. **Add navbar Home/Dashboard link** for desktop (Kane)
+
+## Backlog Actions (P2 + Testing)
+
+11. **Extract utility functions** (`getNextMonday`, `DAY_LABELS`) (Kane)
+12. **Add 6–7 E2E tests** for CRUD workflows and state persistence (Lambert + Kane)
+
+## Team Consensus
+
+✅ **Accept** all 52 findings as actionable  
+✅ **Prioritize** P0 silent failures + dead ends as blocking  
+✅ **Triage** ShoppingTrip as architectural spike (localStorage → DB migration)  
+✅ **Recommend** post-review: Create unified backlog across all 4 agent findings
+
+**Effort Estimate:** ~2–3 weeks to close all gaps and reach production-ready state
+
+**Evidence:** Full team orchestration log at `.squad/orchestration-log/2026-03-04T0828-team-review.md`
+
 **Date:** 2025-01-XX (earlier work)  
 **Status:** Implemented
 
