@@ -78,7 +78,7 @@ function CompleteShoppingDialog({
         {checkedItems.map((item, index) => (
           <li key={item.id} className="flex items-center gap-3">
             <span className="min-w-0 flex-1 truncate text-sm text-gray-900">
-              {item.ingredient_id} ({item.quantity_needed} {item.unit})
+              {item.ingredient_name ?? item.ingredient_id} ({item.quantity_needed} {item.unit})
             </span>
             <input
               type="date"
