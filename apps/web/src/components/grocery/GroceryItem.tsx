@@ -5,6 +5,7 @@ import { useState } from "react";
 import type { GroceryItem as GroceryItemType, Product } from "@/types";
 import { checkGroceryItem } from "@/services/api";
 import { ProductMappingForm } from "@/components/ProductMappingForm";
+import { useToast } from "@/components/ui/Toast";
 
 interface GroceryItemProps {
   item: GroceryItemType;
@@ -18,6 +19,7 @@ function GroceryItem({ item, onChanged, tripChecked }: GroceryItemProps) {
   const [linkedProduct, setLinkedProduct] = useState<NonNullable<
     GroceryItemType["product"]
   > | null>(item.product ?? null);
+  const { showToast } = useToast();
 
   const isChecked = tripChecked !== undefined ? tripChecked : item.is_checked;
   const displayName = item.ingredient_name || item.ingredient_id;
@@ -26,6 +28,9 @@ function GroceryItem({ item, onChanged, tripChecked }: GroceryItemProps) {
     setSaving(true);
     try {
       await checkGroceryItem(item.id, { is_checked: !item.is_checked });
+      if (!item.is_checked) {
+        showToast(`✓ ${displayName}`, "success");
+      }
       onChanged?.();
     } catch {
       // silently fail for POC
@@ -40,15 +45,18 @@ function GroceryItem({ item, onChanged, tripChecked }: GroceryItemProps) {
   }
 
   return (
-    <li className="flex items-start gap-3 px-4 py-3">
-      <input
-        type="checkbox"
-        checked={isChecked}
-        disabled={saving}
-        onChange={() => void handleToggle()}
-        className="mt-0.5 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-      />
-      <div className="min-w-0 flex-1">
+    <li className="flex items-start gap-3 px-4 py-3 transition-colors duration-150 hover:bg-gray-50 active:bg-gray-100">
+      {/* Touch-friendly checkbox wrapper — min 44px tap target */}
+      <label className="flex min-h-[44px] min-w-[44px] cursor-pointer items-center justify-center">
+        <input
+          type="checkbox"
+          checked={isChecked}
+          disabled={saving}
+          onChange={() => void handleToggle()}
+          className="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+        />
+      </label>
+      <div className="min-w-0 flex-1 py-2">
         <p
           className={`truncate font-medium ${
             isChecked ? "text-gray-400 line-through" : "text-gray-900"
@@ -99,7 +107,7 @@ function GroceryItem({ item, onChanged, tripChecked }: GroceryItemProps) {
           </div>
         )}
       </div>
-      <span className="whitespace-nowrap text-sm text-gray-500">
+      <span className="whitespace-nowrap py-2 text-sm text-gray-500">
         {item.quantity_needed} {item.unit}
       </span>
     </li>

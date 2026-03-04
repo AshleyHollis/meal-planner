@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -18,6 +18,8 @@ import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { CuisineSelector } from "@/components/CuisineSelector";
 import { MealTypeSelector } from "@/components/MealTypeSelector";
+import { useToast } from "@/components/ui/Toast";
+import { formatRelativeDate } from "@/lib/date-utils";
 
 type StatusFilter = "all" | "active" | "completed" | "failed" | "draft";
 
@@ -27,6 +29,12 @@ const STATUS_COLORS: Record<string, string> = {
   failed: "border-l-4 border-red-500",
   draft: "border-l-4 border-gray-400",
 };
+
+const GENERATION_STEPS = [
+  "Creating plan...",
+  "Generating recipes...",
+  "Building grocery list...",
+];
 
 function getNextMonday(): string {
   const today = new Date();
@@ -39,10 +47,12 @@ function getNextMonday(): string {
 
 export default function MealPlanListPage() {
   const router = useRouter();
+  const { showToast } = useToast();
   const [plans, setPlans] = useState<MealPlan[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
+  const [generationStep, setGenerationStep] = useState(0);
   const [cuisinePreferences, setCuisinePreferences] = useState<string[]>([]);
   const [mealTypes, setMealTypes] = useState<string[]>([
     "breakfast",
@@ -53,6 +63,25 @@ export default function MealPlanListPage() {
   const [showAll, setShowAll] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const stepIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Cycle through generation steps while generating
+  useEffect(() => {
+    if (generating) {
+      setGenerationStep(0);
+      stepIntervalRef.current = setInterval(() => {
+        setGenerationStep((prev) =>
+          prev < GENERATION_STEPS.length - 1 ? prev + 1 : prev,
+        );
+      }, 2000);
+    } else {
+      if (stepIntervalRef.current) clearInterval(stepIntervalRef.current);
+      setGenerationStep(0);
+    }
+    return () => {
+      if (stepIntervalRef.current) clearInterval(stepIntervalRef.current);
+    };
+  }, [generating]);
 
   const fetchPlans = useCallback(async () => {
     try {
@@ -118,12 +147,14 @@ export default function MealPlanListPage() {
       await deleteMealPlan(planId);
       await fetchPlans();
       setConfirmDelete(null);
+      showToast("Plan deleted", "success");
     } catch (err) {
       if (err instanceof ApiError && err.isAuthError) {
         window.location.href = "/api/auth/login";
         return;
       }
       setError("Failed to delete meal plan.");
+      showToast("Failed to delete plan", "error");
     } finally {
       setDeletingId(null);
     }
@@ -170,6 +201,40 @@ export default function MealPlanListPage() {
             Generate New Plan
           </Button>
         </div>
+
+        {/* Generation progress indicator */}
+        {generating && (
+          <div className="mt-5 rounded-lg border border-blue-100 bg-blue-50 p-4">
+            <div className="mb-3 flex items-center gap-2">
+              <Spinner size="sm" />
+              <span className="text-sm font-medium text-blue-700">
+                {GENERATION_STEPS[generationStep]}
+              </span>
+            </div>
+            <div className="flex gap-2">
+              {GENERATION_STEPS.map((step, i) => (
+                <div key={step} className="flex flex-1 flex-col items-center gap-1">
+                  <div
+                    className={`h-1.5 w-full rounded-full transition-all duration-500 ${
+                      i <= generationStep ? "bg-blue-500" : "bg-blue-200"
+                    }`}
+                  />
+                  <span
+                    className={`text-xs transition-colors duration-300 ${
+                      i === generationStep
+                        ? "font-medium text-blue-600"
+                        : i < generationStep
+                          ? "text-blue-400"
+                          : "text-gray-400"
+                    }`}
+                  >
+                    {i === 0 ? "Creating" : i === 1 ? "Recipes" : "Grocery"}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {loading && (
@@ -223,7 +288,7 @@ export default function MealPlanListPage() {
             {displayedPlans.map((plan) => (
               <div
                 key={plan.id}
-                className={`rounded-xl border border-gray-100 bg-white shadow-sm transition-shadow duration-200 hover:shadow-md ${STATUS_COLORS[plan.status] || ""}`}
+                className={`rounded-xl border border-gray-100 bg-white shadow-sm transition-all duration-200 hover:scale-[1.01] hover:shadow-md active:scale-[0.99] ${STATUS_COLORS[plan.status] || ""}`}
               >
                 <Link href={`/meal-plan/${plan.id}`} className="block p-6">
                   <div className="mb-3 flex items-start justify-between">
@@ -236,7 +301,7 @@ export default function MealPlanListPage() {
                         )}
                       </p>
                       <p className="mt-1 text-xs text-gray-500">
-                        Created {new Date(plan.created_at).toLocaleDateString()}
+                        {formatRelativeDate(plan.created_at)}
                       </p>
                     </div>
                     <Badge

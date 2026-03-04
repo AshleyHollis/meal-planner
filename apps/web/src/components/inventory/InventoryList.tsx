@@ -139,7 +139,7 @@ function InventoryList({ items, onChanged }: InventoryListProps) {
               {locationItems.map((item) => (
                 <li
                   key={item.id}
-                  className="flex items-center justify-between gap-3 px-4 py-3"
+                  className="flex items-center justify-between gap-3 px-4 py-3 transition-colors duration-150 hover:bg-gray-50"
                 >
                   {/* Left: name + expiry */}
                   <div className="min-w-0 flex-1">

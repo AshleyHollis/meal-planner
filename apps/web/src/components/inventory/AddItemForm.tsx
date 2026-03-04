@@ -10,6 +10,7 @@ import {
 } from "@/services/api";
 import { Button } from "../ui/Button";
 import { Input } from "../ui/Input";
+import { useToast } from "@/components/ui/Toast";
 
 const UNITS: UnitType[] = ["g", "ml", "units"];
 const LOCATIONS: StorageLocation[] = ["fridge", "pantry", "freezer"];
@@ -36,6 +37,7 @@ function AddItemForm({ onSuccess }: AddItemFormProps) {
   // --- submission state ---
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { showToast } = useToast();
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const suggestionsRef = useRef<HTMLUListElement>(null);
@@ -144,6 +146,7 @@ function AddItemForm({ onSuccess }: AddItemFormProps) {
       setLocation("fridge");
       setExpiryDate("");
       setDefrostHours("");
+      showToast("Item added", "success");
       onSuccess?.();
     } catch {
       setError("Failed to add item. Please try again.");

@@ -5,6 +5,7 @@ import Link from "next/link";
 import Script from "next/script";
 import { Auth0Provider, useUser } from "@auth0/nextjs-auth0/client";
 import { useState } from "react";
+import { ToastProvider } from "@/components/ui/Toast";
 import "./globals.css";
 
 // Desktop sidebar items with sections
@@ -461,12 +462,14 @@ export default function RootLayout({
       </head>
       <body className="min-w-[375px] bg-gray-50">
         <Auth0Provider>
-          <DesktopSidebar />
-          <div className="lg:pl-64">
-            <Header />
-            <div className="pb-20 lg:pb-0">{children}</div>
-            <BottomNav />
-          </div>
+          <ToastProvider>
+            <DesktopSidebar />
+            <div className="lg:pl-64">
+              <Header />
+              <div className="pb-20 lg:pb-0">{children}</div>
+              <BottomNav />
+            </div>
+          </ToastProvider>
         </Auth0Provider>
       </body>
     </html>
