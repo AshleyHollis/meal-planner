@@ -7,6 +7,7 @@ retries up to 3x, and persists results to the database.
 from __future__ import annotations
 
 import asyncio
+import contextlib
 from collections import defaultdict
 from datetime import datetime, timedelta
 from typing import Any
@@ -447,7 +448,7 @@ async def _generate_with_retries(
         try:
             raw_response = call_llm(current_prompt)
 
-            # Strip markdown fences if present
+            # Extract and repair JSON
             cleaned = _extract_json(raw_response)
 
             # Parse with Pydantic
@@ -476,10 +477,15 @@ async def _generate_with_retries(
             current_prompt = add_error_feedback(prompt, errors)
 
         except Exception as exc:
+            # Log raw response preview for debugging parse/validation failures
+            raw_preview = None
+            with contextlib.suppress(NameError):
+                raw_preview = raw_response[:500] if raw_response else None
             logger.warning(
                 "llm_call_error",
                 attempt=attempt,
                 error=str(exc),
+                raw_response_preview=raw_preview,
             )
             last_errors = [str(exc)]
             current_prompt = add_error_feedback(prompt, str(exc))
@@ -489,15 +495,58 @@ async def _generate_with_retries(
 
 
 def _extract_json(text: str) -> str:
-    """Extract JSON from LLM response, stripping markdown fences."""
+    """Extract and repair JSON from LLM response.
+
+    Handles: markdown fences, thinking blocks, non-JSON text wrapping,
+    and Kimi K2.5's tendency to serialize arrays as string values.
+    """
+    import json
+    import re
+
     stripped = text.strip()
+
+    # Remove thinking/reasoning blocks
+    stripped = re.sub(r"<think>.*?</think>", "", stripped, flags=re.DOTALL).strip()
+
+    # Remove markdown fences
     if stripped.startswith("```"):
-        # Remove opening fence (with optional language tag)
         first_newline = stripped.index("\n")
         stripped = stripped[first_newline + 1 :]
-        # Remove closing fence
         if stripped.endswith("```"):
             stripped = stripped[:-3].strip()
+
+    # Extract JSON object if surrounded by non-JSON text
+    brace_start = stripped.find("{")
+    if brace_start > 0:
+        stripped = stripped[brace_start:]
+    brace_end = stripped.rfind("}")
+    if brace_end >= 0 and brace_end < len(stripped) - 1:
+        stripped = stripped[: brace_end + 1]
+
+    # Repair known issue: recipes/suggestions double-serialized as string
+    try:
+        data = json.loads(stripped)
+        if isinstance(data, dict):
+            repaired = False
+            for key in ("recipes", "suggestions"):
+                if key in data and isinstance(data[key], str):
+                    val = data[key].strip()
+                    # Strip leading colon if present
+                    if val.startswith(":"):
+                        val = val[1:].strip()
+                    try:
+                        parsed = json.loads(val)
+                        if isinstance(parsed, list):
+                            data[key] = parsed
+                            repaired = True
+                    except (json.JSONDecodeError, ValueError):
+                        pass
+            if repaired:
+                logger.info("json_repaired", repaired_keys=list(data.keys()))
+                stripped = json.dumps(data)
+    except (json.JSONDecodeError, ValueError):
+        pass
+
     return stripped
 
 

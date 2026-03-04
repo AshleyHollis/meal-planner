@@ -28,10 +28,10 @@ ADAPTATION_TIMEOUT = 8  # NFR-02: cook-time adaptation p95 < 10s
 
 
 # Azure counts max_tokens against the per-minute token rate limit upfront.
-# With 20K tokens/min and ~2.3K input tokens, max_tokens can be up to ~17K.
-# Kimi K2.5 uses ~5K reasoning tokens (invisible in output) that count toward
-# max_tokens, so we need 16384 to leave ~11K for visible JSON content.
-_MAX_TOKENS = 16384
+# With 20K tokens/min and ~2.3K input tokens, total budget is ~14.5K.
+# Kimi K2.5 uses ~5K reasoning tokens that count toward max_tokens,
+# leaving ~7K for visible JSON content (enough for 7 recipes).
+_MAX_TOKENS = 12288
 
 # Approximate cost per 1K tokens (USD) for cost estimation
 _COST_PER_1K = {
@@ -39,10 +39,15 @@ _COST_PER_1K = {
     "openai": {"input": 0.005, "output": 0.015},
 }
 
-# System instruction for JSON output (used when prompt doesn't split system/user)
+# System instruction for JSON output — explicit about structure to prevent
+# Kimi K2.5 from serializing the recipes array as a string value.
 _JSON_SYSTEM_INSTRUCTION = (
-    "You are a meal planning assistant. Respond ONLY with valid JSON. "
-    "No markdown fences, no explanation, no trailing commas."
+    "You are a meal planning assistant. "
+    "You MUST respond with ONLY a single JSON object. "
+    "The 'recipes' key MUST contain a JSON array, NOT a string. "
+    'Correct: {"recipes": [{"title": "Pasta", ...}]} '
+    'Wrong: {"recipes": "[{\\"title\\": \\"Pasta\\"}]"} '
+    "No markdown fences, no code blocks, no explanation, no thinking text."
 )
 
 
