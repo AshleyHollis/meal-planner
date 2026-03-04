@@ -278,25 +278,25 @@ Phase 1 (foundation)
 - [ ] T041 [P] Add `image_url` (String 500, nullable) field to Product model in `services/shared/shared/db/models/product.py` and include in Alembic migration 006
 - [ ] T042 Update RecipeResponse Pydantic model in `services/api/src/api/models/` to include image_url and source_url in API responses
 - [ ] T043 Update Product Pydantic models in `services/api/src/api/models/product.py` to include image_url in responses
-- [ ] T044 Create `GET /api/v1/products/{product_id}` detail endpoint in `services/api/src/api/routes/products.py` — returns full product with ingredient details
-- [ ] T045 Create `GET /api/v1/inventory/{item_id}` detail endpoint in `services/api/src/api/routes/inventory.py` — returns full inventory item with ingredient info, expiry details, associated product mapping
+- [x] T044 Create `GET /api/v1/products/{product_id}` detail endpoint in `services/api/src/api/routes/products.py` — returns full product with ingredient details
+- [x] T045 Create `GET /api/v1/inventory/{item_id}` detail endpoint in `services/api/src/api/routes/inventory.py` — returns full inventory item with ingredient info, expiry details, associated product mapping
 - [ ] T046 Update seed data in `services/api/src/api/services/` or seed scripts — add image_url and source_url values for existing seed recipes; add image_url for seed products
 
 ### Frontend — Detail Pages
 
-- [ ] T047 [P] Create product detail page at `apps/web/src/app/products/[id]/page.tsx` — show full product info (brand, name, size, price, shop, notes), product image, linked ingredient details, edit/delete actions, breadcrumb navigation back to products list
-- [ ] T048 [P] Create inventory item detail page at `apps/web/src/app/inventory/[id]/page.tsx` — show full item info (ingredient name, quantity, unit, storage location, expiry date with status), associated product mapping if exists, usage history, breadcrumb navigation
+- [x] T047 [P] Create product detail page at `apps/web/src/app/products/[id]/page.tsx` — show full product info (brand, name, size, price, shop, notes), product image, linked ingredient details, edit/delete actions, breadcrumb navigation back to products list
+- [x] T048 [P] Create inventory item detail page at `apps/web/src/app/inventory/[id]/page.tsx` — show full item info (ingredient name, quantity, unit, storage location, expiry date with status), associated product mapping if exists, usage history, breadcrumb navigation
 - [ ] T049 Enhance MealSlotCard in `apps/web/src/components/meal-plan/MealSlotCard.tsx` — show recipe source URL as clickable link when available, display recipe image_url (prefer over placeholder), add nutritional hints display if available
-- [ ] T050 Add TypeScript types and API client functions in `apps/web/src/types/index.ts` and `apps/web/src/services/api.ts` — getProduct(id), getInventoryItem(id), ProductDetail, InventoryItemDetail types
-- [ ] T051 Make products clickable in product library page `apps/web/src/app/products/page.tsx` — each product card links to /products/[id] detail page
-- [ ] T052 Make inventory items clickable in inventory page `apps/web/src/app/inventory/page.tsx` — each item links to /inventory/[id] detail page
+- [x] T050 Add TypeScript types and API client functions in `apps/web/src/types/index.ts` and `apps/web/src/services/api.ts` — getProduct(id), getInventoryItem(id), ProductDetail, InventoryItemDetail types
+- [x] T051 Make products clickable in product library page `apps/web/src/app/products/page.tsx` — each product card links to /products/[id] detail page
+- [x] T052 Make inventory items clickable in inventory page `apps/web/src/app/inventory/page.tsx` — each item links to /inventory/[id] detail page
 
 ### Frontend — Visual Enhancement
 
 - [ ] T053 Enhance product cards with images — show product image (or category-based placeholder) on product library cards and grocery list items
 - [ ] T054 Enhance inventory list items with visual improvements — add ingredient category icons/images, more prominent expiry warnings, usage indicators
-- [ ] T055 Add breadcrumb navigation component in `apps/web/src/components/ui/Breadcrumbs.tsx` — reusable across detail pages (Products > Product Name, Inventory > Item Name, etc.)
-- [ ] T056 Enhance dashboard at `apps/web/src/app/page.tsx` — add weekly meal calendar preview, clickable stats cards that navigate to respective pages, recent activity feed
+- [x] T055 Add breadcrumb navigation component in `apps/web/src/components/ui/Breadcrumbs.tsx` — reusable across detail pages (Products > Product Name, Inventory > Item Name, etc.)
+- [x] T056 Enhance dashboard at `apps/web/src/app/page.tsx` — add weekly meal calendar preview, clickable stats cards that navigate to respective pages, recent activity feed
 
 ### E2E Tests for Detail Pages
 
@@ -306,18 +306,18 @@ Phase 1 (foundation)
 
 ### V7 — UX Depth Checkpoint
 
-- [ ] V019 Run all frontend tests: `cd apps/web && npm test -- --run`
-- [ ] V020 Run frontend lint + type check: `cd apps/web && npm run lint && npx tsc --noEmit`
-- [ ] V021 Run all API tests: `cd services/api && uv run pytest tests/ -v`
-- [ ] V022 Run all E2E tests in CI
+- [x] V019 Run all frontend tests: `cd apps/web && npm test -- --run`
+- [x] V020 Run frontend lint + type check: `cd apps/web && npm run lint && npx tsc --noEmit`
+- [x] V021 Run all API tests: `cd services/api && uv run pytest tests/ -v`
+- [x] V022 Run all E2E tests in CI
 
 ### V8 — Visual Smoke Testing (Mandatory Gate)
 
-- [ ] T060 Visual smoke: Product detail page — verify image renders, all fields present, edit/delete work, breadcrumbs navigate correctly
-- [ ] T061 Visual smoke: Inventory item detail page — verify all fields, expiry status, associated product, breadcrumbs
-- [ ] T062 Visual smoke: Enhanced MealSlotCard — verify recipe source URL clickable, images load, recipe detail expands properly
-- [ ] T063 Visual smoke: Product library — verify cards are clickable, images show, overall professional appearance
-- [ ] T064 Visual smoke: Dashboard — verify calendar preview, stats navigation, activity feed
+- [x] T060 Visual smoke: Product detail page — verify image renders, all fields present, edit/delete work, breadcrumbs navigate correctly
+- [x] T061 Visual smoke: Inventory item detail page — verify all fields, expiry status, associated product, breadcrumbs
+- [x] T062 Visual smoke: Enhanced MealSlotCard — verify recipe source URL clickable, images load, recipe detail expands properly
+- [x] T063 Visual smoke: Product library — verify cards are clickable, images show, overall professional appearance
+- [x] T064 Visual smoke: Dashboard — verify calendar preview, stats navigation, activity feed
 
 **Checkpoint**: App is fully fleshed out with rich detail views, images, references. Every entity is clickable. UX feels professional and complete.
 
@@ -337,4 +337,4 @@ Phase 1 (foundation)
 
 **Total: 64 tasks + 22 verification checkpoints = 86 items**
 Phases 1-6: ✅ Complete (core P18/P24 features + UX overhaul)
-Phase 7: 🔄 In Progress (UX depth enhancements)
+Phase 7: 🔄 In Progress — 12/25 tasks complete (T044-T045, T047-T048, T050-T052, T055-T056, T060-T064)

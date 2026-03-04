@@ -229,3 +229,22 @@
   - `total_price` is None (not 0.0) when no products have prices — avoids misleading "£0.00 total" when data is simply absent.
   - `store_totals` uses "Other" as the key when `product.shop` is None.
 - **All 193 API tests pass, ruff clean.**
+
+### Meal plan generation pipeline audit (2026-03-04)
+
+- **Branch:** 005-grocery-enhancements
+- **Commit:** e75c0ab — `fix(worker): use scalar_one_or_none in persist_plan and mark_failed`
+- **Audit scope:** End-to-end meal plan generation: POST /api/v1/meal-plans → queue message → worker → status=active
+- **All endpoints verified as robust:**
+  - `POST /api/v1/meal-plans` → 202 (draft created, enqueued), 409 if active/draft exists (clear message)
+  - `GET /api/v1/meal-plans/active` → 200 or 404, works correctly
+  - `GET /api/v1/meal-plans/stats` → aggregate counts, placed before `/{plan_id}` to avoid path conflict
+  - `DELETE /api/v1/meal-plans/{plan_id}` → 204 (failed/completed only), 409 with clear message otherwise
+  - Grocery list endpoint → enriched with ingredient names, product details, store totals
+  - Preferences endpoints → dietary-types list, create/delete preferences with proper error codes
+- **Bug found and fixed:** Both `_persist_plan()` and `_mark_failed()` in the worker used `result.scalar_one()` (throws `NoResultFound`) instead of `result.scalar_one_or_none()`. If a plan was deleted between LLM generation start and persistence, this would throw an unhandled exception. Fixed to use `scalar_one_or_none()` with graceful `return` + warning log.
+- **Local venv issue diagnosed:** The API service venv had a stale install of meal-planner-shared that was missing `recurring_meal.py` (added in a prior sprint). This caused 2 test collection errors blocking the entire test suite. Fix: `uv sync --all-extras` rebuilds the shared package correctly. Root cause: uv caches built wheels and doesn't auto-detect source file additions.
+- **Key pattern:** Always run `uv sync --all-extras` after adding new model files to the shared package, not just `uv pip install`.
+- **Race condition noted (not fixed):** Two concurrent `POST /api/v1/meal-plans` requests could both pass the draft/active check before either flushes. No DB-level unique constraint on (household_id, status IN ['draft','active']). Current risk is low (single worker, household-scoped usage). Mitigating with DB constraint is future work.
+- **No logic issues found in generation flow:** create_plan → enqueue_message → generator._load_context → _generate_with_retries (3 retries) → _persist_plan → status=active. Path is solid.
+- **Test results:** 193 API tests pass, 97 worker tests pass, ruff clean.

@@ -134,7 +134,23 @@
 - **Mobile grocery:** GroceryItem checkbox now wrapped in `<label>` with `min-h-[44px] min-w-[44px]` for touch-friendly tap target. Checkbox size increased from `h-4 w-4` to `h-5 w-5`.
 - **Build result:** ✅ Clean — 12 routes, 0 TypeScript errors, 4 pre-existing auth `<a>` warnings (intentional).
 
-### Phase 10 — History Page Enhancements (Images + Expandable Items)
+### Phase 11 — Fix Dashboard Generate Plan (2026-03-09)
+
+- **Root cause:** Dashboard `handleGenerate` called `createMealPlan()` directly without first checking for existing active/draft plans. API returns 409 Conflict in that case. The meal plan page already had this fix (auto-complete before create), but the dashboard did not.
+- **Key insight:** `getActiveMealPlan()` only returns plans with status "active". A "draft" plan causes 409 but won't be found in the dashboard's `plan` state. The fix uses `listMealPlans()` inside `handleGenerate` to catch ALL active/draft plans (not just the one in state).
+- **Changes to `apps/web/src/app/page.tsx`:**
+  1. Added `listMealPlans`, `updatePlanStatus` to API imports.
+  2. Added `MealTypeSelector` and `useToast` imports.
+  3. Added `mealTypes` state, `generationStep` state, and `stepIntervalRef`.
+  4. Added generation step `useEffect` (same 2s interval pattern as meal plan page).
+  5. Fixed `handleGenerate`: call `listMealPlans()` → find active/draft → `updatePlanStatus(id, {status:'completed'})` → then `createMealPlan()`.
+  6. Improved error extraction: reads `err.body.detail` from ApiError body (same as meal plan page).
+  7. Replaced "Customize Cuisine" toggle pattern with always-visible `CuisineSelector` + `MealTypeSelector`.
+  8. Added generation progress indicator (3-step progress bar, spinner, step labels).
+  9. Added `showToast` on error for toast + inline error feedback.
+- **Build:** ✅ 15 routes, 0 TypeScript errors. **Tests:** ✅ 104/104 passed.
+- **Commit:** `f1d988a` on branch `005-grocery-enhancements`.
+
 
 - **What changed:** 1 file — `components/MealHistoryList.tsx`. Enhanced history page with meal images and expandable detail view.
 - **Meal images:** Added thumbnail images (56x56 rounded) on left of each history item using `getMealImageUrl` from `lib/meal-images.ts`. Unsplash URLs use standard `<img>` tag (not `next/image`) as they're external.

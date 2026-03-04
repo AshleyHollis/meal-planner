@@ -77,3 +77,21 @@ Full code review of commit `ad0dfa8` (16 files, 845 insertions). Verdict: **APPR
 
 - Meal plan list page only exposes delete for `failed` plans in UI, but API supports `completed` too. Intentional scope reduction for MVP.
 - `EmptyState` icon prop uses emoji strings (not React components) — keep consistent.
+
+### 2026-03-04: Quality Audit — Dashboard Generate Plan Failure
+
+**Root cause of Generate Plan failure on dashboard:** State mismatch. API rejects `POST /api/v1/meal-plans` with 409 if any `draft` or `active` plan exists. Dashboard's `getActiveMealPlan()` only finds `active` plans (not `draft`). When a `draft` plan exists (worker never completed), dashboard shows "Plan Your Week" but clicking Generate gets 409.
+
+The meal plan page (`/meal-plan`) has the correct pattern: it lists ALL plans, finds any `active`/`draft`, and auto-completes them before creating. Dashboard was never updated with this logic (Decision 13 only applied to the meal plan page).
+
+**Key inconsistencies found:**
+- Dashboard `handleGenerate()` — no auto-complete, generic error message, missing `meal_types` param
+- `getNextMonday()` duplicated in 2 files instead of shared `@/lib/date-utils.ts`
+- `DAY_LABELS` duplicated in 3 places
+- Quick Suggestions "Cook This" button is fake — shows success toast but makes no API call
+- Error handling inconsistent across pages (some show detail + retry, some show generic text)
+- No E2E test covers the dashboard Generate flow — that's why this shipped
+
+**Full audit written to:** `.squad/decisions/inbox/dallas-quality-audit.md`
+
+**Key learning:** When the same user action (Generate Plan) exists on 2+ pages, extract it to a shared hook or utility. Otherwise the copy without tests WILL drift.
