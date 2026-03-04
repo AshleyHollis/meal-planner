@@ -29,6 +29,12 @@ const DAY_LABELS = [
   "Sunday",
 ];
 
+const MEAL_TYPE_LABELS: Record<string, string> = {
+  breakfast: "🌅 Breakfast",
+  lunch: "🍽️ Lunch",
+  dinner: "🌙 Dinner",
+};
+
 export default function MealPlanDetailPage({
   params,
 }: MealPlanDetailPageProps) {
@@ -148,19 +154,27 @@ export default function MealPlanDetailPage({
           )}
 
           {/* Header + progress */}
-          <div className="mb-6">
-            <h1 className="text-2xl font-bold text-gray-900">
-              Week of {new Date(plan.week_start_date).toLocaleDateString()}
-            </h1>
-            <div className="mt-3 flex items-center gap-3">
-              <div className="h-2 flex-1 overflow-hidden rounded-full bg-gray-200">
+          <div className="mb-6 rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
+            <div className="flex items-start justify-between">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">
+                  Week of {new Date(plan.week_start_date).toLocaleDateString()}
+                </h1>
+                <p className="mt-1 text-sm text-gray-600">
+                  {totalSlots} meals planned
+                </p>
+              </div>
+              <Badge variant={plan.status as "active" | "completed" | "failed" | "draft"}>{plan.status}</Badge>
+            </div>
+            <div className="mt-6 flex items-center gap-3">
+              <div className="h-3 flex-1 overflow-hidden rounded-full bg-gray-200">
                 <div
-                  className="h-full rounded-full bg-green-500 transition-all"
+                  className="h-full rounded-full bg-gradient-to-r from-green-500 to-green-600 transition-all"
                   style={{ width: `${progressPct}%` }}
                 />
               </div>
-              <span className="whitespace-nowrap text-sm font-medium text-gray-600">
-                {cookedSlots} of {totalSlots} cooked
+              <span className="whitespace-nowrap text-sm font-semibold text-gray-900">
+                {cookedSlots} / {totalSlots}
               </span>
             </div>
           </div>
@@ -168,29 +182,50 @@ export default function MealPlanDetailPage({
           <div className="space-y-8">
             {DAY_LABELS.map((label, day) => {
               const daySlots = slotsByDay[day] ?? [];
+              
+              // Calculate total prep + cook time for the day
+              const totalMinutes = daySlots.reduce((sum, slot) => {
+                const prep = slot.recipe?.prep_time_min ?? 0;
+                const cook = slot.recipe?.cook_time_min ?? 0;
+                return sum + prep + cook;
+              }, 0);
+
               return (
                 <div key={day}>
-                  <h2 className="mb-3 text-lg font-semibold text-gray-900">
-                    {label}
-                  </h2>
+                  <div className="mb-3 flex items-baseline justify-between">
+                    <h2 className="text-lg font-semibold text-gray-800">
+                      {label}
+                    </h2>
+                    {totalMinutes > 0 && (
+                      <span className="text-xs text-gray-500">
+                        {totalMinutes} min total
+                      </span>
+                    )}
+                  </div>
                   {daySlots.length === 0 ? (
-                    <p className="text-sm text-gray-400">Nothing planned</p>
+                    <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 p-6 text-center">
+                      <p className="text-sm text-gray-400">Nothing planned</p>
+                    </div>
                   ) : (
-                    <div className="grid gap-4 lg:grid-cols-2">
+                    <div className="space-y-4">
                       {daySlots.map((slot) => (
-                        <MealSlotCard
-                          key={slot.id}
-                          slot={slot}
-                          planId={id}
-                          onMarkCooked={handleMarkCooked}
-                          onMarkSkipped={handleMarkSkipped}
-                          onFavoriteToggle={handleFavoriteToggle}
-                          isFavorited={
-                            slot.recipe
-                              ? favoriteRecipeIds.has(slot.recipe.id)
-                              : false
-                          }
-                        />
+                        <div key={slot.id}>
+                          <div className="mb-2 text-xs font-medium text-gray-500">
+                            {MEAL_TYPE_LABELS[slot.meal_type] || slot.meal_type}
+                          </div>
+                          <MealSlotCard
+                            slot={slot}
+                            planId={id}
+                            onMarkCooked={handleMarkCooked}
+                            onMarkSkipped={handleMarkSkipped}
+                            onFavoriteToggle={handleFavoriteToggle}
+                            isFavorited={
+                              slot.recipe
+                                ? favoriteRecipeIds.has(slot.recipe.id)
+                                : false
+                            }
+                          />
+                        </div>
                       ))}
                     </div>
                   )}

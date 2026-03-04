@@ -151,9 +151,19 @@ export default function ProductsPage() {
         </div>
       )}
 
-      {!loading && !error && displayedProducts.length === 0 && (
-        <p className="py-8 text-center text-gray-500">
-          {searchQuery ? "No products found." : "No products yet. Add one!"}
+      {!loading && !error && displayedProducts.length === 0 && searchQuery === "" && (
+        <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm text-center">
+          <div className="mb-4 text-6xl">🏷️</div>
+          <h3 className="mb-2 text-lg font-semibold text-gray-800">No Products Yet</h3>
+          <p className="text-sm text-gray-600">
+            Map ingredients to specific store products
+          </p>
+        </div>
+      )}
+
+      {!loading && !error && displayedProducts.length === 0 && searchQuery !== "" && (
+        <p className="py-8 text-center text-sm text-gray-500">
+          No products found for &quot;{searchQuery}&quot;
         </p>
       )}
 
@@ -169,7 +179,7 @@ export default function ProductsPage() {
                 {grouped[category].map((product) => (
                   <div
                     key={product.id}
-                    className="rounded-lg border border-gray-200 bg-white p-4"
+                    className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm hover:shadow-md transition-shadow duration-200"
                   >
                     {editingProduct?.id === product.id ? (
                       <ProductMappingForm

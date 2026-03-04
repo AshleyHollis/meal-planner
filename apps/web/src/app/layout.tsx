@@ -4,15 +4,50 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 import Script from "next/script";
 import { Auth0Provider, useUser } from "@auth0/nextjs-auth0/client";
+import { useState } from "react";
 import "./globals.css";
 
-const navItems = [
+// Desktop sidebar items with sections
+const desktopNavSections = [
+  {
+    title: "Planning",
+    items: [
+      { href: "/meal-plan", label: "Meal Plan", icon: MealPlanIcon },
+      { href: "/recurring-meals", label: "Recurring", icon: RecurringIcon },
+    ],
+  },
+  {
+    title: "Shopping",
+    items: [
+      { href: "/grocery-list", label: "Grocery", icon: GroceryIcon },
+      { href: "/products", label: "Products", icon: ProductsIcon },
+      { href: "/inventory", label: "Inventory", icon: InventoryIcon },
+    ],
+  },
+  {
+    title: "Me",
+    items: [
+      { href: "/preferences", label: "Preferences", icon: PreferencesIcon },
+      { href: "/history", label: "History", icon: HistoryIcon },
+      { href: "/quick-suggestions", label: "Quick Cook", icon: QuickCookIcon },
+    ],
+  },
+] as const;
+
+// Mobile bottom nav (5 items)
+const mobileNavItems = [
   { href: "/", label: "Home", icon: HomeIcon },
-  { href: "/inventory", label: "Inventory", icon: InventoryIcon },
   { href: "/meal-plan", label: "Meal Plan", icon: MealPlanIcon },
   { href: "/grocery-list", label: "Grocery", icon: GroceryIcon },
-  { href: "/history", label: "History", icon: HistoryIcon },
+  { href: "/inventory", label: "Inventory", icon: InventoryIcon },
+  { href: "__more__", label: "More", icon: MoreIcon },
+] as const;
+
+// Mobile "More" menu items
+const moreMenuItems = [
+  { href: "/products", label: "Products", icon: ProductsIcon },
   { href: "/preferences", label: "Preferences", icon: PreferencesIcon },
+  { href: "/history", label: "History", icon: HistoryIcon },
   { href: "/quick-suggestions", label: "Quick Cook", icon: QuickCookIcon },
   { href: "/recurring-meals", label: "Recurring", icon: RecurringIcon },
 ] as const;
@@ -166,6 +201,47 @@ function RecurringIcon({ className }: { className?: string }) {
   );
 }
 
+function ProductsIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      fill="none"
+      viewBox="0 0 24 24"
+      strokeWidth={1.5}
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z"
+      />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M6 6h.008v.008H6V6z"
+      />
+    </svg>
+  );
+}
+
+function MoreIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      fill="none"
+      viewBox="0 0 24 24"
+      strokeWidth={1.5}
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"
+      />
+    </svg>
+  );
+}
+
 function DesktopSidebar() {
   const pathname = usePathname();
   const { user, isLoading } = useUser();
@@ -178,24 +254,30 @@ function DesktopSidebar() {
         </Link>
       </div>
       <nav className="flex-1 overflow-y-auto px-3 py-4">
-        {navItems.map(({ href, label, icon: Icon }) => {
-          const isActive =
-            href === "/" ? pathname === "/" : pathname.startsWith(href);
-          return (
-            <Link
-              key={href}
-              href={href}
-              className={`mb-1 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-                isActive
-                  ? "bg-blue-50 text-blue-600"
-                  : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-              }`}
-            >
-              <Icon className="h-5 w-5 flex-shrink-0" />
-              <span>{label}</span>
-            </Link>
-          );
-        })}
+        {desktopNavSections.map((section) => (
+          <div key={section.title} className="mb-6">
+            <h3 className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-gray-500">
+              {section.title}
+            </h3>
+            {section.items.map(({ href, label, icon: Icon }) => {
+              const isActive = pathname.startsWith(href);
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  className={`mb-1 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                    isActive
+                      ? "border-l-4 border-blue-600 bg-blue-50 text-blue-600"
+                      : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                  }`}
+                >
+                  <Icon className="h-5 w-5 flex-shrink-0" />
+                  <span>{label}</span>
+                </Link>
+              );
+            })}
+          </div>
+        ))}
       </nav>
       <div className="border-t border-gray-200 px-3 py-4">
         {!isLoading &&
@@ -259,28 +341,100 @@ function Header() {
 
 function BottomNav() {
   const pathname = usePathname();
+  const [showMore, setShowMore] = useState(false);
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-gray-200 bg-white pb-[env(safe-area-inset-bottom)] lg:hidden">
-      <div className="mx-auto flex max-w-2xl items-center justify-around">
-        {navItems.map(({ href, label, icon: Icon }) => {
-          const isActive =
-            href === "/" ? pathname === "/" : pathname.startsWith(href);
-          return (
-            <Link
-              key={href}
-              href={href}
-              className={`flex min-h-[56px] min-w-[44px] flex-1 flex-col items-center justify-center gap-0.5 text-xs font-medium transition-colors ${
-                isActive ? "text-blue-600" : "text-gray-500 hover:text-gray-700"
-              }`}
-            >
-              <Icon className="h-6 w-6" />
-              <span>{label}</span>
-            </Link>
-          );
-        })}
-      </div>
-    </nav>
+    <>
+      <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-gray-200 bg-white pb-[env(safe-area-inset-bottom)] lg:hidden">
+        <div className="mx-auto flex max-w-2xl items-center justify-around">
+          {mobileNavItems.map(({ href, label, icon: Icon }) => {
+            if (href === "__more__") {
+              return (
+                <button
+                  key={href}
+                  onClick={() => setShowMore(true)}
+                  className="flex min-h-[56px] min-w-[44px] flex-1 flex-col items-center justify-center gap-0.5 text-xs font-medium text-gray-500 transition-colors hover:text-gray-700"
+                >
+                  <Icon className="h-6 w-6" />
+                  <span>{label}</span>
+                </button>
+              );
+            }
+            const isActive =
+              href === "/" ? pathname === "/" : pathname.startsWith(href);
+            return (
+              <Link
+                key={href}
+                href={href}
+                className={`flex min-h-[56px] min-w-[44px] flex-1 flex-col items-center justify-center gap-0.5 text-xs font-medium transition-colors ${
+                  isActive ? "text-blue-600" : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                <Icon className="h-6 w-6" />
+                <span>{label}</span>
+                {isActive && (
+                  <div className="mt-0.5 h-1 w-8 rounded-full bg-blue-600" />
+                )}
+              </Link>
+            );
+          })}
+        </div>
+      </nav>
+
+      {showMore && (
+        <div
+          className="fixed inset-0 z-50 bg-black bg-opacity-50 lg:hidden"
+          onClick={() => setShowMore(false)}
+        >
+          <div
+            className="absolute bottom-0 left-0 right-0 rounded-t-2xl bg-white pb-[env(safe-area-inset-bottom)]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-gray-200 px-4 py-4">
+              <h2 className="text-lg font-semibold text-gray-900">More</h2>
+              <button
+                onClick={() => setShowMore(false)}
+                className="rounded-lg p-2 text-gray-500 hover:bg-gray-100"
+              >
+                <svg
+                  className="h-6 w-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={1.5}
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+            <div className="px-2 py-2">
+              {moreMenuItems.map(({ href, label, icon: Icon }) => {
+                const isActive = pathname.startsWith(href);
+                return (
+                  <Link
+                    key={href}
+                    href={href}
+                    onClick={() => setShowMore(false)}
+                    className={`flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-colors ${
+                      isActive
+                        ? "bg-blue-50 text-blue-600"
+                        : "text-gray-600 hover:bg-gray-100"
+                    }`}
+                  >
+                    <Icon className="h-5 w-5 flex-shrink-0" />
+                    <span>{label}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 

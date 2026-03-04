@@ -225,6 +225,38 @@ class MealPlanService:
         await self.session.flush()
         return plan
 
+    async def delete_plan(self, plan_id: UUID) -> None:
+        """Delete a meal plan and its slots.
+
+        Only plans with status "failed" or "completed" can be deleted.
+
+        Raises:
+            HTTPException 404: If plan not found.
+            HTTPException 409: If plan status is not failed or completed.
+        """
+        stmt = select(MealPlan).where(
+            MealPlan.id == plan_id,
+            MealPlan.household_id == self.household_id,
+        )
+        result = await self.session.execute(stmt)
+        plan = result.scalar_one_or_none()
+
+        if plan is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Meal plan not found",
+            )
+
+        if plan.status not in ("failed", "completed"):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Cannot delete meal plan with status '{plan.status}'. Only 'failed' or 'completed' plans can be deleted.",
+            )
+
+        # Delete the plan (cascade will delete slots automatically)
+        await self.session.delete(plan)
+        await self.session.flush()
+
     @staticmethod
     def adapt_recipe(
         recipe: dict,

@@ -81,6 +81,15 @@ async def update_plan_status(
     return MealPlanResponse.model_validate(plan)
 
 
+@router.delete("/{plan_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_meal_plan(
+    plan_id: UUID,
+    service: MealPlanService = Depends(get_meal_plan_service),  # noqa: B008
+) -> None:
+    """Delete a meal plan. Only failed or completed plans can be deleted."""
+    await service.delete_plan(plan_id)
+
+
 @router.patch("/{plan_id}/slots/{slot_id}", response_model=MealSlotResponse)
 async def update_meal_slot(
     plan_id: UUID,

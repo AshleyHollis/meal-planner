@@ -27,8 +27,12 @@ function getExpiryStatus(expiryDate: string | null): {
     return { label: "Expired", variant: "error" };
   }
 
-  if (diffDays <= 2) {
-    return { label: `Expires in ${diffDays}d`, variant: "warning" };
+  if (diffDays <= 3) {
+    return { label: `${diffDays}d left`, variant: "error" };
+  }
+
+  if (diffDays <= 7) {
+    return { label: `${diffDays}d left`, variant: "warning" };
   }
 
   return { label: `${diffDays}d left`, variant: "success" };

@@ -9,9 +9,9 @@ import { Input } from "../ui/Input";
 import { ExpiryBadge } from "./ExpiryBadge";
 
 const LOCATION_LABELS: Record<StorageLocation, string> = {
-  fridge: "Fridge",
-  pantry: "Pantry",
-  freezer: "Freezer",
+  fridge: "🧊 Fridge",
+  pantry: "🗄️ Pantry",
+  freezer: "❄️ Freezer",
 };
 
 const LOCATION_ORDER: StorageLocation[] = ["fridge", "pantry", "freezer"];
@@ -111,9 +111,13 @@ function InventoryList({ items, onChanged }: InventoryListProps) {
 
   if (items.length === 0) {
     return (
-      <p className="py-8 text-center text-gray-500">
-        No items in inventory. Add some above!
-      </p>
+      <div className="flex flex-col items-center justify-center rounded-xl border border-gray-100 bg-white py-12 text-center shadow-sm">
+        <div className="mb-4 text-6xl">🧊</div>
+        <h3 className="mb-2 text-lg font-semibold text-gray-800">Your Pantry is Empty</h3>
+        <p className="text-sm text-gray-600">
+          Add ingredients to get personalized meal plans
+        </p>
+      </div>
     );
   }
 
@@ -125,10 +129,10 @@ function InventoryList({ items, onChanged }: InventoryListProps) {
 
         return (
           <section key={location}>
-            <h3 className="mb-2 text-lg font-semibold text-gray-900">
-              {LOCATION_LABELS[location]}
+            <h3 className="mb-2 text-lg font-semibold text-gray-800">
+              {LOCATION_LABELS[location]} ({locationItems.length} item{locationItems.length !== 1 ? "s" : ""})
             </h3>
-            <ul className="divide-y divide-gray-200 rounded-lg border border-gray-200">
+            <ul className="divide-y divide-gray-200 rounded-xl border border-gray-100 bg-white shadow-sm">
               {locationItems.map((item) => (
                 <li
                   key={item.id}

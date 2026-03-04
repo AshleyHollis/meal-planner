@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { MealHistoryItem } from "@/types";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { EmptyState } from "@/components/ui/EmptyState";
 
 interface MealHistoryListProps {
   items: MealHistoryItem[];
@@ -21,12 +22,14 @@ function MealHistoryList({
   return (
     <div className="space-y-4">
       {items.length === 0 ? (
-        <p className="py-12 text-center text-gray-500">
-          No meal history yet. Mark meals as cooked to see them here.
-        </p>
+        <EmptyState
+          icon="📖"
+          title="No Meals Yet"
+          description="Cook meals from your plan to build history"
+        />
       ) : (
         <>
-          <ul className="divide-y divide-gray-200 rounded-lg border border-gray-200">
+          <ul className="divide-y divide-gray-200 rounded-xl border border-gray-100 bg-white shadow-sm">
             {items.map((item) => (
               <li
                 key={item.slot_id}
@@ -36,7 +39,7 @@ function MealHistoryList({
                   <p className="font-medium text-gray-900">
                     {item.recipe_title}
                   </p>
-                  <p className="mt-0.5 text-sm text-gray-500">
+                  <p className="mt-0.5 text-sm text-gray-600">
                     {new Date(item.cooked_at).toLocaleDateString(undefined, {
                       month: "short",
                       day: "numeric",
