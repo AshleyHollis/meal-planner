@@ -14,13 +14,18 @@ interface InventoryDetailPageProps {
   params: Promise<{ id: string }>;
 }
 
-const LOCATION_LABELS: Record<string, { label: string; icon: string; color: string }> = {
+const LOCATION_LABELS: Record<
+  string,
+  { label: string; icon: string; color: string }
+> = {
   fridge: { label: "Fridge", icon: "🧊", color: "bg-blue-50 text-blue-800" },
   pantry: { label: "Pantry", icon: "🗄️", color: "bg-amber-50 text-amber-800" },
   freezer: { label: "Freezer", icon: "❄️", color: "bg-cyan-50 text-cyan-800" },
 };
 
-export default function InventoryDetailPage({ params }: InventoryDetailPageProps) {
+export default function InventoryDetailPage({
+  params,
+}: InventoryDetailPageProps) {
   const { id } = use(params);
 
   const [item, setItem] = useState<InventoryItem | null>(null);
@@ -51,13 +56,18 @@ export default function InventoryDetailPage({ params }: InventoryDetailPageProps
   }, [id]);
 
   const locationInfo = item
-    ? (LOCATION_LABELS[item.location] ?? { label: item.location, icon: "📦", color: "bg-gray-50 text-gray-800" })
+    ? (LOCATION_LABELS[item.location] ?? {
+        label: item.location,
+        icon: "📦",
+        color: "bg-gray-50 text-gray-800",
+      })
     : null;
 
   const expiryColorClass = (() => {
     if (!item?.expiry_date) return "";
     const diffDays = Math.ceil(
-      (new Date(item.expiry_date).setHours(0, 0, 0, 0) - new Date().setHours(0, 0, 0, 0)) /
+      (new Date(item.expiry_date).setHours(0, 0, 0, 0) -
+        new Date().setHours(0, 0, 0, 0)) /
         (1000 * 60 * 60 * 24),
     );
     if (diffDays < 0) return "border-red-200 bg-red-50";
@@ -76,7 +86,10 @@ export default function InventoryDetailPage({ params }: InventoryDetailPageProps
           ]}
         />
         <div>
-          <Link href="/inventory" className="text-sm text-blue-600 hover:underline">
+          <Link
+            href="/inventory"
+            className="text-sm text-blue-600 hover:underline"
+          >
             &larr; Back to Inventory
           </Link>
         </div>
@@ -134,7 +147,9 @@ export default function InventoryDetailPage({ params }: InventoryDetailPageProps
           </div>
 
           {/* Expiry status */}
-          <div className={`rounded-xl border p-6 shadow-sm ${expiryColorClass || "border-gray-100 bg-white"}`}>
+          <div
+            className={`rounded-xl border p-6 shadow-sm ${expiryColorClass || "border-gray-100 bg-white"}`}
+          >
             <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500">
               Expiry Status
             </h3>
@@ -206,7 +221,9 @@ export default function InventoryDetailPage({ params }: InventoryDetailPageProps
               </div>
               <div>
                 <p className="text-xs text-gray-400">Default unit</p>
-                <p className="mt-1 text-gray-700">{item.ingredient.default_unit}</p>
+                <p className="mt-1 text-gray-700">
+                  {item.ingredient.default_unit}
+                </p>
               </div>
             </div>
           </div>

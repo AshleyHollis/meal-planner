@@ -214,7 +214,10 @@ function InventoryList({ items, onChanged }: InventoryListProps) {
                       <Button
                         size="sm"
                         variant="ghost"
-                        onClick={(e) => { e.preventDefault(); handleEditStart(item); }}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handleEditStart(item);
+                        }}
                         className="!min-h-[36px] !px-2 text-xs"
                       >
                         Edit
@@ -223,7 +226,10 @@ function InventoryList({ items, onChanged }: InventoryListProps) {
                         size="sm"
                         variant="danger"
                         loading={saving}
-                        onClick={(e) => { e.preventDefault(); void handleRemove(item.id); }}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          void handleRemove(item.id);
+                        }}
                         className="!min-h-[36px] !px-2 text-xs"
                       >
                         Remove

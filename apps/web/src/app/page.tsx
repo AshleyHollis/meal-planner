@@ -42,11 +42,9 @@ export default function DashboardPage() {
   const fetchData = useCallback(async () => {
     try {
       setError(null);
-      const [inventoryData, activePlan, historyData] = await Promise.allSettled([
-        listInventory(),
-        getActiveMealPlan(),
-        getMealHistory(1, 5),
-      ]);
+      const [inventoryData, activePlan, historyData] = await Promise.allSettled(
+        [listInventory(), getActiveMealPlan(), getMealHistory(1, 5)],
+      );
 
       if (inventoryData.status === "fulfilled") {
         setInventory(inventoryData.value);
@@ -259,7 +257,9 @@ export default function DashboardPage() {
           href="/inventory"
           className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm text-center hover:shadow-md hover:border-orange-100 transition-all duration-200"
         >
-          <p className={`text-2xl font-bold ${expiringCount > 0 ? "text-orange-600" : "text-gray-900"}`}>
+          <p
+            className={`text-2xl font-bold ${expiringCount > 0 ? "text-orange-600" : "text-gray-900"}`}
+          >
             {expiringCount}
           </p>
           <p className="mt-1 text-xs text-gray-500">Items Expiring</p>
@@ -396,8 +396,13 @@ export default function DashboardPage() {
       {plan && plan.slots.length > 0 && (
         <section className="mt-8">
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-800">This Week&apos;s Meals</h2>
-            <Link href={`/meal-plan/${plan.id}`} className="text-sm text-blue-600 hover:underline">
+            <h2 className="text-lg font-semibold text-gray-800">
+              This Week&apos;s Meals
+            </h2>
+            <Link
+              href={`/meal-plan/${plan.id}`}
+              className="text-sm text-blue-600 hover:underline"
+            >
               View all &rarr;
             </Link>
           </div>
@@ -406,7 +411,15 @@ export default function DashboardPage() {
               .filter((s) => s.recipe)
               .slice(0, 6)
               .map((slot) => {
-                const DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+                const DAY_LABELS = [
+                  "Mon",
+                  "Tue",
+                  "Wed",
+                  "Thu",
+                  "Fri",
+                  "Sat",
+                  "Sun",
+                ];
                 return (
                   <Link
                     key={slot.id}
@@ -447,16 +460,32 @@ export default function DashboardPage() {
       {history.length > 0 && (
         <section className="mt-8">
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-800">Recent Activity</h2>
-            <Link href="/history" className="text-sm text-blue-600 hover:underline">
+            <h2 className="text-lg font-semibold text-gray-800">
+              Recent Activity
+            </h2>
+            <Link
+              href="/history"
+              className="text-sm text-blue-600 hover:underline"
+            >
               Full history &rarr;
             </Link>
           </div>
           <div className="rounded-xl border border-gray-100 bg-white shadow-sm divide-y divide-gray-100">
             {history.map((h) => {
-              const DAY_LABELS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+              const DAY_LABELS = [
+                "Monday",
+                "Tuesday",
+                "Wednesday",
+                "Thursday",
+                "Friday",
+                "Saturday",
+                "Sunday",
+              ];
               return (
-                <div key={h.slot_id} className="flex items-center gap-3 px-4 py-3">
+                <div
+                  key={h.slot_id}
+                  className="flex items-center gap-3 px-4 py-3"
+                >
                   <div className="relative h-10 w-10 flex-shrink-0 overflow-hidden rounded-lg">
                     <Image
                       src={getMealImageUrl(h.recipe_title, 80, 80)}
@@ -473,7 +502,9 @@ export default function DashboardPage() {
                     <p className="text-xs text-gray-500">
                       {DAY_LABELS[h.day] ?? `Day ${h.day}`} · {h.meal_type}
                       {h.rating != null && (
-                        <span className="ml-2 text-yellow-500">{"★".repeat(h.rating)}</span>
+                        <span className="ml-2 text-yellow-500">
+                          {"★".repeat(h.rating)}
+                        </span>
                       )}
                     </p>
                   </div>

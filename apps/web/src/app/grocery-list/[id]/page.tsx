@@ -59,7 +59,10 @@ export default function GroceryListPage({ params }: GroceryListPageProps) {
     if (!groceryList) return 0;
     return groceryList.items
       .filter((i) => i.product?.price != null)
-      .reduce((sum, i) => sum + (i.product!.price! * (i.quantity_needed || 1)), 0);
+      .reduce(
+        (sum, i) => sum + i.product!.price! * (i.quantity_needed || 1),
+        0,
+      );
   }, [groceryList]);
 
   return (

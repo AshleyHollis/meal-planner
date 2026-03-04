@@ -6,11 +6,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 
 import type { Product } from "@/types";
-import {
-  getProduct,
-  deleteProduct,
-  ApiError,
-} from "@/services/api";
+import { getProduct, deleteProduct, ApiError } from "@/services/api";
 import { Spinner } from "@/components/ui/Spinner";
 import { Badge } from "@/components/ui/Badge";
 import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
@@ -86,7 +82,10 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
           ]}
         />
         <div>
-          <Link href="/products" className="text-sm text-blue-600 hover:underline">
+          <Link
+            href="/products"
+            className="text-sm text-blue-600 hover:underline"
+          >
             &larr; Back to Products
           </Link>
         </div>
@@ -133,7 +132,9 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                 <h2 className="text-lg font-semibold text-gray-900">
                   {product.brand} {product.product_name}
                 </h2>
-                <p className="text-sm text-gray-500">{product.ingredient_name}</p>
+                <p className="text-sm text-gray-500">
+                  {product.ingredient_name}
+                </p>
               </div>
               <div className="flex gap-2">
                 <button
@@ -227,7 +228,9 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
             <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500">
               Linked Ingredient
             </h3>
-            <p className="font-medium text-gray-900">{product.ingredient_name}</p>
+            <p className="font-medium text-gray-900">
+              {product.ingredient_name}
+            </p>
             <p className="mt-1 text-xs text-gray-400">
               Ingredient ID: {product.ingredient_id}
             </p>

@@ -218,7 +218,10 @@ export default function ProductsPage() {
                           <div className="relative z-10 flex gap-1">
                             <button
                               type="button"
-                              onClick={(e) => { e.stopPropagation(); setEditingProduct(product); }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setEditingProduct(product);
+                              }}
                               className="rounded px-2 py-1 text-xs text-blue-600 hover:bg-blue-50"
                             >
                               Edit
@@ -227,14 +230,20 @@ export default function ProductsPage() {
                               <>
                                 <button
                                   type="button"
-                                  onClick={(e) => { e.stopPropagation(); void handleDelete(product.id); }}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    void handleDelete(product.id);
+                                  }}
                                   className="rounded px-2 py-1 text-xs text-red-600 hover:bg-red-50"
                                 >
                                   Confirm
                                 </button>
                                 <button
                                   type="button"
-                                  onClick={(e) => { e.stopPropagation(); setConfirmDelete(null); }}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setConfirmDelete(null);
+                                  }}
                                   className="rounded px-2 py-1 text-xs text-gray-500 hover:bg-gray-50"
                                 >
                                   Cancel
@@ -243,7 +252,10 @@ export default function ProductsPage() {
                             ) : (
                               <button
                                 type="button"
-                                onClick={(e) => { e.stopPropagation(); setConfirmDelete(product.id); }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setConfirmDelete(product.id);
+                                }}
                                 className="rounded px-2 py-1 text-xs text-gray-400 hover:bg-red-50 hover:text-red-600"
                               >
                                 Delete
