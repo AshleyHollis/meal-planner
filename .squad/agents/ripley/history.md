@@ -215,3 +215,17 @@
 - **Outcome:** All 193 API tests pass. Users can now clean up clutter safely.
 - **Decision logged:** Decision 20 in team decisions.md.
 - **Commit:** 2026-03-04 orchestration log entry created.
+
+### Meal plan filtering, stats, and grocery totals (2026-03-04)
+
+- **Branch:** 005-grocery-enhancements
+- **Commit:** 5742a7d — `feat(api): add meal plan filtering, stats, and grocery totals`
+- **Task 1 — Filtering/Sorting:** Extended `GET /api/v1/meal-plans` with three query params: `status` (optional string filter), `sort` (created_at|week_start_date, default created_at), `order` (asc|desc, default desc). Updated `MealPlanService.list_plans()` signature to accept these params and apply them via SQLAlchemy `.where()` / `.order_by()`.
+- **Task 2 — Stats endpoint:** Added `GET /api/v1/meal-plans/stats` returning `MealPlanStatsResponse` (plans_by_status, total_meals_cooked, items_expiring_soon). Uses three aggregate queries: GROUP BY status on MealPlans, COUNT of cooked MealSlots via JOIN, COUNT of InventoryItems with expiry_date ≤ now+7 days. Route placed before `/{plan_id}` to avoid path conflict (same pattern as `/active`).
+- **Task 3 — Grocery totals:** Added `total_price: float | None` and `store_totals: dict[str, float]` to `GroceryListResponse`. Computed in the grocery route from `products_lookup` (already fetched): sums `product.price` per store, returns None for total_price if no products have prices, rounds to 2dp.
+- **Key patterns:**
+  - `/stats` must appear before `/{plan_id}` in the router file to avoid FastAPI interpreting "stats" as a UUID path param.
+  - Query params on FastAPI routes use `Query()` with description for OpenAPI docs. `Literal` type hint provides enum validation.
+  - `total_price` is None (not 0.0) when no products have prices — avoids misleading "£0.00 total" when data is simply absent.
+  - `store_totals` uses "Other" as the key when `product.shop` is None.
+- **All 193 API tests pass, ruff clean.**

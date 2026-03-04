@@ -123,3 +123,14 @@
 - **Build result:** ✅ Clean — 12 routes, 0 TypeScript errors, 4 lint warnings (pre-existing auth `<a>` tags, intentional for Auth0 BFF hard redirects).
 - **Outcome:** Significantly improved UX with modern, polished UI. Consistent visual language across all pages. Better information hierarchy and user guidance via empty states. Enhanced navigation usability on both mobile and desktop.
 
+
+### Phase 9 — UX Polish Layer (Toast, Progress, Dates, Hover, Mobile)
+
+- **What changed:** 8 files — 2 new (Toast.tsx, date-utils.ts), 6 modified (globals.css, layout.tsx, meal-plan/page.tsx, GroceryItem.tsx, AddItemForm.tsx, InventoryList.tsx). Commit `6b60450` on branch `005-grocery-enhancements`.
+- **Toast system:** Created `components/ui/Toast.tsx` — `ToastProvider` wraps the whole app in `layout.tsx`. `useToast()` hook available in any client component. Toasts slide in from right via `@keyframes toast-in` in `globals.css`. 3 variants: success (green), error (red), info (gray). Auto-dismiss at 3.5s. Positioned `bottom-24` on mobile (above bottom nav), `bottom-6` on desktop.
+- **Usage:** Delete meal plan → "Plan deleted" (success). Add inventory item → "Item added" (success). Check grocery item → "✓ [name]" (success).
+- **Progress indicator:** During plan generation, a 3-step animated stepper renders inside the generate card: "Creating" → "Recipes" → "Grocery". Steps advance via `setInterval` every 2s while `generating === true`. Steps render as colored progress bars that fill left-to-right.
+- **Date formatting:** Created `lib/date-utils.ts` with `formatRelativeDate(dateString)`. Returns "Created today", "Created yesterday", "Created N days ago", or "Created [Month Day]". Applied to meal plan card subtitles.
+- **Hover effects:** Meal plan cards upgraded from `transition-shadow` to `transition-all hover:scale-[1.01] active:scale-[0.99]`. Inventory list items: `hover:bg-gray-50` row highlight. Grocery items: `hover:bg-gray-50 active:bg-gray-100` row highlight.
+- **Mobile grocery:** GroceryItem checkbox now wrapped in `<label>` with `min-h-[44px] min-w-[44px]` for touch-friendly tap target. Checkbox size increased from `h-4 w-4` to `h-5 w-5`.
+- **Build result:** ✅ Clean — 12 routes, 0 TypeScript errors, 4 pre-existing auth `<a>` warnings (intentional).

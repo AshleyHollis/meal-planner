@@ -57,3 +57,21 @@ Key file paths:
 - `services/workers/meal_plan_generator/generator.py:461` — Slot creation hardcodes meal_type="dinner"
 - `services/api/src/api/services/meal_plan_service.py` — \_call_llm() pattern for synchronous LLM calls
 - `services/workers/meal_plan_generator/prompts.py` — build_prompt() already accepts personalization kwargs
+
+### 2026-03-04: Phase 1 UX Overhaul Code Review
+
+Full code review of commit `ad0dfa8` (16 files, 845 insertions). Verdict: **APPROVED with minor fixes**.
+
+**DELETE endpoint (meal_plans.py):** Solid. Auth enforced via `get_meal_plan_service` dependency injection (household-scoped). All edge cases covered: 404 for nonexistent/other household, 409 for active/draft status. Only failed/completed plans deletable. Cascade deletes slots. 6 tests cover all paths.
+
+**Navigation restructure (layout.tsx):** Clean implementation. Desktop sidebar with section grouping, 5-item mobile bottom nav with "More" slide-up sheet pattern. Active detection correctly uses exact match for "/" and startsWith for others. Backdrop dismiss + stopPropagation on panel. Safe-area-inset handling for mobile.
+
+**Skeleton + EmptyState components:** Well-designed, reusable. Skeleton has 3 variants (text/circular/rectangular) with sensible defaults. EmptyState supports icon/title/description + optional action (link or callback).
+
+**Fixes applied (commit ba39aca):**
+1. Removed dead `useState` import from `MealHistoryList.tsx`
+2. Fixed `EmptyState` double-button edge case — `onAction` now takes precedence over `actionHref`
+
+**Notes for future:**
+- Meal plan list page only exposes delete for `failed` plans in UI, but API supports `completed` too. Intentional scope reduction for MVP.
+- `EmptyState` icon prop uses emoji strings (not React components) — keep consistent.
