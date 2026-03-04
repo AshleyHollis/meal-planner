@@ -6,6 +6,7 @@ retries up to 3x, and persists results to the database.
 
 from __future__ import annotations
 
+import asyncio
 from collections import defaultdict
 from datetime import datetime, timedelta
 from typing import Any
@@ -118,7 +119,11 @@ async def generate_meal_plan(message_content: dict[str, Any]) -> None:
         if len(effective_types) > 1:
             # Multi-meal: generate per-type for reliability (LLM only reliably produces 7 at once)
             all_recipes = []
-            for mt in effective_types:
+            for i, mt in enumerate(effective_types):
+                # Rate-limit pacing: wait between calls to avoid token-bucket exhaustion
+                if i > 0:
+                    logger.info("rate_limit_pacing", wait_seconds=65, next_meal_type=mt)
+                    await asyncio.sleep(65)
                 single_prompt = build_prompt(
                     context["inventory"],
                     context["equipment"],
@@ -431,6 +436,14 @@ async def _generate_with_retries(
 
     for attempt in range(1, MAX_RETRIES + 1):
         logger.info("llm_attempt", attempt=attempt, max_retries=MAX_RETRIES)
+
+        # Wait before retry (not before first attempt) to let rate limits reset
+        if attempt > 1:
+            wait_secs = 30 * (attempt - 1)
+            logger.info("retry_backoff", wait_seconds=wait_secs, attempt=attempt)
+            import time
+
+            time.sleep(wait_secs)
 
         try:
             raw_response = call_llm(current_prompt)

@@ -13,7 +13,6 @@ import time
 
 from shared.config import get_settings
 from shared.logging.config import get_logger
-from tenacity import retry, stop_after_attempt, wait_exponential
 
 logger = get_logger(__name__)
 
@@ -54,11 +53,6 @@ def _resolve_model(provider: str) -> str:
     return settings.llm.model or _MODELS.get(provider, _MODELS["openai"])
 
 
-@retry(
-    stop=stop_after_attempt(2),
-    wait=wait_exponential(multiplier=1, min=1, max=10),
-    reraise=True,
-)
 def call_llm(prompt: str, timeout: int = GENERATION_TIMEOUT) -> str:
     """Call the configured LLM provider and return the response text.
 
@@ -184,10 +178,11 @@ def _call_azure_openai(prompt: str, settings: object, timeout: int, temperature:
     except ImportError:
         ca_bundle = True  # type: ignore[assignment]
 
-    # Use a generous timeout (LLM calls can take 30s+) and disable SDK retries
+    # Use a generous timeout (LLM calls can take 30s+) and let the SDK
+    # handle 429 (rate-limit) retries natively — it reads Retry-After headers.
     http_client = httpx.Client(
         verify=ca_bundle,
-        timeout=httpx.Timeout(60.0, connect=10.0),
+        timeout=httpx.Timeout(120.0, connect=10.0),
     )
 
     client = openai.AzureOpenAI(
@@ -195,7 +190,7 @@ def _call_azure_openai(prompt: str, settings: object, timeout: int, temperature:
         azure_endpoint=llm.azure_endpoint,
         api_version=llm.azure_api_version,
         http_client=http_client,
-        max_retries=0,
+        max_retries=5,
     )
     response = client.chat.completions.create(
         model=deployment,
