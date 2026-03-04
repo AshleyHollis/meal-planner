@@ -178,8 +178,9 @@ def _call_azure_openai(prompt: str, settings: object, timeout: int, temperature:
     except ImportError:
         ca_bundle = True  # type: ignore[assignment]
 
-    # Use a generous timeout (LLM calls can take 30s+) and let the SDK
-    # handle 429 (rate-limit) retries natively — it reads Retry-After headers.
+    # Disable SDK retries — each retry re-sends the full prompt and Azure
+    # counts input tokens against the 20K tokens/min rate limit even for 429s.
+    # We handle retries ourselves with 60s+ waits in the generator layer.
     http_client = httpx.Client(
         verify=ca_bundle,
         timeout=httpx.Timeout(120.0, connect=10.0),
@@ -190,7 +191,7 @@ def _call_azure_openai(prompt: str, settings: object, timeout: int, temperature:
         azure_endpoint=llm.azure_endpoint,
         api_version=llm.azure_api_version,
         http_client=http_client,
-        max_retries=5,
+        max_retries=0,
     )
     response = client.chat.completions.create(
         model=deployment,

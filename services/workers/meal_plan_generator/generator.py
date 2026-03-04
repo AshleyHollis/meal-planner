@@ -437,13 +437,12 @@ async def _generate_with_retries(
     for attempt in range(1, MAX_RETRIES + 1):
         logger.info("llm_attempt", attempt=attempt, max_retries=MAX_RETRIES)
 
-        # Wait before retry (not before first attempt) to let rate limits reset
+        # Wait before retry (not before first attempt) to let rate limits reset.
+        # Must wait at least 60s for the full token-bucket window to reset.
         if attempt > 1:
-            wait_secs = 30 * (attempt - 1)
+            wait_secs = 60 * attempt
             logger.info("retry_backoff", wait_seconds=wait_secs, attempt=attempt)
-            import time
-
-            time.sleep(wait_secs)
+            await asyncio.sleep(wait_secs)
 
         try:
             raw_response = call_llm(current_prompt)
