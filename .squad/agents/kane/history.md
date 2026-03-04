@@ -123,7 +123,6 @@
 - **Build result:** ✅ Clean — 12 routes, 0 TypeScript errors, 4 lint warnings (pre-existing auth `<a>` tags, intentional for Auth0 BFF hard redirects).
 - **Outcome:** Significantly improved UX with modern, polished UI. Consistent visual language across all pages. Better information hierarchy and user guidance via empty states. Enhanced navigation usability on both mobile and desktop.
 
-
 ### Phase 9 — UX Polish Layer (Toast, Progress, Dates, Hover, Mobile)
 
 - **What changed:** 8 files — 2 new (Toast.tsx, date-utils.ts), 6 modified (globals.css, layout.tsx, meal-plan/page.tsx, GroceryItem.tsx, AddItemForm.tsx, InventoryList.tsx). Commit `6b60450` on branch `005-grocery-enhancements`.

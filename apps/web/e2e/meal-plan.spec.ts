@@ -650,10 +650,7 @@ test.describe("Meal Plan Flow", () => {
   });
 
   test.describe("Delete Failed Plan (Phase 1 UX)", () => {
-    test.skip(
-      !process.env.USE_EXTERNAL_SERVER,
-      "Requires backend with plans",
-    );
+    test.skip(!process.env.USE_EXTERNAL_SERVER, "Requires backend with plans");
 
     test("delete button appears for failed plans", async ({ page }) => {
       await page.goto("/meal-plan");
@@ -679,7 +676,9 @@ test.describe("Meal Plan Flow", () => {
 
       // Get the first failed plan card
       const failedBadge = failedBadges.first();
-      const failedPlanCard = failedBadge.locator("xpath=ancestor::div[@class*='rounded-xl']");
+      const failedPlanCard = failedBadge.locator(
+        "xpath=ancestor::div[@class*='rounded-xl']",
+      );
 
       // Delete button should appear
       const deleteButton = failedPlanCard.getByRole("button", {
@@ -717,7 +716,9 @@ test.describe("Meal Plan Flow", () => {
 
       // Get the first failed plan card
       const failedBadge = failedBadges.first();
-      const failedPlanCard = failedBadge.locator("xpath=ancestor::div[@class*='rounded-xl']");
+      const failedPlanCard = failedBadge.locator(
+        "xpath=ancestor::div[@class*='rounded-xl']",
+      );
 
       // Click delete button (first click should show confirmation)
       const deleteButton = failedPlanCard.getByRole("button", {
@@ -812,7 +813,9 @@ test.describe("Meal Plan Flow", () => {
 
       // Check if empty state is shown
       const emptyState = page.getByText("No Plans Yet");
-      const planCards = page.locator('[class*="rounded-xl border border-gray-100"]');
+      const planCards = page.locator(
+        '[class*="rounded-xl border border-gray-100"]',
+      );
 
       // One of these should be visible
       const hasEmptyState = await emptyState

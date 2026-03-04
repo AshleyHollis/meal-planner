@@ -18,10 +18,12 @@
 **Problem:** CI run #22651713954 failed on Frontend Quality job. Tests have hardcoded text expectations that don't match updated component text.
 
 **Failures:**
+
 - `MealHistoryList.test.tsx:51` — Expected "No meal history yet" but component renders "No Meals Yet"
 - `ExpiryBadge.test.tsx:39, 46, 53` — Expected "Expires in Xd" format but component renders "Xd left"
 
 **Impact Chain:**
+
 1. CI failed → CI Status job gate triggers exit code 1
 2. Preview Deployment workflow waits for CI to complete (line: "Wait for CI workflow to complete")
 3. Preview deployment detected CI failure → "Wait for CI" job failed
@@ -31,6 +33,7 @@
 **Pattern Observed:** CI gate is working as designed. When CI fails, preview pipeline correctly halts. No point deploying broken code to preview.
 
 **Action Items:**
+
 - Update test expectations in `apps/web/src/__tests__/` to match component text changes
 - Re-push changes to trigger CI → Preview auto-deploys on pass
 

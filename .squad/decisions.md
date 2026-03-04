@@ -821,7 +821,6 @@ Added `DELETE /api/v1/meal-plans/{plan_id}` endpoint with status-based deletion 
 - **Frontend:** Add DELETE button to meal plan list/detail pages (filtered to show only on failed/completed plans)
 - **Documentation:** Update API docs if published externally
 
-
 ### Decision 21: # UX Overhaul — Frontend Polish and Navigation Redesign
 
 **Author:** Kane (Frontend Dev)  
@@ -840,6 +839,7 @@ The app felt "very basic" and needed significant UX polish to be more useable, i
 **Mobile:** Reduced bottom nav from 8 to 5 items (Home, Meal Plan, Grocery, Inventory, More). "More" opens a slide-up menu with remaining items (Products, Preferences, History, Quick Cook, Recurring).
 
 **Desktop:** Sidebar now has 3 grouped sections with headers:
+
 - **Planning:** Meal Plan, Recurring
 - **Shopping:** Grocery, Products, Inventory
 - **Me:** Preferences, History, Quick Cook
@@ -851,17 +851,20 @@ The app felt "very basic" and needed significant UX polish to be more useable, i
 ### 2. Visual Design System
 
 **Card styling (consistent everywhere):**
+
 ```
 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow duration-200
 ```
 
 **Typography hierarchy:**
+
 - Page titles: `text-2xl font-bold text-gray-900`
 - Section headings: `text-lg font-semibold text-gray-800`
 - Body text: `text-sm text-gray-600`
 - Labels: `text-xs text-gray-500`
 
 **Status colors (border-l-4):**
+
 - Active: green-500
 - Completed: blue-500
 - Failed: red-500
@@ -874,6 +877,7 @@ rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow du
 Created `Skeleton.tsx` (3 variants: text/circular/rectangular with pulse animation) and `EmptyState.tsx` (icon, title, description, optional action).
 
 Enhanced `Badge.tsx` with status-specific variants including icons:
+
 - active = ● (green)
 - completed = ✓ (blue)
 - failed = ✕ (red)
@@ -906,6 +910,7 @@ Enhanced `Badge.tsx` with status-specific variants including icons:
 ### 6. Empty States
 
 Applied EmptyState component to all pages:
+
 - **Dashboard (no plan):** 🍽️ "Plan Your Week" + "Generate Plan" button
 - **History:** 📖 "No Meals Yet" + "Cook meals from your plan to build history"
 - **Grocery:** 🛒 "Nothing to Buy" + link to /meal-plan
@@ -945,10 +950,12 @@ Checked items already had `line-through opacity-50` styling from previous work. 
 ## Files Changed
 
 **Created:**
+
 - `apps/web/src/components/ui/Skeleton.tsx`
 - `apps/web/src/components/ui/EmptyState.tsx`
 
 **Modified:**
+
 - `apps/web/src/components/ui/Badge.tsx` (added status variants)
 - `apps/web/src/app/layout.tsx` (navigation overhaul)
 - `apps/web/src/app/meal-plan/page.tsx` (filters, delete, defaults)
@@ -971,4 +978,3 @@ Significantly improved UX with modern, polished UI. Consistent visual language a
 - Consider adding loading skeletons to replace Spinner in more places (not done this pass to preserve existing behavior)
 - Could add running total in grocery list if product price data becomes more complete
 - Consider adding animation to "More" menu slide-up (currently instant)
-

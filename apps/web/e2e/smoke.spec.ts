@@ -94,15 +94,13 @@ test.describe("Smoke Tests @smoke", () => {
         .locator("button")
         .filter({ hasText: /More/i })
         .first();
-      
+
       // More button should be visible on mobile
       await expect(moreButton).toBeVisible();
       await moreButton.click();
 
       // Menu should slide up with "More" heading
-      await expect(
-        page.getByRole("heading", { name: "More" }),
-      ).toBeVisible({
+      await expect(page.getByRole("heading", { name: "More" })).toBeVisible({
         timeout: 5_000,
       });
 
@@ -132,9 +130,7 @@ test.describe("Smoke Tests @smoke", () => {
         .first();
       await moreButton.click();
 
-      await expect(
-        page.getByRole("heading", { name: "More" }),
-      ).toBeVisible({
+      await expect(page.getByRole("heading", { name: "More" })).toBeVisible({
         timeout: 5_000,
       });
 

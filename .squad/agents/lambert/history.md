@@ -251,20 +251,17 @@ All new E2E tests follow the exact patterns established in existing specs:
    - "More menu closes when clicking a link (mobile)" — verifies menu closes and navigation works after clicking link
 
 2. **meal-plan.spec.ts** → Added 4 new test suites (24 tests total):
-
    - **Status Filter Tabs (Phase 1 UX)** — 3 tests:
      - "meal plan list shows status filter tabs" — All, Active, Completed, Failed, Draft tabs visible
      - "clicking Failed tab shows only failed plans" — filter works correctly
      - "clicking All tab shows all plans" — All tab restores full list
-   
    - **Delete Failed Plan (Phase 1 UX)** — 3 tests:
      - "delete button appears for failed plans" — CTA visible on failed plan cards
      - "delete confirmation dialog appears before deletion" — user must confirm delete
      - "canceling delete closes confirmation dialog" — escape path works
-   
    - **Empty State Display (Phase 1 UX)** — 1 test:
      - "shows EmptyState component when no plans exist" — proper UX when no plans loaded
-   
+
    Total: 26 new E2E tests covering all Phase 1 UI/UX features
 
 **Key Test Patterns:**

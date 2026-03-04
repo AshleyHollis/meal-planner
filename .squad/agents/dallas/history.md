@@ -69,9 +69,11 @@ Full code review of commit `ad0dfa8` (16 files, 845 insertions). Verdict: **APPR
 **Skeleton + EmptyState components:** Well-designed, reusable. Skeleton has 3 variants (text/circular/rectangular) with sensible defaults. EmptyState supports icon/title/description + optional action (link or callback).
 
 **Fixes applied (commit ba39aca):**
+
 1. Removed dead `useState` import from `MealHistoryList.tsx`
 2. Fixed `EmptyState` double-button edge case — `onAction` now takes precedence over `actionHref`
 
 **Notes for future:**
+
 - Meal plan list page only exposes delete for `failed` plans in UI, but API supports `completed` too. Intentional scope reduction for MVP.
 - `EmptyState` icon prop uses emoji strings (not React components) — keep consistent.

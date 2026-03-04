@@ -213,7 +213,10 @@ export default function MealPlanListPage() {
             </div>
             <div className="flex gap-2">
               {GENERATION_STEPS.map((step, i) => (
-                <div key={step} className="flex flex-1 flex-col items-center gap-1">
+                <div
+                  key={step}
+                  className="flex flex-1 flex-col items-center gap-1"
+                >
                   <div
                     className={`h-1.5 w-full rounded-full transition-all duration-500 ${
                       i <= generationStep ? "bg-blue-500" : "bg-blue-200"

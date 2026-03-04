@@ -11,11 +11,13 @@ CI run #22651713954 failed due to frontend test text mismatch failures. The pipe
 ### Failing Tests
 
 **File:** `apps/web/src/__tests__/MealHistoryList.test.tsx`
+
 - Line 51: Test expects "No meal history yet", component renders "No Meals Yet"
 
 **File:** `apps/web/src/__tests__/ExpiryBadge.test.tsx`
+
 - Line 39: Test expects "Expires in 7d", component renders "7d left"
-- Line 46: Test expects "Expires in 2d", component renders "2d left"  
+- Line 46: Test expects "Expires in 2d", component renders "2d left"
 - Line 53: Test expects "Expires in 0d", component renders "0d left"
 
 ### Root Cause
@@ -45,6 +47,7 @@ Update test expectations to match component rendering:
 ## Verification
 
 After fixes:
+
 1. Push corrected tests
 2. CI run #2 should pass all jobs including Frontend Quality
 3. Preview Deployment workflow auto-triggers
