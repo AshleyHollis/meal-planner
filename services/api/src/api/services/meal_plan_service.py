@@ -508,7 +508,10 @@ def _call_llm(prompt: str) -> str:
             temperature=temperature,
             response_format={"type": "json_object"},
             messages=[
-                {"role": "system", "content": "You are a recipe adaptation assistant. Respond ONLY with valid JSON."},
+                {
+                    "role": "system",
+                    "content": "You are a recipe adaptation assistant. Respond ONLY with valid JSON.",
+                },
                 {"role": "user", "content": prompt},
             ],
         )

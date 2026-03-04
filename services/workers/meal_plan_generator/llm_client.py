@@ -168,9 +168,7 @@ def _call_openai(prompt: str, api_key: str, timeout: int, temperature: float) ->
     return text
 
 
-def _call_azure_openai(
-    prompt: str, settings: object, timeout: int, temperature: float
-) -> str:
+def _call_azure_openai(prompt: str, settings: object, timeout: int, temperature: float) -> str:
     """Call Azure OpenAI API with JSON mode and system/user separation."""
     import httpx
     import openai
