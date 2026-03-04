@@ -25,7 +25,8 @@ _MODELS = {
 # Timeout defaults per use-case (seconds)
 GENERATION_TIMEOUT = 25  # NFR-01: meal plan generation p95 < 30s
 ADAPTATION_TIMEOUT = 8  # NFR-02: cook-time adaptation p95 < 10s
-
+
+
 # Azure counts max_tokens against the per-minute token rate limit upfront.
 # With 20K tokens/min and ~3-5K input tokens, max_tokens must be ≤ ~15K.
 # 8192 gives headroom for reasoning tokens while staying within rate limit.
