@@ -594,7 +594,10 @@ async def _persist_plan(
 
         # Update meal plan status to active
         result = await session.execute(select(MealPlan).where(MealPlan.id == meal_plan_id))
-        meal_plan = result.scalar_one()
+        meal_plan = result.scalar_one_or_none()
+        if meal_plan is None:
+            logger.warning("persist_plan_skipped", meal_plan_id=meal_plan_id, reason="not_found")
+            return
         meal_plan.status = "active"
         meal_plan.error_message = None
 
@@ -639,7 +642,12 @@ async def _mark_failed(db: Any, meal_plan_id: str, error_message: str) -> None:
     try:
         async with db.session() as session:
             result = await session.execute(select(MealPlan).where(MealPlan.id == meal_plan_id))
-            meal_plan = result.scalar_one()
+            meal_plan = result.scalar_one_or_none()
+            if meal_plan is None:
+                logger.warning(
+                    "mark_failed_skipped", meal_plan_id=meal_plan_id, reason="not_found"
+                )
+                return
             meal_plan.status = "failed"
             meal_plan.error_message = error_message
     except Exception as exc:
