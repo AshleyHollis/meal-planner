@@ -118,8 +118,10 @@ test.describe("History Page", () => {
         if (isExpanded === "false" || isExpanded === null) {
           await expandButton.click();
 
-          // After clicking, expanded content should appear
-          const expandedContent = page.locator("[role='region']").first();
+          // After clicking, expanded content should appear (detail labels)
+          const expandedContent = page
+            .getByText(/Date Cooked|Meal Type|Cuisine|Your Rating/i)
+            .first();
           await expect(expandedContent).toBeVisible({
             timeout: 10_000,
           });
@@ -252,25 +254,28 @@ test.describe("History Page", () => {
         return;
       }
 
-      // Find a clickable link in the history list
-      const historyLink = page
-        .locator("a")
-        .filter({ hasText: /View|Details|Plan|Recipe/ })
+      // Find a clickable item in the history list (button or link)
+      const historyItem = page
+        .locator("button, [role='button']")
+        .filter({
+          hasText: /\w+ \d{1,2}, \d{4}|breakfast|lunch|dinner/,
+        })
         .first();
 
       if (
-        !(await historyLink.isVisible({ timeout: 5_000 }).catch(() => false))
+        !(await historyItem.isVisible({ timeout: 5_000 }).catch(() => false))
       ) {
-        test.skip(true, "No navigation link in history");
+        test.skip(true, "No clickable history items");
         return;
       }
 
-      await historyLink.click();
+      await historyItem.click();
 
-      // Should navigate to plan detail page or recipe page
-      await expect(page).toHaveURL(/\/meal-plan\/|\/recipe\//, {
-        timeout: 10_000,
-      });
+      // Should show expanded detail content with meal info
+      const detailContent = page.getByText(
+        /Date Cooked|Meal Type|Cuisine|Your Rating/i,
+      );
+      await expect(detailContent.first()).toBeVisible({ timeout: 10_000 });
     });
 
     test("history items display dates or meal types", async ({ page }) => {
