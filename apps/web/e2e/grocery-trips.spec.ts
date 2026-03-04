@@ -328,8 +328,12 @@ test.describe("Grocery Shop Filtering & Trips", () => {
         return;
       }
 
-      // Get item text content - should NOT contain UUID patterns
-      const items = page.locator("li");
+      // Get grocery item text content - scope to grocery list section, not all li elements
+      const grocerySection = page.locator("section");
+      const items =
+        (await grocerySection.count()) > 0
+          ? grocerySection.locator("li")
+          : page.locator("ul li");
       const itemCount = await items.count();
 
       if (itemCount === 0) {

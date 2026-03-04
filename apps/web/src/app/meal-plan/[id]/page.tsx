@@ -166,33 +166,37 @@ export default function MealPlanDetailPage({
           </div>
 
           <div className="space-y-8">
-            {Object.keys(slotsByDay)
-              .map(Number)
-              .sort((a, b) => a - b)
-              .map((day) => (
+            {DAY_LABELS.map((label, day) => {
+              const daySlots = slotsByDay[day] ?? [];
+              return (
                 <div key={day}>
                   <h2 className="mb-3 text-lg font-semibold text-gray-900">
-                    {DAY_LABELS[day]}
+                    {label}
                   </h2>
-                  <div className="grid gap-4 lg:grid-cols-2">
-                    {slotsByDay[day].map((slot) => (
-                      <MealSlotCard
-                        key={slot.id}
-                        slot={slot}
-                        planId={id}
-                        onMarkCooked={handleMarkCooked}
-                        onMarkSkipped={handleMarkSkipped}
-                        onFavoriteToggle={handleFavoriteToggle}
-                        isFavorited={
-                          slot.recipe
-                            ? favoriteRecipeIds.has(slot.recipe.id)
-                            : false
-                        }
-                      />
-                    ))}
-                  </div>
+                  {daySlots.length === 0 ? (
+                    <p className="text-sm text-gray-400">Nothing planned</p>
+                  ) : (
+                    <div className="grid gap-4 lg:grid-cols-2">
+                      {daySlots.map((slot) => (
+                        <MealSlotCard
+                          key={slot.id}
+                          slot={slot}
+                          planId={id}
+                          onMarkCooked={handleMarkCooked}
+                          onMarkSkipped={handleMarkSkipped}
+                          onFavoriteToggle={handleFavoriteToggle}
+                          isFavorited={
+                            slot.recipe
+                              ? favoriteRecipeIds.has(slot.recipe.id)
+                              : false
+                          }
+                        />
+                      ))}
+                    </div>
+                  )}
                 </div>
-              ))}
+              );
+            })}
           </div>
         </>
       )}

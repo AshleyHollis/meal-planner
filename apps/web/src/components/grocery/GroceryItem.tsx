@@ -20,7 +20,7 @@ function GroceryItem({ item, onChanged, tripChecked }: GroceryItemProps) {
   > | null>(item.product ?? null);
 
   const isChecked = tripChecked !== undefined ? tripChecked : item.is_checked;
-  const displayName = item.ingredient_name ?? item.ingredient_id;
+  const displayName = item.ingredient_name || item.ingredient_id;
 
   const handleToggle = async () => {
     setSaving(true);

@@ -134,15 +134,28 @@ test.describe("Meal Plan Flow", () => {
         return;
       }
 
-      // Check that a plan link actually exists before clicking
-      const firstPlanLink = page.getByText(/Week of /).first();
+      // Prefer a completed/active plan over a failed one for day label testing
+      const completedPlanLink = page
+        .locator("a")
+        .filter({ hasText: /Week of / })
+        .filter({ hasText: /completed|active/ })
+        .first();
+      const anyPlanLink = page.getByText(/Week of /).first();
+
+      let planLink = anyPlanLink;
       if (
-        !(await firstPlanLink.isVisible({ timeout: 5_000 }).catch(() => false))
+        await completedPlanLink
+          .isVisible({ timeout: 3_000 })
+          .catch(() => false)
+      ) {
+        planLink = completedPlanLink;
+      } else if (
+        !(await anyPlanLink.isVisible({ timeout: 5_000 }).catch(() => false))
       ) {
         test.skip(true, "No meal plans available to click");
         return;
       }
-      await firstPlanLink.click();
+      await planLink.click();
 
       // Should navigate to plan detail page
       await expect(page).toHaveURL(/\/meal-plan\/[a-zA-Z0-9-]+/);
@@ -169,7 +182,7 @@ test.describe("Meal Plan Flow", () => {
 
       // If plan is ready (not draft), check for day labels
       if (await weekLabel.isVisible().catch(() => false)) {
-        // WeeklyPlanView renders Monday through Sunday
+        // Plan detail page renders all 7 days (Monday through Sunday)
         const monday = page.getByText("Monday");
         if (!(await monday.isVisible({ timeout: 5_000 }).catch(() => false))) {
           test.skip(true, "Plan has no day labels — may be incomplete");
