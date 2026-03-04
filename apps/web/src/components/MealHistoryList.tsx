@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import type { MealHistoryItem } from "@/types";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";

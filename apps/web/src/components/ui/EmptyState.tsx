@@ -25,7 +25,7 @@ function EmptyState({
       <div className="mb-4 text-6xl">{icon}</div>
       <h3 className="mb-2 text-lg font-semibold text-gray-800">{title}</h3>
       <p className="mb-6 text-sm text-gray-600">{description}</p>
-      {actionLabel && actionHref && (
+      {actionLabel && actionHref && !onAction && (
         <Link href={actionHref}>
           <Button>{actionLabel}</Button>
         </Link>
