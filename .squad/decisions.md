@@ -773,3 +773,202 @@ Frontend only. No API or backend impact. Components: ShopFilter.tsx, GroceryList
 - [ ] Capture screenshots/snapshots as evidence
 
 **Rationale:** Automated tests verify behavior in isolation. Visual smoke tests verify the integrated experience as a real user would see it. Both are necessary. This directive closes the gap between "tests pass" and "feature works."
+
+## Session 2026-03-04 UX Overhaul + DELETE Endpoint
+
+Resolved: 2 decisions (Ripley DELETE, Kane UX Overhaul)
+
+### Decision 20: # Decision: Meal Plan DELETE Endpoint — Status-Based Deletion Policy
+
+**Author:** Ripley (Backend Dev)  
+**Date:** 2026-03-04  
+**Status:** Implemented
+
+## Context
+
+Production environment has accumulated 20+ failed meal plans that clutter the UI. Users need a way to clean up failed and completed plans without risking deletion of active or in-progress plans.
+
+## Decision
+
+Added `DELETE /api/v1/meal-plans/{plan_id}` endpoint with status-based deletion policy:
+
+- **Allowed:** Plans with status "failed" or "completed" can be deleted
+- **Blocked:** Plans with status "active" or "draft" return 409 Conflict
+- **Not Found:** Non-existent plans or plans from other households return 404
+
+## Rationale
+
+1. **Safety first:** Active and draft plans represent work in progress. Accidentally deleting them would be disruptive.
+2. **Clear intent:** Users want to clean up past failures and old completed plans, not touch current work.
+3. **Standard HTTP semantics:** 204 No Content (success), 404 (not found), 409 (conflict due to state) follow REST conventions.
+4. **Household scoping:** All operations validate household_id to prevent cross-household access.
+
+## Implementation
+
+- **Service layer:** `MealPlanService.delete_plan(plan_id)` validates status and deletes plan
+- **Cascade deletion:** SQLAlchemy `cascade="all, delete-orphan"` handles slot cleanup automatically
+- **Route handler:** Minimal — calls service method, returns 204 on success
+- **Tests:** 6 tests covering success, status validation, 404/409 errors, household scoping
+
+## Outcome
+
+- All 193 API tests pass
+- Frontend can now implement "Delete" button for failed/completed plans
+- Users will be able to clean up clutter without risk of deleting active plans
+
+## Follow-up Actions
+
+- **Frontend:** Add DELETE button to meal plan list/detail pages (filtered to show only on failed/completed plans)
+- **Documentation:** Update API docs if published externally
+
+
+### Decision 21: # UX Overhaul — Frontend Polish and Navigation Redesign
+
+**Author:** Kane (Frontend Dev)  
+**Date:** 2026-03-03  
+**Status:** Implemented  
+**Branch:** 005-grocery-enhancements
+
+## Context
+
+The app felt "very basic" and needed significant UX polish to be more useable, intuitive, and visually appealing. This was a comprehensive 9-item overhaul affecting navigation, visual consistency, information hierarchy, and user guidance.
+
+## Decisions Made
+
+### 1. Navigation Architecture
+
+**Mobile:** Reduced bottom nav from 8 to 5 items (Home, Meal Plan, Grocery, Inventory, More). "More" opens a slide-up menu with remaining items (Products, Preferences, History, Quick Cook, Recurring).
+
+**Desktop:** Sidebar now has 3 grouped sections with headers:
+- **Planning:** Meal Plan, Recurring
+- **Shopping:** Grocery, Products, Inventory
+- **Me:** Preferences, History, Quick Cook
+
+**Active indicators:** Colored left bar (`border-l-4 border-blue-600`) on desktop, colored dot/bar on mobile.
+
+**Rationale:** 8 items on mobile bottom nav was too cramped. Grouping on desktop improves scannability and information architecture. Products page now accessible from nav.
+
+### 2. Visual Design System
+
+**Card styling (consistent everywhere):**
+```
+rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow duration-200
+```
+
+**Typography hierarchy:**
+- Page titles: `text-2xl font-bold text-gray-900`
+- Section headings: `text-lg font-semibold text-gray-800`
+- Body text: `text-sm text-gray-600`
+- Labels: `text-xs text-gray-500`
+
+**Status colors (border-l-4):**
+- Active: green-500
+- Completed: blue-500
+- Failed: red-500
+- Draft: gray-400
+
+**Rationale:** Consistent visual language improves perceived quality and professionalism. Clear hierarchy improves scannability.
+
+### 3. Reusable Components
+
+Created `Skeleton.tsx` (3 variants: text/circular/rectangular with pulse animation) and `EmptyState.tsx` (icon, title, description, optional action).
+
+Enhanced `Badge.tsx` with status-specific variants including icons:
+- active = ● (green)
+- completed = ✓ (blue)
+- failed = ✕ (red)
+- draft = ○ (gray)
+
+**Rationale:** Reduces repetition, improves consistency, speeds up future development.
+
+### 4. Meal Plan List Enhancements
+
+- Status filter tabs (All, Active, Completed, Failed, Draft) with counts
+- Sort by date DESC (newest first)
+- Delete button on failed plans with confirmation
+- Better plan cards with colored left border, status badges
+- Show 10 by default with "Show more" button
+- Default meal types changed from `["dinner"]` to `["breakfast", "lunch", "dinner"]`
+- Added `deleteMealPlan` API function
+
+**Rationale:** Users had 20+ plans as flat list with identical titles. Filtering, sorting, and deletion give control. Default to all 3 meal types matches expected behavior.
+
+### 5. Dashboard Improvements
+
+- Enhanced hero card with gradient overlay (from-black/70 via-black/30)
+- Stats row: Meals This Week, Items Expiring, In Inventory (3 cards)
+- Expiry warning more prominent (orange-50 bg, border-2, emoji, inline CTA)
+- Quick actions as icon buttons in colored circles (blue/green/purple/orange-100)
+- Progress bar with gradient (from-green-500 to-green-600)
+
+**Rationale:** Dashboard is entry point — should be visually engaging and informative at a glance.
+
+### 6. Empty States
+
+Applied EmptyState component to all pages:
+- **Dashboard (no plan):** 🍽️ "Plan Your Week" + "Generate Plan" button
+- **History:** 📖 "No Meals Yet" + "Cook meals from your plan to build history"
+- **Grocery:** 🛒 "Nothing to Buy" + link to /meal-plan
+- **Inventory:** 🧊 "Your Pantry is Empty" + "Add ingredients to get personalized meal plans"
+- **Products:** 🏷️ "No Products Yet" + "Map ingredients to specific store products"
+- **Meal plan list:** 📋 "No Plans Yet" + "Generate your first meal plan to get started"
+
+**Rationale:** Empty states guide new users and reduce confusion. Emoji icons add personality without requiring image assets.
+
+### 7. Inventory Polish
+
+- Storage location icons in section headers: 🧊 Fridge, 🗄️ Pantry, ❄️ Freezer (with item counts)
+- Expiry badge colors: red for <3 days, orange for <7 days, yellow for >7 days, green for >7 days
+
+**Rationale:** Visual hierarchy and color coding improves quick scanning for items that need attention.
+
+### 8. Meal Plan Detail Improvements
+
+- Meal type labels above cards: 🌅 Breakfast, 🍽️ Lunch, 🌙 Dinner
+- Day summary with total prep+cook time
+- "Nothing planned" days with dashed border, gray-50 bg
+- Progress bar more prominent (h-3, gradient, bold counter)
+
+**Rationale:** Clear meal type separation improves scannability. Time estimates help planning. Visual distinction for empty days reduces confusion.
+
+### 9. Grocery List (already had line-through)
+
+Checked items already had `line-through opacity-50` styling from previous work. No changes needed.
+
+## Technical Implementation
+
+- All changes pure Tailwind CSS — no custom CSS files added
+- TypeScript types kept strict — used type assertions where MealPlan status needed to map to BadgeVariant
+- Preserved all existing functionality and E2E test structure
+- Build clean: 12 routes, 0 TypeScript errors, 4 pre-existing lint warnings (Auth0 `<a>` tags, intentional)
+
+## Files Changed
+
+**Created:**
+- `apps/web/src/components/ui/Skeleton.tsx`
+- `apps/web/src/components/ui/EmptyState.tsx`
+
+**Modified:**
+- `apps/web/src/components/ui/Badge.tsx` (added status variants)
+- `apps/web/src/app/layout.tsx` (navigation overhaul)
+- `apps/web/src/app/meal-plan/page.tsx` (filters, delete, defaults)
+- `apps/web/src/app/page.tsx` (dashboard polish)
+- `apps/web/src/app/inventory/page.tsx` (card styling)
+- `apps/web/src/app/history/page.tsx` (empty state)
+- `apps/web/src/app/products/page.tsx` (empty state, card styling)
+- `apps/web/src/app/meal-plan/[id]/page.tsx` (meal type labels, time summary)
+- `apps/web/src/components/inventory/InventoryList.tsx` (icons, counts, empty state)
+- `apps/web/src/components/inventory/ExpiryBadge.tsx` (color thresholds)
+- `apps/web/src/components/MealHistoryList.tsx` (empty state, card styling)
+- `apps/web/src/services/api.ts` (added deleteMealPlan function)
+
+## Outcome
+
+Significantly improved UX with modern, polished UI. Consistent visual language across all pages. Better information hierarchy and user guidance via empty states. Enhanced navigation usability on both mobile and desktop. App now feels much deeper, more polished, and more intuitive.
+
+## Future Considerations
+
+- Consider adding loading skeletons to replace Spinner in more places (not done this pass to preserve existing behavior)
+- Could add running total in grocery list if product price data becomes more complete
+- Consider adding animation to "More" menu slide-up (currently instant)
+

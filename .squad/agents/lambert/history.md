@@ -225,3 +225,17 @@ All new E2E tests follow the exact patterns established in existing specs:
 - TypeScript compiles (`npx tsc --noEmit` passes)
 - Commit: df7698b
 - Branch: 005-grocery-enhancements
+
+### E2E Test Selector Audit & UX Overhaul Support (2026-03-04)
+
+- **Context:** Kane beginning comprehensive 9-item UX overhaul affecting navigation, components, page layouts. Risk: many E2E test selectors could break if not carefully preserved.
+- **Scope:** Audited 40+ selectors across 11 E2E test files mapping risk levels (High/Medium/Low based on change likelihood).
+- **Deliverable:** Selector preservation checklist created for Kane to maintain test stability during refactoring.
+- **High-risk selectors:** Navigation items, page headers, core action buttons (generate plan, delete, save).
+- **Medium-risk selectors:** Form fields, filters, modal triggers, status badges.
+- **Low-risk selectors:** Typography, helper text, secondary content, expiry dates.
+- **Test files audited:** meal-plan.spec.ts (plan CRUD, detail, filters), inventory.spec.ts (add/delete items, location filters), dashboard.spec.ts (navigation, hero card), grocery-list.spec.ts (shop filter, items), preferences.spec.ts (restrictions, allergies), favorites.spec.ts (recipe favoriting), ratings.spec.ts (star ratings), cuisine.spec.ts (cuisine selector), history.spec.ts (past meals), products.spec.ts (product mapping), meal-plan-detail.spec.ts (meal type labels).
+- **Coordination:** Provided checklist to Kane; verified post-implementation that all selectors maintained and tests remain functional.
+- **Outcome:** 40+ selectors identified and preserved. All E2E tests remain functional post-UX overhaul with no breaking selector changes.
+- **Decision logged:** No formal decision needed — support task completed successfully.
+- **Pattern:** Test preservation requires upfront selector audit before major UI refactoring.

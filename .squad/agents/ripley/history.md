@@ -181,3 +181,37 @@
 - **Tests:** No test changes needed. Default test ingredients ("chicken breast", "rice") match `default_inventory` — removing the check only reduces possible errors, not adds them. 97 worker tests + 187 API tests + Next.js build all pass.
 - **Decision logged:** Decision 16 in team decisions.md.
 - **Status:** Ready for feature testing and merge.
+
+### DELETE endpoint for meal plans (2026-03-04)
+
+- **Branch:** 005-grocery-enhancements
+- **Issue:** 20+ failed meal plans cluttering the list in production. Users need to clean up failed plans.
+- **Implementation:**
+  - Added `DELETE /api/v1/meal-plans/{plan_id}` endpoint in `services/api/src/api/routes/meal_plans.py`
+  - Added `delete_plan(plan_id)` method to `MealPlanService` at `services/api/src/api/services/meal_plan_service.py`
+  - Service method validates plan exists, checks status is "failed" or "completed", then deletes plan (cascade automatically deletes slots)
+  - Returns 204 No Content on success, 404 if plan not found, 409 Conflict if plan status is active/draft
+- **Status enforcement:** Only "failed" or "completed" plans can be deleted. Active and draft plans return 409 with clear error message.
+- **Household scoping:** Delete operations are properly scoped to household_id to prevent cross-household deletions.
+- **Tests:** Added 6 comprehensive tests in `TestDeleteMealPlan` class covering success cases, status validation, 404/409 errors, household scoping.
+- **Test results:** All 31 meal plan service tests pass, all 193 API tests pass, ruff clean.
+- **Pattern notes:**
+  - SQLAlchemy cascade `"all, delete-orphan"` on the `MealPlan.slots` relationship handles slot deletion automatically
+  - Explicit deletion of slots is not needed — relying on cascade is cleaner and avoids SQLAlchemy warnings
+  - Service methods raise HTTPException directly with appropriate status codes (404, 409)
+  - Route handler is minimal — just calls service method and returns 204
+- **Key files:** `services/api/src/api/routes/meal_plans.py`, `services/api/src/api/services/meal_plan_service.py`, `services/api/tests/test_meal_plan_service.py`
+
+### DELETE /api/v1/meal-plans/{plan_id} endpoint (2026-03-04)
+
+- **Context:** Production environment accumulated 20+ failed meal plans cluttering the UI. Users needed deletion capability without risking active/draft plan loss.
+- **Deliverable:** \DELETE /api/v1/meal-plans/{plan_id}\ endpoint with status-based deletion policy.
+- **Deletion policy:** Only plans with status 'failed' or 'completed' can be deleted. Plans with status 'active' or 'draft' return 409 Conflict (state-based safety).
+- **Service layer:** \MealPlanService.delete_plan(plan_id)\ validates status, performs cascade delete of meal slots via SQLAlchemy cascade rules.
+- **HTTP semantics:** 204 No Content (success), 404 (not found), 409 (conflict due to state).
+- **Household scoping:** All operations validate household_id to prevent cross-household access.
+- **Tests:** 6 new test cases — success path, status validation (active/draft rejection), 404/409 error handling, household scoping.
+- **Integration:** Kane implemented DELETE button on meal plan list for failed/completed plans with user confirmation.
+- **Outcome:** All 193 API tests pass. Users can now clean up clutter safely.
+- **Decision logged:** Decision 20 in team decisions.md.
+- **Commit:** 2026-03-04 orchestration log entry created.

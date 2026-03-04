@@ -49,6 +49,21 @@
 - **Build result:** ✅ Clean — 7 routes, 0 TypeScript errors, 0 new warnings. Pre-existing `<a>` auth link lint warnings remain (intentional — Auth0 BFF requires hard redirects, not Next.js Link).
 - **Tests:** ✅ 37/37 passed — no regressions.
 
+### Phase 5 — Comprehensive UX Overhaul (2026-03-04)
+
+- **Context:** 9-item UX polish initiative: navigation redesign, design system, reusable components, meal plan enhancements, dashboard polish, empty states, inventory polish, meal plan detail improvements.
+- **Orchestration:** Ripley added DELETE endpoint (enables delete button); Lambert conducted E2E selector audit (preservation checklist to maintain selectors during refactoring).
+- **What changed:** 16 files (845 insertions, 187 deletions) — created Skeleton.tsx, EmptyState.tsx; redesigned layout.tsx navigation; enhanced Badge.tsx with status variants; applied empty states across 6+ pages.
+- **Navigation:** Mobile bottom nav reduced from 8 to 5 primary items (Home, Meal Plan, Grocery, Inventory, More) with slide-up menu. Desktop sidebar reorganized into 3 grouped sections (Planning, Shopping, Me) with headers and left-bar active indicators.
+- **Components:** New Skeleton component with text/circular/rectangular variants + pulse animation. New EmptyState component with icon, title, description, optional action. Enhanced Badge with active/completed/failed/draft variants including icons.
+- **Meal plan list:** Added status filter tabs (All, Active, Completed, Failed, Draft) with counts, sort DESC by date, delete button for failed/completed plans (with confirmation), "Show more" pagination (10 per page).
+- **Dashboard:** Enhanced hero card with gradient overlay, stats row (Meals This Week, Items Expiring, In Inventory), prominent expiry warning (orange-50 bg, border-2, emoji, inline CTA), quick action buttons in colored circles, gradient progress bar.
+- **Inventory:** Storage location icons in section headers (🧊 Fridge, 🗄️ Pantry, ❄️ Freezer with counts), expiry color coding (red <3d, orange <7d, yellow/green >7d).
+- **Meal plan detail:** Meal type labels above cards (🌅 Breakfast, 🍽️ Lunch, 🌙 Dinner), day summary with total prep+cook time, "Nothing planned" days with dashed border + gray-50 bg, prominent progress bar.
+- **Technical:** All changes pure Tailwind CSS — no custom CSS files. TypeScript strict mode. All existing functionality preserved. E2E test selectors maintained per Lambert's preservation checklist.
+- **Build result:** ✅ Clean — 12 routes, 0 TypeScript errors, build passes.
+- **Integration:** Ripley's DELETE endpoint enabled via new deleteMealPlan API function; delete button now visible on failed/completed plans with confirmation flow.
+
 ### Phase 5 — Auto-complete Existing Plan Before New Generation
 
 - **What changed:** `apps/web/src/app/meal-plan/page.tsx` — modified `handleGenerate` function.
@@ -87,3 +102,24 @@
   - Recipe detail shows ingredient IDs (not names) because `RecipeIngredient.ingredient_id` is a string ID — no join to Ingredient table in current data structure.
 - **Build result:** ✅ Clean — TypeScript 0 errors, lint 4 warnings (pre-existing auth `<a>` tags), tests 87/87 passed.
 - **Outcome:** Users can now mark meals as cooked/skipped, rate cooked meals, favorite recipes, view cooking instructions inline, and see meal history. All core personalization features wired up.
+
+### Phase 8 — UX Overhaul (Comprehensive Frontend Polish)
+
+- **What changed:** 20+ files — created 2 new UI components (Skeleton, EmptyState), enhanced Badge with status variants, overhauled navigation, updated all 9 key pages/components. Build clean (12 routes, 0 errors).
+- **Reusable UI (T1):** Created `Skeleton.tsx` (pulse animation, 3 variants: text/circular/rectangular) and `EmptyState.tsx` (icon, title, description, optional action button/link). Enhanced `Badge.tsx` with status-specific variants (active/completed/failed/draft) including icons (● ✓ ✕ ○).
+- **Navigation overhaul (T2):** Desktop sidebar now has 3 sections with headers (Planning, Shopping, Me). Mobile bottom nav reduced to 5 items with "More" slide-up menu for remaining items. Added Products icon (tag SVG). Active indicators enhanced (colored left bar on desktop, dot/bar on mobile). `useState` for "More" menu state.
+- **Meal plan list page (T1+T3):** Status filter tabs (All, Active, Completed, Failed, Draft) with counts. Sort by date DESC. Delete button on failed plans with confirmation dialog. Better plan cards with colored left border by status, plan number, meal count summary. Show 10 by default with "Show more" button. Changed default mealTypes from `["dinner"]` to `["breakfast", "lunch", "dinner"]`. Added `deleteMealPlan` API function. EmptyState component for no plans.
+- **Dashboard (T9):** Enhanced hero card with gradient overlay (from-black/70 via-black/30 to-transparent), better typography. Stats row (3 cards: Meals This Week, Items Expiring, In Inventory). Expiry warning more prominent with orange-50 bg, border-2, emoji, and inline CTA button. Quick actions as icon buttons in rounded-full colored backgrounds (blue/green/purple/orange-100). Progress bar with gradient (from-green-500 to-green-600).
+- **Inventory (T7):** Storage location icons in section headers (🧊 Fridge, 🗄️ Pantry, ❄️ Freezer) with item counts. Expiry badge colors: red for <3 days, orange for <7 days, yellow for >7 days. Empty state component with 🧊 icon. Card styling on form (rounded-xl, border-gray-100, shadow-sm).
+- **History (T5):** EmptyState component (📖 icon, "No Meals Yet", "Cook meals from your plan to build history"). Card styling on list (rounded-xl, border-gray-100, shadow-sm, hover:shadow-md).
+- **Products (T5):** EmptyState component (🏷️ icon, "No Products Yet", "Map ingredients to specific store products"). Card styling on product items (rounded-xl, shadow-sm, hover:shadow-md, transition-shadow).
+- **Meal plan detail (T8):** Meal type labels above cards (🌅 Breakfast, 🍽️ Lunch, 🌙 Dinner). Day summary with total prep+cook time. "Nothing planned" days with dashed border, gray-50 bg. Progress bar in header card with gradient, larger height (h-3), and bold counter. Header moved into rounded-xl card with badge.
+- **Patterns used:**
+  - Consistent card styling: `rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow duration-200`
+  - Typography hierarchy: text-2xl/font-bold for page titles, text-lg/font-semibold for sections, text-sm/text-gray-600 for body, text-xs/text-gray-500 for labels
+  - Status colors via border-l-4: green-500 (active), blue-500 (completed), red-500 (failed), gray-400 (draft)
+  - EmptyState abstraction: icon (emoji string), title, description, optional action (either href+label or onAction+label)
+  - Badge icons: active=●, completed=✓, failed=✕, draft=○
+- **Build result:** ✅ Clean — 12 routes, 0 TypeScript errors, 4 lint warnings (pre-existing auth `<a>` tags, intentional for Auth0 BFF hard redirects).
+- **Outcome:** Significantly improved UX with modern, polished UI. Consistent visual language across all pages. Better information hierarchy and user guidance via empty states. Enhanced navigation usability on both mobile and desktop.
+
