@@ -144,7 +144,9 @@ async def generate_meal_plan(message_content: dict[str, Any]) -> None:
                 for r in type_plan.recipes:
                     r.meal_type = mt
                 all_recipes.extend(type_plan.recipes)
-                logger.info("multi_meal_type_generated", meal_type=mt, recipes=len(type_plan.recipes))
+                logger.info(
+                    "multi_meal_type_generated", meal_type=mt, recipes=len(type_plan.recipes)
+                )
             plan = GeneratedMealPlan(recipes=all_recipes)
         else:
             plan = await _generate_with_retries(

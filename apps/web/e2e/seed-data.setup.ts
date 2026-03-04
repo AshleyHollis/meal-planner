@@ -191,7 +191,10 @@ setup("seed test data", async ({ request, baseURL }) => {
     return addResp.ok() ? 1 : 0;
   });
   const inventoryResults = await Promise.all(inventoryPromises);
-  let inventoryAdded = inventoryResults.reduce((sum: number, v: number) => sum + v, 0);
+  let inventoryAdded = inventoryResults.reduce(
+    (sum: number, v: number) => sum + v,
+    0,
+  );
   console.log(
     `[seed-data] Inventory seeded: ${inventoryAdded}/${ingredients.length} items`,
   );
@@ -401,7 +404,10 @@ setup("seed test data", async ({ request, baseURL }) => {
       : 0;
   });
   const productResults = await Promise.all(productPromises);
-  let productsAdded = productResults.reduce((sum: number, v: number) => sum + v, 0);
+  let productsAdded = productResults.reduce(
+    (sum: number, v: number) => sum + v,
+    0,
+  );
   console.log(
     `[seed-data] Products seeded: ${productsAdded}/${shopAssignments.length}`,
   );
