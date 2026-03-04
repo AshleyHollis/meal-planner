@@ -37,6 +37,10 @@ async def get_grocery_list(
         )
 
     enriched_items: list[GroceryItemResponse] = []
+    total_price: float = 0.0
+    store_totals: dict[str, float] = {}
+    has_any_price = False
+
     for item in grocery_list.items:
         ingredient_name = item.ingredient.name if item.ingredient else ""
         ingredient_category = item.ingredient.category if item.ingredient else ""
@@ -55,12 +59,19 @@ async def get_grocery_list(
                 product=product_summary,
             )
         )
+        if product and product.price is not None:
+            has_any_price = True
+            total_price += float(product.price)
+            store = product.shop or "Other"
+            store_totals[store] = store_totals.get(store, 0.0) + float(product.price)
 
     return GroceryListResponse(
         id=grocery_list.id,
         meal_plan_id=grocery_list.meal_plan_id,
         created_at=grocery_list.created_at,
         items=enriched_items,
+        total_price=round(total_price, 2) if has_any_price else None,
+        store_totals={k: round(v, 2) for k, v in store_totals.items()},
     )
 
 

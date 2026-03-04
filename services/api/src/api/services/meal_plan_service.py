@@ -3,15 +3,16 @@
 from __future__ import annotations
 
 import json
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
 from fastapi import HTTPException, status
 from shared.config import get_settings
+from shared.db.models.inventory import InventoryItem
 from shared.db.models.meal_plan import MealPlan, MealSlot
 from shared.logging.config import get_logger
 from shared.queue.client import enqueue_message
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..models.meal_plan import (
@@ -128,15 +129,63 @@ class MealPlanService:
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def list_plans(self) -> list[MealPlan]:
-        """Return all meal plans for the household, newest first."""
-        stmt = (
-            select(MealPlan)
-            .where(MealPlan.household_id == self.household_id)
-            .order_by(MealPlan.created_at.desc())
-        )
+    async def list_plans(
+        self,
+        status: str | None = None,
+        sort: str = "created_at",
+        order: str = "desc",
+    ) -> list[MealPlan]:
+        """Return all meal plans for the household with optional filtering and sorting."""
+        _sort_cols = {
+            "created_at": MealPlan.created_at,
+            "week_start_date": MealPlan.week_start_date,
+        }
+        sort_col = _sort_cols.get(sort, MealPlan.created_at)
+        stmt = select(MealPlan).where(MealPlan.household_id == self.household_id)
+        if status:
+            stmt = stmt.where(MealPlan.status == status)
+        stmt = stmt.order_by(sort_col.asc()) if order == "asc" else stmt.order_by(sort_col.desc())
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
+
+    async def get_stats(self) -> dict:
+        """Return aggregate stats for the household's meal plans."""
+        # Plans grouped by status
+        plans_stmt = (
+            select(MealPlan.status, func.count(MealPlan.id))
+            .where(MealPlan.household_id == self.household_id)
+            .group_by(MealPlan.status)
+        )
+        plans_result = await self.session.execute(plans_stmt)
+        plans_by_status: dict[str, int] = {row[0]: row[1] for row in plans_result.all()}
+
+        # Total meals cooked across all plans
+        cooked_stmt = (
+            select(func.count(MealSlot.id))
+            .join(MealPlan)
+            .where(
+                MealPlan.household_id == self.household_id,
+                MealSlot.status == "cooked",
+            )
+        )
+        cooked_result = await self.session.execute(cooked_stmt)
+        total_meals_cooked: int = cooked_result.scalar() or 0
+
+        # Inventory items expiring within 7 days
+        soon = datetime.now(UTC) + timedelta(days=7)
+        expiring_stmt = select(func.count(InventoryItem.id)).where(
+            InventoryItem.household_id == self.household_id,
+            InventoryItem.expiry_date.isnot(None),
+            InventoryItem.expiry_date <= soon,
+        )
+        expiring_result = await self.session.execute(expiring_stmt)
+        items_expiring_soon: int = expiring_result.scalar() or 0
+
+        return {
+            "plans_by_status": plans_by_status,
+            "total_meals_cooked": total_meals_cooked,
+            "items_expiring_soon": items_expiring_soon,
+        }
 
     async def update_slot(
         self,

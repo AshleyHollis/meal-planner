@@ -60,3 +60,5 @@ class GroceryListResponse(BaseModel):
     meal_plan_id: UUID
     created_at: datetime
     items: list[GroceryItemResponse] = Field(default_factory=list)
+    total_price: float | None = None
+    store_totals: dict[str, float] = Field(default_factory=dict)

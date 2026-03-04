@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+from typing import Literal
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from ..dependencies import get_meal_plan_service
 from ..models.meal_plan import (
@@ -13,6 +14,7 @@ from ..models.meal_plan import (
     DeductionItem,
     MealPlanDetailResponse,
     MealPlanResponse,
+    MealPlanStatsResponse,
     MealSlotResponse,
     UpdateMealSlot,
     UpdatePlanStatus,
@@ -36,11 +38,27 @@ async def create_meal_plan(
 
 @router.get("", response_model=list[MealPlanResponse])
 async def list_meal_plans(
+    status: str | None = Query(
+        None, description="Filter by plan status (draft, active, completed, failed)"
+    ),
+    sort: Literal["created_at", "week_start_date"] = Query(
+        "created_at", description="Field to sort by"
+    ),
+    order: Literal["asc", "desc"] = Query("desc", description="Sort direction"),
     service: MealPlanService = Depends(get_meal_plan_service),  # noqa: B008
 ) -> list[MealPlanResponse]:
-    """List all meal plans for the household."""
-    plans = await service.list_plans()
+    """List all meal plans for the household with optional filtering and sorting."""
+    plans = await service.list_plans(status=status, sort=sort, order=order)
     return [MealPlanResponse.model_validate(p) for p in plans]
+
+
+@router.get("/stats", response_model=MealPlanStatsResponse)
+async def get_meal_plan_stats(
+    service: MealPlanService = Depends(get_meal_plan_service),  # noqa: B008
+) -> MealPlanStatsResponse:
+    """Return aggregate stats for the household's meal plans."""
+    stats = await service.get_stats()
+    return MealPlanStatsResponse(**stats)
 
 
 @router.get("/active", response_model=MealPlanDetailResponse)
