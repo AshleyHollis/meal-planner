@@ -65,7 +65,7 @@ test.describe("Product Library", () => {
 
       // Should show either products or empty state
       const productCard = page
-        .locator(".rounded-lg.border.border-gray-200.bg-white")
+        .locator('[class*="rounded-xl"][class*="bg-white"][class*="shadow-sm"]')
         .first();
       const emptyState = page.getByText("No products yet");
       await expect(productCard.or(emptyState)).toBeVisible({ timeout: 10_000 });
@@ -198,7 +198,7 @@ test.describe("Product Library", () => {
 
       // Check if there are products to search
       const productCard = page
-        .locator(".rounded-lg.border.border-gray-200.bg-white")
+        .locator('[class*="rounded-xl"][class*="bg-white"][class*="shadow-sm"]')
         .first();
       const emptyState = page.getByText("No products yet");
 
@@ -302,7 +302,7 @@ test.describe("Product Library", () => {
 
       // Find and click the Delete button for our product
       const deleteButton = page
-        .locator(".rounded-lg.border.border-gray-200.bg-white")
+        .locator('[class*="rounded-xl"][class*="bg-white"][class*="shadow-sm"]')
         .filter({ hasText: "DeleteMe" })
         .getByRole("button", { name: "Delete" });
 
@@ -311,7 +311,7 @@ test.describe("Product Library", () => {
 
       // Confirm deletion
       const confirmButton = page
-        .locator(".rounded-lg.border.border-gray-200.bg-white")
+        .locator('[class*="rounded-xl"][class*="bg-white"][class*="shadow-sm"]')
         .filter({ hasText: "DeleteMe" })
         .getByRole("button", { name: "Confirm" });
 

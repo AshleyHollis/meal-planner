@@ -595,15 +595,18 @@ test.describe("Meal Plan Flow", () => {
       // Wait for filtering
       await page.waitForTimeout(500);
 
-      // If failed plans exist, all visible plans should show "failed" status
+      // If failed plans exist, all visible plans should show "failed" status (red border)
       const planCards = page.locator('[class*="border-l-4"]');
       const cardCount = await planCards.count();
 
       if (cardCount > 0) {
-        // At least one failed plan exists - verify status badges
-        const failedBadges = page.getByText(/^failed$/i);
-        const badgeCount = await failedBadges.count();
-        expect(badgeCount).toBeGreaterThan(0);
+        // Each visible card should have the red border (failed status)
+        for (let i = 0; i < Math.min(cardCount, 5); i++) {
+          await expect(planCards.nth(i)).toHaveAttribute(
+            "class",
+            /border-red-500/,
+          );
+        }
       }
     });
 

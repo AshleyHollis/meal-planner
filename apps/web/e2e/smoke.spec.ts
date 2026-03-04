@@ -44,15 +44,18 @@ test.describe("Smoke Tests @smoke", () => {
     test("navigation has all links", async ({ page }) => {
       await page.goto("/");
 
-      // On desktop, sidebar nav is visible; on mobile, bottom nav is visible
-      const nav = page.locator("nav").first();
-      await expect(nav).toBeVisible();
-
-      // Verify all four navigation items exist
-      await expect(nav.getByText("Home")).toBeVisible();
-      await expect(nav.getByText("Inventory")).toBeVisible();
-      await expect(nav.getByText("Meal Plan")).toBeVisible();
-      await expect(nav.getByText("Grocery")).toBeVisible();
+      // Desktop sidebar nav groups items into sections (no "Home" on desktop)
+      // Mobile bottom nav has Home, Meal Plan, Grocery, Inventory, More
+      // Check for core nav items that exist on both layouts
+      await expect(
+        page.getByRole("link", { name: "Inventory" }).first(),
+      ).toBeVisible();
+      await expect(
+        page.getByRole("link", { name: "Meal Plan" }).first(),
+      ).toBeVisible();
+      await expect(
+        page.getByRole("link", { name: "Grocery" }).first(),
+      ).toBeVisible();
     });
 
     test("clicking Inventory nav link navigates to inventory page", async ({

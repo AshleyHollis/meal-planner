@@ -235,20 +235,19 @@ test.describe("Multi-Meal Plan Creation (US3)", () => {
     const breakfastCheckbox = page.getByLabel(/breakfast/i);
     const lunchCheckbox = page.getByLabel(/lunch/i);
 
-    // At minimum, dinner should be checked by default
+    // All meal types should be checked by default (UX overhaul)
     if (await dinnerCheckbox.isVisible({ timeout: 5_000 }).catch(() => false)) {
       await expect(dinnerCheckbox).toBeChecked();
     }
 
-    // Breakfast and lunch should be available but unchecked
     if (
       await breakfastCheckbox.isVisible({ timeout: 2_000 }).catch(() => false)
     ) {
-      await expect(breakfastCheckbox).not.toBeChecked();
+      await expect(breakfastCheckbox).toBeChecked();
     }
 
     if (await lunchCheckbox.isVisible({ timeout: 2_000 }).catch(() => false)) {
-      await expect(lunchCheckbox).not.toBeChecked();
+      await expect(lunchCheckbox).toBeChecked();
     }
   });
 
