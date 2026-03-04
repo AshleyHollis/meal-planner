@@ -144,9 +144,7 @@ test.describe("Meal Plan Flow", () => {
 
       let planLink = anyPlanLink;
       if (
-        await completedPlanLink
-          .isVisible({ timeout: 3_000 })
-          .catch(() => false)
+        await completedPlanLink.isVisible({ timeout: 3_000 }).catch(() => false)
       ) {
         planLink = completedPlanLink;
       } else if (
