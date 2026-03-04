@@ -70,11 +70,41 @@ setup("seed test data", async ({ request, baseURL }) => {
   // ── Step 2: Look up ingredients ───────────────────────────────────────
   console.log("[seed-data] Looking up ingredients...");
   const ingredientNames = [
+    // Keep existing
     "chicken breast",
     "jasmine rice",
     "broccoli",
     "olive oil",
     "garlic",
+    // Add proteins
+    "eggs",
+    "beef mince",
+    "salmon fillet",
+    "bacon rashers",
+    // Add dairy
+    "milk",
+    "butter",
+    "tasty cheese",
+    "greek yoghurt",
+    "parmesan",
+    // Add carbs
+    "spaghetti",
+    "bread (sliced)",
+    "plain flour",
+    "potato",
+    // Add produce
+    "onion",
+    "tomato",
+    "carrot",
+    "spinach",
+    "capsicum",
+    "lemon",
+    // Add pantry
+    "salt",
+    "black pepper",
+    "soy sauce",
+    "diced tomatoes (canned)",
+    "chicken stock",
   ];
   const ingredients: SeedIngredient[] = [];
 
@@ -132,9 +162,14 @@ setup("seed test data", async ({ request, baseURL }) => {
   const expiryVariants: Array<{ offsetDays: number | null; label: string }> = [
     { offsetDays: -2, label: "expired 2 days ago" },
     { offsetDays: 3, label: "expires in 3 days" },
+    { offsetDays: 7, label: "expires in 7 days" },
     { offsetDays: 14, label: "expires in 14 days" },
-    { offsetDays: null, label: "no expiry" },
+    { offsetDays: 21, label: "expires in 21 days" },
     { offsetDays: 30, label: "expires in 30 days" },
+    { offsetDays: 90, label: "expires in 90 days" },
+    { offsetDays: 180, label: "expires in 180 days" },
+    { offsetDays: 365, label: "expires in 365 days" },
+    { offsetDays: null, label: "no expiry" },
   ];
 
   let inventoryAdded = 0;
@@ -193,6 +228,7 @@ setup("seed test data", async ({ request, baseURL }) => {
     shop: string;
     price: number;
   }> = [
+    // Coles products
     {
       ingredientName: "chicken breast",
       brand: "Coles",
@@ -201,6 +237,49 @@ setup("seed test data", async ({ request, baseURL }) => {
       price: 12.0,
     },
     {
+      ingredientName: "milk",
+      brand: "Dairy Farmers",
+      productName: "Full Cream Milk 2L",
+      shop: "Coles",
+      price: 3.8,
+    },
+    {
+      ingredientName: "bread (sliced)",
+      brand: "Tip Top",
+      productName: "The One White Bread 700g",
+      shop: "Coles",
+      price: 3.5,
+    },
+    {
+      ingredientName: "bacon rashers",
+      brand: "Coles",
+      productName: "Rindless Bacon 250g",
+      shop: "Coles",
+      price: 6.5,
+    },
+    {
+      ingredientName: "tasty cheese",
+      brand: "Bega",
+      productName: "Tasty Block Cheese 500g",
+      shop: "Coles",
+      price: 7.0,
+    },
+    {
+      ingredientName: "diced tomatoes (canned)",
+      brand: "Coles",
+      productName: "Diced Tomatoes 400g",
+      shop: "Coles",
+      price: 1.0,
+    },
+    {
+      ingredientName: "spinach",
+      brand: "Fresh",
+      productName: "Baby Spinach 120g",
+      shop: "Coles",
+      price: 3.0,
+    },
+    // Woolworths products
+    {
       ingredientName: "jasmine rice",
       brand: "SunRice",
       productName: "Jasmine Rice 5kg",
@@ -208,18 +287,110 @@ setup("seed test data", async ({ request, baseURL }) => {
       price: 9.0,
     },
     {
+      ingredientName: "eggs",
+      brand: "Woolworths",
+      productName: "Free Range Eggs 12pk",
+      shop: "Woolworths",
+      price: 7.0,
+    },
+    {
+      ingredientName: "salmon fillet",
+      brand: "Tassal",
+      productName: "Tasmanian Salmon 200g",
+      shop: "Woolworths",
+      price: 9.5,
+    },
+    {
+      ingredientName: "greek yoghurt",
+      brand: "Chobani",
+      productName: "Greek Yoghurt 907g",
+      shop: "Woolworths",
+      price: 8.0,
+    },
+    {
+      ingredientName: "spaghetti",
+      brand: "San Remo",
+      productName: "Spaghetti No.5 500g",
+      shop: "Woolworths",
+      price: 2.0,
+    },
+    {
+      ingredientName: "onion",
+      brand: "Fresh",
+      productName: "Brown Onions 1kg",
+      shop: "Woolworths",
+      price: 2.0,
+    },
+    {
       ingredientName: "broccoli",
       brand: "Fresh",
       productName: "Broccoli Head",
-      shop: "Coles",
+      shop: "Woolworths",
       price: 3.5,
     },
+    {
+      ingredientName: "parmesan",
+      brand: "Perfect Italiano",
+      productName: "Parmesan Grated 125g",
+      shop: "Woolworths",
+      price: 4.5,
+    },
+    // Aldi products
     {
       ingredientName: "olive oil",
       brand: "Cobram Estate",
       productName: "Extra Virgin 750ml",
       shop: "Aldi",
       price: 8.5,
+    },
+    {
+      ingredientName: "beef mince",
+      brand: "Aldi",
+      productName: "Beef Mince 500g",
+      shop: "Aldi",
+      price: 5.5,
+    },
+    {
+      ingredientName: "butter",
+      brand: "Westacre",
+      productName: "Salted Butter 500g",
+      shop: "Aldi",
+      price: 4.5,
+    },
+    {
+      ingredientName: "plain flour",
+      brand: "Molenaar",
+      productName: "Plain Flour 1kg",
+      shop: "Aldi",
+      price: 1.5,
+    },
+    {
+      ingredientName: "soy sauce",
+      brand: "Remano",
+      productName: "Soy Sauce 250ml",
+      shop: "Aldi",
+      price: 1.8,
+    },
+    {
+      ingredientName: "capsicum",
+      brand: "Fresh",
+      productName: "Red Capsicum 500g",
+      shop: "Aldi",
+      price: 2.5,
+    },
+    {
+      ingredientName: "lemon",
+      brand: "Fresh",
+      productName: "Lemons 500g",
+      shop: "Aldi",
+      price: 2.0,
+    },
+    {
+      ingredientName: "black pepper",
+      brand: "Stonemill",
+      productName: "Black Pepper 50g",
+      shop: "Aldi",
+      price: 2.5,
     },
   ];
 

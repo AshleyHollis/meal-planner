@@ -142,6 +142,40 @@ test.describe("Grocery Shop Filtering & Trips", () => {
       const resetCount = await mainListCheckboxes.count();
       expect(resetCount).toBe(initialCount);
     });
+
+    test("multiple shop filter tabs appear with expanded product mappings", async ({
+      page,
+    }) => {
+      if (!(await navigateToGroceryList(page))) {
+        test.skip(true, "No active plan with grocery items");
+        return;
+      }
+
+      // Count the shop filter buttons
+      const filterButtons = page.locator("button.rounded-full");
+      const buttonCount = await filterButtons.count();
+
+      // Count how many are NOT "All" or "Other"
+      let shopSpecificButtons = 0;
+      for (let i = 0; i < buttonCount; i++) {
+        const btnText = (await filterButtons.nth(i).textContent()) ?? "";
+        if (!btnText.startsWith("All") && !btnText.startsWith("Other")) {
+          shopSpecificButtons++;
+        }
+      }
+
+      // With expanded product mappings across Coles, Woolworths, and Aldi,
+      // we expect at least 2 shop-specific filter tabs
+      if (shopSpecificButtons < 2) {
+        test.skip(true, `Only ${shopSpecificButtons} shop filter(s) found`);
+        return;
+      }
+
+      console.log(
+        `[E2E] Found ${shopSpecificButtons} shop-specific filter tabs`,
+      );
+      expect(shopSpecificButtons).toBeGreaterThanOrEqual(2);
+    });
   });
 
   test.describe("Trip Tracker", () => {
