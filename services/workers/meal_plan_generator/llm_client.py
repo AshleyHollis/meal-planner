@@ -28,9 +28,10 @@ ADAPTATION_TIMEOUT = 8  # NFR-02: cook-time adaptation p95 < 10s
 
 
 # Azure counts max_tokens against the per-minute token rate limit upfront.
-# With 20K tokens/min and ~3-5K input tokens, max_tokens must be ≤ ~15K.
-# 8192 gives headroom for reasoning tokens while staying within rate limit.
-_MAX_TOKENS = 8192
+# With 20K tokens/min and ~2.3K input tokens, max_tokens can be up to ~17K.
+# Kimi K2.5 uses ~5K reasoning tokens (invisible in output) that count toward
+# max_tokens, so we need 16384 to leave ~11K for visible JSON content.
+_MAX_TOKENS = 16384
 
 # Approximate cost per 1K tokens (USD) for cost estimation
 _COST_PER_1K = {
@@ -209,7 +210,9 @@ def _call_azure_openai(prompt: str, settings: object, timeout: int, temperature:
             {"role": "user", "content": prompt},
         ],
     )
-    text = response.choices[0].message.content or ""
+    choice = response.choices[0]
+    text = choice.message.content or ""
+    finish_reason = choice.finish_reason
 
     usage = response.usage
     input_tokens = usage.prompt_tokens if usage else 0
@@ -221,6 +224,13 @@ def _call_azure_openai(prompt: str, settings: object, timeout: int, temperature:
         model=deployment,
         input_tokens=input_tokens,
         output_tokens=output_tokens,
+        finish_reason=finish_reason,
         cost_usd=round(cost, 6),
     )
+    if finish_reason == "length":
+        logger.warning(
+            "llm_response_truncated",
+            output_tokens=output_tokens,
+            max_tokens=_MAX_TOKENS,
+        )
     return text
