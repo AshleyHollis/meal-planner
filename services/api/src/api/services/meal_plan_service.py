@@ -479,27 +479,38 @@ def _call_llm(prompt: str) -> str:
     settings = get_settings()
     provider = settings.llm.provider
     api_key = settings.llm.api_key
+    temperature = settings.llm.temperature
+    model_override = settings.llm.model
 
-    logger.info("adapt_llm_call_start", provider=provider)
+    logger.info("adapt_llm_call_start", provider=provider, temperature=temperature)
 
     if provider == "anthropic":
         import anthropic
 
+        model = model_override or _MODELS["anthropic"]
         client = anthropic.Anthropic(api_key=api_key, timeout=_ADAPT_TIMEOUT)
         response = client.messages.create(
-            model=_MODELS["anthropic"],
+            model=model,
             max_tokens=_ADAPT_MAX_TOKENS,
+            temperature=temperature,
+            system="You are a recipe adaptation assistant. Respond ONLY with valid JSON.",
             messages=[{"role": "user", "content": prompt}],
         )
         text = response.content[0].text
     elif provider == "openai":
         import openai
 
+        model = model_override or _MODELS["openai"]
         client = openai.OpenAI(api_key=api_key, timeout=_ADAPT_TIMEOUT)
         response = client.chat.completions.create(
-            model=_MODELS["openai"],
+            model=model,
             max_tokens=_ADAPT_MAX_TOKENS,
-            messages=[{"role": "user", "content": prompt}],
+            temperature=temperature,
+            response_format={"type": "json_object"},
+            messages=[
+                {"role": "system", "content": "You are a recipe adaptation assistant. Respond ONLY with valid JSON."},
+                {"role": "user", "content": prompt},
+            ],
         )
         text = response.choices[0].message.content or ""
     else:

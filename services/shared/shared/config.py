@@ -115,6 +115,14 @@ class LLMSettings(BaseSettings):
         default="anthropic",
         description="LLM provider to use",
     )
+    model: str = Field(
+        default="",
+        description="Override model name (empty = use provider default)",
+    )
+    temperature: float = Field(
+        default=0.7,
+        description="LLM temperature (0.0-1.0). Lower = more deterministic.",
+    )
 
     @property
     def azure_endpoint(self) -> str | None:
