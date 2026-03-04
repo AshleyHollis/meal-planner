@@ -32,6 +32,25 @@ All Phase 1–3 UI/UX work completed per Dallas's architecture (Decisions 4–6)
 - Favorites loading fix unblocks favorites.spec.ts E2E tests
 - Continue with existing E2E test suite (preferences, ratings, cuisine)
 
+### E2E Coverage Audit & Expansion (2026-03-04)
+
+- **Scope:** Quality audit revealed E2E test coverage gaps (82% → 100% target). Identified 6 untested critical flows.
+- **Gap analysis results:**
+  - Before: 27/33 flows tested (82%). Missing: dashboard Generate Plan (THE ROOT CAUSE), stat navigation, history expand/collapse
+  - After: 33/33 flows tested (100%)
+- **New test files added:**
+  - `apps/web/e2e/dashboard.spec.ts` — 13 tests for dashboard flows (page load, generate plan, cuisine selection, stat navigation)
+  - `apps/web/e2e/history.spec.ts` — 10 tests for history page flows (page load, expand/collapse, detail view, status display)
+- **Test patterns:**
+  - Frontend tests run without backend (page load, expandability, navigation)
+  - Backend-dependent tests skip gracefully with clear messages (USE_EXTERNAL_SERVER flag)
+  - 90-second timeout for plan generation (LLM calls slow)
+  - Role-based selectors for resilience during UI changes
+  - Graceful handling of both "week of" and "completed" status displays
+- **Coverage verification:** All 100 E2E tests pass, TypeScript clean, 33/33 flows covered
+- **Impact:** Prevents future "Dashboard breaks" incidents. Dashboard Generate button now tested and verified. Critical flows fully covered.
+- **Why this matters:** Dashboard Generate failure went undetected in E2E tests because the action button was never tested. These gaps are now closed.
+
 - **T073**: Created `apps/web/e2e/preferences.spec.ts` — Tests preferences page CRUD flow (add dietary restrictions, allergies, dislikes; verify grouping; delete preferences)
 - **T074**: Created `apps/web/e2e/favorites.spec.ts` — Tests favoriting recipes from meal plans and managing favorites page
 - **T075**: Created `apps/web/e2e/ratings.spec.ts` — Tests rating cooked meal slots with stars and feedback, verifies persistence

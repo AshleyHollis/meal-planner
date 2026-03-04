@@ -49,6 +49,20 @@
 - **Build result:** ✅ Clean — 7 routes, 0 TypeScript errors, 0 new warnings. Pre-existing `<a>` auth link lint warnings remain (intentional — Auth0 BFF requires hard redirects, not Next.js Link).
 - **Tests:** ✅ 37/37 passed — no regressions.
 
+### Phase 5 — Quality Fix Sprint (2026-03-04)
+
+- **Scope:** Dashboard "Generate Plan" broken (409 error). Root cause: missing auto-complete of existing draft/active plans.
+- **Cross-team audit:** Dallas identified 16 quality issues (P0-P3). Kane assigned P0 blocker + P1 refactors.
+- **Changes made:**
+  - Dashboard `handleGenerate()` now calls `listMealPlans()` before `createMealPlan()` to auto-complete existing plans
+  - Added `CuisineSelector` + `MealTypeSelector` side-by-side (parity with meal plan page)
+  - Improved error handling: show API detail instead of generic message (same pattern as meal plan page)
+  - Added 3-step generation progress indicator
+  - Expandable list items for history page (inline expand/collapse, no navigation)
+- **Testing:** All 87 tests pass, TypeScript clean
+- **Impact:** Fixes P0 critical dashboard Generate failure. Unifies UX across generate flows.
+- **Commit:** f1d988a on 005-grocery-enhancements
+
 ### Phase 5 — Comprehensive UX Overhaul (2026-03-04)
 
 - **Context:** 9-item UX polish initiative: navigation redesign, design system, reusable components, meal plan enhancements, dashboard polish, empty states, inventory polish, meal plan detail improvements.

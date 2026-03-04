@@ -34,6 +34,19 @@
 - Updated class comment from "Exactly 7 recipes required" to "At least 5 recipes required"
 - All 29 worker tests now pass. CI should be unblocked.
 
+### Phase 2: API Quality & Worker Resilience (2026-03-04)
+
+- **Scope:** Worker robustness audit during quality sprint (Dallas identified 2 bugs: `scalar_one()` failures in async workers).
+- **Root cause:** `scalar_one()` raises `NoResultFound` if plan deleted between LLM call and DB write. Exception propagates → `_mark_failed()` also fails using same pattern → double failure.
+- **Pattern introduced:** `scalar_one_or_none()` with explicit None check + warning log + early return for all worker DB lookups where target row may not exist.
+- **Changes:**
+  - `_persist_plan()`: Changed `scalar_one()` → `scalar_one_or_none()` with None guard
+  - `_mark_failed()`: Same pattern for graceful status update when plan deleted
+  - Pattern rationale: Workers are async. Target plan can be deleted. Explicit guard prevents exception cascade and state corruption.
+- **Testing:** All worker tests pass, no regressions
+- **Impact:** Improves reliability of meal plan generation pipeline. Prevents double failures.
+- **Commit:** e75c0ab on 005-grocery-enhancements
+
 ### Phase 1: Personalization models & migration complete (2026-03-02)
 
 - **Branch:** 003-personalization-ai
