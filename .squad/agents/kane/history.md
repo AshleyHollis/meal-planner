@@ -143,10 +143,12 @@
 - **Build result:** ✅ Clean — 15 routes, 0 TypeScript errors. **Tests:** ✅ 104/104 passed (1 test updated for new 2-step delete confirmation).
 
 **Critical (C-series):**
+
 - C3: "Cook This" button on Quick Suggestions now shows `info` toast "coming soon" instead of false success toast — never fake success for no-ops.
 - C4-C8: Removed all 6 silent `catch { // silently fail }` blocks — replaced with `showToast(..., "error")` calls. Affected: GroceryItem, InventoryList, products/page, meal-plan/[id] (cook, skip, favourite).
 
 **Important (I-series):**
+
 - I1: Desktop sidebar gets a "Home" section at top linking to `/` — complete navigation on all breakpoints.
 - I2: Dashboard Recent Activity rows wrapped in `<Link href="/history">` — every clickable-looking row is now actually clickable.
 - I3: Meal plan detail shows "🛒 View Grocery List →" link to `/grocery-list/{id}`.
@@ -159,6 +161,7 @@
 - Retry buttons added to all error states: Dashboard, Products, Quick Suggestions, History, Preferences, Recurring Meals, Meal Plans.
 
 **Minor (M-series):**
+
 - M1: `getNextMonday()` extracted to `lib/date-utils.ts`, imported in page.tsx and meal-plan/page.tsx (DRY).
 - M7: Recurring Meals max-width updated to `max-w-2xl lg:max-w-7xl` (consistent with other pages).
 - I20: `lib/format-currency.ts` created with `formatCurrency()` utility (ready for consistent use).
@@ -166,7 +169,6 @@
 **Gotcha discovered:** The audit report said `/inventory/[id]` and `/products/[id]` don't exist (C1/C2). They DO exist — fully implemented detail pages. Links were retained. Always verify audit findings against the actual file system before removing code.
 
 **Test update:** `PreferencesPanel.test.tsx` delete test updated to use two-step confirmation (first click → "Confirm" button shows, second click → calls API).
-
 
 - **What changed:** 8 files — 2 new (Toast.tsx, date-utils.ts), 6 modified (globals.css, layout.tsx, meal-plan/page.tsx, GroceryItem.tsx, AddItemForm.tsx, InventoryList.tsx). Commit `6b60450` on branch `005-grocery-enhancements`.
 - **Toast system:** Created `components/ui/Toast.tsx` — `ToastProvider` wraps the whole app in `layout.tsx`. `useToast()` hook available in any client component. Toasts slide in from right via `@keyframes toast-in` in `globals.css`. 3 variants: success (green), error (red), info (gray). Auto-dismiss at 3.5s. Positioned `bottom-24` on mobile (above bottom nav), `bottom-6` on desktop.

@@ -21,7 +21,15 @@ export const DAY_LABELS_LONG = [
   "Sunday",
 ] as const;
 
-export const DAY_LABELS_SHORT = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] as const;
+export const DAY_LABELS_SHORT = [
+  "Mon",
+  "Tue",
+  "Wed",
+  "Thu",
+  "Fri",
+  "Sat",
+  "Sun",
+] as const;
 
 /**
  * Format a date string as a relative date label.

@@ -48,9 +48,9 @@ async function navigateToGroceryList(
   }
 
   await groceryLink.click();
-  await expect(
-    page.getByRole("heading", { name: "Grocery List" }),
-  ).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByRole("heading", { name: "Grocery List" })).toBeVisible(
+    { timeout: 30_000 },
+  );
 
   const grocerySpinner = page.locator('[class*="animate-spin"]');
   if ((await grocerySpinner.count()) > 0) {
@@ -70,9 +70,9 @@ test.describe("Inventory Low-Stock Alerts (Spec 003)", () => {
   }) => {
     await page.goto("/inventory");
 
-    await expect(
-      page.getByRole("heading", { name: "Inventory" }),
-    ).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByRole("heading", { name: "Inventory" })).toBeVisible({
+      timeout: 30_000,
+    });
 
     // Wait for loading to finish
     const spinner = page.locator('[class*="animate-spin"]');
@@ -83,7 +83,10 @@ test.describe("Inventory Low-Stock Alerts (Spec 003)", () => {
     // Skip if inventory failed to load
     const errorState = page.getByText("Failed to load inventory");
     if (await errorState.isVisible({ timeout: 2_000 }).catch(() => false)) {
-      test.skip(true, "Inventory API returned an error — backend not available");
+      test.skip(
+        true,
+        "Inventory API returned an error — backend not available",
+      );
       return;
     }
 
@@ -135,9 +138,9 @@ test.describe("Substitution Impact on Grocery List (Spec 004)", () => {
   }) => {
     // Navigate to meal plan list
     await page.goto("/meal-plan");
-    await expect(
-      page.getByRole("heading", { name: "Meal Plans" }),
-    ).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByRole("heading", { name: "Meal Plans" })).toBeVisible(
+      { timeout: 30_000 },
+    );
 
     const spinner = page.locator('[class*="animate-spin"]');
     if ((await spinner.count()) > 0) {
@@ -154,7 +157,10 @@ test.describe("Substitution Impact on Grocery List (Spec 004)", () => {
     if (
       !(await activePlanLink.isVisible({ timeout: 5_000 }).catch(() => false))
     ) {
-      test.skip(true, "No active/completed plan available to test substitution");
+      test.skip(
+        true,
+        "No active/completed plan available to test substitution",
+      );
       return;
     }
 
@@ -195,7 +201,10 @@ test.describe("Substitution Impact on Grocery List (Spec 004)", () => {
     const initialCount = await initialItems.count();
 
     if (initialCount === 0) {
-      test.skip(true, "No grocery items found — cannot verify substitution impact");
+      test.skip(
+        true,
+        "No grocery items found — cannot verify substitution impact",
+      );
       return;
     }
 
@@ -309,9 +318,9 @@ test.describe("Substitution History and Undo (Spec 004)", () => {
 
     // Placeholder assertions (never reached due to skip above)
     await page.goto("/meal-plan");
-    await expect(
-      page.getByRole("heading", { name: "Meal Plans" }),
-    ).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByRole("heading", { name: "Meal Plans" })).toBeVisible(
+      { timeout: 30_000 },
+    );
   });
 
   test("undo substitution restores original ingredient", async ({ page }) => {
@@ -325,9 +334,9 @@ test.describe("Substitution History and Undo (Spec 004)", () => {
 
     // Placeholder assertions (never reached due to skip above)
     await page.goto("/meal-plan");
-    await expect(
-      page.getByRole("heading", { name: "Meal Plans" }),
-    ).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByRole("heading", { name: "Meal Plans" })).toBeVisible(
+      { timeout: 30_000 },
+    );
   });
 });
 
@@ -600,7 +609,9 @@ test.describe("Grocery Trip Completion (Spec 005 US2)", () => {
     await expect(completeButton).toBeEnabled({ timeout: 5_000 });
 
     // Progress should show all items checked
-    await expect(page.getByText(new RegExp(`${tripItemCount}/${tripItemCount} items`))).toBeVisible();
+    await expect(
+      page.getByText(new RegExp(`${tripItemCount}/${tripItemCount} items`)),
+    ).toBeVisible();
 
     console.log(
       `[E2E] Complete Trip button enabled after checking ${tripItemCount}/${tripItemCount} items. ` +
@@ -675,6 +686,8 @@ test.describe("Grocery Trip Completion (Spec 005 US2)", () => {
       page.getByRole("heading", { name: "Grocery List" }),
     ).toBeVisible();
 
-    console.log("[E2E] Complete Trip cleared trip state and returned to full grocery view");
+    console.log(
+      "[E2E] Complete Trip cleared trip state and returned to full grocery view",
+    );
   });
 });

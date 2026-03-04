@@ -177,13 +177,10 @@ class QuickSuggestionService:
                 continue
 
             # Load matching inventory items
-            inv_stmt = (
-                select(InventoryItem)
-                .where(
-                    InventoryItem.household_id == self.household_id,
-                    InventoryItem.ingredient_id == ingredient.id,
-                    InventoryItem.unit == unit,
-                )
+            inv_stmt = select(InventoryItem).where(
+                InventoryItem.household_id == self.household_id,
+                InventoryItem.ingredient_id == ingredient.id,
+                InventoryItem.unit == unit,
             )
             inv_result = await self.session.execute(inv_stmt)
             inv_items = sorted(

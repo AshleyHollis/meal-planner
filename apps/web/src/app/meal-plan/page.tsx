@@ -318,7 +318,7 @@ export default function MealPlanListPage() {
                   </div>
                   <p className="text-sm text-gray-600">
                     {plan.status === "failed"
-                      ? plan.error_message ?? "Generation failed"
+                      ? (plan.error_message ?? "Generation failed")
                       : plan.status === "draft"
                         ? "Generating meals…"
                         : plan.status === "completed"

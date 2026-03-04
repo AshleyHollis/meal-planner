@@ -385,6 +385,7 @@ All new E2E tests follow the exact patterns established in existing specs:
 7. **Grocery trip completion** — Two tests: (a) checking all items enables the Complete Trip button; (b) clicking Complete Trip clears local state and returns to full grocery view. All tests include notes about backend persistence being pending.
 
 **Verification:**
+
 - `npx tsc -p tsconfig.json --noEmit` → exit 0 (pre-existing errors in other files, not mine)
 - No existing test files modified
 - Commit: test-audit-gaps branch

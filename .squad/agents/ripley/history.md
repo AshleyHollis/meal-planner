@@ -263,6 +263,7 @@
 - **Test results:** 193 API tests pass, 97 worker tests pass, ruff clean.
 
 ### Production fixes from architecture review (2026-03-03)
+
 - **Branch:** 005-grocery-enhancements
 - **Scope:** Architecture review identified 11 issues across worker, API services, routes
 - **Completed: 9 of 11 issues fixed**
@@ -272,6 +273,6 @@
   - Quick suggestions are ephemeral — no stored ID, so "Cook This" endpoint accepts full suggestion data in body rather than {id} path param
   - Skipped meals had a test asserting the buggy behavior (cooked_at is not None). When fixing a bug, always check if tests were written against the broken behavior
   - GroceryItem.ingredient relationship is lazy="selectin" so it loads automatically — safe to use item.ingredient.name after dd_staples_to_list()
-  - The _calculate_grocery_changes() function in substitution service was pure compute — all the DB persistence was missing. Pattern: compute diff → persist changes → return diff (for response)
+  - The \_calculate_grocery_changes() function in substitution service was pure compute — all the DB persistence was missing. Pattern: compute diff → persist changes → return diff (for response)
   - Stubs (#6 adapt_meal_slot, #7 save_recipe_variation) exist in routes but have no service backing. These require non-trivial design decisions (what is a "variation"?) — defer to product owner
 - **Test results:** 193 API tests pass, 97 worker tests pass, ruff clean (production code)

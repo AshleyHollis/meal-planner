@@ -207,7 +207,7 @@ export default function ProductsPage() {
                         onCancel={() => setEditingProduct(null)}
                       />
                     ) : (
-                       <>
+                      <>
                         {/* Clickable area — navigates to detail page */}
                         <Link
                           href={`/products/${product.id}`}

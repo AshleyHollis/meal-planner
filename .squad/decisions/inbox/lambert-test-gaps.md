@@ -41,6 +41,7 @@ Only `POST /{plan_id}/slots/{slot_id}/substitute` is implemented.
 Both tests are permanently skipped with clear messages explaining what routes are needed.
 
 **Required endpoints to enable these tests:**
+
 - `GET /api/v1/meal-plans/{plan_id}/substitutions` — list substitution history
 - `DELETE /api/v1/meal-plans/{plan_id}/substitutions/{substitution_id}` — undo substitution
 
@@ -68,6 +69,7 @@ without product mappings.
 **Finding:** The TripTracker component stores trip state in `localStorage` only
 (`apps/web/src/services/tripStorage.ts`). There is **no backend ShoppingTrip model or API**.
 Tests cover:
+
 1. Selecting a shop creates a trip (TripTracker appears with 0/N state) — passes if products exist
 2. Checking all items enables the Complete Trip button — passes if products exist
 3. Clicking Complete Trip clears trip and returns to full view — passes if products exist

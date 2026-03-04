@@ -13,9 +13,7 @@ import "./globals.css";
 const desktopNavSections = [
   {
     title: "Home",
-    items: [
-      { href: "/", label: "Dashboard", icon: HomeIcon },
-    ],
+    items: [{ href: "/", label: "Dashboard", icon: HomeIcon }],
   },
   {
     title: "Planning",
