@@ -142,7 +142,7 @@ class LLMSettings(BaseSettings):
     @property
     def azure_api_version(self) -> str:
         """Get Azure OpenAI API version."""
-        return os.environ.get("AZURE_OPENAI_API_VERSION", "2024-05-01-preview")
+        return os.environ.get("AZURE_OPENAI_API_VERSION", "2024-12-01-preview")
 
     @property
     def is_azure_configured(self) -> bool:

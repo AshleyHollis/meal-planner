@@ -1,28 +1,32 @@
 #!/usr/bin/env bash
 # =============================================================================
-# Deploy Kimi K2.5 on Azure AI Foundry (US region, serverless pay-per-token)
+# Deploy Kimi K2.5 on EXISTING Azure AI Foundry account (aif-pai-dev-aue)
 # =============================================================================
 # Usage:
 #   ./scripts/deploy-kimi-k25.sh
 #
 # Prerequisites:
 #   - Azure CLI 2.60+ with cognitiveservices extension
-#   - Logged in: az login && az account set --subscription <sub-id>
+#   - Logged in: az login && az account set --subscription 28aefbe7-e2af-4b4a-9ce1-92d6672c31bd
 #   - Key Vault access to store secrets
 #
+# ⚠️  REGION NOTE: The existing account 'aif-pai-dev-aue' is in Australia East
+#     (the -aue suffix = australiaeast). If you intended East US, a new account
+#     in a US region would be required. This script deploys on the existing account.
+#
 # This script:
-#   1. Creates an Azure AI Services account in a US region (westus)
-#   2. Deploys Kimi K2.5 as a serverless (pay-per-token) model
-#   3. Stores the endpoint + API key in Azure Key Vault
-#   4. The app picks them up via ExternalSecrets → K8s → env vars
+#   1. Deploys Kimi K2.5 on the existing Azure AI Services account
+#   2. Stores the endpoint + API key in Azure Key Vault
+#   3. The app picks them up via ExternalSecrets → K8s → env vars
 # =============================================================================
 
 set -euo pipefail
 
 # ── Configuration ────────────────────────────────────────────────────────────
-RESOURCE_GROUP="${AZURE_RESOURCE_GROUP:-rg-ytsumm-prd}"
-AI_LOCATION="westus"  # US region for AI Foundry
-AI_ACCOUNT_NAME="mealplan-ai-westus"
+SUBSCRIPTION_ID="28aefbe7-e2af-4b4a-9ce1-92d6672c31bd"
+RESOURCE_GROUP="rg-pai-dev-aue"
+AI_LOCATION="australiaeast"  # ⚠️ Existing account region (aue = Australia East)
+AI_ACCOUNT_NAME="aif-pai-dev-aue"
 DEPLOYMENT_NAME="kimi-k25"
 MODEL_NAME="Kimi-K2.5"
 MODEL_VERSION="1"
@@ -35,6 +39,8 @@ die() { echo "[deploy-kimi] ERROR: $*" >&2; exit 1; }
 # ── Pre-flight checks ───────────────────────────────────────────────────────
 log "Checking Azure CLI..."
 az account show --query "{subscription:name, id:id}" -o table || die "Not logged in. Run: az login"
+az account set --subscription "$SUBSCRIPTION_ID" || die "Failed to set subscription $SUBSCRIPTION_ID"
+log "Subscription set to $SUBSCRIPTION_ID"
 
 # Ensure cognitiveservices extension is installed
 az extension add --name cognitiveservices --upgrade --yes 2>/dev/null || true
@@ -49,23 +55,14 @@ if [[ -z "$KEY_VAULT_NAME" ]]; then
   log "Found Key Vault: $KEY_VAULT_NAME"
 fi
 
-# ── Step 1: Create AI Services account (if not exists) ──────────────────────
-log "Creating Azure AI Services account: $AI_ACCOUNT_NAME in $AI_LOCATION..."
-if az cognitiveservices account show \
+# ── Step 1: Verify AI Services account exists ───────────────────────────────
+log "Verifying existing AI Services account: $AI_ACCOUNT_NAME..."
+az cognitiveservices account show \
   --name "$AI_ACCOUNT_NAME" \
-  --resource-group "$RESOURCE_GROUP" &>/dev/null; then
-  log "AI Services account already exists, skipping creation."
-else
-  az cognitiveservices account create \
-    --name "$AI_ACCOUNT_NAME" \
-    --resource-group "$RESOURCE_GROUP" \
-    --location "$AI_LOCATION" \
-    --kind AIServices \
-    --sku S0 \
-    --custom-domain "$AI_ACCOUNT_NAME" \
-    --yes
-  log "AI Services account created."
-fi
+  --resource-group "$RESOURCE_GROUP" \
+  --query "{name:name, location:location, endpoint:properties.endpoint}" \
+  -o table || die "Account '$AI_ACCOUNT_NAME' not found in '$RESOURCE_GROUP'. Check subscription and resource group."
+log "Account verified."
 
 # ── Step 2: Deploy Kimi K2.5 model ──────────────────────────────────────────
 log "Deploying $MODEL_NAME as '$DEPLOYMENT_NAME'..."
@@ -82,7 +79,7 @@ else
     --model-name "$MODEL_NAME" \
     --model-version "$MODEL_VERSION" \
     --model-format OpenAI \
-    --sku-name Standard \
+    --sku-name "GlobalStandard" \
     --sku-capacity 1
   log "Deployment created."
 fi
@@ -135,25 +132,26 @@ cat <<EOF
   Kimi K2.5 Deployment Complete!
 ═══════════════════════════════════════════════════════════════════
 
+  Subscription:    $SUBSCRIPTION_ID
   Resource Group:  $RESOURCE_GROUP
   AI Account:      $AI_ACCOUNT_NAME
-  Location:        $AI_LOCATION (US)
+  Location:        $AI_LOCATION (Australia East ⚠️)
   Deployment:      $DEPLOYMENT_NAME
   Model:           $MODEL_NAME v$MODEL_VERSION
   Endpoint:        $ENDPOINT
   Key Vault:       $KEY_VAULT_NAME
 
-  Pricing:  \$0.60/1M input tokens, \$3.00/1M output tokens
+  Pricing:  \$0.60/1M input tokens, \$3.00/1M output tokens (GlobalStandard)
 
   Next steps:
   1. Restart the worker pod to pick up new secrets:
-     kubectl rollout restart deployment/worker -n meal-planner
+     kubectl rollout restart deployment/meal-plan-worker -n meal-planner
 
-  2. The app will auto-detect Azure OpenAI config and use it
-     (llm_client.py prefers Azure when AZURE_OPENAI_ENDPOINT is set)
+  2. Worker is configured with LLM_PROVIDER=openai — uses the OpenAI-compatible
+     path in llm_client.py (Kimi K2.5 is fully OpenAI API compatible via Azure AI Foundry)
 
   3. Verify in logs:
-     kubectl logs -l app=worker -n meal-planner --tail=50
+     kubectl logs -l app.kubernetes.io/name=meal-plan-worker -n meal-planner --tail=50
 
 ═══════════════════════════════════════════════════════════════════
 EOF

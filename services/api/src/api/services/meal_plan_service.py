@@ -484,7 +484,46 @@ def _call_llm(prompt: str) -> str:
 
     logger.info("adapt_llm_call_start", provider=provider, temperature=temperature)
 
-    if provider == "anthropic":
+    # Prefer Azure OpenAI when configured, regardless of LLM_PROVIDER setting
+    if settings.llm.is_azure_configured:
+        import httpx
+        import openai
+
+        llm = settings.llm
+        deployment = llm.azure_deployment or model_override or _MODELS["openai"]
+        try:
+            import certifi
+
+            ca_bundle = certifi.where()
+        except ImportError:
+            ca_bundle = True  # type: ignore[assignment]
+
+        http_client = httpx.Client(
+            verify=ca_bundle,
+            timeout=httpx.Timeout(float(_ADAPT_TIMEOUT) + 5.0, connect=10.0),
+        )
+        client = openai.AzureOpenAI(
+            api_key=llm.azure_api_key,
+            azure_endpoint=llm.azure_endpoint,
+            api_version=llm.azure_api_version,
+            http_client=http_client,
+            max_retries=0,
+        )
+        response = client.chat.completions.create(
+            model=deployment,
+            max_tokens=_ADAPT_MAX_TOKENS,
+            temperature=temperature,
+            response_format={"type": "json_object"},
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You are a recipe adaptation assistant. Respond ONLY with valid JSON.",
+                },
+                {"role": "user", "content": prompt},
+            ],
+        )
+        text = response.choices[0].message.content or ""
+    elif provider == "anthropic":
         import anthropic
 
         model = model_override or _MODELS["anthropic"]

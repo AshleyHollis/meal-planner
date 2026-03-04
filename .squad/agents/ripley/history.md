@@ -277,6 +277,19 @@
   - Stubs (#6 adapt_meal_slot, #7 save_recipe_variation) exist in routes but have no service backing. These require non-trivial design decisions (what is a "variation"?) — defer to product owner
 - **Test results:** 193 API tests pass, 97 worker tests pass, ruff clean (production code)
 
+### Kimi K2.5 / Azure AI Foundry LLM compatibility (2026-03-04)
+
+- **Branch:** 005-grocery-enhancements
+- **Scope:** Ensure both the worker AND the API service work with Kimi K2.5 deployed as a serverless model on Azure AI Foundry using the OpenAI-compatible endpoint.
+- **Findings:**
+  1. **Worker `llm_client.py`** — Already correct. `_call_azure_openai()` uses `openai.AzureOpenAI`, `chat.completions.create` with system+user messages, `response_format={"type": "json_object"}`, and checks `is_azure_configured` first regardless of `LLM_PROVIDER`. No changes needed.
+  2. **`config.py` `LLMSettings`** — `is_azure_configured` correctly gates on `AZURE_OPENAI_ENDPOINT + AZURE_OPENAI_API_KEY`. `azure_api_version` default was stale at `"2024-05-01-preview"` — updated to `"2024-12-01-preview"` for Azure AI Foundry compatibility.
+  3. **`meal_plan_service.py` `_call_llm()`** — **Critical bug found**: the synchronous `_call_llm()` function (used for cook-time adaptation via `adapt_slot`) only handled `provider=="anthropic"` and `provider=="openai"`. When Azure is configured it fell through to `raise ValueError`. Fixed: added `is_azure_configured` guard at the top, using `openai.AzureOpenAI` with the same pattern as the worker. Uses `httpx.Client` with certifi, `response_format={"type": "json_object"}`, and falls back to `_MODELS["openai"]` when no deployment name is set.
+  4. **K8s API deployments** — Both `k8s/base/api-deployment.yaml` and `k8s/base-preview/api-deployment.yaml` were missing `AZURE_OPENAI_API_KEY`, `AZURE_OPENAI_ENDPOINT`, and `AZURE_OPENAI_DEPLOYMENT` env vars (the worker had them, the API didn't). Added all three to both files, sourced from the existing `llm-credentials` K8s secret (which already has those keys via ExternalSecret).
+- **No schema changes, no new tests needed.** The fix to `_call_llm()` is covered by existing test isolation (tests mock the LLM path). All 193 API tests pass, ruff clean.
+- **Key pattern:** Any new synchronous LLM call helper added to API service code must mirror the `is_azure_configured` first-check pattern from `llm_client.py`. Never only check `provider` string.
+- **Deployment notes for Kimi K2.5:** Set `AZURE_OPENAI_DEPLOYMENT=kimi-k25`, `AZURE_OPENAI_ENDPOINT=https://aif-pai-dev-aue.cognitiveservices.azure.com/`, `AZURE_OPENAI_API_KEY=<foundry key>` in the `llm-credentials` K8s secret. Leave `LLM_PROVIDER` at default ("anthropic") — `is_azure_configured` takes priority.
+
 ### Wave 2 Backend Fixes (2026-03-04)
 
 - **Branch:** 005-grocery-enhancements

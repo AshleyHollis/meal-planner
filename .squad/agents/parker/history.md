@@ -13,6 +13,24 @@
 
 ## Learnings
 
+### Kimi K2.5 Deployment on Existing Azure AI Foundry Account (2026-03-04)
+
+**Task:** Deploy Kimi K2.5 on existing `aif-pai-dev-aue` account, update infra to use it.
+
+**Key Findings:**
+
+- `shared.tf` sources from a private shared-infra module (`shared-infra-data?ref=v1`) — Key Vault ID is opaque from Terraform. The deploy script auto-detects KV by listing from the resource group.
+- `aif-pai-dev-aue`: The `-aue` suffix = **Australia East**, not East US. User said "US instance" but the existing account is in AU East. Flagged in script header and decision doc.
+- Kimi K2.5 requires `--sku-name GlobalStandard` (not `Standard`) — this is the correct SKU for third-party/marketplace models in Azure AI Foundry.
+- `LLM_PROVIDER=openai` needed in worker env so the app routes to the OpenAI-compatible code path (Kimi K2.5 exposes standard `/chat/completions` via Azure AI Foundry).
+- ExternalSecret `externalsecret-llm.yaml` already mapped the three KV secret names (`azure-openai-api-key`, `azure-openai-endpoint`, `azure-openai-deployment`) — no changes needed there.
+
+**Files Changed:**
+
+- `scripts/deploy-kimi-k25.sh`: Targeted to existing account, removed account-create step, GlobalStandard SKU, correct resource group + subscription
+- `k8s/base/worker-deployment.yaml`: Added `LLM_PROVIDER=openai`
+- `k8s/base-preview/worker-deployment.yaml`: Added `LLM_PROVIDER=openai`
+
 ### CI Pipeline Failure: PR #5 Frontend Test Mismatches (2026-03-04)
 
 **Problem:** CI run #22651713954 failed on Frontend Quality job. Tests have hardcoded text expectations that don't match updated component text.
