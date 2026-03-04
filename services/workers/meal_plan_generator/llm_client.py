@@ -25,8 +25,11 @@ _MODELS = {
 # Timeout defaults per use-case (seconds)
 GENERATION_TIMEOUT = 25  # NFR-01: meal plan generation p95 < 30s
 ADAPTATION_TIMEOUT = 8  # NFR-02: cook-time adaptation p95 < 10s
-
-_MAX_TOKENS = 16384  # Kimi K2.5 uses reasoning tokens that count toward max; needs extra headroom
+
+# Azure counts max_tokens against the per-minute token rate limit upfront.
+# With 20K tokens/min and ~3-5K input tokens, max_tokens must be ≤ ~15K.
+# 8192 gives headroom for reasoning tokens while staying within rate limit.
+_MAX_TOKENS = 8192
 
 # Approximate cost per 1K tokens (USD) for cost estimation
 _COST_PER_1K = {
