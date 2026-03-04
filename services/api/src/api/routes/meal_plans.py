@@ -109,7 +109,9 @@ async def delete_meal_plan(
     await service.delete_plan(plan_id)
 
 
-@router.post("/{plan_id}/retry", response_model=MealPlanResponse, status_code=status.HTTP_202_ACCEPTED)
+@router.post(
+    "/{plan_id}/retry", response_model=MealPlanResponse, status_code=status.HTTP_202_ACCEPTED
+)
 async def retry_meal_plan(
     plan_id: UUID,
     service: MealPlanService = Depends(get_meal_plan_service),  # noqa: B008
