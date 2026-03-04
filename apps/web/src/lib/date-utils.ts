@@ -7,7 +7,11 @@ export function getNextMonday(): string {
   const diff = day === 0 ? 1 : 8 - day;
   const monday = new Date(today);
   monday.setDate(today.getDate() + diff);
-  return monday.toISOString().split("T")[0];
+  // Format in local time to avoid UTC rollback (e.g. Mon AEDT → Sun UTC)
+  const yyyy = monday.getFullYear();
+  const mm = String(monday.getMonth() + 1).padStart(2, "0");
+  const dd = String(monday.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
 }
 
 /** Shared day-of-week label arrays (Mon=0 .. Sun=6). */

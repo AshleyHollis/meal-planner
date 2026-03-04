@@ -44,10 +44,17 @@ function SubstitutionDialog({
         window.location.href = "/api/auth/login";
         return;
       }
-      const message =
-        err instanceof ApiError
-          ? ((err.body as { detail?: string })?.detail ?? err.message)
-          : "Failed to substitute ingredient.";
+      let message = "Failed to substitute ingredient.";
+      if (err instanceof ApiError) {
+        const detail = (err.body as { detail?: unknown })?.detail;
+        if (typeof detail === "string") {
+          message = detail;
+        } else if (Array.isArray(detail) && detail.length > 0) {
+          message = detail.map((d: { msg?: string }) => d.msg || "").join("; ");
+        } else {
+          message = err.message;
+        }
+      }
       setError(message);
     } finally {
       setLoading(false);

@@ -128,10 +128,15 @@ export default function MealPlanListPage() {
         window.location.href = "/api/auth/login";
         return;
       }
-      const message =
-        (err && typeof err === "object" && "body" in err
-          ? (err.body as { detail?: string })?.detail
-          : null) ?? "Failed to generate meal plan.";
+      let message = "Failed to generate meal plan.";
+      if (err && typeof err === "object" && "body" in err) {
+        const detail = (err.body as { detail?: unknown })?.detail;
+        if (typeof detail === "string") {
+          message = detail;
+        } else if (Array.isArray(detail) && detail.length > 0) {
+          message = detail.map((d: { msg?: string }) => d.msg || "").join("; ");
+        }
+      }
       setError(message);
       setGenerating(false);
     }

@@ -140,10 +140,15 @@ export default function DashboardPage() {
         window.location.href = "/api/auth/login";
         return;
       }
-      const message =
-        (err && typeof err === "object" && "body" in err
-          ? (err.body as { detail?: string })?.detail
-          : null) ?? "Failed to generate meal plan. Please try again.";
+      let message = "Failed to generate meal plan. Please try again.";
+      if (err && typeof err === "object" && "body" in err) {
+        const detail = (err.body as { detail?: unknown })?.detail;
+        if (typeof detail === "string") {
+          message = detail;
+        } else if (Array.isArray(detail) && detail.length > 0) {
+          message = detail.map((d: { msg?: string }) => d.msg || "").join("; ");
+        }
+      }
       setError(message);
       showToast(message, "error");
       setGenerating(false);
