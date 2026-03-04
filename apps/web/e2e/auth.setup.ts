@@ -70,10 +70,10 @@ setup("authenticate as test user", async ({ page }) => {
 
       // Wait for redirect to Auth0's login page
       try {
-        await page.waitForURL(
-          (url) => url.hostname.includes("auth0.com"),
-          { timeout: 30_000, waitUntil: "domcontentloaded" },
-        );
+        await page.waitForURL((url) => url.hostname.includes("auth0.com"), {
+          timeout: 30_000,
+          waitUntil: "domcontentloaded",
+        });
         reachedAuth0 = true;
         break;
       } catch {
