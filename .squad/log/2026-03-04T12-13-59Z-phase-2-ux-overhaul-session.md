@@ -8,6 +8,7 @@
 ## What Was Built
 
 ### Phase 1 UX Overhaul (Dallas Review)
+
 - MealHistoryList & EmptyState fixes (dead import, button edge case)
 - Status filter tabs (All, Active, Completed, Failed, Draft)
 - Delete failed meal plans with confirmation dialog
@@ -16,11 +17,13 @@
 - Skeleton loaders for async states
 
 ### Phase 2 API Enhancements (Ripley)
+
 - GET /api/v1/meal-plans filtering (?status=&sort=&order=)
 - GET /api/v1/meal-plans/stats endpoint (plans by status, meals cooked, items expiring soon)
 - GroceryListResponse: total_price + store_totals
 
 ### Phase 2 Frontend Components (Kane)
+
 - Toast notification system (provider + useToast hook)
 - Meal plan generation progress indicator (3-step animated)
 - Relative date formatting utility
@@ -28,6 +31,7 @@
 - Mobile touch-friendly grocery checkboxes (44px targets)
 
 ### Phase 2 E2E Test Coverage (Lambert)
+
 - 26 new E2E tests: navigation (More menu), meal plan status filters, delete flows, empty states
 - All tests follow squad conventions, ready for CI execution
 

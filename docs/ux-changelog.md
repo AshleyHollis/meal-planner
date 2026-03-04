@@ -3,18 +3,21 @@
 ## Phase 1: Core UX Foundation
 
 ### Navigation & Layout
+
 - **Mobile-first restructure**: 5-tab bottom navigation (Home, Meals, Grocery, Household, Profile)
 - **"More" menu**: Secondary menu items in slide-up sheet (responsive, touch-friendly)
 - **Card-based layouts**: Consistent, reusable card components for meal plans, inventory, grocery items
 - **Status indicators**: Visual badges showing plan status (Active, Completed, Failed, Draft)
 
 ### Components
+
 - **Skeleton loaders**: Placeholder states for async data loading (smooth perceived performance)
 - **EmptyState component**: Consistent, reusable empty-data display with emoji icons and call-to-action
 - **Delete confirmation**: 2-level confirmation dialog for destructive actions (prevent accidental deletes)
 - **Badge component**: Flexible status, category, and expiry badges with color/icon variants
 
 ### Features
+
 - **Status filter tabs**: All, Active, Completed, Failed, Draft (on meal plans page)
 - **Delete failed meal plans**: UI only exposes delete for failed plans; API supports completed as well
 - **Navigation resilience**: Graceful handling of missing data states with EmptyState
@@ -22,6 +25,7 @@
 ## Phase 2: Enhanced UX & Interactivity
 
 ### User Feedback & Notifications
+
 - **Toast notification system**: Non-blocking in-app alerts (success, error, info, warning)
   - Auto-dismiss after 3.5 seconds
   - Positioned above mobile bottom nav (`bottom-24`) and desktop (`bottom-6`)
@@ -32,12 +36,14 @@
   - Step 3: Finalizing
 
 ### Dates & Time
+
 - **Relative date formatting**: User-friendly temporal indicators
   - Past: "2d ago", "1h ago", "just now"
   - Future: "in 2d", "in 1h", "tomorrow"
   - Expiry: "7d left", "2d left", "expires today"
 
 ### Interactivity & Accessibility
+
 - **Card hover effects**: Visual feedback on interactive cards
   - Hover state: subtle shadow/color change
   - Active state: pressed/selected appearance
@@ -47,6 +53,7 @@
 - **Touch-friendly checkbox interaction**: Large hit areas, clear visual feedback
 
 ### Data Filtering & Aggregation
+
 - **Meal plan filtering**: Query by status, sort by date, ascending/descending order
 - **Grocery list aggregation**: Total price + store-level breakdown
 - **Stats dashboard**: Plans by status, meals cooked this week, items expiring soon
@@ -63,11 +70,13 @@
 ## Testing & Verification
 
 ### Unit Tests
+
 - MealHistoryList empty state
 - ExpiryBadge relative date formatting
 - Component rendering and user interactions
 
 ### E2E Tests (26 new tests)
+
 - **Navigation**: Mobile "More" menu open/close/navigation (2 tests)
 - **Status filtering**: All, Active, Completed, Failed, Draft tabs (3 tests)
 - **Delete flows**: Button visibility, confirmation, cancel (3 tests)

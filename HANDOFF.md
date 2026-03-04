@@ -15,6 +15,7 @@
 ## What Was Built (Phase 2)
 
 ### UX & Navigation (Dallas, commit ba39aca)
+
 - Fixed MealHistoryList dead import
 - Fixed EmptyState double-button edge case
 - Skeleton loaders for async states
@@ -24,6 +25,7 @@
 - Card-based layouts with visual status indicators
 
 ### Backend API (Ripley, commit 5742a7d)
+
 - **GET /api/v1/meal-plans** filtering & sorting
   - Query params: `status`, `sort` (created_at|week_start_date), `order` (asc|desc)
   - Defaults preserved for backward compatibility
@@ -37,6 +39,7 @@
 - All 193 API tests pass
 
 ### Frontend Components (Kane, commit 6b60450)
+
 - **Toast notification system** (ToastProvider + useToast hook)
   - Positioned above mobile nav (`bottom-24`) and desktop (`bottom-6`)
   - Auto-dismiss at 3.5s
@@ -48,6 +51,7 @@
 - Build clean, no errors
 
 ### E2E Test Coverage (Lambert, commit 3c3f8c1)
+
 - **26 new E2E tests** for Phase 1 UX overhaul
   - Navigation: 2 tests for mobile "More" menu (open, close, navigation)
   - Meal plans: 24 tests across 4 suites
@@ -62,12 +66,12 @@
 
 **CI run #22651713954 failed** — Frontend Quality tests have text mismatch assertions:
 
-| File | Test | Expected | Actual | Line |
-|------|------|----------|--------|------|
-| `MealHistoryList.test.tsx` | No data state | "No meal history yet" | "No Meals Yet" | 51 |
-| `ExpiryBadge.test.tsx` | Expiry text (7d) | "Expires in 7d" | "7d left" | 39 |
-| `ExpiryBadge.test.tsx` | Expiry text (2d) | "Expires in 2d" | "2d left" | 46 |
-| `ExpiryBadge.test.tsx` | Expiry text (0d) | "Expires in 0d" | "0d left" | 53 |
+| File                       | Test             | Expected              | Actual         | Line |
+| -------------------------- | ---------------- | --------------------- | -------------- | ---- |
+| `MealHistoryList.test.tsx` | No data state    | "No meal history yet" | "No Meals Yet" | 51   |
+| `ExpiryBadge.test.tsx`     | Expiry text (7d) | "Expires in 7d"       | "7d left"      | 39   |
+| `ExpiryBadge.test.tsx`     | Expiry text (2d) | "Expires in 2d"       | "2d left"      | 46   |
+| `ExpiryBadge.test.tsx`     | Expiry text (0d) | "Expires in 0d"       | "0d left"      | 53   |
 
 **Root Cause:** Component UI text was updated (Phase 2 work) but test assertions were not synchronized.
 
@@ -99,18 +103,18 @@
 
 ## Key Files (Phase 2 Changes)
 
-| File | Purpose | Agent |
-|------|---------|-------|
-| `apps/web/src/components/ui/Toast.tsx` | Toast provider and hook | Kane |
-| `apps/web/src/app/layout.tsx` | ToastProvider mount point | Kane |
-| `apps/web/src/components/MealPlanProgress.tsx` | 3-step progress indicator | Kane |
-| `apps/web/src/utils/relativeDates.ts` | Relative date formatting | Kane |
-| `apps/web/src/__tests__/MealHistoryList.test.tsx` | ⚠️ Text mismatch (line 51) | Needs fix |
-| `apps/web/src/__tests__/ExpiryBadge.test.tsx` | ⚠️ Text mismatches (lines 39, 46, 53) | Needs fix |
-| `apps/web/e2e/smoke.spec.ts` | Navigation E2E tests (+2) | Lambert |
-| `apps/web/e2e/meal-plan.spec.ts` | Meal plan E2E tests (+24) | Lambert |
-| `services/api/src/api/routes/meal_plans.py` | Filtering & stats endpoints | Ripley |
-| `services/api/src/api/models/responses.py` | GroceryListResponse updates | Ripley |
+| File                                              | Purpose                               | Agent     |
+| ------------------------------------------------- | ------------------------------------- | --------- |
+| `apps/web/src/components/ui/Toast.tsx`            | Toast provider and hook               | Kane      |
+| `apps/web/src/app/layout.tsx`                     | ToastProvider mount point             | Kane      |
+| `apps/web/src/components/MealPlanProgress.tsx`    | 3-step progress indicator             | Kane      |
+| `apps/web/src/utils/relativeDates.ts`             | Relative date formatting              | Kane      |
+| `apps/web/src/__tests__/MealHistoryList.test.tsx` | ⚠️ Text mismatch (line 51)            | Needs fix |
+| `apps/web/src/__tests__/ExpiryBadge.test.tsx`     | ⚠️ Text mismatches (lines 39, 46, 53) | Needs fix |
+| `apps/web/e2e/smoke.spec.ts`                      | Navigation E2E tests (+2)             | Lambert   |
+| `apps/web/e2e/meal-plan.spec.ts`                  | Meal plan E2E tests (+24)             | Lambert   |
+| `services/api/src/api/routes/meal_plans.py`       | Filtering & stats endpoints           | Ripley    |
+| `services/api/src/api/models/responses.py`        | GroceryListResponse updates           | Ripley    |
 
 ## Team Notes
 
