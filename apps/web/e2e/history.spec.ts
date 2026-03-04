@@ -93,7 +93,9 @@ test.describe("History Page", () => {
       }
 
       // Check for empty state
-      const emptyState = page.getByText(/No history|No past plans|No Meals Yet/i);
+      const emptyState = page.getByText(
+        /No history|No past plans|No Meals Yet/i,
+      );
       if (await emptyState.isVisible({ timeout: 5_000 }).catch(() => false)) {
         test.skip(true, "No history items to expand");
         return;
@@ -102,7 +104,9 @@ test.describe("History Page", () => {
       // Find an expandable item (button or clickable heading)
       const expandButton = page
         .locator("button, [role='button']")
-        .filter({ hasText: /\w+ \d{1,2}, \d{4}|breakfast|lunch|dinner|Completed/ })
+        .filter({
+          hasText: /\w+ \d{1,2}, \d{4}|breakfast|lunch|dinner|Completed/,
+        })
         .first();
 
       if (await expandButton.isVisible({ timeout: 5_000 }).catch(() => false)) {
@@ -137,7 +141,9 @@ test.describe("History Page", () => {
         await expect(spinner.first()).not.toBeVisible({ timeout: 30_000 });
       }
 
-      const emptyState = page.getByText(/No history|No past plans|No Meals Yet/i);
+      const emptyState = page.getByText(
+        /No history|No past plans|No Meals Yet/i,
+      );
       if (await emptyState.isVisible({ timeout: 5_000 }).catch(() => false)) {
         test.skip(true, "No history items");
         return;
@@ -194,7 +200,9 @@ test.describe("History Page", () => {
         await expect(spinner.first()).not.toBeVisible({ timeout: 30_000 });
       }
 
-      const emptyState = page.getByText(/No history|No past plans|No Meals Yet/i);
+      const emptyState = page.getByText(
+        /No history|No past plans|No Meals Yet/i,
+      );
       if (await emptyState.isVisible({ timeout: 5_000 }).catch(() => false)) {
         test.skip(true, "No history items");
         return;
@@ -214,7 +222,9 @@ test.describe("History Page", () => {
       await firstItem.click();
 
       // Expanded content should show meal info (Date Cooked, Meal Type, Cuisine, Rating)
-      const mealInfo = page.getByText(/Date Cooked|Meal Type|Cuisine|Your Rating/i);
+      const mealInfo = page.getByText(
+        /Date Cooked|Meal Type|Cuisine|Your Rating/i,
+      );
       await expect(mealInfo.first()).toBeVisible({ timeout: 10_000 });
     });
 
@@ -234,7 +244,9 @@ test.describe("History Page", () => {
         await expect(spinner.first()).not.toBeVisible({ timeout: 30_000 });
       }
 
-      const emptyState = page.getByText(/No history|No past plans|No Meals Yet/i);
+      const emptyState = page.getByText(
+        /No history|No past plans|No Meals Yet/i,
+      );
       if (await emptyState.isVisible({ timeout: 5_000 }).catch(() => false)) {
         test.skip(true, "No history items");
         return;
@@ -261,9 +273,7 @@ test.describe("History Page", () => {
       });
     });
 
-    test("history items display dates or meal types", async ({
-      page,
-    }) => {
+    test("history items display dates or meal types", async ({ page }) => {
       await page.goto("/history");
       await expect(
         page.getByRole("heading", { name: /History|Past.*Meal/i }),
@@ -277,7 +287,9 @@ test.describe("History Page", () => {
         await expect(spinner.first()).not.toBeVisible({ timeout: 30_000 });
       }
 
-      const emptyState = page.getByText(/No history|No past plans|No Meals Yet/i);
+      const emptyState = page.getByText(
+        /No history|No past plans|No Meals Yet/i,
+      );
       if (await emptyState.isVisible({ timeout: 5_000 }).catch(() => false)) {
         test.skip(true, "No history items");
         return;

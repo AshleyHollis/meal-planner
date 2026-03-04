@@ -67,7 +67,9 @@ test.describe("Dashboard", () => {
       });
       const noActivePlanMsg = page.getByText(/No active meal plan/i);
 
-      await expect(activePlanHeading.or(planYourWeek).or(noActivePlanMsg).first()).toBeVisible({
+      await expect(
+        activePlanHeading.or(planYourWeek).or(noActivePlanMsg).first(),
+      ).toBeVisible({
         timeout: 10_000,
       });
     });
@@ -84,10 +86,14 @@ test.describe("Dashboard", () => {
 
       // Should have links to core pages (in sidebar nav or quick actions)
       const inventoryLink = page.getByRole("link", { name: /Inventory/i });
-      const mealPlansLink = page.getByRole("link", { name: /Meal Plans|Plans/i });
+      const mealPlansLink = page.getByRole("link", {
+        name: /Meal Plans|Plans/i,
+      });
       const quickAction = page.getByText(/Quick Actions/i);
 
-      await expect(inventoryLink.or(mealPlansLink).or(quickAction).first()).toBeVisible({
+      await expect(
+        inventoryLink.or(mealPlansLink).or(quickAction).first(),
+      ).toBeVisible({
         timeout: 10_000,
       });
     });
@@ -305,7 +311,9 @@ test.describe("Dashboard", () => {
       // Find a stat card that's clickable
       const mealPlanStat = page
         .locator("button, a")
-        .filter({ hasText: /Meal Plans|Plans Created|Total Plans|Meals This Week/ })
+        .filter({
+          hasText: /Meal Plans|Plans Created|Total Plans|Meals This Week/,
+        })
         .first();
 
       if (await mealPlanStat.isVisible({ timeout: 5_000 }).catch(() => false)) {
