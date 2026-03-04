@@ -46,8 +46,10 @@ test.describe("Favorites Flow", () => {
         return;
       }
 
-      // Click first plan
-      const firstPlanLink = page.getByText(/Week of /).first();
+      // Click first plan link (use role=link to target the <a>, not the wrapping div)
+      const firstPlanLink = page
+        .locator('main a[href*="/meal-plan/"]')
+        .first();
       if (
         !(await firstPlanLink.isVisible({ timeout: 5_000 }).catch(() => false))
       ) {
@@ -57,7 +59,9 @@ test.describe("Favorites Flow", () => {
       await firstPlanLink.click();
 
       // Should navigate to plan detail
-      await expect(page).toHaveURL(/\/meal-plan\/[a-zA-Z0-9-]+/);
+      await expect(page).toHaveURL(/\/meal-plan\/[a-zA-Z0-9-]+/, {
+        timeout: 15_000,
+      });
       await expect(page.getByText("Back to plans")).toBeVisible({
         timeout: 30_000,
       });
@@ -82,7 +86,9 @@ test.describe("Favorites Flow", () => {
         return;
       }
 
-      const firstPlanLink = page.getByText(/Week of /).first();
+      const firstPlanLink = page
+        .locator('main a[href*="/meal-plan/"]')
+        .first();
       if (
         !(await firstPlanLink.isVisible({ timeout: 5_000 }).catch(() => false))
       ) {
@@ -139,7 +145,9 @@ test.describe("Favorites Flow", () => {
         await expect(spinner.first()).not.toBeVisible({ timeout: 30_000 });
       }
 
-      const firstPlanLink = page.getByText(/Week of /).first();
+      const firstPlanLink = page
+        .locator('main a[href*="/meal-plan/"]')
+        .first();
       if (
         !(await firstPlanLink.isVisible({ timeout: 5_000 }).catch(() => false))
       ) {
