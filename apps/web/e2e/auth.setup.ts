@@ -50,14 +50,47 @@ setup("authenticate as test user", async ({ page }) => {
   try {
     // Navigate to Auth0 login endpoint with login_hint for email pre-fill
     const loginUrl = `/api/auth/login?connection=Username-Password-Authentication&login_hint=${encodeURIComponent(email)}`;
-    await page.goto(loginUrl, { waitUntil: "domcontentloaded" });
 
-    // Wait for redirect to Auth0's login page (use domcontentloaded to avoid
-    // hanging on slow third-party resources like analytics scripts)
-    await page.waitForURL((url) => url.hostname.includes("auth0.com"), {
-      timeout: 60_000,
-      waitUntil: "domcontentloaded",
-    });
+    // Retry the initial navigation+redirect up to 3 times (SWA cold-starts
+    // can cause the first request to fail or return a non-redirect response)
+    let reachedAuth0 = false;
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      console.log(`[auth-setup] Login attempt ${attempt}/3`);
+      await page.goto(loginUrl, {
+        waitUntil: "domcontentloaded",
+        timeout: 60_000,
+      });
+      console.log(`[auth-setup] After goto, URL: ${page.url()}`);
+
+      // Check if we already landed on Auth0
+      if (page.url().includes("auth0.com")) {
+        reachedAuth0 = true;
+        break;
+      }
+
+      // Wait for redirect to Auth0's login page
+      try {
+        await page.waitForURL(
+          (url) => url.hostname.includes("auth0.com"),
+          { timeout: 30_000, waitUntil: "domcontentloaded" },
+        );
+        reachedAuth0 = true;
+        break;
+      } catch {
+        console.log(
+          `[auth-setup] Attempt ${attempt}: did not reach auth0.com (URL: ${page.url()})`,
+        );
+        if (attempt < 3) {
+          await page.waitForTimeout(5_000);
+        }
+      }
+    }
+
+    if (!reachedAuth0) {
+      throw new Error(
+        `Failed to reach Auth0 login page after 3 attempts (URL: ${page.url()})`,
+      );
+    }
     console.log(`[auth-setup] Reached Auth0 login page: ${page.url()}`);
 
     // Check if Auth0 is showing an error page

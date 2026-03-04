@@ -69,6 +69,64 @@ async function warmUpSwa(): Promise<void> {
 }
 
 /**
+ * Warm up the SWA auth endpoint.
+ *
+ * The /api/auth/login route is served by Next.js SSR and may cold-start
+ * independently from the frontend. Pre-warming it ensures the auth redirect
+ * works when auth.setup.ts runs.
+ */
+async function warmUpAuth(): Promise<void> {
+  const WEB_URL = process.env.BASE_URL || "http://localhost:3000";
+  const maxRetries = 6;
+  const retryDelay = 5_000;
+
+  console.log(`[global-setup] Warming up auth endpoint...`);
+  const startTime = Date.now();
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 15_000);
+
+      const response = await fetch(`${WEB_URL}/api/auth/login`, {
+        redirect: "manual", // Don't follow redirect, just verify endpoint responds
+        signal: controller.signal,
+      });
+      clearTimeout(timeout);
+
+      const elapsed = Math.round((Date.now() - startTime) / 1000);
+      // 302/307 means the auth endpoint is working (redirecting to Auth0)
+      if (
+        response.status === 302 ||
+        response.status === 307 ||
+        response.status === 200
+      ) {
+        console.log(
+          `[global-setup] Auth endpoint ready (${elapsed}s, status=${response.status})`,
+        );
+        return;
+      }
+      console.log(
+        `[global-setup] Auth attempt ${attempt}/${maxRetries}: status=${response.status} (${elapsed}s)`,
+      );
+    } catch (error) {
+      const elapsed = Math.round((Date.now() - startTime) / 1000);
+      console.log(
+        `[global-setup] Auth attempt ${attempt}/${maxRetries} failed (${elapsed}s): ${error instanceof Error ? error.message : error}`,
+      );
+    }
+
+    if (attempt < maxRetries) {
+      await new Promise((resolve) => setTimeout(resolve, retryDelay));
+    }
+  }
+
+  console.log(
+    "[global-setup] Auth endpoint warm-up did not succeed - auth tests may be slow",
+  );
+}
+
+/**
  * Wait for the backend API to be ready.
  */
 async function waitForApi(): Promise<void> {
@@ -121,6 +179,9 @@ async function globalSetup(_config: FullConfig) {
 
   // Warm up the SWA frontend first
   await warmUpSwa();
+
+  // Warm up the auth endpoint (SWA cold-starts for API routes separately)
+  await warmUpAuth();
 
   // Then wait for the API backend
   await waitForApi();
