@@ -572,3 +572,48 @@ The team should always use the latest LLM models. Specifically: `claude-opus-4.6
 **What:** Team members must be spawned with exact models specified in team.md (Dallas=claude-opus-4.6, Ripley/Kane=claude-sonnet-4.6, Parker/Lambert/Scribe=claude-haiku-4.5). Charters must have explicit Preferred model values.
 
 **Why:** Models were configured but coordinator kept using wrong versions. User request enforces source-of-truth compliance.
+
+---
+
+## Session 2026-03-03T0800 Visual Smoke Testing Directive
+
+**Resolved:** 1 decision (mandatory visual smoke testing)
+
+### Decision 15: User Directive — Mandatory Visual Smoke Testing Before Feature Completion
+
+**Author:** Ashley Hollis (via Copilot)  
+**Date:** 2026-03-03  
+**Status:** Active (Permanent directive)
+
+**What:** Every feature MUST undergo visual smoke testing in the Azure preview environment using Playwright MCP browser tools BEFORE the feature can be marked complete or the PR merged. E2E tests alone are NOT sufficient.
+
+**Why:** During 005-grocery-enhancements, automated E2E tests (52 passed, 0 failed) gave a false sense of confidence. Manual visual smoke testing revealed:
+
+1. **Untestable flows** — Grocery list with shop filter and TripTracker couldn't be tested because no active meal plan with grocery items existed in the interactive user's context (E2E tests use isolated seed data)
+2. **Pre-existing bugs hidden by E2E** — Meal plan generation returns 422 + frontend crashes with React error #31 (renders error object as React child). E2E tests never exercise this path because they seed data directly.
+3. **Visual rendering gaps** — E2E headless tests can't catch layout issues, missing badges, broken responsive behavior, or visual regressions that only appear in a real browser
+
+**Directive — applies to ALL future features:**
+
+1. **Phase gate**: Tasks.md for every feature MUST include a "Visual Smoke Testing" phase as the FINAL phase before feature completion
+2. **Scope**: Test every user story's primary UI flows in the deployed Azure preview environment
+3. **Tooling**: Use Playwright MCP browser tools (navigate, snapshot, click, type) to interact with the live preview
+4. **Auth**: Test both authenticated and unauthenticated states
+5. **Regression**: Verify existing pages have no visual regressions
+6. **Evidence**: Capture accessibility snapshots or screenshots of key screens
+7. **Blocker policy**: Any visual bug found during smoke testing MUST be fixed before merge — it is a blocker, not a nice-to-have
+8. **Owner**: Lambert (Tester) owns the smoke test checklist; Kane (Frontend Dev) fixes any visual bugs found
+
+**Smoke Test Checklist Template** (adapt per feature):
+
+- [ ] Navigate to preview URL (from GitHub Actions deployment)
+- [ ] Test unauthenticated state (landing page, login link)
+- [ ] Log in and verify authenticated state
+- [ ] Test each user story's primary UI flow visually
+- [ ] Verify data displays correctly (not raw IDs, proper formatting)
+- [ ] Test responsive layout (if applicable)
+- [ ] Check for console errors in browser
+- [ ] Verify no visual regressions on existing pages
+- [ ] Capture screenshots/snapshots as evidence
+
+**Rationale:** Automated tests verify behavior in isolation. Visual smoke tests verify the integrated experience as a real user would see it. Both are necessary. This directive closes the gap between "tests pass" and "feature works."

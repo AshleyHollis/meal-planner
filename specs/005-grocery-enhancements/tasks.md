@@ -149,13 +149,47 @@
 - [ ] T032 [US2] E2E test in `apps/web/e2e/grocery-trips.spec.ts` — create product mappings for 2 shops → generate grocery list → filter by shop → check items per-trip → complete trip → verify items marked globally
 - [ ] T033 Full regression: run all existing E2E tests to verify no regressions from grocery enhancement changes
 
-### V5 — Final Checkpoint
+### V5 — E2E Checkpoint
 
 - [ ] V012 Run all API tests: `cd services/api && uv run pytest tests/ -v`
 - [ ] V013 Run all worker tests: `cd services/workers && uv run pytest tests/ -v`
 - [ ] V014 Run all frontend tests: `cd apps/web && npm test -- --run`
 - [ ] V015 Run frontend lint + type check: `cd apps/web && npm run lint && npx tsc --noEmit`
 - [ ] V016 Run API + shared lint: `cd services/api && uv run ruff check src/ && cd ../../services/shared && uv run ruff check shared/`
+
+---
+
+## Phase 6: Visual Smoke Testing in Preview Environment _(mandatory)_
+
+**Goal**: Manually verify all user-facing features in the deployed Azure preview environment using Playwright MCP browser tools. E2E tests run in isolated headless environments and can miss visual regressions, layout issues, and real-world integration problems.
+
+**Depends on**: Phase 5 (E2E tests pass, preview deployment green).
+
+**⚠️ CRITICAL**: Feature is NOT complete until visual smoke testing passes. This phase catches issues that automated tests miss — visual rendering bugs, broken layouts, real API integration errors, and auth-gated flows.
+
+### Smoke Test Procedure
+
+1. **Navigate to Preview URL** — find from GitHub Actions preview deployment workflow run
+2. **Test authenticated and unauthenticated states** — verify login/logout flow works
+3. **Test each user story's primary flows** visually in the browser
+4. **Capture screenshots** of key screens for evidence
+5. **File issues or fix** any visual bugs, layout problems, or integration errors found
+
+### Visual Smoke Test Tasks
+
+- [ ] T034 [US1] Visual smoke: Product Library page (`/products`) — verify product cards render with brand, product name, price badge, shop badge, notes. Test search filtering, add product form, edit product form, delete product
+- [ ] T035 [US1] Visual smoke: Grocery list with product enrichment — verify mapped items show product details (brand, size, price, shop) and unmapped items show plain ingredient name + quantity. Verify "Link Product" button appears on unmapped items
+- [ ] T036 [US2] Visual smoke: Shop filter on grocery list — verify shop filter tabs render (All, per-shop, Other/Any Store), filtering narrows list correctly, item counts per shop are accurate
+- [ ] T037 [US2] Visual smoke: Trip tracker — verify per-trip checkboxes work independently from global is_checked, progress bar updates, "Complete Trip" button functions, trip state persists across navigation
+- [ ] T038 Regression smoke: Dashboard, Inventory, Meal Plans, History pages — verify no visual regressions from grocery enhancement changes
+- [ ] T039 Auth flow smoke: Test authenticated API calls work correctly — product CRUD, grocery list loading, trip completion all function through the SWA BFF auth layer
+
+### V6 — Visual Smoke Testing Checkpoint
+
+- [ ] V017 All smoke test tasks pass with no blocking visual issues
+- [ ] V018 Screenshots captured for key screens (Product Library, Grocery List with products, Shop Filter, Trip Tracker)
+
+**Checkpoint**: Feature is verified end-to-end in a real deployed environment. Ready for merge.
 
 ---
 
@@ -168,6 +202,7 @@
 - **Phase 3 (Product Frontend — US1 frontend)**: Depends on Phase 2 (API must exist).
 - **Phase 4 (Shop-Filtered Trips — US2)**: Depends on Phase 3 (needs product mappings with shop data in UI).
 - **Phase 5 (E2E + Polish)**: Depends on all prior phases.
+- **Phase 6 (Visual Smoke Testing)**: Depends on Phase 5 + preview deployment green. BLOCKS feature completion.
 
 ### User Story Dependencies
 
@@ -204,6 +239,8 @@ Phase 1 (foundation)
                        ├──► T028, T029, T030 in parallel (tests)
                        │
                        └──► Phase 5 (E2E + Polish)
+                              │
+                              └──► Phase 6 (Visual Smoke Testing — GATES completion)
 ```
 
 ---
@@ -223,6 +260,7 @@ Phase 1 (foundation)
 1. Phase 1 + Phase 2 + Phase 3 → Product Mapping works (MVP!)
 2. Phase 4 → Shop filtering + trips adds per-store shopping
 3. Phase 5 → E2E validation + regression check
+4. Phase 6 → Visual smoke testing in preview environment (mandatory gate)
 
 ---
 
@@ -235,5 +273,6 @@ Phase 1 (foundation)
 | 3. Product Frontend (US1 frontend) | T014–T022 | T021–T022 | V006–V008   |
 | 4. Shop-Filtered Trips (US2)       | T023–T030 | T028–T030 | V009–V011   |
 | 5. E2E + Polish                    | T031–T033 | T031–T033 | V012–V016   |
+| 6. Visual Smoke Testing            | T034–T039 | —         | V017–V018   |
 
-**Total: 33 tasks + 16 verification checkpoints = 49 items**
+**Total: 39 tasks + 18 verification checkpoints = 57 items**
