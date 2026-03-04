@@ -10,12 +10,12 @@ Comprehensive quality audit and fixes. Dashboard "Generate Plan" production fail
 
 ## Agents & Deliverables
 
-| Agent | Focus | Outcome |
-|-------|-------|---------|
-| **Dallas** | Quality audit | Identified 16 issues (P0-P3); root cause: missing auto-complete in dashboard Generate |
-| **Kane** | Frontend fixes | Fixed dashboard Generate flow; added cuisine/meal type selectors; error handling |
-| **Ripley** | Backend resilience | Fixed 2 worker robustness bugs (scalar_one → scalar_one_or_none pattern) |
-| **Lambert** | Test coverage | Audited E2E coverage; closed 6 gaps; added 23 tests; achieved 100% flow coverage |
+| Agent       | Focus              | Outcome                                                                               |
+| ----------- | ------------------ | ------------------------------------------------------------------------------------- |
+| **Dallas**  | Quality audit      | Identified 16 issues (P0-P3); root cause: missing auto-complete in dashboard Generate |
+| **Kane**    | Frontend fixes     | Fixed dashboard Generate flow; added cuisine/meal type selectors; error handling      |
+| **Ripley**  | Backend resilience | Fixed 2 worker robustness bugs (scalar_one → scalar_one_or_none pattern)              |
+| **Lambert** | Test coverage      | Audited E2E coverage; closed 6 gaps; added 23 tests; achieved 100% flow coverage      |
 
 ## Key Decisions
 

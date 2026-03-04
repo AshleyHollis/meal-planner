@@ -1013,7 +1013,6 @@ During the meal plan generation pipeline audit, two instances of `result.scalar_
 
 The API-level check for existing draft/active plans in `MealPlanService.create_plan()` uses application-level SELECT+check rather than a DB constraint. This is a potential race condition under concurrent requests. Low risk for current usage but should be addressed if concurrency increases (add a filtered unique index on `(household_id, status)` for draft/active states, or use a DB-level advisory lock).
 
-
 ## Session 2026-03-04T070000Z — lambert-test-coverage
 
 # Lambert — E2E Test Coverage Audit & Expansion
@@ -1037,32 +1036,33 @@ The API-level check for existing draft/active plans in `MealPlanService.create_p
 ## Coverage Audit Results
 
 ### Test Files Reviewed (11 total)
-| File | Tests | Scope |
-|------|-------|-------|
-| **smoke.spec.ts** | 8 | Navigation, auth, core page loads |
-| **meal-plan.spec.ts** | 26 | Plan CRUD, generation, status filters, leftovers, deduction |
-| **planning-enhancements.spec.ts** | 9 | Quick cook, recurring meals, ingredient swap, multi-meal |
-| **inventory.spec.ts** | 10 | Add/list items, multi-location storage, expiry badges |
-| **grocery.spec.ts** | 3 | Grocery list page load and item management |
-| **grocery-trips.spec.ts** | 6 | Shop filter tabs, trip tracking |
-| **products.spec.ts** | 8 | Product CRUD, search, detail view |
-| **preferences.spec.ts** | 6 | Dietary restrictions, allergies, likes/dislikes |
-| **favorites.spec.ts** | 4 | Favorite/unfavorite recipes |
-| **cuisine.spec.ts** | 4 | Cuisine selector, generation |
-| **ratings.spec.ts** | 3 | Rate cooked meals with feedback |
-| **dashboard.spec.ts** ⭐ | 13 | **Dashboard flows (NEW)** |
-| **history.spec.ts** ⭐ | 10 | **History page flows (NEW)** |
+
+| File                              | Tests | Scope                                                       |
+| --------------------------------- | ----- | ----------------------------------------------------------- |
+| **smoke.spec.ts**                 | 8     | Navigation, auth, core page loads                           |
+| **meal-plan.spec.ts**             | 26    | Plan CRUD, generation, status filters, leftovers, deduction |
+| **planning-enhancements.spec.ts** | 9     | Quick cook, recurring meals, ingredient swap, multi-meal    |
+| **inventory.spec.ts**             | 10    | Add/list items, multi-location storage, expiry badges       |
+| **grocery.spec.ts**               | 3     | Grocery list page load and item management                  |
+| **grocery-trips.spec.ts**         | 6     | Shop filter tabs, trip tracking                             |
+| **products.spec.ts**              | 8     | Product CRUD, search, detail view                           |
+| **preferences.spec.ts**           | 6     | Dietary restrictions, allergies, likes/dislikes             |
+| **favorites.spec.ts**             | 4     | Favorite/unfavorite recipes                                 |
+| **cuisine.spec.ts**               | 4     | Cuisine selector, generation                                |
+| **ratings.spec.ts**               | 3     | Rate cooked meals with feedback                             |
+| **dashboard.spec.ts** ⭐          | 13    | **Dashboard flows (NEW)**                                   |
+| **history.spec.ts** ⭐            | 10    | **History page flows (NEW)**                                |
 
 ### Previously Untested Flows (6 gaps) — NOW FIXED ✅
 
-| Flow | Gap Reason | Solution |
-|------|-----------|----------|
-| **Dashboard → Generate Plan** | ⚠️ THE BROKEN ONE | dashboard.spec.ts: 8 tests covering button click, flow entry, plan completion |
-| **Dashboard → Customize Cuisine → Generate** | No tests at dashboard level | dashboard.spec.ts: 3 tests for cuisine selection then generation |
-| **Dashboard stats → Navigate to pages** | No stat card navigation tests | dashboard.spec.ts: 2 tests verifying stat cards clickable and navigate |
-| **History → View past plans** | History page not tested | history.spec.ts: 3 tests for page load, empty state, list display |
-| **History → Expand items** | No expand/collapse tests | history.spec.ts: 3 tests for expansion, collapse, state management |
-| **History → View details** | No detail view tests | history.spec.ts: 4 tests for expanded content, links, status display |
+| Flow                                         | Gap Reason                    | Solution                                                                      |
+| -------------------------------------------- | ----------------------------- | ----------------------------------------------------------------------------- |
+| **Dashboard → Generate Plan**                | ⚠️ THE BROKEN ONE             | dashboard.spec.ts: 8 tests covering button click, flow entry, plan completion |
+| **Dashboard → Customize Cuisine → Generate** | No tests at dashboard level   | dashboard.spec.ts: 3 tests for cuisine selection then generation              |
+| **Dashboard stats → Navigate to pages**      | No stat card navigation tests | dashboard.spec.ts: 2 tests verifying stat cards clickable and navigate        |
+| **History → View past plans**                | History page not tested       | history.spec.ts: 3 tests for page load, empty state, list display             |
+| **History → Expand items**                   | No expand/collapse tests      | history.spec.ts: 3 tests for expansion, collapse, state management            |
+| **History → View details**                   | No detail view tests          | history.spec.ts: 4 tests for expanded content, links, status display          |
 
 ---
 
@@ -1071,23 +1071,28 @@ The API-level check for existing draft/active plans in `MealPlanService.create_p
 ### dashboard.spec.ts (13 tests)
 
 **Page Load & Content (3 tests):**
+
 - ✅ Dashboard loads with heading and primary content
 - ✅ Shows active plan section or "no active plan" message
 - ✅ Shows quick link cards for navigation
 
 **Generate Plan from Dashboard (3 tests):**
+
 - ✅ Clicking Generate Plan button navigates to generation flow (backend-dependent)
 - ✅ Plan generation completes or shows appropriate state (slow test, 90s timeout)
 
 **Cuisine Preferences Before Generation (2 tests):**
+
 - ✅ Cuisine preferences section visible on dashboard
 - ✅ Can set cuisine preferences and then generate plan (backend-dependent)
 
 **Dashboard Stats Navigation (2 tests):**
+
 - ✅ Stat cards are visible
 - ✅ Clicking stat card navigates to relevant page
 
 **Test Pattern:**
+
 - All backend-dependent tests use `test.skip()` guards with `USE_EXTERNAL_SERVER` flag
 - Graceful degradation: tests skip if data unavailable, don't fail with confusing errors
 - 90-second timeout for plan generation (LLM calls slow)
@@ -1096,21 +1101,25 @@ The API-level check for existing draft/active plans in `MealPlanService.create_p
 ### history.spec.ts (10 tests)
 
 **Page Load & Content (3 tests):**
+
 - ✅ History page loads with heading
 - ✅ Shows empty state or history list after loading
 - ✅ Shows back navigation link
 
 **Expanding History Items (3 tests):**
+
 - ✅ History items are expandable (backend-dependent)
 - ✅ Can expand and collapse history items
 - ✅ Expanded items show meal details
 
 **Viewing History Details (4 tests):**
+
 - ✅ Expanded history items show meal details (backend-dependent)
 - ✅ Can click history item to view full plan details
 - ✅ History items display completion status or date
 
 **Test Pattern:**
+
 - Frontend tests (page load, expandability) run without backend
 - Backend-dependent tests skip gracefully with clear messages
 - Handle both "week of" and "completed" status displays
@@ -1133,6 +1142,7 @@ The API-level check for existing draft/active plans in `MealPlanService.create_p
 ### Existing Tests: Still Solid
 
 No regressions. Existing 87 tests remain unchanged with same patterns:
+
 - No skipped tests that should be running
 - All cover both happy path and error states
 - Multi-location inventory tests verify realistic data
@@ -1143,12 +1153,14 @@ No regressions. Existing 87 tests remain unchanged with same patterns:
 ## Remaining Work & Future Considerations
 
 ### Gaps Closed in This Session
+
 ✅ All 6 untested flows now have E2E coverage
 ✅ Dashboard generate plan (the broken one!) now tested
 ✅ History page fully tested with expand/collapse/detail views
 ✅ TypeScript compiles clean (0 errors)
 
 ### Future Enhancements (Out of scope for this task)
+
 - **Visual regression testing:** Playwright's visual comparisons for dashboard layout
 - **Performance testing:** Dashboard load time, plan generation duration baselines
 - **A/B test support:** If dashboard UI variations are tested
@@ -1156,7 +1168,9 @@ No regressions. Existing 87 tests remain unchanged with same patterns:
 - **Accessibility testing:** WCAG 2.1 AA compliance for dashboard and history
 
 ### Seed Data Considerations
+
 Current seed data (30 ingredients, 23 product mappings, 10 expiry variants) is sufficient for:
+
 - History page tests (completed plans exist)
 - Dashboard stat tests (plans created)
 - Multi-meal generation tests
@@ -1181,10 +1195,12 @@ No additional seed data needed for new tests.
 ## Files Changed
 
 **New test files:**
+
 - `apps/web/e2e/dashboard.spec.ts` — 13 tests for dashboard flows
 - `apps/web/e2e/history.spec.ts` — 10 tests for history page flows
 
 **No changes to:**
+
 - Playwright config
 - Seed data setup
 - Auth setup
@@ -1205,11 +1221,13 @@ No additional seed data needed for new tests.
 ## How This Prevents Future Bugs
 
 The "Generate Plan broken in production" incident occurred because:
+
 - Dashboard's Generate button wasn't tested
 - No E2E verification that the button flow works end-to-end
 - UI tests may pass but endpoint integration fails silently
 
 **New coverage prevents this by:**
+
 - ✅ Testing the exact action: dashboard → click Generate → verify navigation/generation
 - ✅ Testing with real backend: `USE_EXTERNAL_SERVER=true` runs against actual API
 - ✅ Testing UI state: verifies button exists, clickable, and triggers correct flow
@@ -1217,7 +1235,6 @@ The "Generate Plan broken in production" incident occurred because:
 - ✅ Testing cuisine variant: ensures preferences passed correctly to API
 
 Next time the Generate action breaks, these tests will catch it immediately.
-
 
 ## Session 2026-03-04T070000Z — kane-history-images
 
@@ -1293,7 +1310,6 @@ If recipe detail pages are added later, can replace expansion with navigation:
 
 Pattern established here can be used for similar feed-style pages (notifications, search results, etc).
 
-
 ## Session 2026-03-04T070000Z — kane-generate-plan-fix
 
 # Decision: Unify Generate Plan Flow (Dashboard + Meal Plan Page)
@@ -1301,7 +1317,7 @@ Pattern established here can be used for similar feed-style pages (notifications
 **Author:** Kane  
 **Date:** 2026-03-09  
 **Branch:** 005-grocery-enhancements  
-**Commit:** f1d988a  
+**Commit:** f1d988a
 
 ## Context
 
@@ -1328,7 +1344,6 @@ Using `listMealPlans()` (not just the `plan` state) is intentional — `getActiv
 - Consistent UX between dashboard and meal plan page
 - No performance concern: `listMealPlans()` is only called on user-initiated generate, not on every render
 
-
 ## Session 2026-03-04T070000Z — dallas-quality-audit
 
 # Quality Audit — Dallas
@@ -1346,6 +1361,7 @@ Using `listMealPlans()` (not just the `plan` state) is intentional — `getActiv
 The dashboard's "Generate Plan" button fails with HTTP 409 because it **does not auto-complete existing draft/active plans** before calling `createMealPlan()`.
 
 **The state mismatch:**
+
 1. API (`meal_plan_service.py:77-87`) rejects `POST /api/v1/meal-plans` if ANY plan with status `draft` or `active` exists → returns 409
 2. Dashboard (`page.tsx:42-75`) calls `getActiveMealPlan()` to check for an existing plan, but this endpoint only returns plans with `status=active`, NOT `status=draft`
 3. So when a `draft` plan exists (e.g., worker never finished, Azure OpenAI unavailable), the dashboard shows "Plan Your Week" with Generate button, but clicking it gets 409
@@ -1355,11 +1371,11 @@ The dashboard's "Generate Plan" button fails with HTTP 409 because it **does not
 
 ### Three Bugs in One
 
-| # | Bug | Dashboard (`page.tsx`) | Meal Plan page (`meal-plan/page.tsx`) |
-|---|-----|----------------------|--------------------------------------|
-| 1 | **No auto-complete of existing plans** | ❌ Missing (lines 81-98) | ✅ Present (lines 116-121) |
-| 2 | **Generic error message** | ❌ Shows "Failed to generate meal plan." (line 96) | ✅ Shows actual API detail (lines 135-138) |
-| 3 | **Missing `meal_types` parameter** | ❌ Only sends `week_start_date` + `cuisine_preferences` (lines 85-89) | ✅ Sends all three including `meal_types` (lines 123-128) |
+| #   | Bug                                    | Dashboard (`page.tsx`)                                                | Meal Plan page (`meal-plan/page.tsx`)                     |
+| --- | -------------------------------------- | --------------------------------------------------------------------- | --------------------------------------------------------- |
+| 1   | **No auto-complete of existing plans** | ❌ Missing (lines 81-98)                                              | ✅ Present (lines 116-121)                                |
+| 2   | **Generic error message**              | ❌ Shows "Failed to generate meal plan." (line 96)                    | ✅ Shows actual API detail (lines 135-138)                |
+| 3   | **Missing `meal_types` parameter**     | ❌ Only sends `week_start_date` + `cuisine_preferences` (lines 85-89) | ✅ Sends all three including `meal_types` (lines 123-128) |
 
 ### Fix — Kane (Frontend)
 
@@ -1377,15 +1393,18 @@ The dashboard's "Generate Plan" button fails with HTTP 409 because it **does not
 ## P1 — HIGH: Inconsistencies Between Dashboard & Meal Plan Page
 
 ### 1. Duplicated `getNextMonday()` function
+
 - **Files:** `apps/web/src/app/page.tsx:22-29` AND `apps/web/src/app/meal-plan/page.tsx:39-46`
 - Identical function defined in both files. Should be extracted to `@/lib/date-utils.ts` (which already exists).
 - **Risk:** Future changes to one copy won't be applied to the other.
 
 ### 2. Dashboard "Plan Your Week" section doesn't reflect `draft` plans
+
 - Dashboard only checks for `active` plans via `getActiveMealPlan()`. A `draft` plan (generation in progress) is invisible to the dashboard — user sees "Generate Plan" even though generation is already underway.
 - **Fix:** Dashboard should also check for `draft` plans and show a "Generation in progress" state with a link to the draft plan.
 
 ### 3. Different error handling patterns
+
 - Dashboard: `setError("Failed to generate meal plan.")` — generic
 - Meal Plan page: Extracts `err.body.detail` — specific
 - History page: `setError("Failed to load meal history")` — generic, no retry
@@ -1393,6 +1412,7 @@ The dashboard's "Generate Plan" button fails with HTTP 409 because it **does not
 - **Standard:** All pages should use the Inventory page pattern: show API detail + Retry button
 
 ### 4. Dashboard doesn't use `useToast`
+
 - Meal Plan page uses `useToast` for delete confirmation feedback
 - Dashboard uses inline `{error}` div only
 - **Inconsistent UX.** Toast should be used for transient errors; inline for persistent.
@@ -1402,33 +1422,39 @@ The dashboard's "Generate Plan" button fails with HTTP 409 because it **does not
 ## P2 — MEDIUM: UX Quality Issues
 
 ### 5. Quick Suggestions "Cook This" button is fake
+
 - **File:** `apps/web/src/app/quick-suggestions/page.tsx:35-38`
 - `handleCookThis()` just shows a fake toast message ("added to your plan!") but performs NO API call
 - **No plan is created.** This is misleading to users.
 - **Fix (Ripley):** Either implement the actual API call to add to plan, or change button text to "View Recipe" and remove the fake success toast.
 
 ### 6. Desktop sidebar active state highlights incorrectly
+
 - **File:** `apps/web/src/app/layout.tsx:264`
 - `pathname.startsWith(href)` means `/meal-plan` highlights for BOTH `/meal-plan` AND `/meal-plan/[id]` — that's correct
 - But the **Home** link (`/`) is missing from the desktop sidebar entirely. User can only get home via the "Meal Planner" logo link. Not discoverable.
 - The sidebar has no "Home" or "Dashboard" entry.
 
 ### 7. Hardcoded currency format
+
 - **Files:** `apps/web/src/app/products/[id]/page.tsx:196-199`, `apps/web/src/app/products/page.tsx:275-278`, `apps/web/src/app/grocery-list/[id]/page.tsx:92`
 - Currency is hardcoded to `en-AU` / `AUD` in product pages but the grocery list uses raw `$` prefix
 - **Fix:** Extract currency formatting to a shared utility. Use a configuration or user preference.
 
 ### 8. Hardcoded `CURRENT_MEMBER_ID = "current"` in preferences
+
 - **File:** `apps/web/src/app/preferences/page.tsx:7`
 - Comment says "In a real implementation, this would fetch the current user's member ID"
 - This is a placeholder. It works because the backend resolves `"current"` from auth context, but it's a code smell.
 
 ### 9. Grocery list estimated cost uses `$` but products page uses `Intl.NumberFormat`
+
 - **File:** `apps/web/src/app/grocery-list/[id]/page.tsx:92` — `Est. ${estimatedCost.toFixed(2)}`
 - **File:** `apps/web/src/app/products/page.tsx:275-278` — `Intl.NumberFormat("en-AU", ...)`
 - **Inconsistent.** Same number, different formatting.
 
 ### 10. Products page delete handler silently fails
+
 - **File:** `apps/web/src/app/products/page.tsx:82-89`
 - `handleDelete` has an empty `catch {}` block — no error feedback to user
 - **Fix:** Show toast or error state on delete failure.
@@ -1438,34 +1464,40 @@ The dashboard's "Generate Plan" button fails with HTTP 409 because it **does not
 ## P3 — LOW: Code Quality & Maintainability
 
 ### 11. `DAY_LABELS` defined in 3 places
+
 - `apps/web/src/app/page.tsx:414-420` (abbreviated: Mon, Tue...)
 - `apps/web/src/app/page.tsx:475-483` (full: Monday, Tuesday...)
 - `apps/web/src/app/meal-plan/[id]/page.tsx:22-30` (full: Monday, Tuesday...)
 - **Fix:** Extract to `@/lib/date-utils.ts` with both abbreviated and full variants.
 
 ### 12. E2E tests don't cover dashboard Generate Plan flow
+
 - `e2e/smoke.spec.ts:172-186` checks that Generate Plan button OR Active Plan heading exists, but never clicks Generate
 - `e2e/meal-plan.spec.ts:316-367` tests Generate from the meal plan page, not the dashboard
 - **This is exactly why the bug went undetected.** The dashboard Generate path has zero E2E coverage.
 - **Fix (Lambert):** Add E2E test that clicks Generate Plan on the dashboard page.
 
 ### 13. No ErrorBoundary wrapper on pages
+
 - `apps/web/src/components/ui/ErrorBoundary.tsx` exists but is not used on any page
 - An unhandled React error will show the default white screen
 - **Fix:** Wrap each page with ErrorBoundary in the layout
 
 ### 14. Missing `<meta>` title per page
+
 - All pages show "Meal Planner" as the browser tab title
 - No page-specific titles (e.g., "Inventory — Meal Planner", "Meal Plans — Meal Planner")
 - Minor but affects usability when multiple tabs are open
 
 ### 15. `WeeklyPlanView.tsx` component exists but is unused
+
 - **File:** `apps/web/src/components/meal-plan/WeeklyPlanView.tsx`
 - Present in the components directory but not imported anywhere
 - The meal plan detail page (`meal-plan/[id]/page.tsx`) inlines its own weekly view
 - **Fix:** Either use the component or delete it.
 
 ### 16. Meal plan list page shows 34 plans with 18 failed
+
 - Preview environment has accumulated test junk: 18 failed plans, 15 completed (all auto-completed before retry), 1 stuck draft
 - No bulk cleanup capability exists in the UI
 - **Not a code bug** but affects perceived quality. Consider adding a "Clean up failed plans" action.
@@ -1485,37 +1517,35 @@ The dashboard's "Generate Plan" button fails with HTTP 409 because it **does not
 
 ## Summary of Assignments
 
-| Priority | Issue | Owner | Effort |
-|----------|-------|-------|--------|
-| P0 | Dashboard Generate Plan fails (409) | Kane | 1hr |
-| P0 | Dashboard shows generic error, not API detail | Kane | 15min |
-| P1 | Extract `getNextMonday()` to shared util | Kane | 15min |
-| P1 | Dashboard should detect draft plans | Kane | 30min |
-| P1 | Standardize error handling pattern | Kane | 2hr |
-| P2 | Quick Suggestions "Cook This" is fake | Ripley | 2hr |
-| P2 | Add Home/Dashboard to desktop sidebar | Kane | 15min |
-| P2 | Standardize currency formatting | Kane | 30min |
-| P2 | Products page silent delete failure | Kane | 15min |
-| P3 | Extract DAY_LABELS to shared util | Kane | 15min |
-| P3 | Add E2E test for dashboard Generate | Lambert | 1hr |
-| P3 | Wrap pages with ErrorBoundary | Kane | 30min |
-| P3 | Page-specific browser tab titles | Kane | 30min |
-| P3 | Clean up or remove unused WeeklyPlanView | Kane | 15min |
-
+| Priority | Issue                                         | Owner   | Effort |
+| -------- | --------------------------------------------- | ------- | ------ |
+| P0       | Dashboard Generate Plan fails (409)           | Kane    | 1hr    |
+| P0       | Dashboard shows generic error, not API detail | Kane    | 15min  |
+| P1       | Extract `getNextMonday()` to shared util      | Kane    | 15min  |
+| P1       | Dashboard should detect draft plans           | Kane    | 30min  |
+| P1       | Standardize error handling pattern            | Kane    | 2hr    |
+| P2       | Quick Suggestions "Cook This" is fake         | Ripley  | 2hr    |
+| P2       | Add Home/Dashboard to desktop sidebar         | Kane    | 15min  |
+| P2       | Standardize currency formatting               | Kane    | 30min  |
+| P2       | Products page silent delete failure           | Kane    | 15min  |
+| P3       | Extract DAY_LABELS to shared util             | Kane    | 15min  |
+| P3       | Add E2E test for dashboard Generate           | Lambert | 1hr    |
+| P3       | Wrap pages with ErrorBoundary                 | Kane    | 30min  |
+| P3       | Page-specific browser tab titles              | Kane    | 30min  |
+| P3       | Clean up or remove unused WeeklyPlanView      | Kane    | 15min  |
 
 ## Session 2026-03-04T070000Z — copilot-directive-sonnet46
 
 ### 2026-03-04T16:35:34Z: User directive
+
 **By:** Ashley Hollis (via Copilot)
 **What:** Always use claude-sonnet-4.6 (not 4.5) for standard-tier agent spawns (Kane, Ripley). Team.md is authoritative — charter Preferred model overrides squad.agent.md defaults.
 **Why:** User request — repeated directive, previously violated.
 
-
 ## Session 2026-03-04T070000Z — copilot-directive-quality-standard
 
 ### 2026-03-04T065619Z: User directive — Production quality standard
+
 **By:** Ashley Hollis (via Copilot)
 **What:** "We need to build much higher quality. Everything being built seems like a very low standard. We need to ensure that our E2E test coverage covers everything." The team must build to production quality, not MVP. Every feature must be polished, consistent, and thoroughly tested. E2E tests must cover all user-facing flows — no gaps.
 **Why:** User request — captured for team memory. The app feels basic/MVP when it should feel professional and complete.
-
-

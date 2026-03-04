@@ -16,21 +16,25 @@
 - **Audit findings:** 16 issues (P0-P3) across frontend, backend, and test layers.
 
 **P0 — Critical (FIXED):**
+
 - Dashboard Generate Plan fails with 409 because it doesn't auto-complete existing draft/active plans before calling createMealPlan(). Meal plan page has working implementation.
 - **Fix (Kane):** Dashboard now calls listMealPlans() before createMealPlan(), auto-completes existing plans, matches meal plan page logic (f1d988a)
 
 **P1 — High (ADDRESSED):**
+
 - Inconsistencies between dashboard and meal plan page (no duplicated functions, unified error handling, draft plan detection)
 - Dashboard shows generic error message; meal plan page shows API detail
 - **Pattern for future fixes:** Use Inventory page error model: show detail + Retry button
 
 **P2 — Medium (IN PROGRESS):**
+
 - Quick Suggestions "Cook This" button is fake (no API call) — misleading to users
 - Hardcoded currency formats and CURRENT_MEMBER_ID placeholder
 - Products page silent delete failure (empty catch block)
 - Desktop sidebar missing Home/Dashboard link
 
 **P3 — Low (DOCUMENTED):**
+
 - Code duplication (DAY_LABELS in 3 places, getNextMonday in 2 places)
 - No E2E coverage for dashboard Generate (THIS WAS THE GAP)
 - No ErrorBoundary wrappers on pages
@@ -38,12 +42,14 @@
 - Unused WeeklyPlanView component
 
 **Team Execution:**
+
 - **Kane (Frontend):** Fixed dashboard Generate (P0), working on P1-P2 refactors
 - **Ripley (Backend):** Fixed 2 worker robustness bugs (scalar_one_or_none pattern) — prevents double failures when plan deleted during generation
 - **Lambert (Testing):** Added 23 E2E tests across 2 new files, closed all 6 coverage gaps, achieved 100% flow coverage
 - **Dallas (Audit):** Documented all 16 issues with priority, rationale, and assignments for future work
 
 **Quality Standard Directives Captured:**
+
 1. Error handling: Always extract and display API error detail (never generic messages)
 2. DRY: Extract shared utilities (dates, currency, labels) to @/lib/
 3. Parity: Dashboard and dedicated page must use same logic for shared actions
@@ -52,6 +58,7 @@
 6. Toast vs inline: Toast for transient confirmations; inline for blocking errors
 
 **Cross-Agent Outcomes:**
+
 - ✅ P0 blocker fixed (Dashboard Generate working)
 - ✅ Worker resilience improved (scalar_one_or_none pattern established)
 - ✅ E2E gaps closed (33/33 flows covered, 100% coverage)
