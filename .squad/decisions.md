@@ -634,6 +634,7 @@ The team should always use the latest LLM models. Specifically: `claude-opus-4.6
 ## Context
 
 Meal plan generation was failing with:
+
 - `"Expected ~21 recipes for 3 meal types (±2), got 13"`
 - Many `"ingredient X not in inventory"` errors
 
@@ -656,6 +657,7 @@ to:
 ## Rationale
 
 Hard validation gates belong only to:
+
 1. **Safety constraints** — allergen ingredients (never relax)
 2. **Structural constraints** — servings must be 2, recipe count within tolerance, equipment modes must exist
 
@@ -663,9 +665,9 @@ Inventory awareness is a **prompt-level guidance**, not a validator gate. The LL
 
 ## Impact
 
-- All 97 worker tests pass  
-- All 187 API tests pass  
-- Next.js build succeeds  
+- All 97 worker tests pass
+- All 187 API tests pass
+- Next.js build succeeds
 - No test changes were required
 
 ### Decision 17: Product Mapping Routes — Manual Serialization Pattern

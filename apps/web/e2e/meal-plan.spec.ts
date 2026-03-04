@@ -285,7 +285,9 @@ test.describe("Meal Plan Flow", () => {
 
       // Wait for plan detail page to load
       const weekLabel = page.getByText(/Week of /);
-      if (!(await weekLabel.isVisible({ timeout: 30_000 }).catch(() => false))) {
+      if (
+        !(await weekLabel.isVisible({ timeout: 30_000 }).catch(() => false))
+      ) {
         test.skip(true, "Plan detail did not load");
         return;
       }
