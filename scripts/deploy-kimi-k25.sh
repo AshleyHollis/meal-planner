@@ -1,36 +1,34 @@
 #!/usr/bin/env bash
 # =============================================================================
-# Deploy Kimi K2.5 on EXISTING Azure AI Foundry account (aif-pai-dev-aue)
+# Deploy Kimi K2.5 on Azure AI Foundry (East US)
 # =============================================================================
 # Usage:
 #   ./scripts/deploy-kimi-k25.sh
 #
 # Prerequisites:
-#   - Azure CLI 2.60+ with cognitiveservices extension
+#   - Azure CLI 2.60+
 #   - Logged in: az login && az account set --subscription 28aefbe7-e2af-4b4a-9ce1-92d6672c31bd
 #   - Key Vault access to store secrets
 #
-# ⚠️  REGION NOTE: The existing account 'aif-pai-dev-aue' is in Australia East
-#     (the -aue suffix = australiaeast). If you intended East US, a new account
-#     in a US region would be required. This script deploys on the existing account.
-#
 # This script:
-#   1. Deploys Kimi K2.5 on the existing Azure AI Services account
-#   2. Stores the endpoint + API key in Azure Key Vault
-#   3. The app picks them up via ExternalSecrets → K8s → env vars
+#   1. Creates resource group and AI Services account if needed
+#   2. Deploys Kimi K2.5 (MoonshotAI format) via GlobalStandard SKU
+#   3. Stores the endpoint + API key in Azure Key Vault
+#   4. The app picks them up via ExternalSecrets → K8s → env vars
 # =============================================================================
 
 set -euo pipefail
 
 # ── Configuration ────────────────────────────────────────────────────────────
 SUBSCRIPTION_ID="28aefbe7-e2af-4b4a-9ce1-92d6672c31bd"
-RESOURCE_GROUP="rg-pai-dev-aue"
-AI_LOCATION="australiaeast"  # ⚠️ Existing account region (aue = Australia East)
-AI_ACCOUNT_NAME="aif-pai-dev-aue"
+RESOURCE_GROUP="rg-pai-dev-eus"
+AI_LOCATION="eastus"
+AI_ACCOUNT_NAME="aif-pai-dev-eus"
 DEPLOYMENT_NAME="kimi-k25"
 MODEL_NAME="Kimi-K2.5"
 MODEL_VERSION="1"
-KEY_VAULT_NAME="${KEY_VAULT_NAME:-}"  # Set via env or auto-detect
+MODEL_FORMAT="MoonshotAI"
+KEY_VAULT_NAME="${KEY_VAULT_NAME:-kv-ytsumm-prd}"
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 log() { echo "[deploy-kimi] $*"; }
@@ -42,27 +40,25 @@ az account show --query "{subscription:name, id:id}" -o table || die "Not logged
 az account set --subscription "$SUBSCRIPTION_ID" || die "Failed to set subscription $SUBSCRIPTION_ID"
 log "Subscription set to $SUBSCRIPTION_ID"
 
-# Ensure cognitiveservices extension is installed
-az extension add --name cognitiveservices --upgrade --yes 2>/dev/null || true
+# ── Step 1: Create resource group + AI Services account ─────────────────────
+log "Creating resource group $RESOURCE_GROUP in $AI_LOCATION..."
+az group create --name "$RESOURCE_GROUP" --location "$AI_LOCATION" \
+  --tags Environment=dev Project=meal-planner -o none
 
-# Auto-detect Key Vault if not set
-if [[ -z "$KEY_VAULT_NAME" ]]; then
-  log "Auto-detecting Key Vault in resource group $RESOURCE_GROUP..."
-  KEY_VAULT_NAME=$(az keyvault list \
+log "Creating AI Services account: $AI_ACCOUNT_NAME..."
+if az cognitiveservices account show --name "$AI_ACCOUNT_NAME" --resource-group "$RESOURCE_GROUP" &>/dev/null; then
+  log "Account already exists, skipping."
+else
+  az cognitiveservices account create \
+    --name "$AI_ACCOUNT_NAME" \
     --resource-group "$RESOURCE_GROUP" \
-    --query "[0].name" -o tsv 2>/dev/null || true)
-  [[ -n "$KEY_VAULT_NAME" ]] || die "No Key Vault found in $RESOURCE_GROUP. Set KEY_VAULT_NAME env var."
-  log "Found Key Vault: $KEY_VAULT_NAME"
+    --location "$AI_LOCATION" \
+    --kind AIServices \
+    --sku S0 \
+    --custom-domain "$AI_ACCOUNT_NAME" \
+    --yes -o none
+  log "Account created."
 fi
-
-# ── Step 1: Verify AI Services account exists ───────────────────────────────
-log "Verifying existing AI Services account: $AI_ACCOUNT_NAME..."
-az cognitiveservices account show \
-  --name "$AI_ACCOUNT_NAME" \
-  --resource-group "$RESOURCE_GROUP" \
-  --query "{name:name, location:location, endpoint:properties.endpoint}" \
-  -o table || die "Account '$AI_ACCOUNT_NAME' not found in '$RESOURCE_GROUP'. Check subscription and resource group."
-log "Account verified."
 
 # ── Step 2: Deploy Kimi K2.5 model ──────────────────────────────────────────
 log "Deploying $MODEL_NAME as '$DEPLOYMENT_NAME'..."
@@ -78,7 +74,7 @@ else
     --deployment-name "$DEPLOYMENT_NAME" \
     --model-name "$MODEL_NAME" \
     --model-version "$MODEL_VERSION" \
-    --model-format OpenAI \
+    --model-format "$MODEL_FORMAT" \
     --sku-name "GlobalStandard" \
     --sku-capacity 1
   log "Deployment created."
@@ -135,9 +131,9 @@ cat <<EOF
   Subscription:    $SUBSCRIPTION_ID
   Resource Group:  $RESOURCE_GROUP
   AI Account:      $AI_ACCOUNT_NAME
-  Location:        $AI_LOCATION (Australia East ⚠️)
+  Location:        $AI_LOCATION (East US)
   Deployment:      $DEPLOYMENT_NAME
-  Model:           $MODEL_NAME v$MODEL_VERSION
+  Model:           $MODEL_NAME v$MODEL_VERSION (format: $MODEL_FORMAT)
   Endpoint:        $ENDPOINT
   Key Vault:       $KEY_VAULT_NAME
 
