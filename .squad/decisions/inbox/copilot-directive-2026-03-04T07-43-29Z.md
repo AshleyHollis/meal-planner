@@ -1,4 +1,5 @@
 ### 2026-03-04T07-43-29Z: User directive
+
 **By:** Ashley Hollis (via Copilot)
 **What:** Always do a visual smoke test of all features in the Azure preview environment before marking a feature complete. Use Playwright MCP browser tools to navigate the deployed preview, verify pages render correctly, check for visual/UX issues, and confirm new features work end-to-end in the real environment.
 **Why:** User request — captured for team memory. During 005-grocery-enhancements, the automated E2E tests passed but interactive smoke testing revealed a pre-existing meal plan generation crash (422 + React Error #31) that E2E tests didn't catch. Visual smoke tests catch rendering issues, UX problems, and error handling gaps that automated tests miss.

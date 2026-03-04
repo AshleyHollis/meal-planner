@@ -46,15 +46,15 @@
 
 ## Visual Smoke Test
 
-| Field            | Value                                                                    |
-| ---------------- | ------------------------------------------------------------------------ |
-| **Trigger**      | auto                                                                     |
-| **When**         | after                                                                    |
-| **Condition**    | E2E tests pass and preview deployment is green                           |
-| **Facilitator**  | tester                                                                   |
-| **Participants** | tester, frontend-dev                                                     |
-| **Time budget**  | focused                                                                  |
-| **Enabled**      | ✅ yes                                                                   |
+| Field            | Value                                          |
+| ---------------- | ---------------------------------------------- |
+| **Trigger**      | auto                                           |
+| **When**         | after                                          |
+| **Condition**    | E2E tests pass and preview deployment is green |
+| **Facilitator**  | tester                                         |
+| **Participants** | tester, frontend-dev                           |
+| **Time budget**  | focused                                        |
+| **Enabled**      | ✅ yes                                         |
 
 **Agenda:**
 
