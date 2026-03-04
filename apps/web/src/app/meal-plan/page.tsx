@@ -19,7 +19,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { CuisineSelector } from "@/components/CuisineSelector";
 import { MealTypeSelector } from "@/components/MealTypeSelector";
 import { useToast } from "@/components/ui/Toast";
-import { formatRelativeDate } from "@/lib/date-utils";
+import { formatRelativeDate, getNextMonday } from "@/lib/date-utils";
 
 type StatusFilter = "all" | "active" | "completed" | "failed" | "draft";
 
@@ -35,15 +35,6 @@ const GENERATION_STEPS = [
   "Generating recipes...",
   "Building grocery list...",
 ];
-
-function getNextMonday(): string {
-  const today = new Date();
-  const day = today.getDay();
-  const diff = day === 0 ? 1 : 8 - day;
-  const monday = new Date(today);
-  monday.setDate(today.getDate() + diff);
-  return monday.toISOString().split("T")[0];
-}
 
 export default function MealPlanListPage() {
   const router = useRouter();
@@ -248,7 +239,13 @@ export default function MealPlanListPage() {
 
       {error && (
         <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-          {error}
+          <p>{error}</p>
+          <button
+            onClick={() => void fetchPlans()}
+            className="mt-2 text-sm font-medium text-red-700 underline hover:text-red-900"
+          >
+            Try Again
+          </button>
         </div>
       )}
 
@@ -319,9 +316,17 @@ export default function MealPlanListPage() {
                       {plan.status}
                     </Badge>
                   </div>
-                  <p className="text-sm text-gray-600">Plan for the week</p>
+                  <p className="text-sm text-gray-600">
+                    {plan.status === "failed"
+                      ? plan.error_message ?? "Generation failed"
+                      : plan.status === "draft"
+                        ? "Generating meals…"
+                        : plan.status === "completed"
+                          ? "Plan complete"
+                          : "Active plan — tap to view meals"}
+                  </p>
                 </Link>
-                {plan.status === "failed" && (
+                {(plan.status === "failed" || plan.status === "completed") && (
                   <div className="border-t border-gray-100 px-6 py-3">
                     {confirmDelete === plan.id ? (
                       <div className="flex items-center gap-2">

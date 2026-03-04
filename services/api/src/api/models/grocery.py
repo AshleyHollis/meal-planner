@@ -32,6 +32,12 @@ class CompleteShoppingRequest(BaseModel):
     purchased_items: list[PurchasedItem]
 
 
+class AddStaplesRequest(BaseModel):
+    """Request body for bulk-adding staples to a grocery list."""
+
+    staple_ids: list[UUID]
+
+
 # --- Response models ---
 
 

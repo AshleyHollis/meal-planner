@@ -240,6 +240,13 @@ class MealPlanService:
 
         deductions = None
 
+        # 409 guard: prevent double-cook
+        if data.status == "cooked" and slot.cooked_at is not None:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Meal slot already marked as cooked",
+            )
+
         # If transitioning to cooked and wasn't already cooked
         if data.status == "cooked" and slot.status != "cooked" and slot.recipe_id is not None:
             from .inventory_service import InventoryService
@@ -248,7 +255,7 @@ class MealPlanService:
             deductions = await inv_service.deduct_for_recipe(slot.recipe_id)
 
         slot.status = data.status
-        if data.status in ("cooked", "skipped"):
+        if data.status == "cooked":
             slot.cooked_at = datetime.now(UTC)
         else:
             slot.cooked_at = None

@@ -69,7 +69,7 @@ class LeftoverService:
         return list(result.scalars().all())
 
     async def mark_used(self, leftover_id: UUID) -> Leftover | None:
-        """Mark a leftover as used."""
+        """Mark a leftover as fully used."""
         stmt = select(Leftover).where(
             Leftover.id == leftover_id,
             Leftover.household_id == self.household_id,
@@ -81,5 +81,33 @@ class LeftoverService:
             return None
 
         leftover.used_at = datetime.now(UTC)
+        await self.session.flush()
+        return leftover
+
+    async def update_leftover(
+        self, leftover_id: UUID, portions_used: int | None = None
+    ) -> Leftover | None:
+        """Update leftover with partial quantity use.
+
+        If portions_used is provided, deducts from portions. If all portions
+        are consumed, sets used_at to now. Returns None if not found.
+        """
+        stmt = select(Leftover).where(
+            Leftover.id == leftover_id,
+            Leftover.household_id == self.household_id,
+        )
+        result = await self.session.execute(stmt)
+        leftover = result.scalar_one_or_none()
+
+        if leftover is None:
+            return None
+
+        if portions_used is not None:
+            leftover.portions = max(0, leftover.portions - portions_used)
+            if leftover.portions == 0:
+                leftover.used_at = datetime.now(UTC)
+        else:
+            leftover.used_at = datetime.now(UTC)
+
         await self.session.flush()
         return leftover

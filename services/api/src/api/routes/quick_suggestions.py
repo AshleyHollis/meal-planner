@@ -6,7 +6,11 @@ from fastapi import APIRouter, Depends, Query
 from shared.logging.config import get_logger
 
 from ..dependencies import get_quick_suggestion_service
-from ..models.quick_suggestion import QuickSuggestionsResponse
+from ..models.quick_suggestion import (
+    CookSuggestionRequest,
+    CookSuggestionResponse,
+    QuickSuggestionsResponse,
+)
 from ..services.quick_suggestion_service import QuickSuggestionService
 
 logger = get_logger(__name__)
@@ -28,3 +32,14 @@ async def get_quick_suggestions(
             suggestions=[],
             message="Could not generate suggestions at this time. Please try again later.",
         )
+
+
+@router.post("/cook", response_model=CookSuggestionResponse, status_code=200)
+async def cook_quick_suggestion(
+    body: CookSuggestionRequest,
+    service: QuickSuggestionService = Depends(get_quick_suggestion_service),  # noqa: B008
+) -> CookSuggestionResponse:
+    """Mark a quick suggestion as cooked and deduct its ingredients from inventory."""
+    ingredients = [ing.model_dump() for ing in body.ingredients]
+    deductions = await service.cook_suggestion(body.title, ingredients)
+    return CookSuggestionResponse(title=body.title, deductions=deductions)

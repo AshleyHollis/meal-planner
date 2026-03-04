@@ -144,6 +144,78 @@ class QuickSuggestionService:
 
         return QuickSuggestionsResponse(suggestions=suggestions)
 
+    async def cook_suggestion(self, title: str, ingredients: list[dict]) -> list[dict]:
+        """Deduct suggestion ingredients from inventory and return deduction results.
+
+        Looks up each ingredient by name, then deducts quantities from inventory
+        (oldest expiry first). Returns per-ingredient deduction results.
+        """
+        from shared.db.models.ingredient import Ingredient
+
+        deductions: list[dict] = []
+        for ing in ingredients:
+            name = ing.get("name", "")
+            quantity = float(ing.get("quantity", 0))
+            unit = ing.get("unit", "units")
+
+            # Find ingredient by name
+            ing_stmt = select(Ingredient).where(Ingredient.name == name)
+            ing_result = await self.session.execute(ing_stmt)
+            ingredient = ing_result.scalar_one_or_none()
+
+            if ingredient is None:
+                deductions.append(
+                    {
+                        "ingredient_name": name,
+                        "requested": quantity,
+                        "deducted": 0.0,
+                        "remaining": 0.0,
+                        "unit": unit,
+                        "unit_mismatch": False,
+                    }
+                )
+                continue
+
+            # Load matching inventory items
+            inv_stmt = (
+                select(InventoryItem)
+                .where(
+                    InventoryItem.household_id == self.household_id,
+                    InventoryItem.ingredient_id == ingredient.id,
+                    InventoryItem.unit == unit,
+                )
+            )
+            inv_result = await self.session.execute(inv_stmt)
+            inv_items = sorted(
+                inv_result.scalars().all(),
+                key=lambda x: (x.expiry_date is None, x.expiry_date),
+            )
+
+            remaining_to_deduct = quantity
+            total_deducted = 0.0
+            for inv_item in inv_items:
+                if remaining_to_deduct <= 0:
+                    break
+                deduct_amount = min(remaining_to_deduct, inv_item.quantity)
+                inv_item.quantity -= deduct_amount
+                remaining_to_deduct -= deduct_amount
+                total_deducted += deduct_amount
+
+            total_remaining = sum(i.quantity for i in inv_items)
+            deductions.append(
+                {
+                    "ingredient_name": name,
+                    "requested": quantity,
+                    "deducted": total_deducted,
+                    "remaining": total_remaining,
+                    "unit": unit,
+                    "unit_mismatch": False,
+                }
+            )
+
+        await self.session.flush()
+        return deductions
+
     async def _get_allergens(self) -> set[str]:
         """Load allergen values for all household members."""
         stmt = (

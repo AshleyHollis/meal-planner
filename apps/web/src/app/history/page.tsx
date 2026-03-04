@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useCallback, useState, useEffect } from "react";
 import { MealHistoryList } from "@/components/MealHistoryList";
 import { getMealHistory } from "@/services/api";
 import type { MealHistoryItem } from "@/types";
 import { Spinner } from "@/components/ui/Spinner";
+import { useToast } from "@/components/ui/Toast";
 
 export default function HistoryPage() {
   const [items, setItems] = useState<MealHistoryItem[]>([]);
@@ -13,26 +14,28 @@ export default function HistoryPage() {
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { showToast } = useToast();
 
   const PAGE_SIZE = 20;
 
-  useEffect(() => {
-    const loadInitial = async () => {
-      try {
-        setInitialLoading(true);
-        const data = await getMealHistory(1, PAGE_SIZE);
-        setItems(data);
-        setHasMore(data.length === PAGE_SIZE);
-        setError(null);
-      } catch (err) {
-        setError("Failed to load meal history");
-        console.error("Failed to load meal history:", err);
-      } finally {
-        setInitialLoading(false);
-      }
-    };
-    void loadInitial();
+  const loadInitial = useCallback(async () => {
+    try {
+      setInitialLoading(true);
+      setError(null);
+      const data = await getMealHistory(1, PAGE_SIZE);
+      setItems(data);
+      setPage(1);
+      setHasMore(data.length === PAGE_SIZE);
+    } catch {
+      setError("Failed to load meal history");
+    } finally {
+      setInitialLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    void loadInitial();
+  }, [loadInitial]);
 
   const handleLoadMore = async () => {
     if (loading) return;
@@ -43,8 +46,8 @@ export default function HistoryPage() {
       setItems((prev) => [...prev, ...data]);
       setPage(nextPage);
       setHasMore(data.length === PAGE_SIZE);
-    } catch (err) {
-      console.error("Failed to load more history:", err);
+    } catch {
+      showToast("Failed to load more history. Please try again.", "error");
     } finally {
       setLoading(false);
     }
@@ -62,7 +65,13 @@ export default function HistoryPage() {
 
       {error && (
         <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-          {error}
+          <p>{error}</p>
+          <button
+            onClick={() => void loadInitial()}
+            className="mt-2 text-sm font-medium text-red-700 underline hover:text-red-900"
+          >
+            Try Again
+          </button>
         </div>
       )}
 

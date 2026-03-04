@@ -18,9 +18,10 @@ class CreateLeftover(BaseModel):
 
 
 class UpdateLeftover(BaseModel):
-    """Request body for marking a leftover as used."""
+    """Request body for updating a leftover."""
 
     used_at: datetime | None = None
+    portions_used: int | None = Field(default=None, ge=1)
 
 
 class LeftoverResponse(BaseModel):

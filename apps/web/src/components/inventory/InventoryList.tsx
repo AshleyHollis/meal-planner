@@ -8,6 +8,7 @@ import { removeInventoryItem, updateInventoryItem } from "@/services/api";
 import { Button } from "../ui/Button";
 import { Input } from "../ui/Input";
 import { ExpiryBadge } from "./ExpiryBadge";
+import { useToast } from "../ui/Toast";
 
 const LOCATION_LABELS: Record<StorageLocation, string> = {
   fridge: "🧊 Fridge",
@@ -68,6 +69,7 @@ function InventoryList({ items, onChanged }: InventoryListProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editQuantity, setEditQuantity] = useState("");
   const [saving, setSaving] = useState(false);
+  const { showToast } = useToast();
 
   const grouped = groupByLocation(items);
 
@@ -92,7 +94,7 @@ function InventoryList({ items, onChanged }: InventoryListProps) {
       setEditQuantity("");
       onChanged?.();
     } catch {
-      // silently fail for POC
+      showToast("Failed to update item. Please try again.", "error");
     } finally {
       setSaving(false);
     }
@@ -104,7 +106,7 @@ function InventoryList({ items, onChanged }: InventoryListProps) {
       await removeInventoryItem(itemId);
       onChanged?.();
     } catch {
-      // silently fail for POC
+      showToast("Failed to remove item. Please try again.", "error");
     } finally {
       setSaving(false);
     }

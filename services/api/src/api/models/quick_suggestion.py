@@ -30,3 +30,17 @@ class QuickSuggestionsResponse(BaseModel):
 
     suggestions: list[QuickSuggestion]
     message: str | None = None
+
+
+class CookSuggestionRequest(BaseModel):
+    """Request body for marking a quick suggestion as cooked."""
+
+    title: str
+    ingredients: list[SuggestionIngredient]
+
+
+class CookSuggestionResponse(BaseModel):
+    """Response after marking a quick suggestion as cooked."""
+
+    title: str
+    deductions: list[dict]

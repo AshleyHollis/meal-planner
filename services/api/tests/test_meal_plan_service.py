@@ -291,7 +291,7 @@ class TestSlotOperations:
         )
         assert updated is not None
         assert updated.status == "skipped"
-        assert updated.cooked_at is not None
+        assert updated.cooked_at is None
 
     async def test_revert_slot_to_planned_clears_cooked_at(self, session: AsyncSession, household):
         plan = await _make_plan(session, household.id, status="active")

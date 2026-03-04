@@ -7,7 +7,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException
 
 from ..dependencies import get_leftover_service
-from ..models.leftover import CreateLeftover, LeftoverResponse
+from ..models.leftover import CreateLeftover, LeftoverResponse, UpdateLeftover
 from ..services.leftover_service import LeftoverService
 
 router = APIRouter(prefix="/api/v1", tags=["leftovers"])
@@ -40,12 +40,19 @@ async def list_leftovers(
 
 
 @router.patch("/leftovers/{leftover_id}", response_model=LeftoverResponse)
-async def mark_leftover_used(
+async def update_leftover(
     leftover_id: UUID,
+    body: UpdateLeftover | None = None,
     service: LeftoverService = Depends(get_leftover_service),
 ) -> LeftoverResponse:
-    """Mark a leftover as used."""
-    leftover = await service.mark_used(leftover_id)
+    """Update a leftover: mark as used or deduct partial portions.
+
+    If `portions_used` is provided, deducts that many portions. If all
+    portions are consumed the leftover is automatically marked used.
+    If no body is provided, the leftover is marked as fully used.
+    """
+    portions_used = body.portions_used if body else None
+    leftover = await service.update_leftover(leftover_id, portions_used=portions_used)
     if leftover is None:
         raise HTTPException(status_code=404, detail="Leftover not found")
     return LeftoverResponse.model_validate(leftover)

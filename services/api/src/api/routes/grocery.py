@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from ..dependencies import get_grocery_service
 from ..models.grocery import (
+    AddStaplesRequest,
     CompleteShoppingRequest,
     GroceryItemResponse,
     GroceryListResponse,
@@ -113,3 +114,41 @@ async def complete_shopping(
         [item.model_dump() for item in body.purchased_items],
     )
     return [InventoryItemResponse.model_validate(i) for i in items]
+
+
+@router.post(
+    "/api/v1/grocery-lists/{grocery_list_id}/add-staples",
+    response_model=GroceryListResponse,
+    status_code=status.HTTP_200_OK,
+)
+async def add_staples_to_grocery_list(
+    grocery_list_id: UUID,
+    body: AddStaplesRequest,
+    service: GroceryService = Depends(get_grocery_service),  # noqa: B008
+) -> GroceryListResponse:
+    """Bulk-add household staples to a grocery list (FR-009)."""
+    grocery_list = await service.add_staples_to_list(grocery_list_id, body.staple_ids)
+    if grocery_list is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Grocery list not found",
+        )
+    items = [
+        GroceryItemResponse(
+            id=item.id,
+            ingredient_id=item.ingredient_id,
+            quantity_needed=item.quantity_needed,
+            unit=item.unit,
+            is_checked=item.is_checked,
+            preferred_store=item.preferred_store,
+            ingredient_name=item.ingredient.name if item.ingredient else "",
+            ingredient_category=item.ingredient.category if item.ingredient else "",
+        )
+        for item in grocery_list.items
+    ]
+    return GroceryListResponse(
+        id=grocery_list.id,
+        meal_plan_id=grocery_list.meal_plan_id,
+        created_at=grocery_list.created_at,
+        items=items,
+    )

@@ -6,6 +6,7 @@ import json
 from uuid import UUID
 
 from fastapi import HTTPException, status
+from shared.db.models.grocery import GroceryItem, GroceryList
 from shared.db.models.household import HouseholdMember
 from shared.db.models.meal_plan import MealPlan, MealSlot
 from shared.db.models.preference import MemberPreference
@@ -61,6 +62,7 @@ Respond ONLY with valid JSON matching this schema:
 {{
   "title": "string",
   "description": "string",
+  "cuisine_type": "string or null",
   "prep_time_min": int,
   "cook_time_min": int,
   "servings": int,
@@ -187,7 +189,7 @@ class SubstitutionService:
             cook_time_min=data.get("cook_time_min", recipe.cook_time_min),
             is_ai_generated=True,
             source_recipe_id=recipe.id,
-            cuisine_type=recipe.cuisine_type,
+            cuisine_type=data.get("cuisine_type") or recipe.cuisine_type,
         )
         self.session.add(new_recipe)
         await self.session.flush()
@@ -244,13 +246,84 @@ class SubstitutionService:
         # 7. Calculate grocery changes
         grocery_changes = _calculate_grocery_changes(recipe, data)
 
-        # 8. Build and return response
+        # 8. Persist grocery list changes
+        await self._persist_grocery_changes(plan_id, recipe, new_recipe, grocery_changes)
+
+        # 9. Build and return response
         recipe_response = RecipeResponse.model_validate(new_recipe)
         return SubstitutionResponse(
             new_recipe=recipe_response,
             allergen_warnings=allergen_warnings,
             grocery_changes=grocery_changes,
         )
+
+    async def _persist_grocery_changes(
+        self,
+        plan_id: UUID,
+        old_recipe: Recipe,
+        new_recipe: Recipe,
+        grocery_changes: list,
+    ) -> None:
+        """Persist grocery list changes after an ingredient substitution."""
+        # Find grocery list for this plan
+        gl_stmt = select(GroceryList).where(GroceryList.meal_plan_id == plan_id)
+        gl_result = await self.session.execute(gl_stmt)
+        grocery_list = gl_result.scalar_one_or_none()
+        if grocery_list is None:
+            return
+
+        # Build ingredient_id maps for old and new recipes
+        old_ing_id_map: dict[str, UUID] = {
+            ri.ingredient.name.lower(): ri.ingredient_id
+            for ri in old_recipe.ingredients
+            if ri.ingredient is not None
+        }
+        new_ing_id_map: dict[str, UUID] = {
+            ri.ingredient.name.lower(): ri.ingredient_id
+            for ri in new_recipe.ingredients
+            if ri.ingredient is not None
+        }
+
+        for change in grocery_changes:
+            ing_name = change.ingredient_name.lower()
+            if change.action == "removed":
+                ing_id = old_ing_id_map.get(ing_name)
+                if ing_id is None:
+                    continue
+                del_stmt = select(GroceryItem).where(
+                    GroceryItem.grocery_list_id == grocery_list.id,
+                    GroceryItem.ingredient_id == ing_id,
+                )
+                del_result = await self.session.execute(del_stmt)
+                existing = del_result.scalar_one_or_none()
+                if existing is not None:
+                    await self.session.delete(existing)
+            elif change.action == "added":
+                ing_id = new_ing_id_map.get(ing_name)
+                if ing_id is None:
+                    continue
+                new_gi = GroceryItem(
+                    grocery_list_id=grocery_list.id,
+                    ingredient_id=ing_id,
+                    quantity_needed=change.quantity,
+                    unit=change.unit,
+                )
+                self.session.add(new_gi)
+            elif change.action == "updated":
+                ing_id = new_ing_id_map.get(ing_name) or old_ing_id_map.get(ing_name)
+                if ing_id is None:
+                    continue
+                upd_stmt = select(GroceryItem).where(
+                    GroceryItem.grocery_list_id == grocery_list.id,
+                    GroceryItem.ingredient_id == ing_id,
+                )
+                upd_result = await self.session.execute(upd_stmt)
+                existing = upd_result.scalar_one_or_none()
+                if existing is not None:
+                    existing.quantity_needed = change.quantity
+                    existing.unit = change.unit
+
+        await self.session.flush()
 
     async def _get_allergens(self) -> set[str]:
         """Load allergen values for all household members."""

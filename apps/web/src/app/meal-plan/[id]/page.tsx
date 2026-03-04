@@ -7,6 +7,7 @@ import { useMealPlanPolling } from "@/hooks/useMealPlanPolling";
 import { MealSlotCard } from "@/components/meal-plan/MealSlotCard";
 import { Spinner } from "@/components/ui/Spinner";
 import { Badge } from "@/components/ui/Badge";
+import { useToast } from "@/components/ui/Toast";
 import {
   updateSlotStatus,
   listFavorites,
@@ -43,6 +44,7 @@ export default function MealPlanDetailPage({
     planId: id,
     enabled: true,
   });
+  const { showToast } = useToast();
 
   const [favoriteRecipeIds, setFavoriteRecipeIds] = useState<Set<string>>(
     new Set(),
@@ -62,8 +64,8 @@ export default function MealPlanDetailPage({
     try {
       await updateSlotStatus(id, slotId, { status: "cooked" });
       refetch();
-    } catch (err) {
-      console.error("Failed to mark as cooked:", err);
+    } catch {
+      showToast("Failed to mark meal as cooked. Please try again.", "error");
     }
   };
 
@@ -71,8 +73,8 @@ export default function MealPlanDetailPage({
     try {
       await updateSlotStatus(id, slotId, { status: "skipped" });
       refetch();
-    } catch (err) {
-      console.error("Failed to mark as skipped:", err);
+    } catch {
+      showToast("Failed to mark meal as skipped. Please try again.", "error");
     }
   };
 
@@ -92,8 +94,8 @@ export default function MealPlanDetailPage({
         await addFavorite(recipeId);
         setFavoriteRecipeIds((prev) => new Set(prev).add(recipeId));
       }
-    } catch (err) {
-      console.error("Failed to toggle favorite:", err);
+    } catch {
+      showToast("Failed to update favourite. Please try again.", "error");
     }
   };
 
@@ -182,6 +184,14 @@ export default function MealPlanDetailPage({
               <span className="whitespace-nowrap text-sm font-semibold text-gray-900">
                 {cookedSlots} / {totalSlots}
               </span>
+            </div>
+            <div className="mt-4">
+              <Link
+                href={`/grocery-list/${id}`}
+                className="inline-flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-700 hover:underline"
+              >
+                🛒 View Grocery List &rarr;
+              </Link>
             </div>
           </div>
 

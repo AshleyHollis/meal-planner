@@ -33,7 +33,7 @@ function GroceryItem({ item, onChanged, tripChecked }: GroceryItemProps) {
       }
       onChanged?.();
     } catch {
-      // silently fail for POC
+      showToast("Failed to update item. Please try again.", "error");
     } finally {
       setSaving(false);
     }

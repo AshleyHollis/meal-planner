@@ -18,6 +18,7 @@ from shared.db.models import (
     HouseholdMember,
     Ingredient,
     InventoryItem,
+    Leftover,
     MealPlan,
     MealSlot,
     MealSlotRating,
@@ -96,6 +97,8 @@ async def generate_meal_plan(message_content: dict[str, Any]) -> None:
             rating_insights=context.get("rating_insights"),
             cuisine_preferences=context.get("cuisine_preferences"),
             recurring_constraints=context.get("recurring_templates"),
+            leftovers=context.get("leftovers"),
+            freezer_items=context.get("freezer_items"),
         )
 
         # Build lookup data for validator
@@ -208,6 +211,17 @@ async def _load_context(
         # Fetch active recurring meal templates
         recurring_templates = await _fetch_recurring_templates(session, household_id)
 
+        # Fetch leftovers (not yet used)
+        leftovers_result = await session.execute(
+            select(Leftover)
+            .where(Leftover.household_id == household_id)
+            .where(Leftover.used_at.is_(None))
+        )
+        leftovers = list(leftovers_result.scalars().all())
+
+        # Freezer items: inventory items stored in the freezer
+        freezer_items = [item for item in inventory if item.location == "freezer"]
+
     return {
         "inventory": inventory,
         "equipment": equipment,
@@ -219,6 +233,8 @@ async def _load_context(
         "allergen_ingredients": allergen_ingredients if allergen_ingredients else None,
         "cuisine_preferences": cuisine_preferences,
         "recurring_templates": recurring_templates if recurring_templates else None,
+        "leftovers": leftovers if leftovers else None,
+        "freezer_items": freezer_items if freezer_items else None,
     }
 
 

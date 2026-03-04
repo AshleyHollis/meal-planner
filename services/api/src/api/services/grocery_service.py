@@ -180,3 +180,52 @@ class GroceryService:
         self.session.add(grocery_list)
         await self.session.flush()
         return grocery_list
+
+    async def add_staples_to_list(
+        self,
+        grocery_list_id: UUID,
+        staple_ids: list[UUID],
+    ) -> GroceryList | None:
+        """Bulk-add household staples to a grocery list.
+
+        Looks up each staple by ID, then adds a GroceryItem for each to the list.
+        Skips duplicates (ingredients already on the list).
+        Returns the updated grocery list, or None if not found.
+        """
+        from shared.db.models.staple_ingredient import StapleIngredient
+
+        # Load grocery list
+        gl_result = await self.session.execute(
+            select(GroceryList).where(GroceryList.id == grocery_list_id)
+        )
+        grocery_list = gl_result.scalar_one_or_none()
+        if grocery_list is None:
+            return None
+
+        # Build set of existing ingredient_ids on the list
+        existing_ids = {item.ingredient_id for item in grocery_list.items}
+
+        # Look up requested staples belonging to this household
+        staples_result = await self.session.execute(
+            select(StapleIngredient).where(
+                StapleIngredient.household_id == self.household_id,
+                StapleIngredient.id.in_(staple_ids),
+            )
+        )
+        staples = list(staples_result.scalars().all())
+
+        for staple in staples:
+            if staple.ingredient_id in existing_ids:
+                continue
+            new_item = GroceryItem(
+                grocery_list_id=grocery_list_id,
+                ingredient_id=staple.ingredient_id,
+                quantity_needed=staple.min_threshold,
+                unit=staple.unit,
+            )
+            self.session.add(new_item)
+            existing_ids.add(staple.ingredient_id)
+
+        await self.session.flush()
+        await self.session.refresh(grocery_list, attribute_names=["items"])
+        return grocery_list

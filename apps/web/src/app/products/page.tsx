@@ -12,6 +12,7 @@ import {
 } from "@/services/api";
 import { Spinner } from "@/components/ui/Spinner";
 import { ProductMappingForm } from "@/components/ProductMappingForm";
+import { useToast } from "@/components/ui/Toast";
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -23,6 +24,7 @@ export default function ProductsPage() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const { showToast } = useToast();
 
   const fetchProducts = useCallback(async () => {
     try {
@@ -85,7 +87,7 @@ export default function ProductsPage() {
       setProducts((prev) => prev.filter((p) => p.id !== productId));
       setConfirmDelete(null);
     } catch {
-      // silently fail
+      showToast("Failed to delete product. Please try again.", "error");
     }
   }
 
@@ -148,7 +150,13 @@ export default function ProductsPage() {
 
       {error && (
         <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-          {error}
+          <p>{error}</p>
+          <button
+            onClick={() => void fetchProducts()}
+            className="mt-2 text-sm font-medium text-red-700 underline hover:text-red-900"
+          >
+            Try Again
+          </button>
         </div>
       )}
 
@@ -199,7 +207,7 @@ export default function ProductsPage() {
                         onCancel={() => setEditingProduct(null)}
                       />
                     ) : (
-                      <>
+                       <>
                         {/* Clickable area — navigates to detail page */}
                         <Link
                           href={`/products/${product.id}`}

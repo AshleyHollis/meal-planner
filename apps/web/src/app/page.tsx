@@ -19,6 +19,7 @@ import { Spinner } from "@/components/ui/Spinner";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { getMealImageUrl } from "@/lib/meal-images";
+import { getNextMonday } from "@/lib/date-utils";
 import { CuisineSelector } from "@/components/CuisineSelector";
 import { MealTypeSelector } from "@/components/MealTypeSelector";
 import { useToast } from "@/components/ui/Toast";
@@ -28,15 +29,6 @@ const GENERATION_STEPS = [
   "Generating recipes...",
   "Building grocery list...",
 ];
-
-function getNextMonday(): string {
-  const today = new Date();
-  const day = today.getDay();
-  const diff = day === 0 ? 1 : 8 - day;
-  const monday = new Date(today);
-  monday.setDate(today.getDate() + diff);
-  return monday.toISOString().split("T")[0];
-}
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -194,7 +186,13 @@ export default function DashboardPage() {
 
       {error && (
         <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-          {error}
+          <p>{error}</p>
+          <button
+            onClick={() => void fetchData()}
+            className="mt-2 text-sm font-medium text-red-700 underline hover:text-red-900"
+          >
+            Try Again
+          </button>
         </div>
       )}
 
@@ -566,9 +564,10 @@ export default function DashboardPage() {
                 "Sunday",
               ];
               return (
-                <div
+                <Link
                   key={h.slot_id}
-                  className="flex items-center gap-3 px-4 py-3"
+                  href="/history"
+                  className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-gray-50"
                 >
                   <div className="relative h-10 w-10 flex-shrink-0 overflow-hidden rounded-lg">
                     <Image
@@ -598,7 +597,7 @@ export default function DashboardPage() {
                       day: "numeric",
                     })}
                   </p>
-                </div>
+                </Link>
               );
             })}
           </div>

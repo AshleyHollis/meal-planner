@@ -261,3 +261,17 @@
 - **Race condition noted (not fixed):** Two concurrent `POST /api/v1/meal-plans` requests could both pass the draft/active check before either flushes. No DB-level unique constraint on (household_id, status IN ['draft','active']). Current risk is low (single worker, household-scoped usage). Mitigating with DB constraint is future work.
 - **No logic issues found in generation flow:** create_plan → enqueue_message → generator.\_load_context → \_generate_with_retries (3 retries) → \_persist_plan → status=active. Path is solid.
 - **Test results:** 193 API tests pass, 97 worker tests pass, ruff clean.
+
+### Production fixes from architecture review (2026-03-03)
+- **Branch:** 005-grocery-enhancements
+- **Scope:** Architecture review identified 11 issues across worker, API services, routes
+- **Completed: 9 of 11 issues fixed**
+- **Key learnings:**
+  - Leftover model uses household_id directly (not via meal plan) — easy to query by household
+  - MealSlot has no cuisine_type column — cuisine lives on Recipe. The "fix" for #11 is ensuring LLM response can override it on new recipe creation
+  - Quick suggestions are ephemeral — no stored ID, so "Cook This" endpoint accepts full suggestion data in body rather than {id} path param
+  - Skipped meals had a test asserting the buggy behavior (cooked_at is not None). When fixing a bug, always check if tests were written against the broken behavior
+  - GroceryItem.ingredient relationship is lazy="selectin" so it loads automatically — safe to use item.ingredient.name after dd_staples_to_list()
+  - The _calculate_grocery_changes() function in substitution service was pure compute — all the DB persistence was missing. Pattern: compute diff → persist changes → return diff (for response)
+  - Stubs (#6 adapt_meal_slot, #7 save_recipe_variation) exist in routes but have no service backing. These require non-trivial design decisions (what is a "variation"?) — defer to product owner
+- **Test results:** 193 API tests pass, 97 worker tests pass, ruff clean (production code)
