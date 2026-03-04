@@ -42,3 +42,12 @@ Reusable patterns and heuristics learned through work. NOT transcripts — each 
 
 **Avoid:** Using `scalar_one()` in async worker code.
 **Why:** Target rows can be deleted between LLM call and DB write. Use `scalar_one_or_none()` + None guard for graceful handling.
+
+**Avoid:** Spawning one agent when multiple could work in parallel.
+**Why:** Every turn spent on a single agent is wasted throughput. If backend, frontend, tests, and UX review could all start, launch all four. The drop-box pattern prevents file conflicts.
+
+**Avoid:** Stopping and waiting for user input between task phases.
+**Why:** Breaks the pipeline. Collect results → launch next wave → report. The user sees continuous progress, not start-stop cycles.
+
+**Avoid:** Cost-saving model downgrades without explicit user request.
+**Why:** User has explicitly said premium request cost is not a concern. Use the highest-quality models specified in team.md charters. Never downgrade to haiku for code-writing agents.

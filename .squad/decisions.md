@@ -1615,3 +1615,39 @@ The dashboard's "Generate Plan" button fails with HTTP 409 because it **does not
 **What:** Populated `.squad/identity/wisdom.md` with 7 patterns and 4 anti-patterns learned from the project's history, including: consistent images, complete features, shared logic, proper error handling, E2E coverage for all actions, no fake buttons, and DRY utilities.
 
 **Why:** Wisdom.md was empty — the team wasn't learning from mistakes across sessions.
+
+## Session 2026-03-04T130000Z — Max Throughput Execution Mode
+
+### Decision: Maximum Parallelism — Cost Is Not a Concern
+
+**Author:** Ashley Hollis (via Claude Code)
+**Date:** 2026-03-04
+**Status:** Active — PERMANENT DIRECTIVE
+
+**What:** The team operates in max-throughput mode. Every routing decision must maximize the number of agents running in parallel. Premium request costs are explicitly approved and not a concern. The `max-throughput` skill is active and must be read by the coordinator before every routing decision.
+
+**Key changes:**
+1. Default to Full mode (multi-agent fan-out) for ALL work, not just "Team, ..." requests
+2. Always anticipate downstream work — spawn testers, UX reviewers, and downstream agents alongside primary implementers
+3. Chain follow-ups immediately — don't stop between agent batches
+4. Process tasks.md phases in waves — launch all `[P]` parallel tasks simultaneously
+5. Ralph processes ALL work categories in parallel, never stops between rounds
+6. Use `claude-sonnet-4.6` for all code-writing agents, `claude-opus-4.6` for Lead — never downgrade for cost
+7. When two agents could handle a task, spawn BOTH
+
+**Why:** User directive — "I want Squad to do as much work in parallel. I want to maximize the amount of work done. I don't care how many premium requests I use." This mirrors the Smart Ralph workflow pattern where parallel worktrees execute specs simultaneously for maximum wall-clock efficiency.
+
+### Decision: Smart Ralph Workflow Pattern for Squad
+
+**Author:** Ashley Hollis (via Claude Code)
+**Date:** 2026-03-04
+**Status:** Active
+
+**What:** The team should follow the Smart Ralph spec-driven development pattern adapted for Squad's agent architecture:
+
+1. **Broad decomposition** — When a feature arrives, spawn agents for ALL aspects simultaneously (backend, frontend, tests, UX review, architecture review) rather than sequential handoffs
+2. **Wave-based task execution** — Group tasks by phase, execute all parallel tasks in each phase as a wave, immediately start the next wave when prerequisites complete
+3. **Continuous pipeline** — Never stop and wait for user input between work items. Collect results → launch next wave → report progress → repeat
+4. **Quality gates run alongside work** — Design reviews and UX reviews happen concurrently with early implementation (scaffolding, types, test setup), not sequentially before it
+
+**Why:** The Smart Ralph pattern achieves 7 specs in the wall-clock time of 4 through aggressive parallelism. Squad's 5-agent concurrency gives ~1M tokens of reasoning capacity — use all of it.
