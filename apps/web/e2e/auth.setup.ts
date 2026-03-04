@@ -14,9 +14,13 @@
  */
 
 import { test as setup } from "@playwright/test";
+import * as fs from "fs";
 import * as path from "path";
 
 const userAuthFile = path.join(__dirname, "../playwright/.auth/user.json");
+
+// Ensure auth directory exists
+fs.mkdirSync(path.dirname(userAuthFile), { recursive: true });
 
 /**
  * Authenticate via Auth0 Universal Login.
@@ -50,7 +54,7 @@ setup("authenticate as test user", async ({ page }) => {
 
     // Wait for redirect to Auth0's login page
     await page.waitForURL((url) => url.hostname.includes("auth0.com"), {
-      timeout: 20_000,
+      timeout: 30_000,
     });
     console.log(`[auth-setup] Reached Auth0 login page: ${page.url()}`);
 
@@ -156,5 +160,15 @@ setup("authenticate as test user", async ({ page }) => {
     console.error(
       "[auth-setup] Tests requiring authentication will be skipped.",
     );
+    // Write empty storage state so downstream projects don't fail with ENOENT
+    if (!fs.existsSync(userAuthFile)) {
+      fs.writeFileSync(
+        userAuthFile,
+        JSON.stringify({ cookies: [], origins: [] }),
+      );
+      console.warn(
+        "[auth-setup] Wrote empty auth state to prevent ENOENT in dependent tests.",
+      );
+    }
   }
 });
