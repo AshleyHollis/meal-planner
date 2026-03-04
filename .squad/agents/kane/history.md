@@ -5,10 +5,25 @@
 - **Project:** Meal Planner MVP — AI meal planner with inventory, weekly plans, grocery lists
 - **Stack:** Next.js 16 + React 19 + TypeScript 5 + Tailwind CSS 4, Auth0 v4 BFF
 - **Owner:** Ashley Hollis
-- **Branch:** 001-meal-planner-mvp (PR #1)
-- **State:** Frontend fully built. 37 frontend unit tests pass. Build clean (6 routes, 102kB shared JS).
+- **Branch:** 005-grocery-enhancements
+- **State:** Frontend fully built. Build clean (15 routes, 0 TypeScript errors).
 - **Key files:** apps/web/src/services/api.ts, apps/web/src/services/runtimeConfig.ts, apps/web/src/middleware.ts
 - **Auth pattern:** Auth0 v4 BFF — /auth/access-token endpoint, Bearer token on all API calls
+
+### Phase 13 — Wave 2 UX Polish (2026-03-04)
+
+- **Commit:** `142c63e` on branch `005-grocery-enhancements`
+- **Cook This wired up:** `cookSuggestion()` added to `api.ts`; `handleCookThis` in quick-suggestions/page.tsx now async, calls POST `/api/v1/quick-suggestions/cook`, shows success/error toast.
+- **formatCurrency sweep:** 4 sites updated — `GroceryItem.tsx`, `products/page.tsx`, `products/[id]/page.tsx`, `grocery-list/[id]/page.tsx`. All now use `formatCurrency()` from `lib/format-currency.ts` (en-US USD).
+- **Quick Suggestion images:** `QuickSuggestionCard.tsx` now shows `next/image` 400×200 meal photo at top of card; falls back to gradient with first initial.
+- **Meal plan list card visuals:** Status-coloured banner header (🍽️/✅/❌/📋 icon + green/blue/red/gray bg) added to each plan card using existing `status` field only.
+- **Per-page titles:** All 13 pages have `useEffect(() => { document.title = "Page | Meal Planner" }, [])`.
+- **DAY_LABELS consolidated:** Removed 5 local definitions. `app/page.tsx` uses `DAY_LABELS_SHORT`/`DAY_LABELS_LONG`; `MealHistoryList.tsx`, `meal-plan/[id]/page.tsx` use `DAY_LABELS_LONG`; `SwapDialog.tsx` uses `const DAY_LABELS = DAY_LABELS_LONG`.
+- **StapleSuggestions integrated:** `inventory/page.tsx` renders `<StapleSuggestions onChanged={handleChanged} />` below the 2-col grid.
+- **Rating loading state:** `RatingWidget.tsx` stars are `disabled={isSubmitting}` with `opacity-50 cursor-not-allowed`; hover guarded; "Saving…" text shown.
+- **WeeklyPlanView deleted:** Was dead code (never imported). Meal plan detail already uses `MealSlotCard`.
+- **Build:** ✅ 15 routes, 0 TypeScript errors, 4 pre-existing auth `<a>` warnings (intentional).
+
 
 ## Learnings
 
