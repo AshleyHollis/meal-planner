@@ -47,9 +47,7 @@ test.describe("Favorites Flow", () => {
       }
 
       // Click first plan link (use role=link to target the <a>, not the wrapping div)
-      const firstPlanLink = page
-        .locator('main a[href*="/meal-plan/"]')
-        .first();
+      const firstPlanLink = page.locator('main a[href*="/meal-plan/"]').first();
       if (
         !(await firstPlanLink.isVisible({ timeout: 5_000 }).catch(() => false))
       ) {
@@ -86,9 +84,7 @@ test.describe("Favorites Flow", () => {
         return;
       }
 
-      const firstPlanLink = page
-        .locator('main a[href*="/meal-plan/"]')
-        .first();
+      const firstPlanLink = page.locator('main a[href*="/meal-plan/"]').first();
       if (
         !(await firstPlanLink.isVisible({ timeout: 5_000 }).catch(() => false))
       ) {
@@ -145,9 +141,7 @@ test.describe("Favorites Flow", () => {
         await expect(spinner.first()).not.toBeVisible({ timeout: 30_000 });
       }
 
-      const firstPlanLink = page
-        .locator('main a[href*="/meal-plan/"]')
-        .first();
+      const firstPlanLink = page.locator('main a[href*="/meal-plan/"]').first();
       if (
         !(await firstPlanLink.isVisible({ timeout: 5_000 }).catch(() => false))
       ) {
