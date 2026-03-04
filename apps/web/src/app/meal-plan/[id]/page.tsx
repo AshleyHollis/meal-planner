@@ -50,7 +50,7 @@ export default function MealPlanDetailPage({
       .then((favorites) =>
         setFavoriteRecipeIds(new Set(favorites.map((f) => f.recipe_id))),
       )
-      .catch((err) => console.error("Failed to load favorites:", err));
+      .catch(() => showToast("Failed to load favorites.", "error"));
   }, []);
 
   const isDraft = plan?.status === "draft";

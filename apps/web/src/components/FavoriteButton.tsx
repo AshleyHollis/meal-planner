@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useToast } from "@/components/ui/Toast";
 
 // ---------------------------------------------------------------------------
 // Props
@@ -23,6 +24,7 @@ export function FavoriteButton({
 }: FavoriteButtonProps) {
   const [isFavorited, setIsFavorited] = useState(initialFavorited);
   const [isLoading, setIsLoading] = useState(false);
+  const { showToast } = useToast();
 
   const handleClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -45,7 +47,7 @@ export function FavoriteButton({
       }
     } catch (err) {
       setIsFavorited(!newFavoritedState);
-      console.error("Failed to toggle favorite:", err);
+      showToast("Failed to update favourite. Please try again.", "error");
     } finally {
       setIsLoading(false);
     }
