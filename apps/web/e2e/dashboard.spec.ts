@@ -217,12 +217,13 @@ test.describe("Dashboard", () => {
       }
 
       // Cuisine section should be visible (if implemented on dashboard)
-      const cuisineSection = page.getByText(/Cuisine|Preferences/i).first();
+      // Use specific heading/label to avoid matching the nav "Preferences" link
+      const cuisineSection = page.getByText(/Cuisine Preferences/i).first();
       const cuisineButton = page
         .getByRole("button", { name: /Mexican|Italian|Asian/i })
         .first();
 
-      await expect(cuisineSection.or(cuisineButton)).toBeVisible({
+      await expect(cuisineSection.or(cuisineButton).first()).toBeVisible({
         timeout: 10_000,
       });
     });
@@ -253,9 +254,9 @@ test.describe("Dashboard", () => {
       }
 
       // Try to select a cuisine (if visible)
-      const cuisineButton = page.getByRole("button", {
-        name: /Mexican/i,
-      });
+      const cuisineButton = page
+        .getByRole("button", { name: /Mexican/i })
+        .first();
 
       if (
         await cuisineButton.isVisible({ timeout: 5_000 }).catch(() => false)
@@ -263,7 +264,7 @@ test.describe("Dashboard", () => {
         await cuisineButton.click();
 
         // Verify selection is highlighted
-        await expect(cuisineButton).toHaveAttribute(
+        await expect(cuisineButton.first()).toHaveAttribute(
           "class",
           /selected|active|bg/i,
         );

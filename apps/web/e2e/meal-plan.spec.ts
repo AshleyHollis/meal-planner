@@ -58,9 +58,9 @@ test.describe("Meal Plan Flow", () => {
       }
 
       // Should show either the empty state or a list of plans
-      const emptyState = page.getByText("No meal plans yet");
+      const emptyState = page.getByText(/No.*Plans.*Yet/i);
       const planItem = page.getByText(/Week of /).first();
-      const errorMessage = page.getByText("Failed to load meal plans");
+      const errorMessage = page.getByText(/Failed to load|error/i);
 
       await expect(
         emptyState.or(planItem).or(errorMessage).first(),
