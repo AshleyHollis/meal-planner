@@ -260,7 +260,7 @@ export default function DashboardPage() {
           </div>
         </section>
       ) : (
-      <section className="mb-6 rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
+        <section className="mb-6 rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
           <div className="mb-4 flex items-center gap-3">
             <div className="text-4xl">🍽️</div>
             <div>

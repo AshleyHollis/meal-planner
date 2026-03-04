@@ -134,6 +134,7 @@ Full code review of commit `ad0dfa8` (16 files, 845 insertions). Verdict: **APPR
 The meal plan page (`/meal-plan`) has the correct pattern: it lists ALL plans, finds any `active`/`draft`, and auto-completes them before creating. Dashboard was never updated with this logic (Decision 13 only applied to the meal plan page).
 
 **Key inconsistencies found:**
+
 - Dashboard `handleGenerate()` — no auto-complete, generic error message, missing `meal_types` param
 - `getNextMonday()` duplicated in 2 files instead of shared `@/lib/date-utils.ts`
 - `DAY_LABELS` duplicated in 3 places

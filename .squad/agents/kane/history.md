@@ -165,7 +165,6 @@
 - **Build:** ✅ 15 routes, 0 TypeScript errors. **Tests:** ✅ 104/104 passed.
 - **Commit:** `f1d988a` on branch `005-grocery-enhancements`.
 
-
 - **What changed:** 1 file — `components/MealHistoryList.tsx`. Enhanced history page with meal images and expandable detail view.
 - **Meal images:** Added thumbnail images (56x56 rounded) on left of each history item using `getMealImageUrl` from `lib/meal-images.ts`. Unsplash URLs use standard `<img>` tag (not `next/image`) as they're external.
 - **Expandable items:** Added `expandedId` state and click handler. Each item toggles between compact and expanded view. Chevron icon rotates 180° when expanded. Full `<button>` element wrapping item content for accessibility.
