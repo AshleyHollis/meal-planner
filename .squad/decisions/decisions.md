@@ -130,3 +130,70 @@ Next migration is `005_planning_enhancements.py`. The existing migrations are 00
 - `services/workers/meal_plan_generator/generator.py:461` — Slot creation hardcodes meal_type="dinner"
 - `services/api/src/api/services/meal_plan_service.py` — \_call_llm() pattern for synchronous LLM calls
 - `services/workers/meal_plan_generator/prompts.py` — build_prompt() already accepts personalization kwargs
+
+---
+
+## Decision 6: UX Depth Review & Prioritized Frontend Enhancements
+
+**Author:** Dallas (Lead)  
+**Date:** 2026-03-04  
+**Status:** Decided
+
+### Feature Completeness (Spec 005 Acceptance Scenarios)
+
+**12/14 PASS**, 1 PARTIAL, 1 FAIL:
+- **PASS**: Product mapping display, unmapped item fallback, inline linking, auto-apply, product search grouping, edit/delete functionality
+- **PARTIAL**: Shop-filtered trips complete but do NOT prompt to add to inventory (gap in CompleteShoppingDialog integration)
+- **FAIL**: Trip state not clearing on new list generation — `isNewList()` check never invoked
+
+### Critical UX Gaps (vs. Industry Standards)
+
+1. **No entity detail pages** — Everything is a list. Recipes/products/inventory items are not clickable or navigable.
+2. **Images only on MealSlots** — Product and inventory lists are pure text. Recipes not viewable outside inline-expand.
+3. **Bug in CompleteShoppingDialog** — Displays `ingredient_id` (UUID) instead of `ingredient_name`.
+4. **No grocery cost total** — Prices exist per-product but sum never shown.
+5. **No recipe source URL** — AI recipes have no attribution or external link.
+
+### Top 10 Prioritized Improvements
+
+| Rank | Improvement | Impact | Effort | Owner |
+|------|------------|--------|--------|-------|
+| **1** | Recipe detail page (`/meal-plan/[id]/recipe/[slotId]`) | 🔴 Critical | Medium | Kane |
+| **2** | Product detail page (`/products/[id]`) | 🔴 Critical | Low | Kane |
+| **3** | Fix CompleteShoppingDialog UUID display | 🔴 Bug | Trivial | Kane |
+| **4** | Grocery list cost total | 🟠 High | Low | Kane |
+| **5** | Inventory detail page (`/inventory/[id]`) | 🟠 High | Low | Kane |
+| **6** | Fix trip state reset on new list | 🟠 High | Trivial | Kane |
+| **7** | Trip completion → inventory add | 🟠 High | Low | Kane |
+| **8** | Recipe source URL field (backend + frontend) | 🟡 Medium | Low | Ripley + Kane |
+| **9** | Inventory search/filter | 🟡 Medium | Low | Kane |
+| **10** | Grocery list print/share | 🟡 Medium | Low | Kane |
+
+### Backend Additions (Ripley)
+
+- Add `source_url` field to Recipe model
+- Add `image_url` field to Product model
+- Add `GET /api/v1/products/{product_id}` endpoint
+- Add `GET /api/v1/inventory/{item_id}` endpoint (if missing)
+- Consider `GET /api/v1/recipes/{recipe_id}` public endpoint
+
+### Frontend Implementation Guide (Kane)
+
+**Immediate fixes:**
+- `CompleteShoppingDialog.tsx:81` — show `ingredient_name` not `ingredient_id`
+- `grocery-list/[id]/page.tsx` — add cost total calculation and display
+- `GroceryList.tsx` — call `clearTripsForList()` when list changes
+
+**New pages:**
+- `/meal-plan/[id]/recipe/[slotId]/page.tsx` — full recipe detail with ingredients, steps, hero image, favorite button, source URL link
+- `/products/[id]/page.tsx` — product detail with price, shop, linked ingredient, edit/delete
+- `/inventory/[id]/page.tsx` — inventory item detail with expiry countdown, related recipes
+
+**Clickable links:**
+- MealSlotCard recipe title → recipe detail page
+- Product rows in products/page.tsx → product detail
+- Inventory items in InventoryList → inventory detail
+
+### Summary
+
+App has solid architecture but lacks **depth** — the skeleton is right, needs flesh. Top 3 fixes (recipe detail, product detail, UUID fix) would transform user experience from "functional prototype" to "usable app".

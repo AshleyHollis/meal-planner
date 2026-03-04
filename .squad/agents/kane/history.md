@@ -133,3 +133,14 @@
 - **Hover effects:** Meal plan cards upgraded from `transition-shadow` to `transition-all hover:scale-[1.01] active:scale-[0.99]`. Inventory list items: `hover:bg-gray-50` row highlight. Grocery items: `hover:bg-gray-50 active:bg-gray-100` row highlight.
 - **Mobile grocery:** GroceryItem checkbox now wrapped in `<label>` with `min-h-[44px] min-w-[44px]` for touch-friendly tap target. Checkbox size increased from `h-4 w-4` to `h-5 w-5`.
 - **Build result:** ✅ Clean — 12 routes, 0 TypeScript errors, 4 pre-existing auth `<a>` warnings (intentional).
+
+### Phase 10 — History Page Enhancements (Images + Expandable Items)
+
+- **What changed:** 1 file — `components/MealHistoryList.tsx`. Enhanced history page with meal images and expandable detail view.
+- **Meal images:** Added thumbnail images (56x56 rounded) on left of each history item using `getMealImageUrl` from `lib/meal-images.ts`. Unsplash URLs use standard `<img>` tag (not `next/image`) as they're external.
+- **Expandable items:** Added `expandedId` state and click handler. Each item toggles between compact and expanded view. Chevron icon rotates 180° when expanded. Full `<button>` element wrapping item content for accessibility.
+- **Expanded view:** Shows larger image (128px/160px), full recipe title as heading, formatted date with weekday, meal type, cuisine, and rating with empty stars (★★★★★ → ★★★☆☆). Two-column grid on mobile, side-by-side on tablet+. Gray-50 background distinguishes expanded section.
+- **Visual improvements:** Increased thumbnail from 14x14 to 56x56 (h-14 w-14), added shadow-sm to images, improved badge spacing (gap-1.5), changed divider from gray-200 to gray-100, added active:bg-gray-100 for tactile feedback.
+- **Transition patterns:** Chevron uses `transition-transform` with conditional `rotate-180`. Button uses `transition-colors` for smooth hover/active states. Maintains existing hover:bg-gray-50 pattern from other list items in the app.
+- **Tests:** ✅ All 9 tests pass — renders empty state, displays items, shows badges, Load More button, pagination, and interactivity all working.
+- **Build result:** ✅ TypeScript 0 errors, lint shows 2 new `<img>` warnings (expected for external Unsplash URLs), 4 pre-existing auth `<a>` warnings.
