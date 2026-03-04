@@ -92,3 +92,27 @@
 7. File blocking issues for anything that falls short — assign to Kane or Ripley
 
 **Gate:** Feature cannot be marked complete until Ash (UX Reviewer) approves. UX issues are blocking.
+
+---
+
+## Spec Review
+
+| Field            | Value                                              |
+| ---------------- | -------------------------------------------------- |
+| **Trigger**      | auto                                               |
+| **When**         | after                                              |
+| **Condition**    | Bishop completes spec.md + plan.md + tasks.md      |
+| **Facilitator**  | lead                                               |
+| **Participants** | lead, spec-architect                               |
+| **Time budget**  | focused                                            |
+| **Enabled**      | yes                                                |
+
+**Agenda:**
+
+1. Review spec.md — are user stories complete with acceptance scenarios?
+2. Review plan.md — are data models, API contracts, and architecture sound?
+3. Review tasks.md — are tasks ordered correctly, parallel markers accurate, file paths exact?
+4. Check for missing edge cases, security concerns, or regressions
+5. Approve or request specific changes (max 2 revision rounds)
+
+**Gate:** Implementation cannot begin until Dallas (Lead) approves the spec. If approved, implementation starts immediately — no user confirmation needed.

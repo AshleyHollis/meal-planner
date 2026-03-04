@@ -18,6 +18,7 @@
 | Parker  | DevOps         | `.squad/agents/parker/charter.md`  | claude-haiku-4.5  | ✅ Active  |
 | Lambert | Tester         | `.squad/agents/lambert/charter.md` | claude-haiku-4.5  | ✅ Active  |
 | Ash     | UX Reviewer    | `.squad/agents/ash/charter.md`     | claude-sonnet-4.6 | ✅ Active  |
+| Bishop  | Spec Architect | `.squad/agents/bishop/charter.md`  | claude-sonnet-4.6 | ✅ Active  |
 | Scribe  | Session Logger | `.squad/agents/scribe/charter.md`  | claude-haiku-4.5  | 📋 Silent  |
 | Ralph   | Work Monitor   | —                                  | —                 | 🔄 Monitor |
 

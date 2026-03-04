@@ -1651,3 +1651,27 @@ The dashboard's "Generate Plan" button fails with HTTP 409 because it **does not
 4. **Quality gates run alongside work** — Design reviews and UX reviews happen concurrently with early implementation (scaffolding, types, test setup), not sequentially before it
 
 **Why:** The Smart Ralph pattern achieves 7 specs in the wall-clock time of 4 through aggressive parallelism. Squad's 5-agent concurrency gives ~1M tokens of reasoning capacity — use all of it.
+
+### Decision: Add Bishop (Spec Architect) — Full Spec Pipeline in Squad
+
+**Author:** Ashley Hollis (via Claude Code)
+**Date:** 2026-03-04
+**Status:** Active
+
+**What:** Added Bishop (Spec Architect) agent to the team. Bishop owns the entire spec pipeline: research → spec.md → plan.md → tasks.md. This replaces the need for Smart Ralph's `/ralph-specum:new` command. Users can now say "Bishop, spec 006-cooking-experience: ..." in Copilot CLI and get the full pipeline.
+
+**Pipeline flow:**
+1. Bishop researches codebase (15-20+ file reads)
+2. Bishop writes spec.md (user stories, acceptance criteria)
+3. Bishop writes plan.md (data models, API contracts, architecture)
+4. Bishop writes tasks.md (ordered tasks with `[P]` parallel markers)
+5. Dallas reviews all artifacts (Spec Review ceremony)
+6. If approved → coordinator fans out all agents for implementation in waves
+7. No user confirmation needed between spec and implementation — Dallas's approval is the gate
+
+**Smart Ralph command equivalents:**
+- `/ralph-specum:new` → `"Bishop, spec {id}: {description}"`
+- `/ralph-specum:implement` → `"Team, implement from tasks.md"`
+- `/ralph-specum:status` → `"Ralph, status"` or `"Where are we?"`
+
+**Why:** User wanted to do everything in Copilot CLI without needing Claude Code. Bishop gives Squad the same spec-driven workflow that Smart Ralph provided, but integrated into the agent team with automatic handoff to implementation.

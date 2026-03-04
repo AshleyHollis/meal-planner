@@ -16,6 +16,7 @@ How to decide who handles what.
 | Testing strategy                                  | Lambert  | Test coverage, edge cases, verify fixes                         |
 | Scope & priorities                                | Dallas   | What to build next, trade-offs, decisions                       |
 | UX completeness, feature feel, visual consistency | Ash      | Feature feels incomplete, missing interactions, inconsistent UI |
+| New feature, spec, plan, tasks, requirements      | Bishop   | "Build feature X", "Spec out Y", "Add feature Z"               |
 | Session logging                                   | Scribe   | Automatic — never needs routing                                 |
 
 ## Rules
@@ -41,9 +42,15 @@ How to decide who handles what.
 10. **UX completeness gate** — After Kane completes a user story, Ash MUST review for feature completeness using the `ux-completeness` skill. Issues filed by Ash are blocking — feature is not done until Ash approves.
 11. **Anticipate UX review** — When spawning Kane for frontend work, also spawn Ash to prepare for review. Ash reads the user story and skill standards while Kane implements.
 
+### Spec Pipeline
+
+12. **"Build feature X" → spec pipeline.** When the user describes a new feature, activate the `spec-workflow` skill. Spawn Bishop to create spec/plan/tasks, spawn Dallas to prepare for review. After Bishop completes, Dallas reviews (sync). After Dallas approves, fan-out all agents for implementation using tasks.md waves.
+13. **"Bishop, spec X" → spec only.** If the user explicitly names Bishop, spawn Bishop alone for spec work. Still spawn Dallas for review after.
+14. **Spec → Implementation is automatic.** After Dallas approves specs, the coordinator immediately starts implementation. Don't wait for user confirmation — Dallas's approval is the gate.
+
 ### Chaining and Continuous Execution
 
-12. **Chain immediately** — When agents complete, don't stop. Identify what's unblocked, launch the next wave of agents, THEN report to the user.
-13. **Process tasks.md in waves** — When working from a task file, identify ALL `[P]` (parallel) tasks in the current phase and launch agents for all of them simultaneously. As tasks complete, launch the next unlocked phase immediately.
-14. **Ralph never stops** — When Ralph is active, process ALL work categories in parallel (untriaged + assigned + CI failures simultaneously). Never stop between rounds.
-15. **No idle agents** — After every batch, check: more tasks? quality improvements? missing tests? UX gaps? documentation? If anything exists, launch it. Don't wait for the user to ask.
+15. **Chain immediately** — When agents complete, don't stop. Identify what's unblocked, launch the next wave of agents, THEN report to the user.
+16. **Process tasks.md in waves** — When working from a task file, identify ALL `[P]` (parallel) tasks in the current phase and launch agents for all of them simultaneously. As tasks complete, launch the next unlocked phase immediately.
+17. **Ralph never stops** — When Ralph is active, process ALL work categories in parallel (untriaged + assigned + CI failures simultaneously). Never stop between rounds.
+18. **No idle agents** — After every batch, check: more tasks? quality improvements? missing tests? UX gaps? documentation? If anything exists, launch it. Don't wait for the user to ask.
