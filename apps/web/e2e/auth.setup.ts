@@ -50,11 +50,13 @@ setup("authenticate as test user", async ({ page }) => {
   try {
     // Navigate to Auth0 login endpoint with login_hint for email pre-fill
     const loginUrl = `/api/auth/login?connection=Username-Password-Authentication&login_hint=${encodeURIComponent(email)}`;
-    await page.goto(loginUrl);
+    await page.goto(loginUrl, { waitUntil: "domcontentloaded" });
 
-    // Wait for redirect to Auth0's login page
+    // Wait for redirect to Auth0's login page (use domcontentloaded to avoid
+    // hanging on slow third-party resources like analytics scripts)
     await page.waitForURL((url) => url.hostname.includes("auth0.com"), {
       timeout: 30_000,
+      waitUntil: "domcontentloaded",
     });
     console.log(`[auth-setup] Reached Auth0 login page: ${page.url()}`);
 
@@ -147,6 +149,7 @@ setup("authenticate as test user", async ({ page }) => {
     // Wait for redirect back to the app (away from auth0.com)
     await page.waitForURL((url) => !url.hostname.includes("auth0.com"), {
       timeout: 30_000,
+      waitUntil: "domcontentloaded",
     });
     console.log(
       "[auth-setup] User authenticated successfully — redirected to app",

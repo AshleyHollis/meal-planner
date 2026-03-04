@@ -27,7 +27,7 @@ _MODELS = {
 GENERATION_TIMEOUT = 25  # NFR-01: meal plan generation p95 < 30s
 ADAPTATION_TIMEOUT = 8  # NFR-02: cook-time adaptation p95 < 10s
 
-_MAX_TOKENS = 8192
+_MAX_TOKENS = 16384  # Kimi K2.5 uses reasoning tokens that count toward max; needs extra headroom
 
 # Approximate cost per 1K tokens (USD) for cost estimation
 _COST_PER_1K = {

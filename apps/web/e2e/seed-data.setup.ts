@@ -141,11 +141,11 @@ setup("seed test data", async ({ request, baseURL }) => {
     console.log(
       `[seed-data]   Deleting ${existingItems.length} existing inventory items`,
     );
-    for (const existingItem of existingItems) {
-      await request.delete(`${API_URL}/api/v1/inventory/${existingItem.id}`, {
-        headers,
-      });
-    }
+    await Promise.all(
+      existingItems.map((item) =>
+        request.delete(`${API_URL}/api/v1/inventory/${item.id}`, { headers }),
+      ),
+    );
     console.log("[seed-data]   Existing inventory cleared");
   } else {
     console.log(
