@@ -596,7 +596,8 @@ test.describe("Meal Plan Flow", () => {
       await page.waitForTimeout(500);
 
       // If failed plans exist, all visible plans should show "failed" status (red border)
-      const planCards = page.locator('[class*="border-l-4"]');
+      // Scope to main to avoid matching the sidebar nav active link which also has border-l-4
+      const planCards = page.locator('main [class*="border-l-4"]');
       const cardCount = await planCards.count();
 
       if (cardCount > 0) {
@@ -668,20 +669,19 @@ test.describe("Meal Plan Flow", () => {
         await expect(spinner.first()).not.toBeVisible({ timeout: 30_000 });
       }
 
-      // Look for a failed plan badge
-      const failedBadges = page.getByText(/^failed$/i);
-      const failedBadgeCount = await failedBadges.count();
+      // Look for a failed plan card (scoped to main to avoid sidebar nav)
+      const failedPlanCards = page.locator(
+        'main [class*="border-l-4"][class*="border-red-500"]',
+      );
+      const failedCardCount = await failedPlanCards.count();
 
-      if (failedBadgeCount === 0) {
+      if (failedCardCount === 0) {
         test.skip(true, "No failed plans exist to test delete");
         return;
       }
 
       // Get the first failed plan card
-      const failedBadge = failedBadges.first();
-      const failedPlanCard = failedBadge.locator(
-        "xpath=ancestor::div[@class*='rounded-xl']",
-      );
+      const failedPlanCard = failedPlanCards.first();
 
       // Delete button should appear
       const deleteButton = failedPlanCard.getByRole("button", {
@@ -708,20 +708,19 @@ test.describe("Meal Plan Flow", () => {
         await expect(spinner.first()).not.toBeVisible({ timeout: 30_000 });
       }
 
-      // Look for a failed plan
-      const failedBadges = page.getByText(/^failed$/i);
-      const failedBadgeCount = await failedBadges.count();
+      // Look for a failed plan card (scoped to main to avoid sidebar nav)
+      const failedPlanCards = page.locator(
+        'main [class*="border-l-4"][class*="border-red-500"]',
+      );
+      const failedCardCount = await failedPlanCards.count();
 
-      if (failedBadgeCount === 0) {
+      if (failedCardCount === 0) {
         test.skip(true, "No failed plans exist to test delete");
         return;
       }
 
       // Get the first failed plan card
-      const failedBadge = failedBadges.first();
-      const failedPlanCard = failedBadge.locator(
-        "xpath=ancestor::div[@class*='rounded-xl']",
-      );
+      const failedPlanCard = failedPlanCards.first();
 
       // Click delete button (first click should show confirmation)
       const deleteButton = failedPlanCard.getByRole("button", {
@@ -761,18 +760,17 @@ test.describe("Meal Plan Flow", () => {
         await expect(spinner.first()).not.toBeVisible({ timeout: 30_000 });
       }
 
-      const failedBadges = page.getByText(/^failed$/i);
-      const failedBadgeCount = await failedBadges.count();
+      const failedPlanCards = page.locator(
+        'main [class*="border-l-4"][class*="border-red-500"]',
+      );
+      const failedCardCount = await failedPlanCards.count();
 
-      if (failedBadgeCount === 0) {
+      if (failedCardCount === 0) {
         test.skip(true, "No failed plans exist to test delete");
         return;
       }
 
-      const failedBadge = failedBadges.first();
-      const failedPlanCard = failedBadge.locator(
-        "xpath=ancestor::div[@class*='rounded-xl']",
-      );
+      const failedPlanCard = failedPlanCards.first();
 
       const deleteButton = failedPlanCard.getByRole("button", {
         name: /Delete|delete/i,
