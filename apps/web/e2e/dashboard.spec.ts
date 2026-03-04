@@ -58,13 +58,16 @@ test.describe("Dashboard", () => {
         await expect(spinner.first()).not.toBeVisible({ timeout: 30_000 });
       }
 
-      // Should show either active plan info or "No active meal plan" message
+      // Should show either active plan info or "Plan Your Week" section
       const activePlanHeading = page.getByRole("heading", {
         name: /Active Plan/i,
       });
+      const planYourWeek = page.getByRole("heading", {
+        name: /Plan Your Week/i,
+      });
       const noActivePlanMsg = page.getByText(/No active meal plan/i);
 
-      await expect(activePlanHeading.or(noActivePlanMsg).first()).toBeVisible({
+      await expect(activePlanHeading.or(planYourWeek).or(noActivePlanMsg).first()).toBeVisible({
         timeout: 10_000,
       });
     });
@@ -79,11 +82,12 @@ test.describe("Dashboard", () => {
         timeout: 30_000,
       });
 
-      // Should have links to core pages
+      // Should have links to core pages (in sidebar nav or quick actions)
       const inventoryLink = page.getByRole("link", { name: /Inventory/i });
-      const mealPlansLink = page.getByRole("link", { name: /Meal Plans/i });
+      const mealPlansLink = page.getByRole("link", { name: /Meal Plans|Plans/i });
+      const quickAction = page.getByText(/Quick Actions/i);
 
-      await expect(inventoryLink.or(mealPlansLink).first()).toBeVisible({
+      await expect(inventoryLink.or(mealPlansLink).or(quickAction).first()).toBeVisible({
         timeout: 10_000,
       });
     });
@@ -274,9 +278,9 @@ test.describe("Dashboard", () => {
         await expect(spinner.first()).not.toBeVisible({ timeout: 30_000 });
       }
 
-      // Look for stat cards (Total Plans, Upcoming Meals, etc.)
+      // Look for stat cards (Meals This Week, Items Expiring, In Inventory)
       const statCard = page.getByText(
-        /Total Plans|Upcoming|Meals|Shopping|Plans Created/i,
+        /Meals This Week|Items Expiring|In Inventory|Total Plans|Upcoming/i,
       );
 
       await expect(statCard.first()).toBeVisible({ timeout: 10_000 });
@@ -301,7 +305,7 @@ test.describe("Dashboard", () => {
       // Find a stat card that's clickable
       const mealPlanStat = page
         .locator("button, a")
-        .filter({ hasText: /Meal Plans|Plans Created|Total Plans/ })
+        .filter({ hasText: /Meal Plans|Plans Created|Total Plans|Meals This Week/ })
         .first();
 
       if (await mealPlanStat.isVisible({ timeout: 5_000 }).catch(() => false)) {

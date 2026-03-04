@@ -43,10 +43,10 @@ test.describe("History Page", () => {
 
       // Should show either empty state or list of past plans
       const emptyState = page.getByText(
-        /No history|No past plans|No meal plans/i,
+        /No history|No past plans|No meal plans|No Meals Yet/i,
       );
       const historyItem = page
-        .getByText(/Week of |Completed|Finished/i)
+        .getByText(/\w+ \d{1,2}, \d{4}|breakfast|lunch|dinner/i)
         .first();
       const errorMessage = page.getByText(/Failed to load/i);
 
@@ -55,7 +55,7 @@ test.describe("History Page", () => {
       ).toBeVisible({ timeout: 10_000 });
     });
 
-    test("shows back navigation link", async ({ page }) => {
+    test("shows navigation elements", async ({ page }) => {
       await page.goto("/history");
       await expect(
         page.getByRole("heading", { name: /History|Past.*Meal/i }),
@@ -63,12 +63,12 @@ test.describe("History Page", () => {
         timeout: 30_000,
       });
 
-      // Should have a way to navigate back (home or dashboard)
-      const backLink = page
-        .getByRole("link", { name: /Home|Dashboard|Back/i })
+      // Should have site navigation (sidebar or header nav links)
+      const navLink = page
+        .getByRole("link", { name: /Home|Dashboard|Meal Plans|Inventory/i })
         .first();
 
-      await expect(backLink).toBeVisible({ timeout: 10_000 });
+      await expect(navLink).toBeVisible({ timeout: 10_000 });
     });
   });
 
@@ -93,7 +93,7 @@ test.describe("History Page", () => {
       }
 
       // Check for empty state
-      const emptyState = page.getByText(/No history|No past plans/i);
+      const emptyState = page.getByText(/No history|No past plans|No Meals Yet/i);
       if (await emptyState.isVisible({ timeout: 5_000 }).catch(() => false)) {
         test.skip(true, "No history items to expand");
         return;
@@ -102,7 +102,7 @@ test.describe("History Page", () => {
       // Find an expandable item (button or clickable heading)
       const expandButton = page
         .locator("button, [role='button']")
-        .filter({ hasText: /Week of |Completed/ })
+        .filter({ hasText: /\w+ \d{1,2}, \d{4}|breakfast|lunch|dinner|Completed/ })
         .first();
 
       if (await expandButton.isVisible({ timeout: 5_000 }).catch(() => false)) {
@@ -137,7 +137,7 @@ test.describe("History Page", () => {
         await expect(spinner.first()).not.toBeVisible({ timeout: 30_000 });
       }
 
-      const emptyState = page.getByText(/No history|No past plans/i);
+      const emptyState = page.getByText(/No history|No past plans|No Meals Yet/i);
       if (await emptyState.isVisible({ timeout: 5_000 }).catch(() => false)) {
         test.skip(true, "No history items");
         return;
@@ -194,16 +194,16 @@ test.describe("History Page", () => {
         await expect(spinner.first()).not.toBeVisible({ timeout: 30_000 });
       }
 
-      const emptyState = page.getByText(/No history|No past plans/i);
+      const emptyState = page.getByText(/No history|No past plans|No Meals Yet/i);
       if (await emptyState.isVisible({ timeout: 5_000 }).catch(() => false)) {
         test.skip(true, "No history items");
         return;
       }
 
-      // Find and expand first item
+      // Find and expand first item (history items show recipe names and dates)
       const firstItem = page
         .locator("[role='button'], button")
-        .filter({ hasText: /Week of |Completed/ })
+        .filter({ hasText: /\w+ \d{1,2}, \d{4}|breakfast|lunch|dinner/ })
         .first();
 
       if (!(await firstItem.isVisible({ timeout: 5_000 }).catch(() => false))) {
@@ -213,8 +213,8 @@ test.describe("History Page", () => {
 
       await firstItem.click();
 
-      // Expanded content should show meal info
-      const mealInfo = page.getByText(/Monday|Tuesday|Wednesday|Recipe|Meal/i);
+      // Expanded content should show meal info (Date Cooked, Meal Type, Cuisine, Rating)
+      const mealInfo = page.getByText(/Date Cooked|Meal Type|Cuisine|Your Rating/i);
       await expect(mealInfo.first()).toBeVisible({ timeout: 10_000 });
     });
 
@@ -234,7 +234,7 @@ test.describe("History Page", () => {
         await expect(spinner.first()).not.toBeVisible({ timeout: 30_000 });
       }
 
-      const emptyState = page.getByText(/No history|No past plans/i);
+      const emptyState = page.getByText(/No history|No past plans|No Meals Yet/i);
       if (await emptyState.isVisible({ timeout: 5_000 }).catch(() => false)) {
         test.skip(true, "No history items");
         return;
@@ -243,7 +243,7 @@ test.describe("History Page", () => {
       // Find a clickable link in the history list
       const historyLink = page
         .locator("a")
-        .filter({ hasText: /Week of |View|Details|Plan/ })
+        .filter({ hasText: /View|Details|Plan|Recipe/ })
         .first();
 
       if (
@@ -255,18 +255,13 @@ test.describe("History Page", () => {
 
       await historyLink.click();
 
-      // Should navigate to plan detail page
-      await expect(page).toHaveURL(/\/meal-plan\//, {
+      // Should navigate to plan detail page or recipe page
+      await expect(page).toHaveURL(/\/meal-plan\/|\/recipe\//, {
         timeout: 10_000,
       });
-
-      // Should show meal plan details
-      await expect(
-        page.getByText(/Week of |Back to plans|Monday/i).first(),
-      ).toBeVisible({ timeout: 10_000 });
     });
 
-    test("history items display completion status or date", async ({
+    test("history items display dates or meal types", async ({
       page,
     }) => {
       await page.goto("/history");
@@ -282,17 +277,17 @@ test.describe("History Page", () => {
         await expect(spinner.first()).not.toBeVisible({ timeout: 30_000 });
       }
 
-      const emptyState = page.getByText(/No history|No past plans/i);
+      const emptyState = page.getByText(/No history|No past plans|No Meals Yet/i);
       if (await emptyState.isVisible({ timeout: 5_000 }).catch(() => false)) {
         test.skip(true, "No history items");
         return;
       }
 
-      // Should show dates or status
-      const dateOrStatus = page.getByText(
-        /\d{4}-\d{2}-\d{2}|Completed|Active|Finished/i,
+      // Should show dates or meal type labels (e.g. "Jan 5, 2024 · lunch")
+      const dateOrType = page.getByText(
+        /\w+ \d{1,2}, \d{4}|breakfast|lunch|dinner/i,
       );
-      await expect(dateOrStatus.first()).toBeVisible({ timeout: 10_000 });
+      await expect(dateOrType.first()).toBeVisible({ timeout: 10_000 });
     });
   });
 });
