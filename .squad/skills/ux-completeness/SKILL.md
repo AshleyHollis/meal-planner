@@ -22,14 +22,14 @@ Meals, recipes, ingredients, products — if it appears as text or a card, it li
 
 If one view shows a meal image, ALL views showing that meal must show an image. No inconsistency between pages.
 
-| View | Must Show Image? |
-|------|-----------------|
-| Dashboard hero | Yes |
-| Dashboard recent meals | Yes |
-| Meal plan weekly grid | Yes |
-| History list | Yes |
-| Grocery list (recipe context) | Yes, thumbnail |
-| Search results | Yes |
+| View                          | Must Show Image? |
+| ----------------------------- | ---------------- |
+| Dashboard hero                | Yes              |
+| Dashboard recent meals        | Yes              |
+| Meal plan weekly grid         | Yes              |
+| History list                  | Yes              |
+| Grocery list (recipe context) | Yes, thumbnail   |
+| Search results                | Yes              |
 
 **Check:** Search for all places an entity is rendered. Does every instance have a visual representation?
 
@@ -54,6 +54,7 @@ Show summary first, click for detail. Don't overwhelm with information, but don'
 ### 6. Empty States Are Designed
 
 Never show a blank page or empty container without explanation. Every empty state has:
+
 - An icon or illustration
 - A title explaining what goes here
 - A description of how to populate it
@@ -72,6 +73,7 @@ Show what went wrong AND what the user can do about it. Include retry buttons fo
 ### 9. Feedback for Every Action
 
 Every user action gets immediate feedback:
+
 - Button clicks: loading state or disabled state
 - Form submissions: success toast or inline error
 - Deletions: confirmation dialog + success toast

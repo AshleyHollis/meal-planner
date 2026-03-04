@@ -1,7 +1,11 @@
 ---
 updated_at: 2026-03-04T12:00:00Z
 focus_area: Grocery Enhancements feature (005) + UX Quality Improvements
-active_issues: ["Finishing 005-grocery-enhancements", "UX completeness audit of all existing features"]
+active_issues:
+  [
+    "Finishing 005-grocery-enhancements",
+    "UX completeness audit of all existing features",
+  ]
 ---
 
 # What We're Focused On

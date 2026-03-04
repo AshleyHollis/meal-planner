@@ -131,9 +131,7 @@ test.describe("Dashboard", () => {
         name: /Generate.*Plan/i,
       });
       if (
-        !(await generateButton
-          .isVisible({ timeout: 5_000 })
-          .catch(() => false))
+        !(await generateButton.isVisible({ timeout: 5_000 }).catch(() => false))
       ) {
         test.skip(true, "Generate Plan not visible — active plan exists");
         return;
@@ -174,9 +172,7 @@ test.describe("Dashboard", () => {
         name: /Generate.*Plan/i,
       });
       if (
-        !(await generateButton
-          .isVisible({ timeout: 5_000 })
-          .catch(() => false))
+        !(await generateButton.isVisible({ timeout: 5_000 }).catch(() => false))
       ) {
         test.skip(true, "Generate Plan not visible — active plan exists");
         return;
@@ -278,9 +274,7 @@ test.describe("Dashboard", () => {
         name: /Generate.*Plan/i,
       });
       if (
-        !(await generateButton
-          .isVisible({ timeout: 5_000 })
-          .catch(() => false))
+        !(await generateButton.isVisible({ timeout: 5_000 }).catch(() => false))
       ) {
         test.skip(true, "Generate Plan not visible — active plan exists");
         return;

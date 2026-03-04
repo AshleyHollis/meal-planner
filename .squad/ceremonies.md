@@ -71,15 +71,15 @@
 
 ## Feature Completeness Review
 
-| Field            | Value                                                  |
-| ---------------- | ------------------------------------------------------ |
-| **Trigger**      | auto                                                   |
-| **When**         | after                                                  |
-| **Condition**    | all tasks in a user story are marked complete          |
-| **Facilitator**  | ux-reviewer                                            |
-| **Participants** | ux-reviewer, lead, frontend-dev                        |
-| **Time budget**  | focused                                                |
-| **Enabled**      | yes                                                    |
+| Field            | Value                                         |
+| ---------------- | --------------------------------------------- |
+| **Trigger**      | auto                                          |
+| **When**         | after                                         |
+| **Condition**    | all tasks in a user story are marked complete |
+| **Facilitator**  | ux-reviewer                                   |
+| **Participants** | ux-reviewer, lead, frontend-dev               |
+| **Time budget**  | focused                                       |
+| **Enabled**      | yes                                           |
 
 **Agenda:**
 

@@ -4,19 +4,19 @@ How to decide who handles what.
 
 ## Routing Table
 
-| Work Type                                | Route To | Examples                                                  |
-| ---------------------------------------- | -------- | --------------------------------------------------------- |
-| Architecture, scope, CORS diagnosis      | Dallas   | API design, middleware debugging, tech decisions          |
-| Backend API, FastAPI, SQLAlchemy, worker | Ripley   | Fix endpoints, CORS middleware, worker config, DB queries |
-| Frontend, Next.js, React, TypeScript, UI | Kane     | Components, pages, API client, Auth0 BFF, runtime config  |
-| K8s, CI/CD, Terraform, deployment        | Parker   | Pipeline fixes, AKS debugging, image verification, ArgoCD |
-| E2E tests, Playwright, test seeding      | Lambert  | Fix skipped tests, seed data strategy, test assertions    |
-| Visual smoke testing (preview env)       | Lambert  | Playwright MCP browser testing in Azure preview           |
-| Code review                              | Dallas   | Review PRs, check quality, approve/reject                 |
-| Testing strategy                         | Lambert  | Test coverage, edge cases, verify fixes                   |
-| Scope & priorities                       | Dallas   | What to build next, trade-offs, decisions                 |
-| UX completeness, feature feel, visual consistency | Ash | Feature feels incomplete, missing interactions, inconsistent UI |
-| Session logging                          | Scribe   | Automatic — never needs routing                           |
+| Work Type                                         | Route To | Examples                                                        |
+| ------------------------------------------------- | -------- | --------------------------------------------------------------- |
+| Architecture, scope, CORS diagnosis               | Dallas   | API design, middleware debugging, tech decisions                |
+| Backend API, FastAPI, SQLAlchemy, worker          | Ripley   | Fix endpoints, CORS middleware, worker config, DB queries       |
+| Frontend, Next.js, React, TypeScript, UI          | Kane     | Components, pages, API client, Auth0 BFF, runtime config        |
+| K8s, CI/CD, Terraform, deployment                 | Parker   | Pipeline fixes, AKS debugging, image verification, ArgoCD       |
+| E2E tests, Playwright, test seeding               | Lambert  | Fix skipped tests, seed data strategy, test assertions          |
+| Visual smoke testing (preview env)                | Lambert  | Playwright MCP browser testing in Azure preview                 |
+| Code review                                       | Dallas   | Review PRs, check quality, approve/reject                       |
+| Testing strategy                                  | Lambert  | Test coverage, edge cases, verify fixes                         |
+| Scope & priorities                                | Dallas   | What to build next, trade-offs, decisions                       |
+| UX completeness, feature feel, visual consistency | Ash      | Feature feels incomplete, missing interactions, inconsistent UI |
+| Session logging                                   | Scribe   | Automatic — never needs routing                                 |
 
 ## Rules
 

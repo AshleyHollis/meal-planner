@@ -1571,6 +1571,7 @@ The dashboard's "Generate Plan" button fails with HTTP 409 because it **does not
 **Status:** Active
 
 **What:** Created `.squad/skills/ux-completeness/SKILL.md` with 9 core principles:
+
 1. Every data entity is clickable
 2. Images everywhere (consistent across all views)
 3. Consistent interaction patterns
