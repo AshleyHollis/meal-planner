@@ -113,14 +113,48 @@ async def generate_meal_plan(message_content: dict[str, Any]) -> None:
             equipment_modes[eq.name] = [m.name for m in modes]
 
         # 3. Call LLM with retry loop
-        plan = await _generate_with_retries(
-            prompt,
-            inventory_names,
-            equipment_modes,
-            allergen_ingredients=context.get("allergen_ingredients"),
-            cuisine_preferences=context.get("cuisine_preferences"),
-            meal_types=meal_types,
-        )
+        effective_types = meal_types or ["dinner"]
+
+        if len(effective_types) > 1:
+            # Multi-meal: generate per-type for reliability (LLM only reliably produces 7 at once)
+            all_recipes = []
+            for mt in effective_types:
+                single_prompt = build_prompt(
+                    context["inventory"],
+                    context["equipment"],
+                    context["expiring"],
+                    meal_types=[mt],
+                    member_preferences=context.get("member_preferences"),
+                    recent_meals=context.get("recent_meals"),
+                    favorites=context.get("favorites"),
+                    rating_insights=context.get("rating_insights"),
+                    cuisine_preferences=context.get("cuisine_preferences"),
+                    recurring_constraints=context.get("recurring_templates"),
+                    leftovers=context.get("leftovers"),
+                    freezer_items=context.get("freezer_items"),
+                )
+                type_plan = await _generate_with_retries(
+                    single_prompt,
+                    inventory_names,
+                    equipment_modes,
+                    allergen_ingredients=context.get("allergen_ingredients"),
+                    cuisine_preferences=context.get("cuisine_preferences"),
+                    meal_types=[mt],
+                )
+                for r in type_plan.recipes:
+                    r.meal_type = mt
+                all_recipes.extend(type_plan.recipes)
+                logger.info("multi_meal_type_generated", meal_type=mt, recipes=len(type_plan.recipes))
+            plan = GeneratedMealPlan(recipes=all_recipes)
+        else:
+            plan = await _generate_with_retries(
+                prompt,
+                inventory_names,
+                equipment_modes,
+                allergen_ingredients=context.get("allergen_ingredients"),
+                cuisine_preferences=context.get("cuisine_preferences"),
+                meal_types=meal_types,
+            )
 
         # 4. Persist to DB
         await _persist_plan(

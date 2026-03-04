@@ -68,7 +68,6 @@ setup("seed test data", async ({ request, baseURL }) => {
   };
 
   // ── Step 2: Look up ingredients ───────────────────────────────────────
-  console.log("[seed-data] Looking up ingredients...");
   const ingredientNames = [
     // Keep existing
     "chicken breast",
@@ -106,29 +105,27 @@ setup("seed test data", async ({ request, baseURL }) => {
     "diced tomatoes (canned)",
     "chicken stock",
   ];
-  const ingredients: SeedIngredient[] = [];
-
-  for (const name of ingredientNames) {
+  console.log(
+    `[seed-data] Looking up ${ingredientNames.length} ingredients in parallel...`,
+  );
+  const ingredientPromises = ingredientNames.map(async (name) => {
     const resp = await request.get(
       `${API_URL}/api/v1/ingredients?q=${encodeURIComponent(name)}&limit=1`,
       { headers },
     );
     if (resp.ok()) {
       const data = (await resp.json()) as SeedIngredient[];
-      if (data.length > 0) {
-        ingredients.push(data[0]);
-        console.log(`[seed-data]   Found: ${data[0].name} (${data[0].id})`);
-      } else {
-        console.log(`[seed-data]   Search "${name}": 200 OK but 0 results`);
-      }
-    } else {
-      const body = await resp.text().catch(() => "");
-      console.log(
-        `[seed-data]   Search "${name}": ${resp.status()} ${body.substring(0, 200)}`,
-      );
+      if (data.length > 0) return data[0];
     }
-  }
-
+    return null;
+  });
+  const ingredientResults = await Promise.all(ingredientPromises);
+  const ingredients: SeedIngredient[] = ingredientResults.filter(
+    (r): r is SeedIngredient => r !== null,
+  );
+  console.log(
+    `[seed-data] Ingredients found: ${ingredients.length}/${ingredientNames.length}`,
+  );
   expect(
     ingredients.length,
     "No ingredients found — ingredient DB may be empty. This is critical for tests.",
@@ -156,7 +153,7 @@ setup("seed test data", async ({ request, baseURL }) => {
     );
   }
 
-  console.log("[seed-data] Adding inventory items...");
+  console.log("[seed-data] Adding inventory items in parallel...");
 
   const now = new Date();
   const expiryVariants: Array<{ offsetDays: number | null; label: string }> = [
@@ -172,18 +169,14 @@ setup("seed test data", async ({ request, baseURL }) => {
     { offsetDays: null, label: "no expiry" },
   ];
 
-  let inventoryAdded = 0;
-  for (let i = 0; i < ingredients.length; i++) {
-    const ing = ingredients[i];
+  const inventoryPromises = ingredients.map(async (ing, i) => {
     const variant = expiryVariants[i % expiryVariants.length];
-
     let expiryDate: string | null = null;
     if (variant.offsetDays !== null) {
       const d = new Date(now);
       d.setDate(d.getDate() + variant.offsetDays);
       expiryDate = d.toISOString();
     }
-
     const body = {
       ingredient_id: ing.id,
       quantity: 500,
@@ -191,24 +184,14 @@ setup("seed test data", async ({ request, baseURL }) => {
       location: ing.default_storage || "fridge",
       ...(expiryDate ? { expiry_date: expiryDate } : {}),
     };
-
     const addResp = await request.post(`${API_URL}/api/v1/inventory`, {
       headers,
       data: body,
     });
-
-    if (addResp.ok()) {
-      inventoryAdded++;
-      console.log(
-        `[seed-data]   Added ${ing.name} to inventory (${variant.label})`,
-      );
-    } else {
-      const errBody = await addResp.text().catch(() => "");
-      console.log(
-        `[seed-data]   Failed to add ${ing.name}: ${addResp.status()} ${errBody}`,
-      );
-    }
-  }
+    return addResp.ok() ? 1 : 0;
+  });
+  const inventoryResults = await Promise.all(inventoryPromises);
+  let inventoryAdded = inventoryResults.reduce((sum: number, v: number) => sum + v, 0);
   console.log(
     `[seed-data] Inventory seeded: ${inventoryAdded}/${ingredients.length} items`,
   );
@@ -220,7 +203,7 @@ setup("seed test data", async ({ request, baseURL }) => {
   ).toBeGreaterThan(0);
 
   // ── Step 3b: Seed product mappings for shop filtering E2E tests ──────
-  console.log("[seed-data] Seeding product mappings...");
+  console.log("[seed-data] Seeding product mappings in parallel...");
   const shopAssignments: Array<{
     ingredientName: string;
     brand: string;
@@ -394,18 +377,11 @@ setup("seed test data", async ({ request, baseURL }) => {
     },
   ];
 
-  let productsAdded = 0;
-  for (const mapping of shopAssignments) {
+  const productPromises = shopAssignments.map(async (mapping) => {
     const ing = ingredients.find(
       (i) => i.name.toLowerCase() === mapping.ingredientName,
     );
-    if (!ing) {
-      console.log(
-        `[seed-data]   Skipping product for "${mapping.ingredientName}" (not in lookup)`,
-      );
-      continue;
-    }
-
+    if (!ing) return 0;
     const createResp = await request.post(`${API_URL}/api/v1/products`, {
       headers,
       data: {
@@ -418,22 +394,14 @@ setup("seed test data", async ({ request, baseURL }) => {
         notes: "Seeded by E2E setup",
       },
     });
-
-    if (createResp.ok() || createResp.status() === 201) {
-      productsAdded++;
-      console.log(
-        `[seed-data]   Created product: ${mapping.brand} ${mapping.productName} @ ${mapping.shop}`,
-      );
-    } else if (createResp.status() === 409) {
-      productsAdded++;
-      console.log(`[seed-data]   Product already exists for ${ing.name} (409)`);
-    } else {
-      const errBody = await createResp.text().catch(() => "");
-      console.log(
-        `[seed-data]   Failed to create product for ${ing.name}: ${createResp.status()} ${errBody}`,
-      );
-    }
-  }
+    return createResp.ok() ||
+      createResp.status() === 201 ||
+      createResp.status() === 409
+      ? 1
+      : 0;
+  });
+  const productResults = await Promise.all(productPromises);
+  let productsAdded = productResults.reduce((sum: number, v: number) => sum + v, 0);
   console.log(
     `[seed-data] Products seeded: ${productsAdded}/${shopAssignments.length}`,
   );

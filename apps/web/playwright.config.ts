@@ -14,8 +14,8 @@ export default defineConfig({
     : undefined,
 
   // Maximum timeout for each test
-  // 180s to accommodate SWA cold starts and API latency
-  timeout: 180_000,
+  // 90s is sufficient; seed data setup is now parallelized
+  timeout: 90_000,
 
   // Run tests in files in parallel
   fullyParallel: true,
