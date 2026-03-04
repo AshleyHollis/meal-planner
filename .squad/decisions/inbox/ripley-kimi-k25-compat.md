@@ -15,6 +15,7 @@ The worker correctly checks `settings.llm.is_azure_configured` first. The API se
 **Any synchronous or async LLM call helper in ANY service must check `settings.llm.is_azure_configured` BEFORE checking `settings.llm.provider`.** The Azure path takes unconditional priority when both env vars are set.
 
 Pattern (enforced across worker and API):
+
 ```python
 if settings.llm.is_azure_configured:
     # use openai.AzureOpenAI(...)
@@ -36,6 +37,7 @@ else:
 ## Deployment Instructions for Kimi K2.5
 
 Store in Azure Key Vault (keys already mapped via ExternalSecret):
+
 - `azure-openai-api-key` → your Azure AI Foundry API key
 - `azure-openai-endpoint` → `https://aif-pai-dev-aue.cognitiveservices.azure.com/`
 - `azure-openai-deployment` → `kimi-k25`

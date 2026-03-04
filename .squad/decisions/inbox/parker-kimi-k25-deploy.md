@@ -32,6 +32,7 @@ The `-aue` suffix on the resource name indicates **Australia East**, not East US
 Key Vault name is resolved at runtime by auto-detecting the first KV in `rg-pai-dev-aue`. Override via `KEY_VAULT_NAME=<name>` env var if the auto-detect picks the wrong one.
 
 The following KV secrets are written:
+
 - `azure-openai-api-key`
 - `azure-openai-endpoint`
 - `azure-openai-deployment` (value: `kimi-k25`)
