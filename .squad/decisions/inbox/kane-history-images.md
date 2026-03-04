@@ -11,6 +11,7 @@ History page needed images and better interactivity. Couldn't link to individual
 ## Decision
 
 Implement expandable list items with click-to-toggle detail view:
+
 - Thumbnail image (56x56 rounded) in compact view
 - Full `<button>` wrapper for entire item (accessible, keyboard-friendly)
 - Chevron icon with rotate-180 transition
@@ -35,10 +36,15 @@ const toggleExpanded = (id: string) => {
 };
 
 // In render:
-<button onClick={() => toggleExpanded(item.id)} className="w-full text-left hover:bg-gray-50">
+<button
+  onClick={() => toggleExpanded(item.id)}
+  className="w-full text-left hover:bg-gray-50"
+>
   {/* compact view */}
-</button>
-{isExpanded && <div className="bg-gray-50">{/* detail view */}</div>}
+</button>;
+{
+  isExpanded && <div className="bg-gray-50">{/* detail view */}</div>;
+}
 ```
 
 ## Alternatives Considered
@@ -50,12 +56,14 @@ const toggleExpanded = (id: string) => {
 ## Testing
 
 All 9 existing tests pass. Tests verify:
+
 - Empty state, list rendering, badges, pagination, Load More button
 - No new tests needed — expansion is progressive enhancement, core functionality unchanged
 
 ## Future Work
 
 If recipe detail pages are added later, can replace expansion with navigation:
+
 ```tsx
 <Link href={`/recipe/${item.recipe_id}`}>...</Link>
 ```

@@ -27,4 +27,4 @@ Kane initiated frontend enhancements to the Meal History page to address missing
 
 ---
 
-*Session logged by Scribe. No additional context captured.*
+_Session logged by Scribe. No additional context captured._

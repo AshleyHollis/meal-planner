@@ -142,6 +142,7 @@ Next migration is `005_planning_enhancements.py`. The existing migrations are 00
 ### Feature Completeness (Spec 005 Acceptance Scenarios)
 
 **12/14 PASS**, 1 PARTIAL, 1 FAIL:
+
 - **PASS**: Product mapping display, unmapped item fallback, inline linking, auto-apply, product search grouping, edit/delete functionality
 - **PARTIAL**: Shop-filtered trips complete but do NOT prompt to add to inventory (gap in CompleteShoppingDialog integration)
 - **FAIL**: Trip state not clearing on new list generation — `isNewList()` check never invoked
@@ -156,18 +157,18 @@ Next migration is `005_planning_enhancements.py`. The existing migrations are 00
 
 ### Top 10 Prioritized Improvements
 
-| Rank | Improvement | Impact | Effort | Owner |
-|------|------------|--------|--------|-------|
-| **1** | Recipe detail page (`/meal-plan/[id]/recipe/[slotId]`) | 🔴 Critical | Medium | Kane |
-| **2** | Product detail page (`/products/[id]`) | 🔴 Critical | Low | Kane |
-| **3** | Fix CompleteShoppingDialog UUID display | 🔴 Bug | Trivial | Kane |
-| **4** | Grocery list cost total | 🟠 High | Low | Kane |
-| **5** | Inventory detail page (`/inventory/[id]`) | 🟠 High | Low | Kane |
-| **6** | Fix trip state reset on new list | 🟠 High | Trivial | Kane |
-| **7** | Trip completion → inventory add | 🟠 High | Low | Kane |
-| **8** | Recipe source URL field (backend + frontend) | 🟡 Medium | Low | Ripley + Kane |
-| **9** | Inventory search/filter | 🟡 Medium | Low | Kane |
-| **10** | Grocery list print/share | 🟡 Medium | Low | Kane |
+| Rank   | Improvement                                            | Impact      | Effort  | Owner         |
+| ------ | ------------------------------------------------------ | ----------- | ------- | ------------- |
+| **1**  | Recipe detail page (`/meal-plan/[id]/recipe/[slotId]`) | 🔴 Critical | Medium  | Kane          |
+| **2**  | Product detail page (`/products/[id]`)                 | 🔴 Critical | Low     | Kane          |
+| **3**  | Fix CompleteShoppingDialog UUID display                | 🔴 Bug      | Trivial | Kane          |
+| **4**  | Grocery list cost total                                | 🟠 High     | Low     | Kane          |
+| **5**  | Inventory detail page (`/inventory/[id]`)              | 🟠 High     | Low     | Kane          |
+| **6**  | Fix trip state reset on new list                       | 🟠 High     | Trivial | Kane          |
+| **7**  | Trip completion → inventory add                        | 🟠 High     | Low     | Kane          |
+| **8**  | Recipe source URL field (backend + frontend)           | 🟡 Medium   | Low     | Ripley + Kane |
+| **9**  | Inventory search/filter                                | 🟡 Medium   | Low     | Kane          |
+| **10** | Grocery list print/share                               | 🟡 Medium   | Low     | Kane          |
 
 ### Backend Additions (Ripley)
 
@@ -180,16 +181,19 @@ Next migration is `005_planning_enhancements.py`. The existing migrations are 00
 ### Frontend Implementation Guide (Kane)
 
 **Immediate fixes:**
+
 - `CompleteShoppingDialog.tsx:81` — show `ingredient_name` not `ingredient_id`
 - `grocery-list/[id]/page.tsx` — add cost total calculation and display
 - `GroceryList.tsx` — call `clearTripsForList()` when list changes
 
 **New pages:**
+
 - `/meal-plan/[id]/recipe/[slotId]/page.tsx` — full recipe detail with ingredients, steps, hero image, favorite button, source URL link
 - `/products/[id]/page.tsx` — product detail with price, shop, linked ingredient, edit/delete
 - `/inventory/[id]/page.tsx` — inventory item detail with expiry countdown, related recipes
 
 **Clickable links:**
+
 - MealSlotCard recipe title → recipe detail page
 - Product rows in products/page.tsx → product detail
 - Inventory items in InventoryList → inventory detail
