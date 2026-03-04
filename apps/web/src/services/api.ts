@@ -271,6 +271,10 @@ export async function updateInventoryItem(
   });
 }
 
+export async function getInventoryItem(itemId: string): Promise<InventoryItem> {
+  return fetchApi<InventoryItem>(`/api/v1/inventory/${itemId}`);
+}
+
 export async function removeInventoryItem(itemId: string): Promise<void> {
   return fetchApi<void>(`/api/v1/inventory/${itemId}`, {
     method: "DELETE",
@@ -641,6 +645,10 @@ export async function deleteProduct(productId: string): Promise<void> {
   return fetchApi<void>(`/api/v1/products/${productId}`, {
     method: "DELETE",
   });
+}
+
+export async function getProduct(productId: string): Promise<Product> {
+  return fetchApi<Product>(`/api/v1/products/${productId}`);
 }
 
 export async function searchProducts(query: string): Promise<Product[]> {

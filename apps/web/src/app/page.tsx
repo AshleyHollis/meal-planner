@@ -5,11 +5,12 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 
-import type { InventoryItem, MealPlanDetail } from "@/types";
+import type { InventoryItem, MealPlanDetail, MealHistoryItem } from "@/types";
 import {
   listInventory,
   getActiveMealPlan,
   createMealPlan,
+  getMealHistory,
 } from "@/services/api";
 import { ApiError } from "@/services/api";
 import { Spinner } from "@/components/ui/Spinner";
@@ -31,6 +32,7 @@ export default function DashboardPage() {
   const router = useRouter();
   const [plan, setPlan] = useState<MealPlanDetail | null>(null);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
+  const [history, setHistory] = useState<MealHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -40,9 +42,10 @@ export default function DashboardPage() {
   const fetchData = useCallback(async () => {
     try {
       setError(null);
-      const [inventoryData, activePlan] = await Promise.allSettled([
+      const [inventoryData, activePlan, historyData] = await Promise.allSettled([
         listInventory(),
         getActiveMealPlan(),
+        getMealHistory(1, 5),
       ]);
 
       if (inventoryData.status === "fulfilled") {
@@ -57,6 +60,10 @@ export default function DashboardPage() {
         if (err instanceof ApiError && err.status === 404) {
           setPlan(null);
         }
+      }
+
+      if (historyData.status === "fulfilled") {
+        setHistory(historyData.value);
       }
     } catch (err) {
       if (err instanceof ApiError && err.isAuthError) {
@@ -241,18 +248,29 @@ export default function DashboardPage() {
 
       {/* Stats Row */}
       <div className="mb-6 grid grid-cols-3 gap-3 lg:gap-6">
-        <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm text-center">
+        <Link
+          href={`/meal-plan${plan ? `/${plan.id}` : ""}`}
+          className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm text-center hover:shadow-md hover:border-blue-100 transition-all duration-200"
+        >
           <p className="text-2xl font-bold text-gray-900">{cookedCount}</p>
           <p className="mt-1 text-xs text-gray-500">Meals This Week</p>
-        </div>
-        <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm text-center">
-          <p className="text-2xl font-bold text-gray-900">{expiringCount}</p>
+        </Link>
+        <Link
+          href="/inventory"
+          className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm text-center hover:shadow-md hover:border-orange-100 transition-all duration-200"
+        >
+          <p className={`text-2xl font-bold ${expiringCount > 0 ? "text-orange-600" : "text-gray-900"}`}>
+            {expiringCount}
+          </p>
           <p className="mt-1 text-xs text-gray-500">Items Expiring</p>
-        </div>
-        <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm text-center">
+        </Link>
+        <Link
+          href="/inventory"
+          className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm text-center hover:shadow-md hover:border-green-100 transition-all duration-200"
+        >
           <p className="text-2xl font-bold text-gray-900">{inventory.length}</p>
           <p className="mt-1 text-xs text-gray-500">In Inventory</p>
-        </div>
+        </Link>
       </div>
 
       {/* Expiry Warning */}
@@ -373,6 +391,104 @@ export default function DashboardPage() {
           </Link>
         </div>
       </section>
+
+      {/* This Week's Meals */}
+      {plan && plan.slots.length > 0 && (
+        <section className="mt-8">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-gray-800">This Week&apos;s Meals</h2>
+            <Link href={`/meal-plan/${plan.id}`} className="text-sm text-blue-600 hover:underline">
+              View all &rarr;
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {plan.slots
+              .filter((s) => s.recipe)
+              .slice(0, 6)
+              .map((slot) => {
+                const DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+                return (
+                  <Link
+                    key={slot.id}
+                    href={`/meal-plan/${plan.id}`}
+                    className="group relative overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm hover:shadow-md transition-all duration-200"
+                  >
+                    <div className="relative h-28">
+                      <Image
+                        src={getMealImageUrl(slot.recipe!.title, 400, 200)}
+                        alt={slot.recipe!.title}
+                        fill
+                        className="object-cover group-hover:scale-105 transition-transform duration-300"
+                        placeholder="empty"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+                      <div className="absolute bottom-2 left-3 right-3">
+                        <p className="truncate text-sm font-semibold text-white">
+                          {slot.recipe!.title}
+                        </p>
+                        <p className="text-xs text-white/70">
+                          {DAY_LABELS[slot.day]} · {slot.meal_type}
+                        </p>
+                      </div>
+                      {slot.status === "cooked" && (
+                        <div className="absolute right-2 top-2 rounded-full bg-green-500 px-2 py-0.5 text-xs font-medium text-white">
+                          ✓ Cooked
+                        </div>
+                      )}
+                    </div>
+                  </Link>
+                );
+              })}
+          </div>
+        </section>
+      )}
+
+      {/* Recent Activity */}
+      {history.length > 0 && (
+        <section className="mt-8">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-gray-800">Recent Activity</h2>
+            <Link href="/history" className="text-sm text-blue-600 hover:underline">
+              Full history &rarr;
+            </Link>
+          </div>
+          <div className="rounded-xl border border-gray-100 bg-white shadow-sm divide-y divide-gray-100">
+            {history.map((h) => {
+              const DAY_LABELS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+              return (
+                <div key={h.slot_id} className="flex items-center gap-3 px-4 py-3">
+                  <div className="relative h-10 w-10 flex-shrink-0 overflow-hidden rounded-lg">
+                    <Image
+                      src={getMealImageUrl(h.recipe_title, 80, 80)}
+                      alt={h.recipe_title}
+                      fill
+                      className="object-cover"
+                      placeholder="empty"
+                    />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-gray-900">
+                      {h.recipe_title}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {DAY_LABELS[h.day] ?? `Day ${h.day}`} · {h.meal_type}
+                      {h.rating != null && (
+                        <span className="ml-2 text-yellow-500">{"★".repeat(h.rating)}</span>
+                      )}
+                    </p>
+                  </div>
+                  <p className="flex-shrink-0 text-xs text-gray-400">
+                    {new Date(h.cooked_at).toLocaleDateString(undefined, {
+                      month: "short",
+                      day: "numeric",
+                    })}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
     </main>
   );
 }

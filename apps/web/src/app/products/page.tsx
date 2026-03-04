@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 
 import type { Product } from "@/types";
 import {
@@ -187,7 +188,7 @@ export default function ProductsPage() {
                 {grouped[category].map((product) => (
                   <div
                     key={product.id}
-                    className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm hover:shadow-md transition-shadow duration-200"
+                    className="relative rounded-xl border border-gray-100 bg-white p-4 shadow-sm hover:shadow-md transition-shadow duration-200"
                   >
                     {editingProduct?.id === product.id ? (
                       <ProductMappingForm
@@ -199,6 +200,12 @@ export default function ProductsPage() {
                       />
                     ) : (
                       <>
+                        {/* Clickable area — navigates to detail page */}
+                        <Link
+                          href={`/products/${product.id}`}
+                          className="absolute inset-0 rounded-xl"
+                          aria-label={`View ${product.product_name} details`}
+                        />
                         <div className="mb-1 flex items-start justify-between gap-2">
                           <div>
                             <p className="text-xs text-gray-500">
@@ -208,10 +215,10 @@ export default function ProductsPage() {
                               {product.brand} · {product.product_name}
                             </p>
                           </div>
-                          <div className="flex gap-1">
+                          <div className="relative z-10 flex gap-1">
                             <button
                               type="button"
-                              onClick={() => setEditingProduct(product)}
+                              onClick={(e) => { e.stopPropagation(); setEditingProduct(product); }}
                               className="rounded px-2 py-1 text-xs text-blue-600 hover:bg-blue-50"
                             >
                               Edit
@@ -220,14 +227,14 @@ export default function ProductsPage() {
                               <>
                                 <button
                                   type="button"
-                                  onClick={() => void handleDelete(product.id)}
+                                  onClick={(e) => { e.stopPropagation(); void handleDelete(product.id); }}
                                   className="rounded px-2 py-1 text-xs text-red-600 hover:bg-red-50"
                                 >
                                   Confirm
                                 </button>
                                 <button
                                   type="button"
-                                  onClick={() => setConfirmDelete(null)}
+                                  onClick={(e) => { e.stopPropagation(); setConfirmDelete(null); }}
                                   className="rounded px-2 py-1 text-xs text-gray-500 hover:bg-gray-50"
                                 >
                                   Cancel
@@ -236,7 +243,7 @@ export default function ProductsPage() {
                             ) : (
                               <button
                                 type="button"
-                                onClick={() => setConfirmDelete(product.id)}
+                                onClick={(e) => { e.stopPropagation(); setConfirmDelete(product.id); }}
                                 className="rounded px-2 py-1 text-xs text-gray-400 hover:bg-red-50 hover:text-red-600"
                               >
                                 Delete
