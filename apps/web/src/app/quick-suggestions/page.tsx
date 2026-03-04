@@ -41,7 +41,10 @@ export default function QuickSuggestionsPage() {
 
   const handleCookThis = async (suggestion: QuickSuggestion) => {
     try {
-      await cookSuggestion({ title: suggestion.title, ingredients: suggestion.ingredients });
+      await cookSuggestion({
+        title: suggestion.title,
+        ingredients: suggestion.ingredients,
+      });
       showToast(`"${suggestion.title}" cooked! Inventory updated.`, "success");
     } catch (err) {
       if (err instanceof ApiError && err.isAuthError) {

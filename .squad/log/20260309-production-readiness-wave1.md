@@ -17,6 +17,7 @@ Wave 1 spawned 3 agents (Ripley, Kane, Lambert) to address critical and importan
 ## Agent Summary
 
 ### Ripley (Backend Dev) — Critical + Important Backend Issues
+
 - **Issues Resolved:** 8 critical, 6 important (14 total; 5 deferred as minor/scope)
 - **Test Results:** 193 API tests ✅, 97 worker tests ✅
 - **Key Deliverables:**
@@ -29,6 +30,7 @@ Wave 1 spawned 3 agents (Ripley, Kane, Lambert) to address critical and importan
   - Staples bulk-add endpoint
 
 ### Kane (Frontend Dev) — Critical + Important UX Issues
+
 - **Issues Resolved:** 8 critical, 21 important (29 total; 3 deferred as ready/pending wiring)
 - **Test Results:** 104 tests ✅, TypeScript clean ✅
 - **Key Deliverables:**
@@ -42,6 +44,7 @@ Wave 1 spawned 3 agents (Ripley, Kane, Lambert) to address critical and importan
   - Currency formatter utility
 
 ### Lambert (Tester) — Test Coverage Gaps
+
 - **Gaps Closed:** 7 scenarios, 9 test cases
 - **Approach:** Graceful skips with clear documentation for unimplemented features
 - **Key Deliverables:**
@@ -56,15 +59,15 @@ Wave 1 spawned 3 agents (Ripley, Kane, Lambert) to address critical and importan
 
 ## Scope Deferrals (Intentional)
 
-| Item | Reason | Wave 2 Path |
-|------|--------|-----------|
-| `adapt_meal_slot` stub | LLM route integration (scope creep) | Architecture review |
-| `save_recipe_variation` stub | No variation table in model | Data model expansion |
-| `preferred_store` gap | Minor; regeneration doesn't populate | Low-priority backend sweep |
-| StapleSuggestions integration | Component ready, not wired to /inventory | Frontend integration |
-| Substitution history/undo | Pending endpoints `GET /substitutions`, `DELETE /substitutions/{id}` | Backend expansion |
-| Trip backend persistence | Currently localStorage only | Backend ShoppingTrip model |
-| Format currency sweep | Utility created, calls not yet replaced | Mechanical frontend update |
+| Item                          | Reason                                                               | Wave 2 Path                |
+| ----------------------------- | -------------------------------------------------------------------- | -------------------------- |
+| `adapt_meal_slot` stub        | LLM route integration (scope creep)                                  | Architecture review        |
+| `save_recipe_variation` stub  | No variation table in model                                          | Data model expansion       |
+| `preferred_store` gap         | Minor; regeneration doesn't populate                                 | Low-priority backend sweep |
+| StapleSuggestions integration | Component ready, not wired to /inventory                             | Frontend integration       |
+| Substitution history/undo     | Pending endpoints `GET /substitutions`, `DELETE /substitutions/{id}` | Backend expansion          |
+| Trip backend persistence      | Currently localStorage only                                          | Backend ShoppingTrip model |
+| Format currency sweep         | Utility created, calls not yet replaced                              | Mechanical frontend update |
 
 ---
 
@@ -75,7 +78,7 @@ Wave 1 spawned 3 agents (Ripley, Kane, Lambert) to address critical and importan
 ✅ No test suite regressions  
 ✅ All inbox decisions merged into `decisions.md`  
 ✅ Git history clean (commits documented)  
-✅ Remote push confirmed  
+✅ Remote push confirmed
 
 ---
 
@@ -93,7 +96,7 @@ Wave 1 spawned 3 agents (Ripley, Kane, Lambert) to address critical and importan
 
 **Backend:** 6 service files, 2 route files, 2 model files, test updates  
 **Frontend:** 13 component/page files, 2 utility files, test updates  
-**Testing:** 1 new e2e spec file  
+**Testing:** 1 new e2e spec file
 
 Total: ~50 files touched, ~2000 LOC changes (net positive: +150 test cases, +10 endpoints)
 

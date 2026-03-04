@@ -277,7 +277,6 @@
   - Stubs (#6 adapt_meal_slot, #7 save_recipe_variation) exist in routes but have no service backing. These require non-trivial design decisions (what is a "variation"?) — defer to product owner
 - **Test results:** 193 API tests pass, 97 worker tests pass, ruff clean (production code)
 
-
 ### Wave 2 Backend Fixes (2026-03-04)
 
 - **Branch:** 005-grocery-enhancements
@@ -285,12 +284,14 @@
 - **Scope:** Remaining 2 stubs from architecture review + grocery preferred_store fix
 
 #### adapt_meal_slot (stub → real implementation)
+
 - Added `MealPlanService.adapt_slot(plan_id, slot_id, effort_level)` async method.
 - Loads slot (household-scoped), builds recipe dict, runs existing synchronous `adapt_recipe()` static method via `asyncio.to_thread()` to avoid blocking event loop.
 - Route now returns 404 if slot/recipe not found, otherwise returns `{plan_id, slot_id, recipe_id, title, effort_level, adapted_steps}`.
 - Pattern: wrap sync LLM calls in `asyncio.to_thread()` when reusing existing sync helpers in async routes.
 
 #### save_recipe_variation (stub → real implementation)
+
 - Added `SaveVariationRequest` Pydantic model (optional `title`, `notes`).
 - Added `MealPlanService.save_variation(recipe_id, data)` async method.
 - Variations stored as new Recipe rows with `source_recipe_id` pointing to original — uses existing lineage column, no schema changes needed.
@@ -298,8 +299,9 @@
 - Route returns 201 Created with `{recipe_id, variation_id, title, status}`.
 
 #### preferred_store in regenerate_grocery_list
+
 - Added Products lookup in `GroceryService.regenerate_grocery_list()` between steps 4 and 5.
 - Queries Product table for household, builds ingredient_id → shop map, sets preferred_store on new GroceryItems.
-- Mirrors the worker _persist_plan() pattern exactly.
+- Mirrors the worker \_persist_plan() pattern exactly.
 
 - **Test results:** 193 API tests pass, ruff clean. No schema migrations needed.

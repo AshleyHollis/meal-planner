@@ -121,7 +121,9 @@ export function RatingWidget({
           </button>
         ))}
         {isSubmitting && (
-          <span className="ml-2 text-xs text-gray-400 animate-pulse">Saving…</span>
+          <span className="ml-2 text-xs text-gray-400 animate-pulse">
+            Saving…
+          </span>
         )}
       </div>
 

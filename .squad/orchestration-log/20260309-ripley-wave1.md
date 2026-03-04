@@ -21,7 +21,7 @@ Resolve all critical and important backend issues from production readiness audi
 
 1. **Worker loads leftovers + freezer context** — Updated `_load_context()` to query active leftovers and freezer items, pass to AI prompt
 2. **Substitution persists grocery changes** — Added `_persist_grocery_changes()` to SubstitutionService, processes add/remove/update operations
-3-8. **Additional critical fixes** (cooked guard, cuisine override, staples endpoint, leftover updates) — All implemented
+   3-8. **Additional critical fixes** (cooked guard, cuisine override, staples endpoint, leftover updates) — All implemented
 
 ### Important (6/11 ✅, 5 deferred)
 

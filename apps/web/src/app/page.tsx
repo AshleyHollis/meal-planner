@@ -19,7 +19,11 @@ import { Spinner } from "@/components/ui/Spinner";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { getMealImageUrl } from "@/lib/meal-images";
-import { getNextMonday, DAY_LABELS_SHORT, DAY_LABELS_LONG } from "@/lib/date-utils";
+import {
+  getNextMonday,
+  DAY_LABELS_SHORT,
+  DAY_LABELS_LONG,
+} from "@/lib/date-utils";
 import { CuisineSelector } from "@/components/CuisineSelector";
 import { MealTypeSelector } from "@/components/MealTypeSelector";
 import { useToast } from "@/components/ui/Toast";

@@ -297,16 +297,25 @@ export default function MealPlanListPage() {
               >
                 <Link href={`/meal-plan/${plan.id}`} className="block p-6">
                   {/* Decorative status banner */}
-                  <div className={`-mx-6 -mt-6 mb-4 flex items-center gap-3 rounded-t-xl px-6 py-3 ${
-                    plan.status === "active" ? "bg-green-50" :
-                    plan.status === "completed" ? "bg-blue-50" :
-                    plan.status === "failed" ? "bg-red-50" :
-                    "bg-gray-50"
-                  }`}>
+                  <div
+                    className={`-mx-6 -mt-6 mb-4 flex items-center gap-3 rounded-t-xl px-6 py-3 ${
+                      plan.status === "active"
+                        ? "bg-green-50"
+                        : plan.status === "completed"
+                          ? "bg-blue-50"
+                          : plan.status === "failed"
+                            ? "bg-red-50"
+                            : "bg-gray-50"
+                    }`}
+                  >
                     <span className="text-2xl">
-                      {plan.status === "active" ? "🍽️" :
-                       plan.status === "completed" ? "✅" :
-                       plan.status === "failed" ? "❌" : "📋"}
+                      {plan.status === "active"
+                        ? "🍽️"
+                        : plan.status === "completed"
+                          ? "✅"
+                          : plan.status === "failed"
+                            ? "❌"
+                            : "📋"}
                     </span>
                     <div>
                       <p className="text-xs font-medium uppercase tracking-wide text-gray-500">

@@ -24,7 +24,6 @@
 - **WeeklyPlanView deleted:** Was dead code (never imported). Meal plan detail already uses `MealSlotCard`.
 - **Build:** ✅ 15 routes, 0 TypeScript errors, 4 pre-existing auth `<a>` warnings (intentional).
 
-
 ## Learnings
 
 ### Phase 1 — Responsive Layout (Desktop Sidebar Nav)

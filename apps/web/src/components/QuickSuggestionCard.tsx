@@ -4,7 +4,11 @@ import { useState } from "react";
 import Image from "next/image";
 import type { QuickSuggestion } from "@/types";
 import { Button } from "./ui/Button";
-import { getMealImageUrl, getMealCategory, getCategoryColor } from "@/lib/meal-images";
+import {
+  getMealImageUrl,
+  getMealCategory,
+  getCategoryColor,
+} from "@/lib/meal-images";
 
 interface QuickSuggestionCardProps {
   suggestion: QuickSuggestion;
@@ -35,7 +39,9 @@ function QuickSuggestionCard({
           />
         </div>
       ) : (
-        <div className={`flex h-24 w-full items-center justify-center bg-gradient-to-br ${grad}`}>
+        <div
+          className={`flex h-24 w-full items-center justify-center bg-gradient-to-br ${grad}`}
+        >
           <span className="text-3xl font-bold text-white/80 drop-shadow">
             {suggestion.title.charAt(0).toUpperCase()}
           </span>

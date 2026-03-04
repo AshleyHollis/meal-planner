@@ -12,6 +12,7 @@
 All critical and important issues from production review have been resolved:
 
 **Ripley (Backend Critical+Important):**
+
 - Worker now loads leftovers and freezer items into AI prompt context
 - Substitution persists grocery list changes
 - `cooked_at` no longer set for skipped meals (prevents cooking history pollution)
@@ -23,6 +24,7 @@ All critical and important issues from production review have been resolved:
 - All 193 API tests pass, all 97 worker tests pass
 
 **Kane (Frontend Critical+Important):**
+
 - All 8 critical UX issues resolved (error handling, toasts, status labels, confirmations)
 - All 21 important UX issues resolved (navigation, error states, retry buttons, empty states)
 - 2 minor improvements (date utils extraction, currency formatter)
@@ -31,6 +33,7 @@ All critical and important issues from production review have been resolved:
 - All 104 frontend tests pass, TypeScript clean
 
 **Lambert (Test Coverage):**
+
 - 7 coverage gaps closed in `apps/web/e2e/coverage-gaps.spec.ts`
 - Low-stock alerts test with graceful skip if not yet integrated
 - Substitution grocery list impact test complete
@@ -41,6 +44,7 @@ All critical and important issues from production review have been resolved:
 - No new TypeScript errors introduced
 
 **Scope Deferrals (intentional, documented):**
+
 - `adapt_meal_slot` stub — requires LLM integration in route layer (architectural scope creep)
 - `save_recipe_variation` stub — requires variation table definition (not in current model)
 - `preferred_store` in grocery regeneration — minor gap in GroceryService
@@ -50,6 +54,7 @@ All critical and important issues from production review have been resolved:
 - Format currency sweep not yet complete (utility created, needs wiring)
 
 **Decisions Made:**
+
 - Accept graceful test skips for unimplemented features (better than flaky tests)
 - Defer architecture-changing work to Wave 2/post-MVP
 - Document deferrals with clear path to completion
@@ -1879,7 +1884,6 @@ The dashboard's "Generate Plan" button fails with HTTP 409 because it **does not
 
 **Why:** User wanted to do everything in Copilot CLI without needing Claude Code. Bishop gives Squad the same spec-driven workflow that Smart Ralph provided, but integrated into the agent team with automatic handoff to implementation.
 
-
 ### Ripley Production Fixes — Backend Review Resolution
 
 **Author:** Ripley (Backend Dev)  
@@ -1887,8 +1891,9 @@ The dashboard's "Generate Plan" button fails with HTTP 409 because it **does not
 **Status:** Completed
 
 **Key Fixes:**
-- Worker loads leftovers and freezer items into AI prompt via _load_context()
-- Substitution persists grocery changes via _persist_grocery_changes()
+
+- Worker loads leftovers and freezer items into AI prompt via \_load_context()
+- Substitution persists grocery changes via \_persist_grocery_changes()
 - Skipped meals no longer set cooked_at (prevents history pollution)
 - 409 guard prevents double-cook attempts
 - Quick Suggestions "Cook This" endpoint with inventory deduction
@@ -1922,6 +1927,7 @@ All 104 tests pass, TypeScript clean.
 **Status:** Completed
 
 **Coverage Gaps Closed (7 scenarios):**
+
 1. Low-stock alerts test (skips gracefully if StapleSuggestions not yet on /inventory)
 2. Substitution impact on grocery list test
 3. Preferred store display test (soft, product-agnostic)
@@ -1931,6 +1937,7 @@ All 104 tests pass, TypeScript clean.
 7. Substitution history/undo tests (2 permanently skipped — endpoints pending)
 
 **Endpoints Required for Deferred Tests:**
+
 - GET /api/v1/meal-plans/{plan_id}/substitutions — list history
 - DELETE /api/v1/meal-plans/{plan_id}/substitutions/{substitution_id} — undo
 

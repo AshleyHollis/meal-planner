@@ -35,6 +35,7 @@ Close 7 test coverage gaps identified in test audit (Specs 003-005).
 **Status:** ⏭️ Permanently Skipped  
 **Reason:** Endpoints not yet implemented  
 **Required Endpoints:**
+
 - `GET /api/v1/meal-plans/{plan_id}/substitutions`
 - `DELETE /api/v1/meal-plans/{plan_id}/substitutions/{substitution_id}`
 
@@ -61,6 +62,7 @@ Close 7 test coverage gaps identified in test audit (Specs 003-005).
 ## Test Design Philosophy
 
 All tests use **graceful skip logic** with clear explanations:
+
 - If feature not yet integrated: skip with message
 - If backend not yet implemented: permanently skip with endpoint requirements
 - If flaky due to missing data: soft test that passes with minimal product setup
@@ -83,6 +85,7 @@ All tests use **graceful skip logic** with clear explanations:
 All 7 coverage gaps addressed. Test suite ready for Wave 2 endpoint implementations.
 
 **Pending for Wave 2:**
+
 1. Substitution history/undo endpoints → enable 2 skipped tests
 2. ShoppingTrip backend model → soft tests become full integration tests
 3. StapleSuggestions /inventory integration → skip becomes real test

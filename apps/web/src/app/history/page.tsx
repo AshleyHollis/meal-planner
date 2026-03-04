@@ -22,7 +22,7 @@ export default function HistoryPage() {
     document.title = "Cooking History | Meal Planner";
   }, []);
 
-  const loadInitial= useCallback(async () => {
+  const loadInitial = useCallback(async () => {
     try {
       setInitialLoading(true);
       setError(null);

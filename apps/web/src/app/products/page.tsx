@@ -31,7 +31,7 @@ export default function ProductsPage() {
     document.title = "Products | Meal Planner";
   }, []);
 
-  const fetchProducts= useCallback(async () => {
+  const fetchProducts = useCallback(async () => {
     try {
       setError(null);
       const data = await getProducts();
