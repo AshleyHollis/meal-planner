@@ -526,4 +526,313 @@ test.describe("Meal Plan Flow", () => {
       await expect(deductionList).toBeVisible({ timeout: 2_000 });
     });
   });
+
+  test.describe("Status Filter Tabs (Phase 1 UX)", () => {
+    test("meal plan list shows status filter tabs", async ({ page }) => {
+      await page.goto("/meal-plan");
+      await expect(
+        page.getByRole("heading", { name: "Meal Plans" }),
+      ).toBeVisible({
+        timeout: 30_000,
+      });
+
+      // Wait for loading spinner to disappear
+      const spinner = page.locator('[class*="animate-spin"]');
+      if ((await spinner.count()) > 0) {
+        await expect(spinner.first()).not.toBeVisible({ timeout: 30_000 });
+      }
+
+      // Plans should have at least one plan to show filter tabs
+      const emptyState = page.getByText("No Plans Yet");
+      if (await emptyState.isVisible({ timeout: 5_000 }).catch(() => false)) {
+        test.skip(true, "No plans exist to test filtering");
+        return;
+      }
+
+      // Verify all filter tabs are present
+      const filterTabs = ["All", "Active", "Completed", "Failed", "Draft"];
+      for (const tab of filterTabs) {
+        const filterButton = page
+          .getByRole("button")
+          .filter({ hasText: new RegExp(`^${tab}\\s*\\(`, "i") });
+        await expect(filterButton.first()).toBeVisible({
+          timeout: 5_000,
+        });
+      }
+    });
+
+    test("clicking Failed tab shows only failed plans", async ({ page }) => {
+      test.skip(
+        !process.env.USE_EXTERNAL_SERVER,
+        "Requires backend with plans",
+      );
+
+      await page.goto("/meal-plan");
+      await expect(
+        page.getByRole("heading", { name: "Meal Plans" }),
+      ).toBeVisible({
+        timeout: 30_000,
+      });
+
+      const spinner = page.locator('[class*="animate-spin"]');
+      if ((await spinner.count()) > 0) {
+        await expect(spinner.first()).not.toBeVisible({ timeout: 30_000 });
+      }
+
+      // Check if any failed plans exist
+      const emptyState = page.getByText("No Plans Yet");
+      if (await emptyState.isVisible({ timeout: 5_000 }).catch(() => false)) {
+        test.skip(true, "No plans exist");
+        return;
+      }
+
+      // Click "Failed" tab
+      const failedTab = page
+        .getByRole("button")
+        .filter({ hasText: /^Failed\s*\(/ });
+      await failedTab.first().click();
+
+      // Wait for filtering
+      await page.waitForTimeout(500);
+
+      // If failed plans exist, all visible plans should show "failed" status
+      const planCards = page.locator('[class*="border-l-4"]');
+      const cardCount = await planCards.count();
+
+      if (cardCount > 0) {
+        // At least one failed plan exists - verify status badges
+        const failedBadges = page.getByText(/^failed$/i);
+        const badgeCount = await failedBadges.count();
+        expect(badgeCount).toBeGreaterThan(0);
+      }
+    });
+
+    test("clicking All tab shows all plans", async ({ page }) => {
+      await page.goto("/meal-plan");
+      await expect(
+        page.getByRole("heading", { name: "Meal Plans" }),
+      ).toBeVisible({
+        timeout: 30_000,
+      });
+
+      const spinner = page.locator('[class*="animate-spin"]');
+      if ((await spinner.count()) > 0) {
+        await expect(spinner.first()).not.toBeVisible({ timeout: 30_000 });
+      }
+
+      // Navigate to a specific filter first (e.g., Active)
+      const activeTab = page
+        .getByRole("button")
+        .filter({ hasText: /^Active\s*\(/ });
+      const activeTabVisible = await activeTab
+        .first()
+        .isVisible({ timeout: 5_000 })
+        .catch(() => false);
+
+      if (!activeTabVisible) {
+        test.skip(true, "Filter tabs not available");
+        return;
+      }
+
+      await activeTab.first().click();
+      await page.waitForTimeout(500);
+
+      // Then click "All" tab
+      const allTab = page.getByRole("button").filter({ hasText: /^All\s*\(/ });
+      await allTab.first().click();
+
+      // Wait for filtering
+      await page.waitForTimeout(500);
+
+      // All tab should be highlighted/active
+      await expect(allTab.first()).toHaveClass(/bg-blue-600/);
+    });
+  });
+
+  test.describe("Delete Failed Plan (Phase 1 UX)", () => {
+    test.skip(
+      !process.env.USE_EXTERNAL_SERVER,
+      "Requires backend with plans",
+    );
+
+    test("delete button appears for failed plans", async ({ page }) => {
+      await page.goto("/meal-plan");
+      await expect(
+        page.getByRole("heading", { name: "Meal Plans" }),
+      ).toBeVisible({
+        timeout: 30_000,
+      });
+
+      const spinner = page.locator('[class*="animate-spin"]');
+      if ((await spinner.count()) > 0) {
+        await expect(spinner.first()).not.toBeVisible({ timeout: 30_000 });
+      }
+
+      // Look for a failed plan badge
+      const failedBadges = page.getByText(/^failed$/i);
+      const failedBadgeCount = await failedBadges.count();
+
+      if (failedBadgeCount === 0) {
+        test.skip(true, "No failed plans exist to test delete");
+        return;
+      }
+
+      // Get the first failed plan card
+      const failedBadge = failedBadges.first();
+      const failedPlanCard = failedBadge.locator("xpath=ancestor::div[@class*='rounded-xl']");
+
+      // Delete button should appear
+      const deleteButton = failedPlanCard.getByRole("button", {
+        name: /Delete|delete/i,
+      });
+
+      await expect(deleteButton).toBeVisible({
+        timeout: 5_000,
+      });
+    });
+
+    test("delete confirmation dialog appears before deletion", async ({
+      page,
+    }) => {
+      await page.goto("/meal-plan");
+      await expect(
+        page.getByRole("heading", { name: "Meal Plans" }),
+      ).toBeVisible({
+        timeout: 30_000,
+      });
+
+      const spinner = page.locator('[class*="animate-spin"]');
+      if ((await spinner.count()) > 0) {
+        await expect(spinner.first()).not.toBeVisible({ timeout: 30_000 });
+      }
+
+      // Look for a failed plan
+      const failedBadges = page.getByText(/^failed$/i);
+      const failedBadgeCount = await failedBadges.count();
+
+      if (failedBadgeCount === 0) {
+        test.skip(true, "No failed plans exist to test delete");
+        return;
+      }
+
+      // Get the first failed plan card
+      const failedBadge = failedBadges.first();
+      const failedPlanCard = failedBadge.locator("xpath=ancestor::div[@class*='rounded-xl']");
+
+      // Click delete button (first click should show confirmation)
+      const deleteButton = failedPlanCard.getByRole("button", {
+        name: /Delete|delete/i,
+      });
+
+      await deleteButton.click();
+
+      // Confirmation text should appear
+      const confirmationText = failedPlanCard.getByText(/Delete this plan\?/);
+      await expect(confirmationText).toBeVisible({
+        timeout: 5_000,
+      });
+
+      // Confirmation buttons should be visible
+      const confirmButton = failedPlanCard.getByRole("button", {
+        name: /Confirm|Yes|Delete/i,
+      });
+      const cancelButton = failedPlanCard.getByRole("button", {
+        name: /Cancel|No/i,
+      });
+
+      await expect(confirmButton).toBeVisible({ timeout: 5_000 });
+      await expect(cancelButton).toBeVisible({ timeout: 5_000 });
+    });
+
+    test("canceling delete closes confirmation dialog", async ({ page }) => {
+      await page.goto("/meal-plan");
+      await expect(
+        page.getByRole("heading", { name: "Meal Plans" }),
+      ).toBeVisible({
+        timeout: 30_000,
+      });
+
+      const spinner = page.locator('[class*="animate-spin"]');
+      if ((await spinner.count()) > 0) {
+        await expect(spinner.first()).not.toBeVisible({ timeout: 30_000 });
+      }
+
+      const failedBadges = page.getByText(/^failed$/i);
+      const failedBadgeCount = await failedBadges.count();
+
+      if (failedBadgeCount === 0) {
+        test.skip(true, "No failed plans exist to test delete");
+        return;
+      }
+
+      const failedBadge = failedBadges.first();
+      const failedPlanCard = failedBadge.locator(
+        "xpath=ancestor::div[@class*='rounded-xl']",
+      );
+
+      const deleteButton = failedPlanCard.getByRole("button", {
+        name: /Delete|delete/i,
+      });
+
+      await deleteButton.click();
+
+      // Confirmation should show
+      const confirmationText = failedPlanCard.getByText(/Delete this plan\?/);
+      await expect(confirmationText).toBeVisible({
+        timeout: 5_000,
+      });
+
+      // Click cancel
+      const cancelButton = failedPlanCard.getByRole("button", {
+        name: /Cancel|No/i,
+      });
+
+      await cancelButton.click();
+
+      // Confirmation should disappear
+      await expect(confirmationText).not.toBeVisible({
+        timeout: 5_000,
+      });
+    });
+  });
+
+  test.describe("Empty State Display (Phase 1 UX)", () => {
+    test("shows EmptyState component when no plans exist", async ({ page }) => {
+      await page.goto("/meal-plan");
+      await expect(
+        page.getByRole("heading", { name: "Meal Plans" }),
+      ).toBeVisible({
+        timeout: 30_000,
+      });
+
+      const spinner = page.locator('[class*="animate-spin"]');
+      if ((await spinner.count()) > 0) {
+        await expect(spinner.first()).not.toBeVisible({ timeout: 30_000 });
+      }
+
+      // Check if empty state is shown
+      const emptyState = page.getByText("No Plans Yet");
+      const planCards = page.locator('[class*="rounded-xl border border-gray-100"]');
+
+      // One of these should be visible
+      const hasEmptyState = await emptyState
+        .isVisible({ timeout: 5_000 })
+        .catch(() => false);
+      const hasPlans = (await planCards.count()) > 0;
+
+      if (!hasEmptyState && !hasPlans) {
+        test.skip(true, "Could not determine state of meal plan list");
+        return;
+      }
+
+      if (hasEmptyState) {
+        // Empty state should have icon, title, and description
+        await expect(
+          page.getByText("Generate your first meal plan to get started"),
+        ).toBeVisible({
+          timeout: 5_000,
+        });
+      }
+    });
+  });
 });

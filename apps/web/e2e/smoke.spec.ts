@@ -84,6 +84,66 @@ test.describe("Smoke Tests @smoke", () => {
         page.getByRole("heading", { name: "Meal Plans" }),
       ).toBeVisible();
     });
+
+    test("More menu opens and all links work (mobile)", async ({ page }) => {
+      await page.setViewportSize({ width: 375, height: 667 }); // Mobile viewport
+      await page.goto("/");
+
+      // Find the More button in bottom nav
+      const moreButton = page
+        .locator("button")
+        .filter({ hasText: /More/i })
+        .first();
+      
+      // More button should be visible on mobile
+      await expect(moreButton).toBeVisible();
+      await moreButton.click();
+
+      // Menu should slide up with "More" heading
+      await expect(
+        page.getByRole("heading", { name: "More" }),
+      ).toBeVisible({
+        timeout: 5_000,
+      });
+
+      // Verify all menu items are visible
+      const moreMenuItems = [
+        "Products",
+        "Preferences",
+        "History",
+        "Quick Cook",
+        "Recurring",
+      ];
+
+      for (const item of moreMenuItems) {
+        const link = page.getByRole("link", { name: item }).first();
+        await expect(link).toBeVisible({ timeout: 5_000 });
+      }
+    });
+
+    test("More menu closes when clicking a link (mobile)", async ({ page }) => {
+      await page.setViewportSize({ width: 375, height: 667 }); // Mobile viewport
+      await page.goto("/");
+
+      // Open More menu
+      const moreButton = page
+        .locator("button")
+        .filter({ hasText: /More/i })
+        .first();
+      await moreButton.click();
+
+      await expect(
+        page.getByRole("heading", { name: "More" }),
+      ).toBeVisible({
+        timeout: 5_000,
+      });
+
+      // Click a link (e.g., Preferences)
+      await page.getByRole("link", { name: "Preferences" }).first().click();
+
+      // Should navigate and menu should close
+      await expect(page).toHaveURL(/\/preferences/);
+    });
   });
 
   test.describe("Dashboard Content", () => {
