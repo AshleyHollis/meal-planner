@@ -54,3 +54,10 @@ How to decide who handles what.
 16. **Process tasks.md in waves** — When working from a task file, identify ALL `[P]` (parallel) tasks in the current phase and launch agents for all of them simultaneously. As tasks complete, launch the next unlocked phase immediately.
 17. **Ralph never stops** — When Ralph is active, process ALL work categories in parallel (untriaged + assigned + CI failures simultaneously). Never stop between rounds.
 18. **No idle agents** — After every batch, check: more tasks? quality improvements? missing tests? UX gaps? documentation? If anything exists, launch it. Don't wait for the user to ask.
+
+### Pipeline Monitoring (Definition of Done)
+
+19. **Never stop after pushing** — After pushing code, the coordinator MUST monitor the CI pipeline to completion. If CI fails, diagnose and fix immediately. Do not report success or wait for the user to notice failures.
+20. **Preview deployment gate** — After CI passes, monitor the Preview workflow. Verify it deploys successfully and E2E tests pass in the preview environment.
+21. **Visual smoke test is mandatory** — After preview deployment succeeds, auto-trigger the Visual Smoke Test ceremony (Rule 9). Feature work is NOT complete until the full pipeline passes: CI → Preview → E2E → Visual Smoke Test.
+22. **Pipeline failures are highest priority** — If a pipeline fails after a push, fixing it takes precedence over all other queued work. Route the fix to the appropriate agent (Ripley for backend, Kane for frontend, Parker for infra).

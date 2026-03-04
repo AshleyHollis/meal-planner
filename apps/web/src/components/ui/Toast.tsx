@@ -30,10 +30,11 @@ interface ToastContextValue {
 
 const ToastContext = createContext<ToastContextValue | null>(null);
 
+const NOOP_TOAST: ToastContextValue = { showToast: () => {} };
+
 export function useToast(): ToastContextValue {
   const ctx = useContext(ToastContext);
-  if (!ctx) throw new Error("useToast must be used within <ToastProvider>");
-  return ctx;
+  return ctx ?? NOOP_TOAST;
 }
 
 // ---------------------------------------------------------------------------
