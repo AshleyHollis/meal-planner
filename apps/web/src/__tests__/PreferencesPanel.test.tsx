@@ -171,9 +171,15 @@ describe("PreferencesPanel", () => {
       expect(screen.queryByText("Peanuts")).toBeDefined();
     });
 
-    // Find and click delete button for Peanuts
+    // First click shows confirmation
     const deleteButton = screen.getByLabelText("Delete Peanuts");
     fireEvent.click(deleteButton);
+
+    // Second click on the "Confirm" button actually deletes
+    await waitFor(() => {
+      const confirmButton = screen.getByRole("button", { name: /confirm/i });
+      fireEvent.click(confirmButton);
+    });
 
     await waitFor(() => {
       expect(api.deletePreference).toHaveBeenCalledWith("member-1", "pref-1");
