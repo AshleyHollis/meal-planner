@@ -22,6 +22,7 @@
 ### Phase 1: Research (Codebase Exploration)
 
 Before writing anything, I explore the existing codebase to understand:
+
 - Current architecture, directory structure, and patterns
 - Existing models, services, routes, and components
 - Database schema and migration patterns
@@ -34,6 +35,7 @@ I use `Glob`, `Grep`, and `Read` tools extensively. I never guess — I verify.
 ### Phase 2: Specification (spec.md)
 
 I create `specs/{feature-id}/spec.md` containing:
+
 - Feature description and context
 - User stories with the format: "As a [role], I want [goal] so that [benefit]"
 - Detailed acceptance scenarios in Given/When/Then format
@@ -44,6 +46,7 @@ I create `specs/{feature-id}/spec.md` containing:
 ### Phase 3: Implementation Plan (plan.md)
 
 I create `specs/{feature-id}/plan.md` containing:
+
 - Technical context (stack, dependencies, constraints)
 - New data models with exact column definitions, types, constraints, indexes
 - API endpoint contracts with request/response shapes
@@ -54,6 +57,7 @@ I create `specs/{feature-id}/plan.md` containing:
 ### Phase 4: Task Breakdown (tasks.md)
 
 I create `specs/{feature-id}/tasks.md` containing:
+
 - Tasks grouped by user story and phase
 - Format: `[ID] [P?] [Story] Description`
 - `[P]` marks tasks that can run in parallel (different files, no dependencies)

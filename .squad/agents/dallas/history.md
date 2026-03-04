@@ -158,16 +158,18 @@ The meal plan page (`/meal-plan`) has the correct pattern: it lists ALL plans, f
 Full architecture review across all 5 specs (001-MVP through 005-grocery-enhancements). 14 findings total: 3 critical, 6 important, 5 minor.
 
 **Critical gaps:**
+
 1. **Worker doesn't fetch leftovers or freezer items** — `prompts.py` has formatters, `build_prompt()` has params, but `_load_context()` never loads the data. Two spec 002 requirements (FR-006, FR-013) are wired at the prompt layer but disconnected at the data layer.
 2. **ShoppingTrip model completely missing** — spec 005 US2 (shop-filtered trips, per-trip check-off) is entirely unimplemented. No model, no routes, no service.
 3. **Substitution doesn't persist grocery changes** — `_calculate_grocery_changes()` returns a diff in the response but never writes to GroceryItem/GroceryList tables.
 
-**Key integration insight:** The pattern across all cross-feature gaps is the same: the *interface* is defined (prompt params, response models, route stubs) but the *data pipeline* is incomplete. This suggests a top-down design approach where contracts were written first but data-fetching implementations lagged. Future work should audit any function that accepts optional params and verify the caller actually passes data.
+**Key integration insight:** The pattern across all cross-feature gaps is the same: the _interface_ is defined (prompt params, response models, route stubs) but the _data pipeline_ is incomplete. This suggests a top-down design approach where contracts were written first but data-fetching implementations lagged. Future work should audit any function that accepts optional params and verify the caller actually passes data.
 
 **Metrics:** Of 17 cross-feature integration points checked, 11 are fully working, 6 are missing. The working integrations (preferences → prompt, ratings → prompt, cuisine → prompt, recurring → slots, allergens → substitution, product → grocery) are solid and well-implemented.
 
 **File paths for fixes:**
-- Leftovers/freezer: `services/workers/meal_plan_generator/generator.py:145-222` (add to _load_context)
+
+- Leftovers/freezer: `services/workers/meal_plan_generator/generator.py:145-222` (add to \_load_context)
 - ShoppingTrip: New model in `services/shared/shared/db/models/`, new routes/service
 - Grocery persist: `services/api/src/api/services/substitution_service.py:234-253` (call regenerate_grocery_list)
 - Add-staples: `services/api/src/api/routes/staple_routes.py` (new endpoint)

@@ -13,6 +13,7 @@ This skill defines how the team takes a feature idea and turns it into shipped c
 ## Trigger
 
 The coordinator activates this workflow when the user says any of:
+
 - "Build feature X" / "Add feature X" / "I want to build X"
 - "New feature: {description}"
 - "Spec out {feature}"
@@ -38,13 +39,16 @@ The coordinator activates this workflow when the user says any of:
 ## Phase 1: Spec Creation (Bishop)
 
 ### Input
+
 Feature ID and description, e.g.:
+
 ```
 "006-cooking-experience: Build the cook-time experience with step-by-step
 mode, voice control, and push notifications for prep tasks."
 ```
 
 ### What Bishop Does
+
 1. **Research** — reads 15-20+ files across the codebase to understand patterns
 2. **Creates `specs/{feature-id}/`** directory
 3. **Writes `spec.md`** — user stories with acceptance scenarios
@@ -52,6 +56,7 @@ mode, voice control, and push notifications for prep tasks."
 5. **Writes `tasks.md`** — ordered tasks with `[P]` parallel markers and verification checkpoints
 
 ### Output Quality Requirements
+
 - Every task has exact file paths
 - Every model has exact column types and constraints
 - Every API endpoint has request/response shapes
@@ -60,6 +65,7 @@ mode, voice control, and push notifications for prep tasks."
 - Tasks grouped by user story
 
 ### Coordinator Behavior During Spec
+
 - Spawn Bishop (sync or background depending on whether implementation follows)
 - Simultaneously spawn Dallas to prepare for review (reads existing specs as reference)
 - If user provided a description with multiple features, Bishop handles all in one spec
@@ -67,12 +73,14 @@ mode, voice control, and push notifications for prep tasks."
 ## Phase 2: Spec Review (Dallas)
 
 ### What Dallas Does
+
 1. Reads the spec artifacts Bishop created
 2. Checks for completeness, consistency, missing edge cases
 3. Verifies task ordering and parallel markers
 4. Either approves or requests changes
 
 ### Coordinator Behavior
+
 - If approved → proceed to implementation immediately
 - If changes requested → Bishop revises, Dallas re-reviews (max 2 rounds)
 - Don't wait for user approval between spec and implementation — Dallas's approval is the gate
@@ -94,21 +102,22 @@ mode, voice control, and push notifications for prep tasks."
 
 ### Agent Routing for Tasks
 
-| Task Pattern | Route To |
-|---|---|
-| SQLAlchemy model, migration, Alembic | Ripley |
-| Pydantic models, API service, routes | Ripley |
-| Worker/generator changes | Ripley |
-| TypeScript types, API client | Kane |
-| React components, pages, UI | Kane |
-| E2E tests, Playwright specs | Lambert |
-| API unit tests, pytest | Lambert |
-| Lint/build verification | Parker |
-| UX completeness review | Ash |
+| Task Pattern                         | Route To |
+| ------------------------------------ | -------- |
+| SQLAlchemy model, migration, Alembic | Ripley   |
+| Pydantic models, API service, routes | Ripley   |
+| Worker/generator changes             | Ripley   |
+| TypeScript types, API client         | Kane     |
+| React components, pages, UI          | Kane     |
+| E2E tests, Playwright specs          | Lambert  |
+| API unit tests, pytest               | Lambert  |
+| Lint/build verification              | Parker   |
+| UX completeness review               | Ash      |
 
 ### Post-Implementation
 
 After all tasks complete:
+
 1. Lambert runs full test suite
 2. Ash runs Feature Completeness Review (ceremony)
 3. Lambert runs Visual Smoke Test (ceremony)
@@ -119,14 +128,14 @@ After all tasks complete:
 
 Feature IDs follow the pattern: `{NNN}-{kebab-case-name}`
 
-| ID | Feature |
-|---|---|
-| 001 | meal-planner-mvp |
-| 002 | inventory-enhancements |
-| 003 | personalization-ai |
-| 004 | planning-enhancements |
-| 005 | grocery-enhancements |
-| 006+ | (next features) |
+| ID   | Feature                |
+| ---- | ---------------------- |
+| 001  | meal-planner-mvp       |
+| 002  | inventory-enhancements |
+| 003  | personalization-ai     |
+| 004  | planning-enhancements  |
+| 005  | grocery-enhancements   |
+| 006+ | (next features)        |
 
 ## Branch Strategy
 
@@ -138,26 +147,28 @@ git worktree add ../meal-planner-{feature-id} -b {feature-id}
 
 ## Smart Ralph Command Equivalents
 
-| Smart Ralph Command | Squad Equivalent |
-|---|---|
-| `/ralph-specum:new 006-cooking-experience "..."` | `"Bishop, spec 006-cooking-experience: ..."` |
-| `/ralph-specum:status` | `"Ralph, status"` or `"Where are we?"` |
-| `/ralph-specum:implement --recovery-mode` | `"Team, continue implementing from tasks.md"` |
-| `/ralph-specum:cancel` | `"Ralph, idle"` |
-| `/ralph-specum:research` | `"Bishop, research the codebase for feature X"` |
-| `/ralph-specum:requirements` | `"Bishop, write spec.md for feature X"` |
-| `/ralph-specum:design` | `"Bishop, write plan.md for feature X"` |
-| `/ralph-specum:tasks` | `"Bishop, write tasks.md for feature X"` |
+| Smart Ralph Command                              | Squad Equivalent                                |
+| ------------------------------------------------ | ----------------------------------------------- |
+| `/ralph-specum:new 006-cooking-experience "..."` | `"Bishop, spec 006-cooking-experience: ..."`    |
+| `/ralph-specum:status`                           | `"Ralph, status"` or `"Where are we?"`          |
+| `/ralph-specum:implement --recovery-mode`        | `"Team, continue implementing from tasks.md"`   |
+| `/ralph-specum:cancel`                           | `"Ralph, idle"`                                 |
+| `/ralph-specum:research`                         | `"Bishop, research the codebase for feature X"` |
+| `/ralph-specum:requirements`                     | `"Bishop, write spec.md for feature X"`         |
+| `/ralph-specum:design`                           | `"Bishop, write plan.md for feature X"`         |
+| `/ralph-specum:tasks`                            | `"Bishop, write tasks.md for feature X"`        |
 
 ## Example: Full Pipeline Execution
 
 User says:
+
 ```
 Bishop, spec 006-cooking-experience: "Build the cook-time experience with
 step-by-step mode, voice control, and push notifications."
 ```
 
 Coordinator:
+
 1. Spawns Bishop (background) to create spec/plan/tasks
 2. Spawns Dallas (background) to prepare for review
 3. Shows launch table:

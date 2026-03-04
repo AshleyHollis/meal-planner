@@ -23,6 +23,7 @@ Default to Full mode (multi-agent fan-out) for ALL work requests, not just "Team
 ### 2. Fan-Out Aggressively
 
 For any task:
+
 - Spawn the **primary agent** doing the work
 - Spawn the **tester** to write tests from requirements simultaneously
 - Spawn **Ash** (UX Reviewer) to read the user story and prepare review criteria
@@ -35,17 +36,18 @@ Never wait for one agent to finish before starting another unless there is a **h
 
 Don't just think about what's needed now. Think about what will be needed **after this work completes** and start it early:
 
-| Current Work | Anticipatory Spawn | Why |
-|---|---|---|
-| Kane building UI | Ash reading UX skill + user story | Review starts faster |
-| Ripley building API | Kane reading API contracts | Frontend can start mapping |
-| Any implementation | Lambert writing test cases from spec | Tests ready when code lands |
-| Any code change | Parker checking CI/build impact | Deployment issues caught early |
-| Bug fix | Lambert writing regression test | Prevents re-occurrence |
+| Current Work        | Anticipatory Spawn                   | Why                            |
+| ------------------- | ------------------------------------ | ------------------------------ |
+| Kane building UI    | Ash reading UX skill + user story    | Review starts faster           |
+| Ripley building API | Kane reading API contracts           | Frontend can start mapping     |
+| Any implementation  | Lambert writing test cases from spec | Tests ready when code lands    |
+| Any code change     | Parker checking CI/build impact      | Deployment issues caught early |
+| Bug fix             | Lambert writing regression test      | Prevents re-occurrence         |
 
 ### 4. Chain Follow-Ups Immediately
 
 When agents complete, **do not stop and report to the user**. Instead:
+
 1. Collect results
 2. Immediately identify what's unblocked
 3. Launch the next wave of agents
@@ -56,6 +58,7 @@ The user sees continuous progress, not start-stop-start-stop.
 ### 5. Model Selection — Quality Over Cost
 
 Since premium requests are explicitly approved:
+
 - Use `claude-sonnet-4.6` for ALL code-writing agents (Kane, Ripley, Lambert)
 - Use `claude-opus-4.6` for Dallas (Lead) — always
 - Use `claude-sonnet-4.6` for Ash (UX Reviewer) — judgment matters
@@ -64,6 +67,7 @@ Since premium requests are explicitly approved:
 ### 6. Ralph Keeps the Pipeline Moving
 
 When Ralph is active:
+
 - Process ALL categories in parallel (not one at a time)
 - Spawn agents for untriaged issues AND assigned issues AND CI failures simultaneously
 - Never stop between rounds — continuous execution until the board is clear
@@ -74,14 +78,17 @@ When Ralph is active:
 When decomposing a user request, don't just identify the obvious work:
 
 **Narrow decomposition (avoid):**
+
 > "Add product search" → Spawn Kane to build search UI
 
 **Broad decomposition (prefer):**
+
 > "Add product search" → Spawn Kane (search UI) + Ripley (search API endpoint) + Lambert (E2E tests for search) + Ash (review search UX patterns) + Dallas (review search architecture) — ALL in parallel
 
 ### 8. Ceremonies Don't Block — They Run Alongside
 
 Design Reviews should run **concurrently** with early implementation:
+
 - Spawn the Lead for design review
 - Simultaneously spawn agents to begin scaffolding, writing types, setting up test files
 - If the design review changes the approach, agents pivot — but they've already done useful groundwork
@@ -89,6 +96,7 @@ Design Reviews should run **concurrently** with early implementation:
 ### 9. Never Leave Agents Idle
 
 After every batch:
+
 1. Are there more tasks in the backlog? → Launch them
 2. Are there quality improvements to make? → Launch them
 3. Are there tests to write? → Launch them
@@ -99,6 +107,7 @@ After every batch:
 ### 10. Spec-Driven Workflow Integration
 
 When working from a tasks.md file:
+
 - Identify ALL tasks that can run in parallel (tagged with `[P]`)
 - Launch agents for ALL parallel tasks simultaneously
 - As tasks complete, immediately launch the next unlocked tasks

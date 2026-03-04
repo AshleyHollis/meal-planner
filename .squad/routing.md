@@ -16,7 +16,7 @@ How to decide who handles what.
 | Testing strategy                                  | Lambert  | Test coverage, edge cases, verify fixes                         |
 | Scope & priorities                                | Dallas   | What to build next, trade-offs, decisions                       |
 | UX completeness, feature feel, visual consistency | Ash      | Feature feels incomplete, missing interactions, inconsistent UI |
-| New feature, spec, plan, tasks, requirements      | Bishop   | "Build feature X", "Spec out Y", "Add feature Z"               |
+| New feature, spec, plan, tasks, requirements      | Bishop   | "Build feature X", "Spec out Y", "Add feature Z"                |
 | Session logging                                   | Scribe   | Automatic — never needs routing                                 |
 
 ## Rules

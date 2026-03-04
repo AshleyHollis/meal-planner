@@ -97,15 +97,15 @@
 
 ## Spec Review
 
-| Field            | Value                                              |
-| ---------------- | -------------------------------------------------- |
-| **Trigger**      | auto                                               |
-| **When**         | after                                              |
-| **Condition**    | Bishop completes spec.md + plan.md + tasks.md      |
-| **Facilitator**  | lead                                               |
-| **Participants** | lead, spec-architect                               |
-| **Time budget**  | focused                                            |
-| **Enabled**      | yes                                                |
+| Field            | Value                                         |
+| ---------------- | --------------------------------------------- |
+| **Trigger**      | auto                                          |
+| **When**         | after                                         |
+| **Condition**    | Bishop completes spec.md + plan.md + tasks.md |
+| **Facilitator**  | lead                                          |
+| **Participants** | lead, spec-architect                          |
+| **Time budget**  | focused                                       |
+| **Enabled**      | yes                                           |
 
 **Agenda:**
 

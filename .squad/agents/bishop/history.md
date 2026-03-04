@@ -33,6 +33,7 @@ Project-specific learnings from spec creation sessions.
 ## Spec Directory Structure
 
 The project uses this spec structure (established by specs 001-005):
+
 ```
 specs/{feature-id}/
   spec.md       — user stories, acceptance criteria

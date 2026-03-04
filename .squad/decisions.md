@@ -475,6 +475,7 @@ The team should always use the latest LLM models. Specifically: `claude-opus-4.6
 ## Summary
 
 Comprehensive audit across all 5 feature specs (001–005) identified **52 actionable findings**:
+
 - **3 critical architectural gaps** (Dallas)
 - **36 UX/UI issues** (8 critical + 19 important + 9 minor) (Ash)
 - **14 spec vs implementation gaps** (3 critical + 6 important + 5 minor) (Bishop)
@@ -484,27 +485,32 @@ Comprehensive audit across all 5 feature specs (001–005) identified **52 actio
 ## Critical Findings (All Three Lead to Data Loss or Silent Failures)
 
 **C1 — LLM Prompt Missing Leftovers & Freezer Items (Dallas):**
+
 - Prompt formatters exist but `_load_context()` never fetches leftovers/freezer data
 - AI cannot prioritize expiring items or account for defrost timing
 - Fix: Add `_fetch_leftovers()` and `_fetch_freezer_items()` to data layer
 
 **C2 — ShoppingTrip Model Completely Missing (Dallas):**
+
 - Spec 005 defines ShoppingTrip with DB persistence and per-trip state tracking
 - Impl: localStorage-only workaround loses all state on browser change/device switch
 - Users cannot filter by shop or persist trip progress across sessions
 - Fix: Implement ShoppingTrip model, API routes, service layer
 
 **C3 — Substitution Changes Not Persisted to DB (Dallas):**
+
 - `SubstitutionService` computes grocery diff but never writes to GroceryItems table
 - Grocery list shows stale data until user regenerates entire plan
 - Fix: Call `grocery_service.regenerate_grocery_list()` after substitution
 
 **UX Silent Failures (Ash):**
+
 - 6 components silently fail (`catch { // silent }` pattern): grocery check, inventory edit/remove, product delete, mark cooked/skip, favorite toggle
 - Users perform actions and get NO feedback on failure
 - Fix: Replace all with proper error toast + retry UX pattern
 
 **UX 404 Dead Ends (Ash):**
+
 - `/inventory/[id]` and `/products/[id]` routes link to non-existent pages
 - Every click is a 404; users trapped at dead ends
 - Fix: Create detail pages or remove clickable links + re-wire to real actions
@@ -512,18 +518,21 @@ Comprehensive audit across all 5 feature specs (001–005) identified **52 actio
 ## Important Findings (Confusing/Incomplete Workflows)
 
 **API Feature Stubs (Dallas):**
+
 - "Cook This" quick suggestion endpoint doesn't create persistent meal slot (spec requires it)
 - `/adapt` route has TODO comment; service layer not wired to API endpoint
 - `/save-variation` route returns mock response (unimplemented)
 - Fix: Wire service layer to routes or delete stub endpoints
 
 **Missing API Endpoints (Dallas/Bishop):**
+
 - No `POST /grocery-lists/{id}/add-staples` (FR-009)
 - No endpoint to update existing preference (PUT/PATCH) (only create/delete)
 - Leftover PATCH only marks `used_at`, cannot update portions/location/expiry
 - Fix: Implement missing CRUD paths
 
 **UX Navigation Gaps (Ash):**
+
 - No Home/Dashboard link in desktop sidebar (only accessible via logo)
 - Recent activity rows not interactive (no links to meal plan/recipe)
 - No grocery list link from meal plan detail (user must navigate backward)
@@ -531,10 +540,12 @@ Comprehensive audit across all 5 feature specs (001–005) identified **52 actio
 - Fix: Add missing navigation, link interconnectedness
 
 **Frontend Validation Gap (Ash/Bishop):**
+
 - Preferences hardcoded to placeholder CURRENT_MEMBER_ID ("current" user never fetched)
 - Fix: Wire Auth0 user session to preferences panel
 
 **Broken UX Patterns (Ash):**
+
 - 4 missing Retry buttons on error states (dashboard, history, preferences, quick suggestions)
 - Delete actions lack confirmation dialogs (preference, recurring meal — instant loss)
 - Currency formatting inconsistent (`$X.XX` vs `AUD X.XX` vs no locale)
@@ -559,6 +570,7 @@ Comprehensive audit across all 5 feature specs (001–005) identified **52 actio
 - Spec 005 (Grocery): **71.4%** (4 missing: product edit/delete E2E, trip state persistence, reset on new list)
 
 **Gap types:**
+
 - 4 E2E CRUD workflows missing (edit/delete forms and confirmations)
 - 2 integration tests missing (deletion side effects)
 - 1 regression test missing (default behavior)
@@ -1763,6 +1775,7 @@ The dashboard's "Generate Plan" button fails with HTTP 409 because it **does not
 **What:** The team operates in max-throughput mode. Every routing decision must maximize the number of agents running in parallel. Premium request costs are explicitly approved and not a concern. The `max-throughput` skill is active and must be read by the coordinator before every routing decision.
 
 **Key changes:**
+
 1. Default to Full mode (multi-agent fan-out) for ALL work, not just "Team, ..." requests
 2. Always anticipate downstream work — spawn testers, UX reviewers, and downstream agents alongside primary implementers
 3. Chain follow-ups immediately — don't stop between agent batches
@@ -1797,6 +1810,7 @@ The dashboard's "Generate Plan" button fails with HTTP 409 because it **does not
 **What:** Added Bishop (Spec Architect) agent to the team. Bishop owns the entire spec pipeline: research → spec.md → plan.md → tasks.md. This replaces the need for Smart Ralph's `/ralph-specum:new` command. Users can now say "Bishop, spec 006-cooking-experience: ..." in Copilot CLI and get the full pipeline.
 
 **Pipeline flow:**
+
 1. Bishop researches codebase (15-20+ file reads)
 2. Bishop writes spec.md (user stories, acceptance criteria)
 3. Bishop writes plan.md (data models, API contracts, architecture)
@@ -1806,6 +1820,7 @@ The dashboard's "Generate Plan" button fails with HTTP 409 because it **does not
 7. No user confirmation needed between spec and implementation — Dallas's approval is the gate
 
 **Smart Ralph command equivalents:**
+
 - `/ralph-specum:new` → `"Bishop, spec {id}: {description}"`
 - `/ralph-specum:implement` → `"Team, implement from tasks.md"`
 - `/ralph-specum:status` → `"Ralph, status"` or `"Where are we?"`

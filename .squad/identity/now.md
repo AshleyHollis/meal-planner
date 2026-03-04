@@ -16,6 +16,7 @@ Building grocery list enhancements for the AI meal planner (branch 005-grocery-e
 ## Max Throughput Mode (2026-03-04) — ACTIVE
 
 **The team operates at maximum parallelism.** Cost is not a concern. Read the `max-throughput` skill before every routing decision. Key behaviors:
+
 - Default to Full mode (multi-agent fan-out) for ALL work
 - Always anticipate downstream work and spawn extra agents
 - Chain follow-ups immediately — never stop between batches
