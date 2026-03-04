@@ -73,6 +73,21 @@ async def create_product(
     return _to_response(product)
 
 
+@router.get("/{product_id}", response_model=ProductResponse)
+async def get_product(
+    product_id: UUID,
+    service: ProductService = Depends(get_product_service),  # noqa: B008
+) -> ProductResponse:
+    """Get a product mapping by ID."""
+    product = await service.get_product(product_id)
+    if product is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Product not found",
+        )
+    return _to_response(product)
+
+
 @router.put("/{product_id}", response_model=ProductResponse)
 async def update_product(
     product_id: UUID,

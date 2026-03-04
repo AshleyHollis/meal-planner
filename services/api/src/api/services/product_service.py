@@ -98,6 +98,15 @@ class ProductService:
         await self.session.flush()
         return True
 
+    async def get_product(self, product_id: UUID) -> Product | None:
+        """Return a single product by ID for the household. Returns None if not found."""
+        stmt = select(Product).where(
+            Product.id == product_id,
+            Product.household_id == self.household_id,
+        )
+        result = await self.session.execute(stmt)
+        return result.scalar_one_or_none()
+
     async def search_products(self, query: str) -> list[Product]:
         """Search products by brand, product_name, or shop (case-insensitive)."""
         pattern = f"%{query}%"
