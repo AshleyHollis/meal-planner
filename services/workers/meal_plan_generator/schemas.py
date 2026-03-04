@@ -34,6 +34,7 @@ class GeneratedRecipe(BaseModel):
     cook_time_min: int
     servings: int = 2
     cuisine_type: str | None = None
+    meal_type: str | None = None
     ingredients: list[RecipeIngredientSchema]
     steps: list[RecipeStepSchema]
 
@@ -42,3 +43,9 @@ class GeneratedMealPlan(BaseModel):
     """Pydantic model for LLM structured output of a complete meal plan."""
 
     recipes: list[GeneratedRecipe]  # Exactly 7
+
+
+class QuickSuggestionPlan(BaseModel):
+    """Pydantic model for LLM structured output of quick meal suggestions."""
+
+    suggestions: list[GeneratedRecipe]

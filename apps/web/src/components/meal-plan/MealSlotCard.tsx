@@ -18,6 +18,7 @@ import {
   getCategoryColor,
 } from "@/lib/meal-images";
 import { LeftoverForm } from "../leftover/LeftoverForm";
+import { SubstitutionDialog } from "../SubstitutionDialog";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -62,6 +63,7 @@ interface MealSlotCardProps {
   onFavoriteToggle?: (recipeId: string, isFavorited: boolean) => void;
   isFavorited?: boolean;
   onLeftoverRecorded?: () => void;
+  onIngredientSubstituted?: () => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -80,8 +82,13 @@ function MealSlotCard({
   onFavoriteToggle,
   isFavorited = false,
   onLeftoverRecorded,
+  onIngredientSubstituted,
 }: MealSlotCardProps) {
   const [showLeftoverForm, setShowLeftoverForm] = useState(false);
+  const [swapDialog, setSwapDialog] = useState<{
+    open: boolean;
+    ingredientName: string;
+  }>({ open: false, ingredientName: "" });
 
   const recipe = slot.recipe;
   const statusCfg = STATUS_CONFIG[slot.status] ?? STATUS_CONFIG.planned;
@@ -274,7 +281,7 @@ function MealSlotCard({
                   {recipe.ingredients.map((ing) => (
                     <li key={ing.id} className="flex items-baseline gap-1">
                       <span className="text-gray-400">•</span>
-                      <span>
+                      <span className="flex-1">
                         {ing.quantity} {ing.unit}{" "}
                         {ing.ingredient_name || "ingredient"}
                         {ing.is_optional && (
@@ -283,6 +290,21 @@ function MealSlotCard({
                           </span>
                         )}
                       </span>
+                      {planId && !isDone && (
+                        <button
+                          onClick={() =>
+                            setSwapDialog({
+                              open: true,
+                              ingredientName:
+                                ing.ingredient_name || "ingredient",
+                            })
+                          }
+                          className="ml-1 shrink-0 rounded px-1 py-0.5 text-xs text-blue-500 hover:bg-blue-50 hover:text-blue-700"
+                          title="Swap ingredient"
+                        >
+                          Swap
+                        </button>
+                      )}
                     </li>
                   ))}
                 </ul>
@@ -360,6 +382,21 @@ function MealSlotCard({
             }}
           />
         </div>
+      )}
+
+      {/* Ingredient substitution dialog */}
+      {planId && swapDialog.open && (
+        <SubstitutionDialog
+          open={swapDialog.open}
+          onClose={() => setSwapDialog({ open: false, ingredientName: "" })}
+          planId={planId}
+          slotId={slot.id}
+          ingredientName={swapDialog.ingredientName}
+          onSuccess={() => {
+            setSwapDialog({ open: false, ingredientName: "" });
+            onIngredientSubstituted?.();
+          }}
+        />
       )}
     </div>
   );

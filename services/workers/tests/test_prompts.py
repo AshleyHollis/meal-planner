@@ -8,6 +8,8 @@ from types import SimpleNamespace
 from meal_plan_generator.prompts import (
     add_error_feedback,
     build_prompt,
+    build_quick_suggestion_prompt,
+    build_substitution_prompt,
     format_cuisine_preferences,
     format_equipment,
     format_expiring,
@@ -441,3 +443,134 @@ class TestBuildPromptWithPersonalization:
         assert "FAVORITES" not in prompt
         assert "RATING INSIGHTS" not in prompt
         assert "CUISINE PREFERENCE" not in prompt
+
+
+# --- build_substitution_prompt ---
+
+
+class TestBuildSubstitutionPrompt:
+    def test_contains_ingredient_swap_instruction(self):
+        prompt = build_substitution_prompt(
+            recipe_title="Chicken Pasta",
+            recipe_ingredients=[
+                {"ingredient_name": "Chicken", "quantity": 300, "unit": "g"},
+                {"ingredient_name": "Pasta", "quantity": 200, "unit": "g"},
+            ],
+            recipe_steps=[
+                {"step_order": 1, "instruction": "Cook chicken", "duration_min": 15},
+            ],
+            original_ingredient="Chicken",
+            replacement_ingredient="Beef",
+        )
+        assert "Chicken" in prompt
+        assert "Beef" in prompt
+        assert "Replace" in prompt or "substitute" in prompt.lower() or "SUBSTITUTION" in prompt
+
+    def test_contains_recipe_title(self):
+        prompt = build_substitution_prompt(
+            recipe_title="Test Recipe",
+            recipe_ingredients=[],
+            recipe_steps=[],
+            original_ingredient="Salt",
+            replacement_ingredient="Sea Salt",
+        )
+        assert "Test Recipe" in prompt
+
+    def test_allergen_note_included_when_provided(self):
+        prompt = build_substitution_prompt(
+            recipe_title="Test",
+            recipe_ingredients=[],
+            recipe_steps=[],
+            original_ingredient="Milk",
+            replacement_ingredient="Almond Milk",
+            allergen_ingredients={"peanuts", "shellfish"},
+        )
+        assert "ALLERGEN" in prompt
+        assert "peanuts" in prompt
+
+    def test_no_allergen_note_when_empty(self):
+        prompt = build_substitution_prompt(
+            recipe_title="Test",
+            recipe_ingredients=[],
+            recipe_steps=[],
+            original_ingredient="Milk",
+            replacement_ingredient="Oat Milk",
+            allergen_ingredients=None,
+        )
+        assert "ALLERGEN" not in prompt
+
+    def test_contains_json_schema_hint(self):
+        prompt = build_substitution_prompt(
+            recipe_title="Test",
+            recipe_ingredients=[],
+            recipe_steps=[],
+            original_ingredient="A",
+            replacement_ingredient="B",
+        )
+        assert "ingredients" in prompt
+        assert "steps" in prompt
+
+
+# --- build_quick_suggestion_prompt ---
+
+
+class TestBuildQuickSuggestionPrompt:
+    def test_contains_inventory_items(self):
+        inventory = [
+            {"name": "Chicken Breast", "quantity": 500, "unit": "g"},
+            {"name": "Rice", "quantity": 1000, "unit": "g"},
+        ]
+        prompt = build_quick_suggestion_prompt(
+            inventory_items=inventory,
+            expiring_items=[],
+            max_results=3,
+        )
+        assert "Chicken Breast" in prompt
+        assert "Rice" in prompt
+        assert "CURRENT INVENTORY" in prompt
+
+    def test_contains_expiring_items(self):
+        expiring = [{"name": "Milk", "quantity": 500, "unit": "ml", "expiry": "2026-03-05"}]
+        prompt = build_quick_suggestion_prompt(
+            inventory_items=[],
+            expiring_items=expiring,
+            max_results=3,
+        )
+        assert "Milk" in prompt
+        assert "EXPIRING SOON" in prompt
+
+    def test_contains_max_results(self):
+        prompt = build_quick_suggestion_prompt(
+            inventory_items=[],
+            expiring_items=[],
+            max_results=7,
+        )
+        assert "7" in prompt
+
+    def test_allergen_restriction_included(self):
+        prompt = build_quick_suggestion_prompt(
+            inventory_items=[],
+            expiring_items=[],
+            max_results=3,
+            allergen_ingredients={"peanuts", "gluten"},
+        )
+        assert "ALLERGEN RESTRICTION" in prompt
+        assert "peanuts" in prompt
+        assert "gluten" in prompt
+
+    def test_no_allergen_note_when_none(self):
+        prompt = build_quick_suggestion_prompt(
+            inventory_items=[],
+            expiring_items=[],
+            max_results=3,
+            allergen_ingredients=None,
+        )
+        assert "ALLERGEN" not in prompt
+
+    def test_empty_inventory_message(self):
+        prompt = build_quick_suggestion_prompt(
+            inventory_items=[],
+            expiring_items=[],
+            max_results=3,
+        )
+        assert "No inventory items available" in prompt

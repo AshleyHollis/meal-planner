@@ -91,7 +91,6 @@ def upgrade() -> None:
             op.create_index("ix_leftovers_household", "Leftovers", ["household_id"])
         if not _index_exists("ix_leftovers_slot"):
             op.create_index("ix_leftovers_slot", "Leftovers", ["meal_slot_id"])
-
     if not _table_exists("StapleIngredients"):
         op.create_table(
             "StapleIngredients",

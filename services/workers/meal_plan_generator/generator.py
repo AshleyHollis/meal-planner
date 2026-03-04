@@ -27,6 +27,7 @@ from shared.db.models import (
     RecipeFavorite,
     RecipeIngredient,
     RecipeStep,
+    RecurringMealTemplate,
 )
 from shared.logging.config import get_logger
 from sqlalchemy import func, select
@@ -59,6 +60,7 @@ async def generate_meal_plan(message_content: dict[str, Any]) -> None:
     meal_plan_id = message_content["meal_plan_id"]
     household_id = message_content["household_id"]
     cuisine_preferences = message_content.get("cuisine_preferences")
+    meal_types = message_content.get("meal_types", ["dinner"])
 
     logger.info(
         "generate_meal_plan_start",
@@ -87,11 +89,13 @@ async def generate_meal_plan(message_content: dict[str, Any]) -> None:
             context["inventory"],
             context["equipment"],
             context["expiring"],
+            meal_types=meal_types,
             member_preferences=context.get("member_preferences"),
             recent_meals=context.get("recent_meals"),
             favorites=context.get("favorites"),
             rating_insights=context.get("rating_insights"),
             cuisine_preferences=context.get("cuisine_preferences"),
+            recurring_constraints=context.get("recurring_templates"),
         )
 
         # Build lookup data for validator
@@ -112,10 +116,19 @@ async def generate_meal_plan(message_content: dict[str, Any]) -> None:
             equipment_modes,
             allergen_ingredients=context.get("allergen_ingredients"),
             cuisine_preferences=context.get("cuisine_preferences"),
+            meal_types=meal_types,
         )
 
         # 4. Persist to DB
-        await _persist_plan(db, meal_plan_id, household_id, plan, context["inventory"])
+        await _persist_plan(
+            db,
+            meal_plan_id,
+            household_id,
+            plan,
+            context["inventory"],
+            meal_types=meal_types,
+            recurring_templates=context.get("recurring_templates"),
+        )
 
         logger.info("generate_meal_plan_success", meal_plan_id=meal_plan_id)
 
@@ -132,7 +145,7 @@ async def generate_meal_plan(message_content: dict[str, Any]) -> None:
 async def _load_context(
     db: Any, household_id: str, cuisine_preferences: list[str] | None = None
 ) -> dict[str, Any]:
-    """Load inventory, equipment, expiring items, and personalization data from DB.
+    """Load inventory, equipment, expiring items, personalization, and recurring templates from DB.
 
     Args:
         db: Database connection instance.
@@ -150,6 +163,7 @@ async def _load_context(
             - rating_insights: Dict with high_rated and low_rated recipe titles
             - allergen_ingredients: Set of allergen ingredient names (lowercase)
             - cuisine_preferences: List of cuisine types (passthrough from message)
+            - recurring_templates: List of active RecurringMealTemplate objects
     """
     async with db.session() as session:
         # Load inventory with ingredient relationship
@@ -191,6 +205,9 @@ async def _load_context(
                 if pref["preference_type"] == "allergy":
                     allergen_ingredients.add(pref["value"].lower())
 
+        # Fetch active recurring meal templates
+        recurring_templates = await _fetch_recurring_templates(session, household_id)
+
     return {
         "inventory": inventory,
         "equipment": equipment,
@@ -201,6 +218,7 @@ async def _load_context(
         "rating_insights": rating_insights if rating_insights else None,
         "allergen_ingredients": allergen_ingredients if allergen_ingredients else None,
         "cuisine_preferences": cuisine_preferences,
+        "recurring_templates": recurring_templates if recurring_templates else None,
     }
 
 
@@ -316,6 +334,27 @@ async def _fetch_rating_insights(session: AsyncSession, household_id: str) -> di
     return insights if insights else {}
 
 
+async def _fetch_recurring_templates(
+    session: AsyncSession, household_id: str
+) -> list[RecurringMealTemplate]:
+    """Fetch active recurring meal templates for the household.
+
+    Args:
+        session: Database session.
+        household_id: UUID of the household.
+
+    Returns:
+        List of active RecurringMealTemplate objects ordered by day and meal_type.
+    """
+    result = await session.execute(
+        select(RecurringMealTemplate)
+        .where(RecurringMealTemplate.household_id == household_id)
+        .where(RecurringMealTemplate.is_active == True)  # noqa: E712
+        .order_by(RecurringMealTemplate.day, RecurringMealTemplate.meal_type)
+    )
+    return list(result.scalars().all())
+
+
 async def _generate_with_retries(
     prompt: str,
     inventory_names: list[str],
@@ -323,6 +362,7 @@ async def _generate_with_retries(
     *,
     allergen_ingredients: set[str] | None = None,
     cuisine_preferences: list[str] | None = None,
+    meal_types: list[str] | None = None,
 ) -> GeneratedMealPlan:
     """Call LLM and validate, retrying up to MAX_RETRIES times.
 
@@ -356,6 +396,7 @@ async def _generate_with_retries(
                 equipment_modes,
                 allergen_ingredients=allergen_ingredients,
                 cuisine_preferences=cuisine_preferences,
+                meal_types=meal_types,
             )
             if not errors:
                 logger.info("llm_validation_passed", attempt=attempt)
@@ -402,6 +443,8 @@ async def _persist_plan(
     household_id: str,
     plan: GeneratedMealPlan,
     inventory: list[InventoryItem],
+    meal_types: list[str] | None = None,
+    recurring_templates: list[RecurringMealTemplate] | None = None,
 ) -> None:
     """Persist generated plan to DB: recipes, ingredients, steps, slots, grocery list."""
     async with db.session() as session:
@@ -413,7 +456,46 @@ async def _persist_plan(
             lambda: {"quantity": 0.0, "unit": ""}
         )
 
-        for day_index, gen_recipe in enumerate(plan.recipes):
+        # Pre-fill slots from recurring templates (before AI-generated slots)
+        recurring_day_types: set[tuple[int, str]] = set()
+        if recurring_templates:
+            for tpl in recurring_templates:
+                if tpl.recipe_id is not None:
+                    slot = MealSlot(
+                        meal_plan_id=meal_plan_id,
+                        recipe_id=tpl.recipe_id,
+                        day=tpl.day,
+                        meal_type=tpl.meal_type,
+                        status="planned",
+                    )
+                    session.add(slot)
+                    recurring_day_types.add((tpl.day, tpl.meal_type))
+
+        # Build (day, recipe, meal_type) assignments for AI-generated slots
+        effective_types = meal_types or ["dinner"]
+        assignments: list[tuple[int, Any, str]] = []
+
+        if len(effective_types) == 1:
+            # Original behavior: sequential day assignment
+            meal_type_name = effective_types[0]
+            for day_index, gen_recipe in enumerate(plan.recipes):
+                assignments.append((day_index, gen_recipe, meal_type_name))
+        else:
+            # Multi-meal: group recipes by their meal_type field
+            recipes_by_type: dict[str, list] = defaultdict(list)
+            for gen_recipe in plan.recipes:
+                mt = gen_recipe.meal_type or effective_types[0]
+                recipes_by_type[mt].append(gen_recipe)
+
+            for mt, type_recipes in recipes_by_type.items():
+                for day_index, gen_recipe in enumerate(type_recipes[:7]):
+                    assignments.append((day_index, gen_recipe, mt))
+
+        for day_index, gen_recipe, meal_type_name in assignments:
+            # Skip slots already covered by a recurring template
+            if (day_index, meal_type_name) in recurring_day_types:
+                continue
+
             recipe = Recipe(
                 household_id=household_id,
                 title=gen_recipe.title,
@@ -458,12 +540,12 @@ async def _persist_plan(
                 )
                 session.add(step)
 
-            # Meal slot (day 0-6 = Mon-Sun, dinner)
+            # Meal slot
             slot = MealSlot(
                 meal_plan_id=meal_plan_id,
                 recipe_id=recipe.id,
                 day=day_index,
-                meal_type="dinner",
+                meal_type=meal_type_name,
                 status="planned",
             )
             session.add(slot)

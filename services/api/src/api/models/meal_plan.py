@@ -16,6 +16,7 @@ class CreateMealPlan(BaseModel):
 
     week_start_date: datetime
     cuisine_preferences: list[str] | None = None
+    meal_types: list[str] | None = None
 
     @field_validator("week_start_date")
     @classmethod
@@ -24,6 +25,19 @@ class CreateMealPlan(BaseModel):
         if v.weekday() != 0:
             msg = "week_start_date must be a Monday"
             raise ValueError(msg)
+        return v
+
+    @field_validator("meal_types")
+    @classmethod
+    def valid_meal_types(cls, v: list[str] | None) -> list[str] | None:
+        """Validate each meal type against allowed values."""
+        if v is None:
+            return v
+        allowed = {"breakfast", "lunch", "dinner"}
+        for mt in v:
+            if mt not in allowed:
+                msg = f"Invalid meal type: {mt}. Allowed: {', '.join(sorted(allowed))}"
+                raise ValueError(msg)
         return v
 
 

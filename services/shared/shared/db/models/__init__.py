@@ -13,6 +13,7 @@ from .preference import MemberPreference
 from .product import Product
 from .rating import MealSlotRating
 from .recipe import Recipe, RecipeIngredient, RecipeStep
+from .recurring_meal import RecurringMealTemplate
 from .staple_ingredient import StapleIngredient
 
 __all__ = [
@@ -35,6 +36,7 @@ __all__ = [
     "RecipeIngredient",
     "RecipeStep",
     "MealSlotRating",
+    "RecurringMealTemplate",
     "StapleIngredient",
     "TimestampMixin",
     "generate_uuid",

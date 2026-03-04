@@ -21,8 +21,11 @@ from .routes.meal_plans import recipes_router
 from .routes.meal_plans import router as meal_plans_router
 from .routes.preferences import router as preferences_router
 from .routes.products import router as products_router
+from .routes.quick_suggestions import router as quick_suggestions_router
 from .routes.ratings import router as ratings_router
+from .routes.recurring_meals import router as recurring_meals_router
 from .routes.staple_routes import router as staple_router
+from .routes.substitution import router as substitution_router
 
 
 @asynccontextmanager
@@ -99,6 +102,9 @@ def create_app() -> FastAPI:
     app.include_router(ratings_router)
     app.include_router(leftover_router)
     app.include_router(staple_router)
+    app.include_router(substitution_router)
+    app.include_router(quick_suggestions_router)
+    app.include_router(recurring_meals_router)
 
     return app
 

@@ -281,3 +281,63 @@ export interface DefrostReminder {
   meal_type: string;
   recipe_title: string;
 }
+
+// --- Meal Type ---
+
+export type MealType = "breakfast" | "lunch" | "dinner";
+
+// --- Substitution ---
+
+export interface SubstitutionRequest {
+  original_ingredient_name: string;
+  replacement_ingredient_name: string;
+}
+
+export interface GroceryChange {
+  ingredient_name: string;
+  action: "added" | "removed" | "updated";
+  quantity: number;
+  unit: string;
+}
+
+export interface SubstitutionResult {
+  new_recipe: Recipe;
+  allergen_warnings: string[];
+  grocery_changes: GroceryChange[];
+}
+
+// --- Quick Suggestions ---
+
+export interface SuggestionIngredient {
+  name: string;
+  quantity: number;
+  unit: string;
+  on_hand: boolean;
+}
+
+export interface QuickSuggestion {
+  title: string;
+  description: string;
+  prep_time_min: number;
+  cook_time_min: number;
+  servings: number;
+  ingredients: SuggestionIngredient[];
+}
+
+export interface QuickSuggestionsResponse {
+  suggestions: QuickSuggestion[];
+  message: string | null;
+}
+
+// --- Recurring Meals ---
+
+export interface RecurringMealTemplate {
+  id: string;
+  household_id: string;
+  day: number;
+  meal_type: string;
+  recipe_id: string | null;
+  recipe_title: string | null;
+  is_active: boolean;
+  created_at: string;
+}

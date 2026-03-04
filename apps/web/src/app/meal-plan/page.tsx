@@ -15,6 +15,7 @@ import { Spinner } from "@/components/ui/Spinner";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { CuisineSelector } from "@/components/CuisineSelector";
+import { MealTypeSelector } from "@/components/MealTypeSelector";
 
 const STATUS_VARIANT: Record<string, "default" | "success" | "warning"> = {
   draft: "warning",
@@ -38,6 +39,7 @@ export default function MealPlanListPage() {
   const [error, setError] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
   const [cuisinePreferences, setCuisinePreferences] = useState<string[]>([]);
+  const [mealTypes, setMealTypes] = useState<string[]>(["dinner"]);
 
   const fetchPlans = useCallback(async () => {
     try {
@@ -76,6 +78,7 @@ export default function MealPlanListPage() {
         week_start_date: getNextMonday(),
         cuisine_preferences:
           cuisinePreferences.length > 0 ? cuisinePreferences : undefined,
+        meal_types: mealTypes.length > 0 ? mealTypes : undefined,
       });
       router.push(`/meal-plan/${plan.id}`);
     } catch (err) {
@@ -107,6 +110,9 @@ export default function MealPlanListPage() {
           selected={cuisinePreferences}
           onChange={setCuisinePreferences}
         />
+        <div className="mt-4">
+          <MealTypeSelector selected={mealTypes} onChange={setMealTypes} />
+        </div>
         <div className="mt-4">
           <Button
             onClick={() => void handleGenerate()}
