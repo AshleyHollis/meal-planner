@@ -47,6 +47,13 @@ class AdaptRequest(BaseModel):
     effort_level: Literal["quick", "standard", "elaborate"]
 
 
+class SaveVariationRequest(BaseModel):
+    """Request body for saving a recipe variation."""
+
+    title: str | None = None
+    notes: str | None = None
+
+
 class UpdateMealSlot(BaseModel):
     """Request body for swapping a meal slot's recipe."""
 

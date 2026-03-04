@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 from datetime import UTC, datetime, timedelta
 from uuid import UUID
@@ -10,6 +11,7 @@ from fastapi import HTTPException, status
 from shared.config import get_settings
 from shared.db.models.inventory import InventoryItem
 from shared.db.models.meal_plan import MealPlan, MealSlot
+from shared.db.models.recipe import Recipe, RecipeIngredient, RecipeStep
 from shared.logging.config import get_logger
 from shared.queue.client import enqueue_message
 from sqlalchemy import func, select
@@ -17,6 +19,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..models.meal_plan import (
     CreateMealPlan,
+    SaveVariationRequest,
     UpdateMealSlot,
     UpdatePlanStatus,
     UpdateSlotStatus,
@@ -312,6 +315,119 @@ class MealPlanService:
         # Delete the plan (cascade will delete slots automatically)
         await self.session.delete(plan)
         await self.session.flush()
+
+    async def adapt_slot(
+        self,
+        plan_id: UUID,
+        slot_id: UUID,
+        effort_level: str,
+    ) -> dict | None:
+        """Adapt a meal slot's recipe for a different effort level via LLM.
+
+        Loads the slot + recipe, calls adapt_recipe() in a thread pool (sync LLM call),
+        and returns the adapted recipe dict. Returns None if slot or recipe not found.
+        """
+        stmt = (
+            select(MealSlot)
+            .join(MealPlan)
+            .where(
+                MealSlot.id == slot_id,
+                MealSlot.meal_plan_id == plan_id,
+                MealPlan.household_id == self.household_id,
+            )
+        )
+        result = await self.session.execute(stmt)
+        slot = result.scalar_one_or_none()
+        if slot is None or slot.recipe is None:
+            return None
+
+        recipe = slot.recipe
+        recipe_dict = {
+            "title": recipe.title,
+            "description": recipe.description or "",
+            "servings": recipe.servings,
+            "steps": [
+                {
+                    "step_order": step.step_order,
+                    "instruction": step.instruction,
+                    "duration_min": step.duration_min,
+                }
+                for step in sorted(recipe.steps, key=lambda s: s.step_order)
+            ],
+        }
+
+        adapted = await asyncio.to_thread(self.adapt_recipe, recipe_dict, effort_level)
+        return {
+            "plan_id": str(plan_id),
+            "slot_id": str(slot_id),
+            "recipe_id": str(recipe.id),
+            "title": recipe.title,
+            "effort_level": effort_level,
+            "adapted_steps": adapted.get("steps", []),
+        }
+
+    async def save_variation(
+        self,
+        recipe_id: UUID,
+        data: SaveVariationRequest,
+    ) -> dict | None:
+        """Save a recipe variation as a new recipe row for future reuse.
+
+        Creates a copy of the original recipe with source_recipe_id pointing back.
+        Copies all ingredients and steps. Returns None if original not found.
+        """
+        stmt = select(Recipe).where(
+            Recipe.id == recipe_id,
+            Recipe.household_id == self.household_id,
+        )
+        result = await self.session.execute(stmt)
+        original = result.scalar_one_or_none()
+        if original is None:
+            return None
+
+        variation = Recipe(
+            household_id=self.household_id,
+            title=data.title or f"{original.title} (variation)",
+            description=data.notes or original.description,
+            servings=original.servings,
+            prep_time_min=original.prep_time_min,
+            cook_time_min=original.cook_time_min,
+            is_ai_generated=original.is_ai_generated,
+            source_recipe_id=original.id,
+            cuisine_type=original.cuisine_type,
+        )
+        self.session.add(variation)
+        await self.session.flush()
+
+        for ri in original.ingredients:
+            self.session.add(
+                RecipeIngredient(
+                    recipe_id=variation.id,
+                    ingredient_id=ri.ingredient_id,
+                    quantity=ri.quantity,
+                    unit=ri.unit,
+                    is_optional=ri.is_optional,
+                )
+            )
+        for step in original.steps:
+            self.session.add(
+                RecipeStep(
+                    recipe_id=variation.id,
+                    step_order=step.step_order,
+                    instruction=step.instruction,
+                    equipment_mode_id=step.equipment_mode_id,
+                    temperature=step.temperature,
+                    duration_min=step.duration_min,
+                )
+            )
+        await self.session.flush()
+
+        return {
+            "recipe_id": str(original.id),
+            "variation_id": str(variation.id),
+            "title": variation.title,
+            "status": "saved",
+        }
 
     @staticmethod
     def adapt_recipe(

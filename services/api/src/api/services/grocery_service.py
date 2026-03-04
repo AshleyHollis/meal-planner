@@ -159,6 +159,13 @@ class GroceryService:
             if remaining > 0:
                 grocery_entries.append((ing_id, remaining, unit))
 
+        # 4.5. Build product shop lookup: ingredient_id → preferred_store
+        products_stmt = select(Product).where(Product.household_id == self.household_id)
+        products_result = await self.session.execute(products_stmt)
+        product_shop_map: dict[UUID, str | None] = {
+            p.ingredient_id: p.shop for p in products_result.scalars().all()
+        }
+
         # 5. Remove existing grocery list if present
         existing_stmt = select(GroceryList).where(GroceryList.meal_plan_id == meal_plan_id)
         existing_result = await self.session.execute(existing_stmt)
@@ -174,6 +181,7 @@ class GroceryService:
                 ingredient_id=ing_id,
                 quantity_needed=qty,
                 unit=unit,
+                preferred_store=product_shop_map.get(ing_id),
             )
             for ing_id, qty, unit in grocery_entries
         ]

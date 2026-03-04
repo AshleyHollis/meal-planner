@@ -16,6 +16,7 @@ from ..models.meal_plan import (
     MealPlanResponse,
     MealPlanStatsResponse,
     MealSlotResponse,
+    SaveVariationRequest,
     UpdateMealSlot,
     UpdatePlanStatus,
     UpdateSlotStatus,
@@ -129,14 +130,11 @@ async def adapt_meal_slot(
     body: AdaptRequest,
     service: MealPlanService = Depends(get_meal_plan_service),  # noqa: B008
 ) -> dict:
-    """Adapt a meal slot recipe to a different effort/cook-time level."""
-    # TODO: implement adaptation logic in service layer
-    return {
-        "plan_id": str(plan_id),
-        "slot_id": str(slot_id),
-        "effort_level": body.effort_level,
-        "status": "accepted",
-    }
+    """Adapt a meal slot recipe to a different effort/cook-time level via LLM."""
+    result = await service.adapt_slot(plan_id, slot_id, body.effort_level)
+    if result is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Meal slot not found")
+    return result
 
 
 @router.patch("/{plan_id}/slots/{slot_id}/status", response_model=MealSlotResponse)
@@ -156,14 +154,14 @@ async def update_slot_status(
     return response
 
 
-@recipes_router.post("/{recipe_id}/save-variation")
+@recipes_router.post("/{recipe_id}/save-variation", status_code=status.HTTP_201_CREATED)
 async def save_recipe_variation(
     recipe_id: UUID,
+    body: SaveVariationRequest,
     service: MealPlanService = Depends(get_meal_plan_service),  # noqa: B008
 ) -> dict:
     """Save a recipe variation for future use."""
-    # TODO: implement save-variation logic in service layer
-    return {
-        "recipe_id": str(recipe_id),
-        "status": "saved",
-    }
+    result = await service.save_variation(recipe_id, body)
+    if result is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Recipe not found")
+    return result
