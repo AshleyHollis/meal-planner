@@ -13,6 +13,7 @@ import {
   listFavorites,
   addFavorite,
   removeFavorite,
+  retryMealPlan,
 } from "@/services/api";
 import type { MealSlot } from "@/types";
 import { DAY_LABELS_LONG } from "@/lib/date-utils";
@@ -54,6 +55,20 @@ export default function MealPlanDetailPage({
   }, []);
 
   const isDraft = plan?.status === "draft";
+  const isFailed = plan?.status === "failed";
+  const [retrying, setRetrying] = useState(false);
+
+  const handleRetryPlan = async () => {
+    setRetrying(true);
+    try {
+      await retryMealPlan(id);
+      refetch();
+    } catch {
+      showToast("Failed to retry meal plan. Please try again.", "error");
+    } finally {
+      setRetrying(false);
+    }
+  };
 
   const handleMarkCooked = async (slotId: string) => {
     try {
@@ -145,8 +160,17 @@ export default function MealPlanDetailPage({
       {plan && !isDraft && (
         <>
           {plan.error_message && (
-            <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-              {plan.error_message}
+            <div className="mb-4 flex items-center justify-between rounded-lg border border-red-200 bg-red-50 p-4">
+              <span className="text-sm text-red-700">{plan.error_message}</span>
+              {isFailed && (
+                <button
+                  onClick={handleRetryPlan}
+                  disabled={retrying}
+                  className="ml-4 inline-flex items-center gap-1 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
+                >
+                  {retrying ? "Retrying…" : "🔄 Retry"}
+                </button>
+              )}
             </div>
           )}
 

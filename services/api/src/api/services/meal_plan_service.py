@@ -111,6 +111,45 @@ class MealPlanService:
 
         return plan
 
+    async def retry_plan(self, plan_id: UUID) -> MealPlan | None:
+        """Reset a failed meal plan to draft and re-enqueue generation.
+
+        Returns None if plan not found. Raises 409 if plan is not in failed state.
+        """
+        stmt = select(MealPlan).where(
+            MealPlan.id == plan_id,
+            MealPlan.household_id == self.household_id,
+        )
+        result = await self.session.execute(stmt)
+        plan = result.scalar_one_or_none()
+        if plan is None:
+            return None
+
+        if plan.status != "failed":
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Only failed plans can be retried (current status: {plan.status})",
+            )
+
+        # Clear existing slots/recipes from the failed attempt
+        slots_stmt = select(MealSlot).where(MealSlot.meal_plan_id == plan_id)
+        slots_result = await self.session.execute(slots_stmt)
+        for slot in slots_result.scalars().all():
+            await self.session.delete(slot)
+
+        plan.status = "draft"
+        plan.error_message = None
+        await self.session.flush()
+
+        message = {
+            "meal_plan_id": str(plan.id),
+            "household_id": str(self.household_id),
+            "week_start_date": plan.week_start_date.isoformat(),
+        }
+        enqueue_message(message)
+
+        return plan
+
     async def get_plan(
         self,
         plan_id: UUID,

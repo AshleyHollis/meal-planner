@@ -109,6 +109,18 @@ async def delete_meal_plan(
     await service.delete_plan(plan_id)
 
 
+@router.post("/{plan_id}/retry", response_model=MealPlanResponse, status_code=status.HTTP_202_ACCEPTED)
+async def retry_meal_plan(
+    plan_id: UUID,
+    service: MealPlanService = Depends(get_meal_plan_service),  # noqa: B008
+) -> MealPlanResponse:
+    """Retry a failed meal plan by resetting to draft and re-queuing generation."""
+    plan = await service.retry_plan(plan_id)
+    if plan is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Meal plan not found")
+    return MealPlanResponse.model_validate(plan)
+
+
 @router.patch("/{plan_id}/slots/{slot_id}", response_model=MealSlotResponse)
 async def update_meal_slot(
     plan_id: UUID,

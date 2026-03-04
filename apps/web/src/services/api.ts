@@ -354,6 +354,12 @@ export async function deleteMealPlan(planId: string): Promise<void> {
   });
 }
 
+export async function retryMealPlan(planId: string): Promise<MealPlan> {
+  return fetchApi<MealPlan>(`/api/v1/meal-plans/${planId}/retry`, {
+    method: "POST",
+  });
+}
+
 export async function updateMealSlot(
   planId: string,
   slotId: string,
