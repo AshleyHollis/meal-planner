@@ -3,7 +3,7 @@
 # =============================================================================
 # Creates meal-planner's own Auth0 applications (prod + preview) with correct
 # callback URLs. Stores credentials in Key Vault with meal-planner- prefix to
-# avoid conflicts with yt-summarizer's secrets in the shared kv-ytsumm-prd.
+# avoid conflicts with yt-summarizer's secrets in the shared kv-ytsumm-prd-ci.
 
 # -----------------------------------------------------------------------------
 # Generate random session secrets

@@ -1726,13 +1726,13 @@ jobs:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-      - run: az acr login --name acrytsummprd
+      - run: az acr login --name acrytsummprdci
       - run: |
-          docker build -t acrytsummprd.azurecr.io/meal-planner-api:${{ github.sha }} services/api/
-          docker push acrytsummprd.azurecr.io/meal-planner-api:${{ github.sha }}
+          docker build -t acrytsummprdci.azurecr.io/meal-planner-api:${{ github.sha }} services/api/
+          docker push acrytsummprdci.azurecr.io/meal-planner-api:${{ github.sha }}
       - run: |
-          docker build -t acrytsummprd.azurecr.io/meal-planner-worker:${{ github.sha }} services/workers/
-          docker push acrytsummprd.azurecr.io/meal-planner-worker:${{ github.sha }}
+          docker build -t acrytsummprdci.azurecr.io/meal-planner-worker:${{ github.sha }} services/workers/
+          docker push acrytsummprdci.azurecr.io/meal-planner-worker:${{ github.sha }}
 
   swa-deploy:
     needs: [frontend-quality]

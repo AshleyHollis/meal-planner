@@ -26,8 +26,8 @@ concurrency:
 env:
   PYTHON_VERSION: "3.13"
   NODE_VERSION: "22"
-  ACR_NAME: ${{ vars.ACR_NAME || 'acrytsummprd' }}
-  ACR_LOGIN_SERVER: ${{ vars.ACR_LOGIN_SERVER || 'acrytsummprd.azurecr.io' }}
+  ACR_NAME: ${{ vars.ACR_NAME || 'acrytsummprdci' }}
+  ACR_LOGIN_SERVER: ${{ vars.ACR_LOGIN_SERVER || 'acrytsummprdci.azurecr.io' }}
 
 defaults:
   run:
