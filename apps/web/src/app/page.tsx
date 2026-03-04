@@ -156,7 +156,9 @@ export default function DashboardPage() {
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
               {todaySlot?.recipe && (
                 <div className="absolute bottom-4 left-4 right-4">
-                  <p className="text-sm font-medium text-white/90">Tonight&apos;s Dinner</p>
+                  <p className="text-sm font-medium text-white/90">
+                    Tonight&apos;s Dinner
+                  </p>
                   <p className="text-lg font-bold text-white drop-shadow-lg">
                     {todaySlot.recipe.title}
                   </p>
@@ -203,7 +205,9 @@ export default function DashboardPage() {
       ) : (
         <section className="mb-6 rounded-xl border border-gray-100 bg-white p-6 shadow-sm text-center">
           <div className="mb-4 text-5xl">🍽️</div>
-          <h3 className="mb-2 text-lg font-semibold text-gray-800">Plan Your Week</h3>
+          <h3 className="mb-2 text-lg font-semibold text-gray-800">
+            Plan Your Week
+          </h3>
           <p className="mb-6 text-sm text-gray-600">
             Generate a meal plan to get started
           </p>
@@ -258,7 +262,8 @@ export default function DashboardPage() {
             <div className="text-2xl">⚠️</div>
             <div className="flex-1">
               <p className="text-sm font-semibold text-orange-900">
-                {expiringCount} item{expiringCount !== 1 ? "s" : ""} expiring soon
+                {expiringCount} item{expiringCount !== 1 ? "s" : ""} expiring
+                soon
               </p>
               <p className="mt-1 text-xs text-orange-700">
                 Check your inventory to avoid food waste
@@ -276,7 +281,9 @@ export default function DashboardPage() {
 
       {/* Quick Actions */}
       <section>
-        <h2 className="mb-3 text-lg font-semibold text-gray-800">Quick Actions</h2>
+        <h2 className="mb-3 text-lg font-semibold text-gray-800">
+          Quick Actions
+        </h2>
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
           <Link
             href="/inventory"

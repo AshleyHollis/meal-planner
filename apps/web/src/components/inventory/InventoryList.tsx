@@ -113,7 +113,9 @@ function InventoryList({ items, onChanged }: InventoryListProps) {
     return (
       <div className="flex flex-col items-center justify-center rounded-xl border border-gray-100 bg-white py-12 text-center shadow-sm">
         <div className="mb-4 text-6xl">🧊</div>
-        <h3 className="mb-2 text-lg font-semibold text-gray-800">Your Pantry is Empty</h3>
+        <h3 className="mb-2 text-lg font-semibold text-gray-800">
+          Your Pantry is Empty
+        </h3>
         <p className="text-sm text-gray-600">
           Add ingredients to get personalized meal plans
         </p>
@@ -130,7 +132,8 @@ function InventoryList({ items, onChanged }: InventoryListProps) {
         return (
           <section key={location}>
             <h3 className="mb-2 text-lg font-semibold text-gray-800">
-              {LOCATION_LABELS[location]} ({locationItems.length} item{locationItems.length !== 1 ? "s" : ""})
+              {LOCATION_LABELS[location]} ({locationItems.length} item
+              {locationItems.length !== 1 ? "s" : ""})
             </h3>
             <ul className="divide-y divide-gray-200 rounded-xl border border-gray-100 bg-white shadow-sm">
               {locationItems.map((item) => (

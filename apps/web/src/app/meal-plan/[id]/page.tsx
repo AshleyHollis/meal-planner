@@ -164,7 +164,13 @@ export default function MealPlanDetailPage({
                   {totalSlots} meals planned
                 </p>
               </div>
-              <Badge variant={plan.status as "active" | "completed" | "failed" | "draft"}>{plan.status}</Badge>
+              <Badge
+                variant={
+                  plan.status as "active" | "completed" | "failed" | "draft"
+                }
+              >
+                {plan.status}
+              </Badge>
             </div>
             <div className="mt-6 flex items-center gap-3">
               <div className="h-3 flex-1 overflow-hidden rounded-full bg-gray-200">
@@ -182,7 +188,7 @@ export default function MealPlanDetailPage({
           <div className="space-y-8">
             {DAY_LABELS.map((label, day) => {
               const daySlots = slotsByDay[day] ?? [];
-              
+
               // Calculate total prep + cook time for the day
               const totalMinutes = daySlots.reduce((sum, slot) => {
                 const prep = slot.recipe?.prep_time_min ?? 0;

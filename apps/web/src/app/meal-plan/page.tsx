@@ -58,9 +58,12 @@ export default function MealPlanListPage() {
     try {
       setError(null);
       const data = await listMealPlans();
-      setPlans(data.sort((a, b) => 
-        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-      ));
+      setPlans(
+        data.sort(
+          (a, b) =>
+            new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+        ),
+      );
     } catch (err) {
       if (err instanceof ApiError && err.isAuthError) {
         window.location.href = "/api/auth/login";
@@ -192,22 +195,28 @@ export default function MealPlanListPage() {
       {!loading && !error && plans.length > 0 && (
         <>
           <div className="mb-4 flex gap-2 overflow-x-auto pb-2">
-            {(["all", "active", "completed", "failed", "draft"] as StatusFilter[]).map(
-              (status) => (
-                <button
-                  key={status}
-                  onClick={() => setStatusFilter(status)}
-                  className={`whitespace-nowrap rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
-                    statusFilter === status
-                      ? "bg-blue-600 text-white"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                  }`}
-                >
-                  {status.charAt(0).toUpperCase() + status.slice(1)} (
-                  {statusCounts[status]})
-                </button>
-              ),
-            )}
+            {(
+              [
+                "all",
+                "active",
+                "completed",
+                "failed",
+                "draft",
+              ] as StatusFilter[]
+            ).map((status) => (
+              <button
+                key={status}
+                onClick={() => setStatusFilter(status)}
+                className={`whitespace-nowrap rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+                  statusFilter === status
+                    ? "bg-blue-600 text-white"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                }`}
+              >
+                {status.charAt(0).toUpperCase() + status.slice(1)} (
+                {statusCounts[status]})
+              </button>
+            ))}
           </div>
 
           <div className="grid gap-4 lg:grid-cols-2">
@@ -216,10 +225,7 @@ export default function MealPlanListPage() {
                 key={plan.id}
                 className={`rounded-xl border border-gray-100 bg-white shadow-sm transition-shadow duration-200 hover:shadow-md ${STATUS_COLORS[plan.status] || ""}`}
               >
-                <Link
-                  href={`/meal-plan/${plan.id}`}
-                  className="block p-6"
-                >
+                <Link href={`/meal-plan/${plan.id}`} className="block p-6">
                   <div className="mb-3 flex items-start justify-between">
                     <div className="flex-1">
                       <p className="text-lg font-semibold text-gray-900">
@@ -233,19 +239,27 @@ export default function MealPlanListPage() {
                         Created {new Date(plan.created_at).toLocaleDateString()}
                       </p>
                     </div>
-                    <Badge variant={plan.status as "active" | "completed" | "failed" | "draft"}>
+                    <Badge
+                      variant={
+                        plan.status as
+                          | "active"
+                          | "completed"
+                          | "failed"
+                          | "draft"
+                      }
+                    >
                       {plan.status}
                     </Badge>
                   </div>
-                  <p className="text-sm text-gray-600">
-                    Plan for the week
-                  </p>
+                  <p className="text-sm text-gray-600">Plan for the week</p>
                 </Link>
                 {plan.status === "failed" && (
                   <div className="border-t border-gray-100 px-6 py-3">
                     {confirmDelete === plan.id ? (
                       <div className="flex items-center gap-2">
-                        <span className="text-sm text-gray-600">Delete this plan?</span>
+                        <span className="text-sm text-gray-600">
+                          Delete this plan?
+                        </span>
                         <button
                           onClick={() => void handleDelete(plan.id)}
                           disabled={deletingId === plan.id}
@@ -289,4 +303,3 @@ export default function MealPlanListPage() {
     </main>
   );
 }
-

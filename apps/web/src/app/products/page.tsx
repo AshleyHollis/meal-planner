@@ -151,21 +151,29 @@ export default function ProductsPage() {
         </div>
       )}
 
-      {!loading && !error && displayedProducts.length === 0 && searchQuery === "" && (
-        <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm text-center">
-          <div className="mb-4 text-6xl">🏷️</div>
-          <h3 className="mb-2 text-lg font-semibold text-gray-800">No Products Yet</h3>
-          <p className="text-sm text-gray-600">
-            Map ingredients to specific store products
-          </p>
-        </div>
-      )}
+      {!loading &&
+        !error &&
+        displayedProducts.length === 0 &&
+        searchQuery === "" && (
+          <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm text-center">
+            <div className="mb-4 text-6xl">🏷️</div>
+            <h3 className="mb-2 text-lg font-semibold text-gray-800">
+              No Products Yet
+            </h3>
+            <p className="text-sm text-gray-600">
+              Map ingredients to specific store products
+            </p>
+          </div>
+        )}
 
-      {!loading && !error && displayedProducts.length === 0 && searchQuery !== "" && (
-        <p className="py-8 text-center text-sm text-gray-500">
-          No products found for &quot;{searchQuery}&quot;
-        </p>
-      )}
+      {!loading &&
+        !error &&
+        displayedProducts.length === 0 &&
+        searchQuery !== "" && (
+          <p className="py-8 text-center text-sm text-gray-500">
+            No products found for &quot;{searchQuery}&quot;
+          </p>
+        )}
 
       {/* Grouped product list */}
       {!loading && !error && categoryNames.length > 0 && (

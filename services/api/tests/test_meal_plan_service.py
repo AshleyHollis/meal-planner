@@ -5,11 +5,6 @@ from unittest.mock import patch
 from uuid import uuid4
 
 import pytest
-from shared.db.models.household import Household
-from shared.db.models.meal_plan import MealPlan, MealSlot
-from shared.db.models.recipe import Recipe
-from sqlalchemy.ext.asyncio import AsyncSession
-
 from api.models.meal_plan import (
     CreateMealPlan,
     UpdateMealSlot,
@@ -17,6 +12,10 @@ from api.models.meal_plan import (
     UpdateSlotStatus,
 )
 from api.services.meal_plan_service import MealPlanService
+from shared.db.models.household import Household
+from shared.db.models.meal_plan import MealPlan, MealSlot
+from shared.db.models.recipe import Recipe
+from sqlalchemy.ext.asyncio import AsyncSession
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -379,9 +378,7 @@ class TestCreatePlanEnqueuesMessage:
         svc = MealPlanService(session, household.id)
         monday = _next_monday()
         cuisines = ["italian", "mexican"]
-        await svc.create_plan(
-            CreateMealPlan(week_start_date=monday, cuisine_preferences=cuisines)
-        )
+        await svc.create_plan(CreateMealPlan(week_start_date=monday, cuisine_preferences=cuisines))
 
         mock_enqueue.assert_called_once()
         call_args = mock_enqueue.call_args[0][0]
