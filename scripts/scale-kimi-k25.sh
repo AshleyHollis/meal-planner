@@ -99,23 +99,22 @@ log "Target Capacity:  $TARGET_CAPACITY"
 log "Expected Change:  ~$(( CURRENT_CAPACITY * 20 ))K TPM → ~$(( TARGET_CAPACITY * 20 ))K TPM"
 log ""
 
-# Build the scale command
-SCALE_CMD="az cognitiveservices account deployment create \
-    --name \"$AI_ACCOUNT_NAME\" \
-    --resource-group \"$RESOURCE_GROUP\" \
-    --deployment-name \"$DEPLOYMENT_NAME\" \
-    --model-name \"$MODEL_NAME\" \
-    --model-version \"$MODEL_VERSION\" \
-    --model-format \"$MODEL_FORMAT\" \
-    --sku-name \"GlobalStandard\" \
-    --sku-capacity \"$TARGET_CAPACITY\""
-
 if [[ "$EXECUTE_MODE" == false ]]; then
   log "🏃 DRY-RUN MODE (no changes made)"
   log ""
   log "Command to be executed:"
   log ""
-  echo "$SCALE_CMD"
+  cat <<'CMDEND'
+az cognitiveservices account deployment create \
+  --name aif-pai-dev-eus \
+  --resource-group rg-pai-dev-eus \
+  --deployment-name kimi-k25 \
+  --model-name Kimi-K2.5 \
+  --model-version 1 \
+  --model-format MoonshotAI \
+  --sku-name GlobalStandard \
+  --sku-capacity 4
+CMDEND
   log ""
   log "To actually scale, run:"
   log "  $0 --execute"
@@ -130,7 +129,15 @@ log "Scaling deployment '$DEPLOYMENT_NAME' from capacity $CURRENT_CAPACITY to $T
 log "⏱️  This may take 3-5 minutes. Do NOT interrupt."
 log ""
 
-eval "$SCALE_CMD" || die "Failed to scale deployment"
+az cognitiveservices account deployment create \
+  --name "$AI_ACCOUNT_NAME" \
+  --resource-group "$RESOURCE_GROUP" \
+  --deployment-name "$DEPLOYMENT_NAME" \
+  --model-name "$MODEL_NAME" \
+  --model-version "$MODEL_VERSION" \
+  --model-format "$MODEL_FORMAT" \
+  --sku-name "GlobalStandard" \
+  --sku-capacity "$TARGET_CAPACITY" || die "Failed to scale deployment"
 
 log ""
 log "✓ Scale command executed successfully"
@@ -152,7 +159,7 @@ if [[ "$UPDATED_CAPACITY" == "UNKNOWN" ]]; then
   log "⚠️  WARNING: Could not verify new capacity (check Azure Portal manually)"
 else
   log "New Capacity:   $UPDATED_CAPACITY"
-  
+
   if [[ "$UPDATED_CAPACITY" == "$TARGET_CAPACITY" ]]; then
     log "✓ Capacity successfully scaled to $TARGET_CAPACITY (~$(( TARGET_CAPACITY * 20 ))K TPM)"
   else
@@ -163,19 +170,16 @@ fi
 
 # ── Summary ──────────────────────────────────────────────────────────────────
 log ""
-cat <<EOF
+cat <<'EOF'
 ═══════════════════════════════════════════════════════════════════
   Kimi K2.5 Scale Complete!
 ═══════════════════════════════════════════════════════════════════
 
-  Subscription:    $SUBSCRIPTION_ID
-  Resource Group:  $RESOURCE_GROUP
-  AI Account:      $AI_ACCOUNT_NAME
-  Deployment:      $DEPLOYMENT_NAME
-  Model:           $MODEL_NAME v$MODEL_VERSION
-
-  Previous Capacity:  $CURRENT_CAPACITY (~$(( CURRENT_CAPACITY * 20 ))K TPM)
-  New Capacity:       $UPDATED_CAPACITY (~$(( UPDATED_CAPACITY * 20 ))K TPM)
+  Subscription:    28aefbe7-e2af-4b4a-9ce1-92d6672c31bd
+  Resource Group:  rg-pai-dev-eus
+  AI Account:      aif-pai-dev-eus
+  Deployment:      kimi-k25
+  Model:           Kimi-K2.5 v1
 
   Pricing Impact:     None (PAYGO token cost unchanged)
   Latency Impact:     Improved (4x higher throughput)
