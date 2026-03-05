@@ -29,9 +29,10 @@ ADAPTATION_TIMEOUT = 8  # NFR-02: cook-time adaptation p95 < 10s
 
 # Azure counts max_tokens against the per-minute token rate limit upfront.
 # With thinking disabled, there are no invisible reasoning tokens consuming the budget.
-# 7 recipes produce ~2200 tokens of actual output; 4000 provides 1.8x headroom
-# while consuming only 4K of the 20K TPM limit (vs 10K previously).
-_MAX_TOKENS = 4000
+# 7 recipes produce ~2200 tokens of actual output; 2500 provides 1.14x headroom.
+# At capacity 4, Kimi K2.5 has 4000 TPM — keeping max_tokens low minimises
+# upfront reservation so more calls fit within the rate-limit window.
+_MAX_TOKENS = 2500
 
 # Approximate cost per 1K tokens (USD) for cost estimation
 _COST_PER_1K = {
