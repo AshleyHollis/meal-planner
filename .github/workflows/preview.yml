@@ -643,8 +643,9 @@ jobs:
         uses: azure/CLI@v2
         with:
           inlineScript: |
-            AUTH0_USER_EMAIL=$(az keyvault secret show --vault-name "kv-ytsumm-prd" --name "meal-planner-auth0-user-test-email" --query "value" -o tsv)
-            AUTH0_USER_PASSWORD=$(az keyvault secret show --vault-name "kv-ytsumm-prd" --name "meal-planner-auth0-user-test-password" --query "value" -o tsv)
+            KV_CI="kv-ytsumm-prd-ci"
+            AUTH0_USER_EMAIL=$(az keyvault secret show --vault-name "$KV_CI" --name "meal-planner-auth0-user-test-email" --query "value" -o tsv)
+            AUTH0_USER_PASSWORD=$(az keyvault secret show --vault-name "$KV_CI" --name "meal-planner-auth0-user-test-password" --query "value" -o tsv)
 
             echo "AUTH0_USER_TEST_EMAIL=$AUTH0_USER_EMAIL" >> $GITHUB_ENV
             echo "::add-mask::$AUTH0_USER_PASSWORD"
@@ -653,39 +654,40 @@ jobs:
       - name: Ensure Auth0 connection enabled for preview app
         continue-on-error: true
         uses: azure/CLI@v2
-        env:
-          AUTH0_MGMT_DOMAIN: ${{ secrets.AUTH0_DOMAIN }}
-          AUTH0_MGMT_CLIENT_ID: ${{ secrets.AUTH0_CLIENT_ID }}
-          AUTH0_MGMT_CLIENT_SECRET: ${{ secrets.AUTH0_CLIENT_SECRET }}
         with:
           inlineScript: |
-            # Get the preview app's client_id and connection ID from Key Vault
-            KV_NAME="${{ vars.KEY_VAULT_NAME || 'kv-ytsumm-prd' }}"
-            PREVIEW_CLIENT_ID=$(az keyvault secret show --vault-name "$KV_NAME" \
-              --name "meal-planner-auth0-preview-client-id" --query "value" -o tsv)
+            # Read Auth0 Terraform M2M credentials from Key Vault
+            # (BFF secrets.AUTH0_CLIENT_ID doesn't support client_credentials grant)
+            KV_CI="kv-ytsumm-prd-ci"
+            AUTH0_DOMAIN=$(az keyvault secret show --vault-name "$KV_CI" \
+              --name "auth0-terraform-domain" --query "value" -o tsv 2>/dev/null || echo "")
+            AUTH0_CLIENT_ID=$(az keyvault secret show --vault-name "$KV_CI" \
+              --name "auth0-terraform-client-id" --query "value" -o tsv 2>/dev/null || echo "")
+            AUTH0_CLIENT_SECRET=$(az keyvault secret show --vault-name "$KV_CI" \
+              --name "auth0-terraform-client-secret" --query "value" -o tsv 2>/dev/null || echo "")
 
-            if [[ -z "$PREVIEW_CLIENT_ID" ]]; then
-              echo "::warning::Could not retrieve preview client ID from Key Vault — skipping"
+            if [[ -z "$AUTH0_DOMAIN" || -z "$AUTH0_CLIENT_ID" || -z "$AUTH0_CLIENT_SECRET" ]]; then
+              echo "::warning::Could not retrieve Auth0 Terraform M2M credentials from Key Vault — skipping"
               exit 0
             fi
-            echo "Preview client ID: ${PREVIEW_CLIENT_ID:0:8}..."
 
-            # Try to get connection ID from Key Vault (set by Terraform)
-            CONNECTION_ID=$(az keyvault secret show --vault-name "$KV_NAME" \
+            PREVIEW_CLIENT_ID=$(az keyvault secret show --vault-name "$KV_CI" \
+              --name "meal-planner-auth0-preview-client-id" --query "value" -o tsv 2>/dev/null || echo "")
+            CONNECTION_ID=$(az keyvault secret show --vault-name "$KV_CI" \
               --name "meal-planner-auth0-connection-id" --query "value" -o tsv 2>/dev/null || echo "")
 
-            if [[ -z "$CONNECTION_ID" ]]; then
-              echo "::warning::Connection ID not in Key Vault — Terraform needs to run first"
+            if [[ -z "$PREVIEW_CLIENT_ID" || -z "$CONNECTION_ID" ]]; then
+              echo "::warning::Missing preview client ID or connection ID in Key Vault — skipping"
               exit 0
             fi
-            echo "Connection ID: ${CONNECTION_ID}"
+            echo "Preview client: ${PREVIEW_CLIENT_ID:0:8}... Connection: ${CONNECTION_ID}"
 
-            # Get Auth0 Management API token
-            TOKEN_RESPONSE=$(curl -s --request POST \
-              --url "https://${AUTH0_MGMT_DOMAIN}/oauth/token" \
+            # Get Auth0 Management API token using Terraform M2M credentials
+            TOKEN=$(curl -s --request POST \
+              --url "https://${AUTH0_DOMAIN}/oauth/token" \
               --header 'content-type: application/json' \
-              --data "{\"client_id\":\"${AUTH0_MGMT_CLIENT_ID}\",\"client_secret\":\"${AUTH0_MGMT_CLIENT_SECRET}\",\"audience\":\"https://${AUTH0_MGMT_DOMAIN}/api/v2/\",\"grant_type\":\"client_credentials\"}")
-            TOKEN=$(echo "$TOKEN_RESPONSE" | jq -r '.access_token // empty')
+              --data "{\"client_id\":\"${AUTH0_CLIENT_ID}\",\"client_secret\":\"${AUTH0_CLIENT_SECRET}\",\"audience\":\"https://${AUTH0_DOMAIN}/api/v2/\",\"grant_type\":\"client_credentials\"}" \
+              | jq -r '.access_token // empty')
 
             if [[ -z "$TOKEN" ]]; then
               echo "::warning::Could not get Auth0 Management API token — skipping"
@@ -693,21 +695,19 @@ jobs:
             fi
             echo "Auth0 Management API token obtained"
 
-            # Use POST /connections/{id}/clients to add the client (idempotent via 409 check)
-            ADD_RESPONSE=$(curl -s -w "\n%{http_code}" --request POST \
-              --url "https://${AUTH0_MGMT_DOMAIN}/api/v2/connections/${CONNECTION_ID}/clients" \
+            # Use PATCH /connections/{id}/clients (new API, replaces deprecated enabled_clients)
+            PATCH_RESPONSE=$(curl -s -w "\n%{http_code}" --request PATCH \
+              --url "https://${AUTH0_DOMAIN}/api/v2/connections/${CONNECTION_ID}/clients" \
               --header "authorization: Bearer ${TOKEN}" \
               --header 'content-type: application/json' \
-              --data "{\"client_id\":\"${PREVIEW_CLIENT_ID}\"}")
-            HTTP_CODE=$(echo "$ADD_RESPONSE" | tail -1)
-            BODY=$(echo "$ADD_RESPONSE" | sed '$d')
+              --data "[{\"client_id\":\"${PREVIEW_CLIENT_ID}\",\"status\":true}]")
+            HTTP_CODE=$(echo "$PATCH_RESPONSE" | tail -1)
+            BODY=$(echo "$PATCH_RESPONSE" | sed '$d')
 
             if [[ "$HTTP_CODE" -ge 200 && "$HTTP_CODE" -lt 300 ]]; then
-              echo "✅ Enabled preview client on connection (HTTP ${HTTP_CODE})"
-            elif [[ "$HTTP_CODE" == "409" ]]; then
-              echo "✅ Preview client already enabled on connection (HTTP 409 Conflict)"
+              echo "✅ Preview client enabled on Auth0 connection (HTTP ${HTTP_CODE})"
             else
-              echo "::warning::POST /connections/${CONNECTION_ID}/clients returned HTTP ${HTTP_CODE}"
+              echo "::warning::PATCH /connections/${CONNECTION_ID}/clients returned HTTP ${HTTP_CODE}"
               echo "Response: ${BODY:0:500}"
             fi
 

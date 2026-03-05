@@ -3,7 +3,7 @@
 # =============================================================================
 # Creates meal-planner's own Auth0 applications (prod + preview) with correct
 # callback URLs. Stores credentials in Key Vault with meal-planner- prefix to
-# avoid conflicts with yt-summarizer's secrets in the shared kv-ytsumm-prd.
+# avoid conflicts with yt-summarizer's secrets in the shared kv-ytsumm-prd-ci.
 
 # -----------------------------------------------------------------------------
 # Generate random session secrets
@@ -108,14 +108,6 @@ resource "auth0_connection_client" "meal_planner_preview_database" {
   count         = var.enable_auth0 ? 1 : 0
   connection_id = data.auth0_connection.database[0].id
   client_id     = module.auth0_preview[0].application_client_id
-}
-
-# Store connection ID in Key Vault so CI can reference it without needing read:connections scope
-resource "azurerm_key_vault_secret" "auth0_connection_id" {
-  count        = var.enable_auth0 ? 1 : 0
-  name         = "meal-planner-auth0-connection-id"
-  value        = data.auth0_connection.database[0].id
-  key_vault_id = module.shared.key_vault_id
 }
 
 # -----------------------------------------------------------------------------
