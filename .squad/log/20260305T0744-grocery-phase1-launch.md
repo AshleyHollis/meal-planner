@@ -9,6 +9,7 @@ Successful launch of Phase 1 for meal-planner-005-grocery-enhancements initiativ
 **What:** Coordinator resolved ruff SIM102 violations (3 nested if statements) across `.squad/` and e2e test files. Applied prettier formatting standards.
 
 **Files Updated:**
+
 - `.squad/agents/*/charter.md` (style consistency)
 - `e2e/` test suites (SIM102 nested-if refactoring)
 
@@ -19,6 +20,7 @@ Successful launch of Phase 1 for meal-planner-005-grocery-enhancements initiativ
 **What:** Enhanced squad governance to prevent duplicate work and enforce clarity.
 
 **Changes:**
+
 1. **routing.md** — Added Rule 0: "Check orchestration-log before spawning overlapping agents"
 2. **now.md** — Introduced NON-NEGOTIABLE section listing critical blocking conditions (e.g., "Do not merge PRs without passing tests")
 3. **wisdom.md** — Added concrete anti-pattern: "Never spawn two agents for the same task without explicit coordination"
@@ -30,6 +32,7 @@ Successful launch of Phase 1 for meal-planner-005-grocery-enhancements initiativ
 **Spawn:** Ripley (Product Model Lead)
 
 **Initial Tasks (3 concurrent):**
+
 - T001: Product model refactor (ORM + relationships)
 - T002: Product export (JSON/CSV)
 - T003: Migration framework
@@ -53,4 +56,4 @@ Successful launch of Phase 1 for meal-planner-005-grocery-enhancements initiativ
 
 ---
 
-*Logged by Scribe at 2026-03-05T0744*
+_Logged by Scribe at 2026-03-05T0744_

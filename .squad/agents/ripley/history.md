@@ -383,7 +383,7 @@
 - **65s multi-meal sleep was calibrated for 10K tokens + Kimi thinking overhead:** With \_MAX_TOKENS=4000 and thinking disabled, 5s is sufficient — or eliminate entirely with syncio.gather + semaphore(2).
 - **syncio.to_thread(call_llm, ...) is the safe path to parallel multi-meal generation:** It unblocks the event loop without rewriting the HTTP layer. Full AsyncAzureOpenAI migration is a follow-on after Tier 1 is validated.
 - **Double-serialization repair in \_extract_json() is a Kimi thinking-mode artefact:** The {"recipes": "[{...}]"} corruption pattern (string-encoded array) was caused by thinking tokens mixing with the JSON response. Should disappear with thinking disabled. Do not remove repair code until PoC confirms this.
-- **Retry backoff logic:** max(rate_limit_wait, 60 _ attempt) correctly uses the Retry-After header when present, but 60s floor is excessive with max_tokens=4000. Drop floor to 15 _ attempt — the token bucket refills faster with smaller requests.
+- **Retry backoff logic:** max(rate*limit_wait, 60 * attempt) correctly uses the Retry-After header when present, but 60s floor is excessive with max*tokens=4000. Drop floor to 15 * attempt — the token bucket refills faster with smaller requests.
 - **JSON mode PoC must precede simplification:**
   esponse_format={"type": "json_object"} should be tested empirically after thinking is disabled. Azure's proxy layer for Kimi may or may not honour json_object the same way as native GPT-4 models.
 
@@ -413,7 +413,6 @@
 - **Test results:** 97 worker tests pass, ruff clean.
 - **Expected perf gain:** 3 meal types: 25-55s → 9-19s wall-clock (semaphore-bounded parallel + 4s stagger vs 3× sequential + 2× 5s pacing).
 
-
 ### Phase 1: Product Model, Migration, Export (2026-03-06)
 
 **Task:** Implement T001-T003 from specs/005-grocery-enhancements/tasks.md.
@@ -421,17 +420,19 @@
 **Status at spawn:** All three deliverables already present and committed in 52c6172 (feat(005): implement product mappings for grocery enhancement).
 
 **Validation results:**
+
 - ruff check shared/ + format --check: All checks passed, 24 files already formatted.
 - pytest tests/ -v: 193 passed, 0 failures, 14 warnings (deprecation only).
 
 **Key patterns confirmed:**
+
 - UUID PK uses generate_uuid Python default (migration uses server_default=NEWID() separately)
-- Migration uses idempotent _table_exists() / _index_exists() guards before creating objects
+- Migration uses idempotent \_table_exists() / \_index_exists() guards before creating objects
 - down_revision chain: 005 -> 004 -> 003 -> 002 -> 001
 - TimestampMixin provides created_at / updated_at with func.sysutcdatetime() defaults
 - UNIQUEIDENTIFIER mapped at Base via type_annotation_map = {UUID: UNIQUEIDENTIFIER}
 - Relationships use lazy='selectin' pattern throughout this codebase
-- __table_args__ tuple holds UniqueConstraint + Index entries at bottom of model class
+- **table_args** tuple holds UniqueConstraint + Index entries at bottom of model class
 
 ### Kimi K2.5 Slowness Investigation — Preview Deployment (2026-03-09)
 
@@ -442,8 +443,8 @@
 #### Root Cause Analysis
 
 **Bug 1 (fixed): Stagger sleep held the semaphore slot (generator.py)**
-syncio.sleep(2 * index) was inside sync with semaphore:, meaning index=1 held a semaphore slot for 2 seconds before even starting the LLM call. For 3 meal types with Semaphore(2), this delayed index=2's start by 2s unnecessarily.
-Fix: moved sleep BEFORE sync with semaphore:, reduced to 1 * index seconds.
+syncio.sleep(2 _ index) was inside sync with semaphore:, meaning index=1 held a semaphore slot for 2 seconds before even starting the LLM call. For 3 meal types with Semaphore(2), this delayed index=2's start by 2s unnecessarily.
+Fix: moved sleep BEFORE sync with semaphore:, reduced to 1 _ index seconds.
 
 **Bug 2 (fixed): Schema JSON with indent=2 wasted ~300 tokens per call (prompts.py)**
 json.dumps(model_json_schema(), indent=2) produced ~2500 chars vs ~1000 chars compact.
@@ -457,26 +458,30 @@ Fix: added zure_request_params log (deployment, max_tokens, thinking_disabled=T
 #### Likely Ongoing Bottleneck (not code-fixed, needs monitoring)
 
 The most probable cause of "very long time" on the preview deployment is **Azure AI Foundry rate limiting (429s)**:
+
 - capacity=1 → ~20K TPM
 - Each call = ~2K input + up to 4K output = ~6K tokens
 - 20K / 6K = 3.3 calls/minute max
 - If a previous call exhausted the token bucket, the next call gets a 429
-  with Retry-After ~60s → backoff = max(65, 15*attempt) → up to 65s wait
+  with Retry-After ~60s → backoff = max(65, 15\*attempt) → up to 65s wait
 - Worst case 3 attempts: 15s + 65s + 15s + 30s + 15s = ~140s = 2.3 minutes
 
 If thinking is NOT disabled (Azure proxy strips extra_body):
+
 - Thinking tokens run invisibly, consuming 2000-8000 extra tokens per call
 - Burns TPM budget 3-4× faster, causing immediate 429s after the first call
 
 **Monitoring action:** After deploying, check logs for:
-- 	hinking_not_disabled warning (means Azure stripped extra_body.thinking)
-- ate_limit_retry_after with high values (means 429s are occurring)
+
+-     hinking_not_disabled warning (means Azure stripped extra_body.thinking)
+- ate_limit_retry_after with high values (means 429s are occurring)
 - prompt_chars values in llm_call_start — if >8000 chars (~2000 tokens), the input is large
 
 #### Key Learnings
 
 - **Stagger sleep must be OUTSIDE the semaphore** — sleeping inside holds a slot during the wait period, reducing effective concurrency.
 - **Schema JSON indent adds ~300 tokens** — remove indent=2 to save meaningful TPM.
-- **Diagnostic logging is critical** for LLM latency debugging — without prompt_chars, deployment, and 	hinking_disabled in logs, diagnosing slow calls requires code inspection rather than log analysis.
+- **Diagnostic logging is critical** for LLM latency debugging — without prompt_chars, deployment, and hinking_disabled in logs, diagnosing slow calls requires code inspection rather than log analysis.
 - **Azure 429s are the most likely "very long time" cause** for capacity=1 deployments with multi-type generation.
-- **thinking=disabled cannot be locally confirmed** — only verifiable via easoning_content in the response. If Azure strips extra_body, the safety net log (	hinking_not_disabled warning) is the only indicator.
+- **thinking=disabled cannot be locally confirmed** — only verifiable via
+  easoning_content in the response. If Azure strips extra_body, the safety net log ( hinking_not_disabled warning) is the only indicator.

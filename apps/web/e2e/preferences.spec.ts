@@ -100,9 +100,7 @@ test.describe("Preferences Management", () => {
       await waitForPreferencesLoaded(page);
 
       // If vegetarian already exists from a prior run, just verify it
-      const existingItem = page
-        .locator("li")
-        .filter({ hasText: "vegetarian" });
+      const existingItem = page.locator("li").filter({ hasText: "vegetarian" });
       if (
         await existingItem.isVisible({ timeout: 10_000 }).catch(() => false)
       ) {
@@ -119,9 +117,7 @@ test.describe("Preferences Management", () => {
         const dietaryDropdown = page.getByLabel(/Dietary Restriction/i);
         const valueInput = page.getByLabel(/Value/i);
         if (
-          await dietaryDropdown
-            .isVisible({ timeout: 5_000 })
-            .catch(() => false)
+          await dietaryDropdown.isVisible({ timeout: 5_000 }).catch(() => false)
         ) {
           await dietaryDropdown.selectOption("vegetarian");
         } else {
@@ -135,9 +131,7 @@ test.describe("Preferences Management", () => {
       await fillAndSubmit();
 
       // Wait for either the item to appear or an error message
-      const itemLocator = page
-        .locator("li")
-        .filter({ hasText: "vegetarian" });
+      const itemLocator = page.locator("li").filter({ hasText: "vegetarian" });
       const errorMsg = page.getByText(/Failed to add preference/i);
       await expect(itemLocator.or(errorMsg).first()).toBeVisible({
         timeout: 30_000,
@@ -158,9 +152,7 @@ test.describe("Preferences Management", () => {
       await waitForPreferencesLoaded(page);
 
       // If peanuts already exists from a prior run, just verify it
-      const existingItem = page
-        .locator("li")
-        .filter({ hasText: "peanuts" });
+      const existingItem = page.locator("li").filter({ hasText: "peanuts" });
       if (
         await existingItem.isVisible({ timeout: 10_000 }).catch(() => false)
       ) {
@@ -198,9 +190,7 @@ test.describe("Preferences Management", () => {
       await waitForPreferencesLoaded(page);
 
       // If cilantro already exists from a prior run, just verify it
-      const existingItem = page
-        .locator("li")
-        .filter({ hasText: "cilantro" });
+      const existingItem = page.locator("li").filter({ hasText: "cilantro" });
       if (
         await existingItem.isVisible({ timeout: 10_000 }).catch(() => false)
       ) {

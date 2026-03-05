@@ -4,12 +4,12 @@ Agents use Discord to notify the user when they need attention. Messages go to t
 
 ## When to Notify
 
-| Situation | Priority | Action |
-|-----------|----------|--------|
-| Blocked — need decision or input | High | `send_message` with clear question |
-| Error — can't recover autonomously | High | `send_message` with error details |
-| Work complete — milestone or feature done | Normal | `send_message` with summary |
-| FYI — progress update on long task | Low | `send_message` with brief update |
+| Situation                                 | Priority | Action                             |
+| ----------------------------------------- | -------- | ---------------------------------- |
+| Blocked — need decision or input          | High     | `send_message` with clear question |
+| Error — can't recover autonomously        | High     | `send_message` with error details  |
+| Work complete — milestone or feature done | Normal   | `send_message` with summary        |
+| FYI — progress update on long task        | Low      | `send_message` with brief update   |
 
 Do NOT notify for routine operations (commits, test runs, file edits). Only notify when the user's attention is genuinely needed or when significant work completes.
 
@@ -39,6 +39,7 @@ Keep messages scannable. Use this structure:
 ## Message Naming Convention
 
 Always prefix with the agent name so the user can scan messages quickly:
+
 - `**Ripley: DB migration needs review**`
 - `**Kane: Frontend build failing — missing env var**`
 - `**Parker: Preview deployment complete**`

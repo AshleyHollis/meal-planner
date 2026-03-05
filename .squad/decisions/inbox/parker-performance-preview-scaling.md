@@ -21,17 +21,20 @@ Two-tier bottleneck:
 ### Immediate Actions (Deploy Today — 30 min)
 
 #### 1. Scale Azure AI Kimi K2.5: 1→4 Capacity
+
 ```bash
 ./scripts/scale-kimi-k25.sh --execute
 ```
 
 **Impact:**
+
 - Increases TPM quota from ~20K to ~80K (4x)
 - Enables 4 parallel meal plan requests
 - **Cost:** $0 additional (token pricing unchanged)
 - **Downtime:** ~5 minutes
 
 **Why This Script:**
+
 - Pre-flight checks validate Azure CLI login, resource group, AI account, deployment
 - Dry-run by default (shows exactly what will run)
 - Post-flight verification confirms target capacity reached
@@ -40,7 +43,9 @@ Two-tier bottleneck:
 **Evidence:** Script already tested and documented in Parker's history (2026-03-06)
 
 #### 2. Increase Worker Pod CPU Limits (Preview)
+
 Edit `k8s/overlays/preview/kustomization.yaml` line 144:
+
 ```yaml
 # From:
   limits:
@@ -52,6 +57,7 @@ Edit `k8s/overlays/preview/kustomization.yaml` line 144:
 ```
 
 **Impact:**
+
 - Reduces CPU throttling during LLM wait cycles
 - Worker can handle request queue more efficiently
 - Still safe (base allows 500m; 300m preview is reasonable)
@@ -62,18 +68,22 @@ Edit `k8s/overlays/preview/kustomization.yaml` line 144:
 ### Short-term Actions (Within 1 week)
 
 #### 3. Add LLM Request Timeout Configuration
+
 Add to `k8s/base/configmap.yaml`:
+
 ```yaml
-  LLM_REQUEST_TIMEOUT: "60"
-  LLM_POOL_SIZE: "5"
+LLM_REQUEST_TIMEOUT: "60"
+LLM_POOL_SIZE: "5"
 ```
 
 **Impact:**
+
 - Prevents indefinite hangs if Azure OpenAI becomes unresponsive
 - Enables connection pooling for parallel requests
 - Allows tuning without redeployment
 
 #### 4. Monitor and Iterate
+
 - Watch worker logs for latency reduction: `kubectl logs -l app.kubernetes.io/name=meal-plan-worker -n preview-pr-X --tail=100 | grep -i duration`
 - Set CloudWatch alarm: Worker LLM latency > 120s → Page on-call
 - Baseline throughput: Measure plans/min before and after scaling
@@ -81,7 +91,9 @@ Add to `k8s/base/configmap.yaml`:
 ### Long-term Actions (Strategic)
 
 #### 5. Model Switch to GPT-4o-mini
+
 Per Dallas's analysis:
+
 - 80% cheaper ($30/mo vs. $120/mo at 1000 plans/month)
 - 4-8x faster (8-20s vs. 20-120s)
 - Requires: Model switch in `services/workers/meal_plan_generator/llm_client.py` + native JSON mode
@@ -90,12 +102,12 @@ Per Dallas's analysis:
 
 ## Decision Matrix
 
-| Scenario | Scale Azure | Increase CPU | Result |
-|----------|------------|-------------|--------|
-| Azure at capacity (full quota) | ✅ | ✅ | 4x faster, balanced |
-| Azure OK, worker CPU-bound | ❌ | ✅ | 2x faster, partial |
-| Worker OK, Azure bottleneck | ✅ | ❌ | 2x faster, partial |
-| Both bottlenecked | ✅ | ✅ | 4x faster, optimal |
+| Scenario                       | Scale Azure | Increase CPU | Result              |
+| ------------------------------ | ----------- | ------------ | ------------------- |
+| Azure at capacity (full quota) | ✅          | ✅           | 4x faster, balanced |
+| Azure OK, worker CPU-bound     | ❌          | ✅           | 2x faster, partial  |
+| Worker OK, Azure bottleneck    | ✅          | ❌           | 2x faster, partial  |
+| Both bottlenecked              | ✅          | ✅           | 4x faster, optimal  |
 
 **Current state:** Both bottlenecked → deploy both fixes.
 
@@ -130,12 +142,12 @@ Per Dallas's analysis:
 
 ## Risks & Mitigations
 
-| Risk | Likelihood | Mitigation |
-|------|-----------|-----------|
-| Azure scale causes 5-min downtime | High | Expected; customer notification recommended |
-| Worker CPU increase causes restart storms | Low | Health probe initialDelaySeconds=10 is safe |
-| Quota auto-limits on Azure revert change | Very Low | Microsoft auto-promotion is per-tier only |
-| Preview env still slow due to code issue | Medium | Requires Dallas/Ripley investigation in parallel |
+| Risk                                      | Likelihood | Mitigation                                       |
+| ----------------------------------------- | ---------- | ------------------------------------------------ |
+| Azure scale causes 5-min downtime         | High       | Expected; customer notification recommended      |
+| Worker CPU increase causes restart storms | Low        | Health probe initialDelaySeconds=10 is safe      |
+| Quota auto-limits on Azure revert change  | Very Low   | Microsoft auto-promotion is per-tier only        |
+| Preview env still slow due to code issue  | Medium     | Requires Dallas/Ripley investigation in parallel |
 
 ## Approval Gate
 

@@ -20,6 +20,7 @@
 **Key Findings:**
 
 **1. Worker Pod Configuration (Preview)**
+
 - **Replicas:** 1 pod (both base and preview overlay)
 - **CPU Limits:** 150m preview / 500m base (CPU throttling likely during long LLM calls)
 - **Memory Limits:** 256Mi preview / 512Mi base (adequate for worker process)
@@ -27,6 +28,7 @@
 - **No Timeout/Concurrency Variables:** ConfigMap and manifests lack LLM_TIMEOUT, REQUEST_TIMEOUT, or worker concurrency settings
 
 **2. Azure AI Foundry Capacity (Current State)**
+
 - **Deployment:** `kimi-k25` in `aif-pai-dev-eus` account (East US)
 - **Current Capacity:** 1 (baseline ~20K TPM)
 - **Scale Script Status:** Ready (`scripts/scale-kimi-k25.sh` exists)
@@ -35,6 +37,7 @@
   - Pre/post-flight checks + verification included
 
 **3. Preview Overlay Configuration**
+
 - **Resource Constraints (vs. Base):**
   - Worker: 25m CPU request (vs 50m base) — **BOTTLENECK**
   - Worker: 64Mi memory request (vs 128Mi base) — tight but acceptable
@@ -43,6 +46,7 @@
 - **No Health Probe Differences:** Same liveness probe config; won't cause cascading restarts
 
 **4. Configuration Gaps**
+
 - No environment variables for:
   - LLM request timeout (could block indefinitely)
   - Max parallel LLM calls (could cause contention)
@@ -58,13 +62,13 @@ Two tiers of slowness:
 
 **Recommended Actions (Priority Order):**
 
-| Action | Impact | Effort | Cost |
-|--------|--------|--------|------|
-| **Scale Azure AI capacity 1→4** | 4x LLM throughput, 4x parallel requests | 5 min (script ready) | $0 (token cost unchanged) |
-| **Increase worker CPU limit in preview** | Reduce CPU throttling during LLM waits | 5 min (kustomization patch) | $0 |
-| **Add LLM_REQUEST_TIMEOUT env var** | Fail fast if LLM unresponsive | 10 min (add to configmap) | $0 |
-| **Increase worker replicas** | 2-3 pods distribute queue load | 10 min (kustomization patch) | ~$0.01/hour per pod |
-| **Model switch to GPT-4o-mini** | 80% cheaper, 4-8x faster | Code review required | 75% cost savings |
+| Action                                   | Impact                                  | Effort                       | Cost                      |
+| ---------------------------------------- | --------------------------------------- | ---------------------------- | ------------------------- |
+| **Scale Azure AI capacity 1→4**          | 4x LLM throughput, 4x parallel requests | 5 min (script ready)         | $0 (token cost unchanged) |
+| **Increase worker CPU limit in preview** | Reduce CPU throttling during LLM waits  | 5 min (kustomization patch)  | $0                        |
+| **Add LLM_REQUEST_TIMEOUT env var**      | Fail fast if LLM unresponsive           | 10 min (add to configmap)    | $0                        |
+| **Increase worker replicas**             | 2-3 pods distribute queue load          | 10 min (kustomization patch) | ~$0.01/hour per pod       |
+| **Model switch to GPT-4o-mini**          | 80% cheaper, 4-8x faster                | Code review required         | 75% cost savings          |
 
 **Immediate Fixes (Next 30 minutes):**
 

@@ -11,14 +11,16 @@ Phase 1 (T001-T003) was already committed before this session in commit 52c6172.
 ## Patterns Established
 
 ### Product model (services/shared/shared/db/models/product.py)
+
 - UUID PK uses `generate_uuid` Python-side default, not a SQL server_default — consistent with all other models
 - UNIQUEIDENTIFIER is handled by Base.type_annotation_map at class level, not per-column
 - Relationships: `lazy="selectin"` on both household and ingredient FK sides
 - `__table_args__` holds UniqueConstraint + two Index entries at bottom of class
 
 ### Migration (services/shared/alembic/versions/005_grocery_products.py)
+
 - revision="005", down_revision="004" — maintains the linear chain
-- Idempotent: _table_exists() before create_table, _index_exists() before create_index
+- Idempotent: \_table_exists() before create_table, \_index_exists() before create_index
 - Timestamps use server_default=sa.text("SYSUTCDATETIME()") in migration (Python default is for ORM path)
 - downgrade uses DROP TABLE IF EXISTS (T-SQL syntax, matches Azure SQL)
 
