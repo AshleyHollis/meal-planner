@@ -12,6 +12,35 @@
 
 ## Learnings
 
+### 2026-03-05: LLM Performance Investigation — Code-Level Bottleneck Analysis
+
+**Task:** Cross-agent investigation into meal plan generation slowness. Parallel with Dallas (LLM analysis) and Parker (Azure/cost analysis).
+
+**Findings:** Identified 7 specific bottlenecks in meal_plan_generator pipeline with line numbers:
+
+1. `generator.py:145-222` — Missing leftovers/freezer context load in \_load_context()
+2. `generator.py:461` — Slot creation hardcodes meal_type="dinner" (multi-meal inflexible)
+3. `llm_client.py` — Timeout and retry backoff need tuning for new model
+4. `prompts.py` — Multi-meal prompt params not fully wired
+5. `generator.py:520` — Inter-call sleep (65s per meal, sequential = O(n) latency)
+6. `generator.py:JSON repair loop` — Fallback parsing needed due to Kimi output corruption
+7. `substitution_service.py:234-253` — Grocery changes calculated but not persisted to DB
+
+**Quick Wins (4):**
+1. Reduce max_tokens from 10K to 4K (JSON mode doesn't need buffer)
+2. Set response_format="json_mode" in Azure client
+3. Remove JSON repair code once model switch complete
+4. Parallelize multi-meal generation (use asyncio.gather)
+
+**Structural Changes (5):**
+1. Add async context cache (avoid re-fetching preferences per meal)
+2. Implement concurrent meal generation (vs sequential sleep pacing)
+3. Add observability (timing spans per bottleneck)
+4. Cache recipe retrieval (same recipes queried multiple times)
+5. Batch database queries (load all preferences once, not per meal)
+
+**Cross-Agent Consensus:** All three agents (Dallas, Ripley, Parker) converge on unified recommendation: GPT-4o-mini model switch + native JSON mode. P0 changes deliver 80%+ improvement. Decision 7 merged into decisions.md.
+
 ### pre-commit.ci `identify` library compat (2025-07)
 
 - pre-commit.ci pins an older `identify` library that doesn't recognize the `typescript` type tag.

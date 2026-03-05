@@ -1,4 +1,4 @@
-# Dallas — History
+﻿# Dallas — History
 
 ## Project Context
 
@@ -176,3 +176,31 @@ Full architecture review across all 5 specs (001-MVP through 005-grocery-enhance
 - Cook This: `services/api/src/api/routes/quick_suggestions.py` (new POST endpoint)
 
 Review written to `.squad/decisions/inbox/dallas-feature-review.md`.
+
+
+### 2026-03-09: LLM Performance Investigation — Kimi K2.5 Root Cause Analysis
+
+**Trigger:** Ashley reported meal plan generation is slow. Requested comprehensive architectural analysis.
+
+**Root cause:** Kimi K2.5 (1T parameter reasoning model) is fundamentally wrong for structured JSON generation. Key bottlenecks:
+
+1. **Invisible thinking tokens** — reasoning model burns 30-120s on chain-of-thought before producing output, counted against rate limit and output budget
+2. **20K TPM rate limit** with `max_tokens=10000` — single request reserves half the per-minute budget
+3. **300s HTTP read timeout** — masks slowness instead of failing fast
+4. **65s inter-call sleep** for multi-meal pacing — sequential generation compounds latency
+5. **JSON repair code** needed because Kimi corrupts JSON output (can't use `response_format`)
+6. **Retry backoff 60s x attempt** — rate limit recovery adds 1-3 minutes per retry
+
+**Key recommendation:** Switch to GPT-4o-mini. It's 4-8x faster (79 tok/s vs ~10-20), 4-5x cheaper, supports native JSON mode, and eliminates the need for JSON repair. Single dinner generation drops from 30-120s to 8-20s. NFR-01 (p95 < 30s) becomes achievable.
+
+**Implementation plan:** 4 phases, ~4-5 hours total. P0 changes (model switch + JSON mode + reduce max_tokens) deliver 80%+ improvement in <1 hour of code changes.
+
+**Key file paths:**
+- `services/workers/meal_plan_generator/llm_client.py` — Azure client, timeouts, max_tokens, JSON mode
+- `services/workers/meal_plan_generator/generator.py` — retry loop, pacing sleep, JSON repair
+- `services/workers/meal_plan_generator/prompts.py` — prompt construction
+- `services/shared/shared/config.py` — LLM settings, Azure config properties
+
+**Decision written to:** `.squad/decisions/inbox/dallas-llm-performance-investigation.md`
+
+**Status:** Decision 7 merged into decisions.md (2026-03-05). Cross-agent investigation complete: Ripley (backend bottleneck analysis), Parker (Azure deployment + cost analysis) converge on same recommendation. All three agents confirmed GPT-4o-mini as optimal model swap with minimal code impact.

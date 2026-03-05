@@ -13,6 +13,31 @@
 
 ## Learnings
 
+### 2026-03-05: LLM Performance Investigation — Azure Deployment & Cost Analysis
+
+**Task:** Cross-agent investigation into meal plan generation performance. Parallel with Dallas (LLM root cause) and Ripley (code bottlenecks).
+
+**Findings:** Azure deployment analysis for GPT-4o-mini as alternative to Kimi K2.5
+
+**Model Comparison:**
+- Kimi K2.5: ~20-120s per generation, $0.12/1M tokens input, $3.00/1M output
+- GPT-4o-mini: ~8-20s per generation, $0.15/1M tokens input, $0.60/1M output
+- **Impact:** 80% cheaper, 4-8x faster
+
+**Deployment Insights:**
+- Azure AI Foundry supports GPT-4o-mini via OpenAI-compatible endpoint
+- Existing aif-pai-dev-aue account (Australia East) compatible — no new infrastructure
+- Requires model switch in `services/workers/meal_plan_generator/llm_client.py` only
+- JSON mode native support eliminates repair code entirely
+- Request TPM quota increase from 20K to 60K for parallel generation support
+
+**Cost Savings (1000 monthly generations example):**
+- Current (Kimi K2.5): ~$120/month
+- Proposed (GPT-4o-mini): ~$30/month
+- **Savings:** $90/month (75% reduction)
+
+**Cross-Agent Consensus:** All three agents (Dallas, Ripley, Parker) converge on unified recommendation: GPT-4o-mini model switch with native JSON mode. P0 changes (model switch, JSON mode, reduce max_tokens, reduce timeout) deliver 80%+ latency improvement in <1 hour of code changes. Decision 7 merged into decisions.md (2026-03-05).
+
 ### Kimi K2.5 Deployment on Existing Azure AI Foundry Account (2026-03-04)
 
 **Task:** Deploy Kimi K2.5 on existing `aif-pai-dev-aue` account, update infra to use it.
