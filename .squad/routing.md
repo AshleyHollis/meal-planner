@@ -70,7 +70,7 @@ How to decide who handles what.
 26. **Start Discord watcher on every session** — The coordinator MUST start the Discord watcher daemon (`~/.copilot/tools/discordmcp/discord-watcher.cjs`) as a detached background process at the beginning of every session. Check `~/.copilot/tools/discordmcp/inbox.json` for new human messages after every agent batch and before calling task_complete.
 27. **Process Discord inbox like user input** — When the inbox contains messages, treat them as if the user typed them in the CLI. Acknowledge on Discord, then route the work.
 
-26. **Never stop after pushing** — After pushing code, the coordinator MUST monitor the CI pipeline to completion. If CI fails, diagnose and fix immediately. Do not report success or wait for the user to notice failures.
-27. **Preview deployment gate** — After CI passes, monitor the Preview workflow. Verify it deploys successfully and E2E tests pass in the preview environment.
-28. **Visual smoke test is mandatory** — After preview deployment succeeds, auto-trigger the Visual Smoke Test ceremony (Rule 9). Feature work is NOT complete until the full pipeline passes: CI → Preview → E2E → Visual Smoke Test.
-29. **Pipeline failures are highest priority** — If a pipeline fails after a push, fixing it takes precedence over all other queued work. Route the fix to the appropriate agent (Ripley for backend, Kane for frontend, Parker for infra).
+28. **Never stop after pushing** — After pushing code, the coordinator MUST monitor the CI pipeline to completion. If CI fails, diagnose and fix immediately. Do not report success or wait for the user to notice failures.
+29. **Preview deployment gate** — After CI passes, monitor the Preview workflow. Verify it deploys successfully and E2E tests pass in the preview environment.
+30. **Visual smoke test is mandatory** — After preview deployment succeeds, auto-trigger the Visual Smoke Test ceremony (Rule 9). Feature work is NOT complete until the full pipeline passes: CI → Preview → E2E → Visual Smoke Test.
+31. **Pipeline failures are highest priority** — If a pipeline fails after a push, fixing it takes precedence over all other queued work. Route the fix to the appropriate agent (Ripley for backend, Kane for frontend, Parker for infra).

@@ -115,14 +115,15 @@ if (Test-Path "$env:USERPROFILE\.copilot\tools\discordmcp\inbox.json") {
 ```
 
 When messages are found:
+
 1. Read and process them as if the user typed them in the CLI
 2. Clear the inbox file after processing
 3. Respond on Discord acknowledging the message
 
 ### Files
 
-| File | Purpose |
-|------|---------|
-| `~/.copilot/tools/discordmcp/discord-watcher.cjs` | Watcher daemon script |
-| `~/.copilot/tools/discordmcp/inbox.json` | New human messages (coordinator reads) |
-| `~/.copilot/tools/discordmcp/.last-read-id` | Last processed Discord message ID |
+| File                                              | Purpose                                |
+| ------------------------------------------------- | -------------------------------------- |
+| `~/.copilot/tools/discordmcp/discord-watcher.cjs` | Watcher daemon script                  |
+| `~/.copilot/tools/discordmcp/inbox.json`          | New human messages (coordinator reads) |
+| `~/.copilot/tools/discordmcp/.last-read-id`       | Last processed Discord message ID      |
