@@ -79,3 +79,50 @@ Always prefix with the agent name so the user can scan messages quickly:
 3. **Include actionable info.** Don't just say "something failed" — include the error, what you tried, and what you need.
 4. **Respect the channel.** This channel is shared across all feature branches for the project. Include the branch/feature name when relevant.
 5. **Two-way comms.** After posting a question, check for replies before proceeding with a default action. Give the user reasonable time to respond.
+
+## Discord Watcher (Two-Way Communication)
+
+A background watcher daemon monitors `#meal-planner` for human messages and writes them to an inbox file.
+
+### Architecture
+
+```
+Discord #meal-planner ←→ discord-watcher.cjs (detached daemon)
+                              ↓ writes new human messages
+                         ~/.copilot/tools/discordmcp/inbox.json
+                              ↑ Coordinator checks periodically
+                         Copilot CLI session
+```
+
+### Starting the watcher
+
+The coordinator MUST start the Discord watcher at the beginning of every session:
+
+```powershell
+node "$env:USERPROFILE\.copilot\tools\discordmcp\discord-watcher.cjs" --interval 10
+```
+
+Run as a **detached** background process so it survives session end.
+
+### Checking for messages
+
+The coordinator MUST check the inbox file periodically (at minimum: after every agent batch, and before calling task_complete):
+
+```powershell
+if (Test-Path "$env:USERPROFILE\.copilot\tools\discordmcp\inbox.json") {
+    Get-Content "$env:USERPROFILE\.copilot\tools\discordmcp\inbox.json" | ConvertFrom-Json | Format-Table
+}
+```
+
+When messages are found:
+1. Read and process them as if the user typed them in the CLI
+2. Clear the inbox file after processing
+3. Respond on Discord acknowledging the message
+
+### Files
+
+| File | Purpose |
+|------|---------|
+| `~/.copilot/tools/discordmcp/discord-watcher.cjs` | Watcher daemon script |
+| `~/.copilot/tools/discordmcp/inbox.json` | New human messages (coordinator reads) |
+| `~/.copilot/tools/discordmcp/.last-read-id` | Last processed Discord message ID |
