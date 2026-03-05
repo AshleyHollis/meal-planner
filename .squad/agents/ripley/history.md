@@ -412,3 +412,23 @@
 - Worker tests run via `uv run pytest tests\` from the workers directory (pytest not installed in the venv directly, uv resolves it).
 - **Test results:** 97 worker tests pass, ruff clean.
 - **Expected perf gain:** 3 meal types: 25-55s → 9-19s wall-clock (semaphore-bounded parallel + 4s stagger vs 3× sequential + 2× 5s pacing).
+
+
+### Phase 1: Product Model, Migration, Export (2026-03-06)
+
+**Task:** Implement T001-T003 from specs/005-grocery-enhancements/tasks.md.
+
+**Status at spawn:** All three deliverables already present and committed in 52c6172 (feat(005): implement product mappings for grocery enhancement).
+
+**Validation results:**
+- ruff check shared/ + format --check: All checks passed, 24 files already formatted.
+- pytest tests/ -v: 193 passed, 0 failures, 14 warnings (deprecation only).
+
+**Key patterns confirmed:**
+- UUID PK uses generate_uuid Python default (migration uses server_default=NEWID() separately)
+- Migration uses idempotent _table_exists() / _index_exists() guards before creating objects
+- down_revision chain: 005 -> 004 -> 003 -> 002 -> 001
+- TimestampMixin provides created_at / updated_at with func.sysutcdatetime() defaults
+- UNIQUEIDENTIFIER mapped at Base via type_annotation_map = {UUID: UNIQUEIDENTIFIER}
+- Relationships use lazy='selectin' pattern throughout this codebase
+- __table_args__ tuple holds UniqueConstraint + Index entries at bottom of model class
