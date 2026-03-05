@@ -242,6 +242,26 @@ jobs:
             echo "SWA URL (fallback): https://${SWA_HOSTNAME}"
           fi
 
+      # After app settings change, the SWA managed function must restart to
+      # pick up new env vars. Poll /api/auth/login until it returns a redirect
+      # (302/307) instead of 200/500, confirming the Auth0 SDK initialized.
+      - name: Wait for SWA auth warm-up
+        if: steps.swa-url.outputs.static_web_app_url != ''
+        shell: bash
+        run: |
+          URL="${{ steps.swa-url.outputs.static_web_app_url }}/api/auth/login"
+          echo "Waiting for SWA managed function to restart with Auth0 config..."
+          for i in $(seq 1 20); do
+            HTTP_CODE=$(curl -s -o /dev/null -w '%{http_code}' -L --max-redirs 0 "$URL" || true)
+            echo "  Attempt $i/20: HTTP $HTTP_CODE"
+            if [[ "$HTTP_CODE" == "302" || "$HTTP_CODE" == "307" ]]; then
+              echo "✅ Auth0 redirect working (HTTP $HTTP_CODE)"
+              exit 0
+            fi
+            sleep 15
+          done
+          echo "::warning::SWA auth warm-up timed out after 20 attempts — E2E auth may fail"
+
       - name: Verify frontend deployment
         if: steps.swa-url.outputs.static_web_app_url != ''
         uses: AshleyHollis/shared-infra/.github/actions/health-check@v1
