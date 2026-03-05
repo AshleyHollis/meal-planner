@@ -57,18 +57,17 @@ test.describe("Product Library", () => {
         page.getByRole("heading", { name: "Product Library" }),
       ).toBeVisible({ timeout: 30_000 });
 
-      // Wait for loading to finish
-      const spinner = page.locator('[class*="animate-spin"]');
-      if ((await spinner.count()) > 0) {
-        await expect(spinner.first()).not.toBeVisible({ timeout: 30_000 });
-      }
+      // Wait for content instead of unreliable spinner check.
+      // Search box + either product cards or empty state proves page loaded.
+      await expect(page.getByPlaceholder("Search products")).toBeVisible({
+        timeout: 60_000,
+      });
 
-      // Should show either products or empty state
       const productCard = page
         .locator('[class*="rounded-xl"][class*="bg-white"][class*="shadow-sm"]')
         .first();
       const emptyState = page.getByText("No products yet");
-      await expect(productCard.or(emptyState)).toBeVisible({ timeout: 10_000 });
+      await expect(productCard.or(emptyState)).toBeVisible({ timeout: 30_000 });
     });
   });
 

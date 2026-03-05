@@ -111,21 +111,14 @@ test.describe("Recurring Meals Page (US4)", () => {
       { timeout: 30_000 },
     );
 
-    // Wait for loading to complete
-    const spinner = page.locator('[class*="animate-spin"]');
-    if ((await spinner.count()) > 0) {
-      await expect(spinner.first()).not.toBeVisible({ timeout: 60_000 });
-    }
-
-    // If the API call failed, the error state renders instead of the manager
+    // Wait for page content (button or error) instead of unreliable spinner check
     const errorBanner = page.locator("text=Failed to load recurring meals");
     const addButton = page.getByRole("button", {
       name: /add recurring meal/i,
     });
 
-    // Wait for either the button OR an error banner to appear
     await expect(addButton.or(errorBanner).first()).toBeVisible({
-      timeout: 10_000,
+      timeout: 60_000,
     });
 
     // If we got an error, skip the rest of the test
@@ -159,18 +152,12 @@ test.describe("Recurring Meals Page (US4)", () => {
         page.getByRole("heading", { name: /recurring/i }),
       ).toBeVisible({ timeout: 30_000 });
 
-      // Wait for load
-      const spinner = page.locator('[class*="animate-spin"]');
-      if ((await spinner.count()) > 0) {
-        await expect(spinner.first()).not.toBeVisible({ timeout: 30_000 });
-      }
-
-      // Click the "+ Add Recurring Meal" button to reveal the form
+      // Wait for page content instead of unreliable spinner check
       const openFormButton = page.getByRole("button", {
         name: /add recurring meal/i,
       });
       if (
-        !(await openFormButton.isVisible({ timeout: 5_000 }).catch(() => false))
+        !(await openFormButton.isVisible({ timeout: 60_000 }).catch(() => false))
       ) {
         test.skip(true, "Add button not available");
         return;
@@ -230,14 +217,15 @@ test.describe("Multi-Meal Plan Creation (US3)", () => {
       },
     );
 
-    // Wait for page load
-    const spinner = page.locator('[class*="animate-spin"]');
-    if ((await spinner.count()) > 0) {
-      await expect(spinner.first()).not.toBeVisible({ timeout: 30_000 });
-    }
-
-    // Check for meal type checkboxes
+    // Wait for page content instead of unreliable spinner check
+    // Look for meal type checkboxes or Generate button
     const dinnerCheckbox = page.getByLabel(/dinner/i);
+    const generateButton = page.getByRole("button", { name: /generate/i });
+
+    await expect(dinnerCheckbox.or(generateButton).first()).toBeVisible({
+      timeout: 60_000,
+    });
+
     const breakfastCheckbox = page.getByLabel(/breakfast/i);
     const lunchCheckbox = page.getByLabel(/lunch/i);
 

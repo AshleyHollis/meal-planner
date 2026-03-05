@@ -13,6 +13,27 @@ import { test, expect } from "@playwright/test";
  * - Delete button on each preference
  */
 
+/**
+ * Waits for the preferences page to fully load by waiting for the Add
+ * Preference button to appear. This is more reliable than the spinner check
+ * because useEffect may fire AFTER the initial render, causing spinner.count()
+ * to return 0 before the spinner even appears.
+ */
+async function waitForPreferencesLoaded(page: import("@playwright/test").Page) {
+  await expect(
+    page.getByRole("heading", { name: /Preferences|Food Preferences/i }),
+  ).toBeVisible({ timeout: 30_000 });
+
+  // Wait for the Add Preference button — proves the component (including
+  // the async data fetch) has finished rendering.
+  await expect(
+    page.getByRole("button", { name: /Add Preference|Add|Save|Submit/i }),
+  ).toBeVisible({ timeout: 60_000 });
+
+  // Give React one more tick to finish rendering the preference list
+  await page.waitForTimeout(500);
+}
+
 test.describe("Preferences Management", () => {
   test.use({ storageState: "playwright/.auth/user.json" });
 
@@ -29,17 +50,7 @@ test.describe("Preferences Management", () => {
 
     test("shows add preference form", async ({ page }) => {
       await page.goto("/preferences");
-      await expect(
-        page.getByRole("heading", { name: /Preferences|Food Preferences/i }),
-      ).toBeVisible({
-        timeout: 30_000,
-      });
-
-      // Wait for loading spinner to disappear
-      const spinner = page.locator('[class*="animate-spin"]');
-      if ((await spinner.count()) > 0) {
-        await expect(spinner.first()).not.toBeVisible({ timeout: 60_000 });
-      }
+      await waitForPreferencesLoaded(page);
 
       // Form should have preference type selector
       await expect(page.getByLabel(/Type|Preference Type/i)).toBeVisible({
@@ -47,42 +58,28 @@ test.describe("Preferences Management", () => {
       });
 
       // Form should have value input or dietary restriction dropdown
-      // (depends on whether dietary types API returns data)
       await expect(page.getByLabel(/Value|Dietary Restriction/i)).toBeVisible({
         timeout: 10_000,
       });
-
-      // Form should have add/submit button
-      await expect(
-        page.getByRole("button", { name: /Add|Save|Submit/i }),
-      ).toBeVisible();
     });
 
     test("shows empty state or preference list after loading", async ({
       page,
     }) => {
       await page.goto("/preferences");
-      await expect(
-        page.getByRole("heading", { name: /Preferences|Food Preferences/i }),
-      ).toBeVisible({
-        timeout: 30_000,
-      });
+      await waitForPreferencesLoaded(page);
 
-      // Wait for loading spinner to disappear
-      const spinner = page.locator('[class*="animate-spin"]');
-      if ((await spinner.count()) > 0) {
-        await expect(spinner.first()).not.toBeVisible({ timeout: 60_000 });
-      }
-
-      // Should show either empty state or preference items
+      // Should show either empty state, preference items, or group headings
       const emptyState = page.getByText(/No preferences|Add your first/i);
       const preferenceItem = page.getByText(
         /vegetarian|vegan|allergy|dislike/i,
       );
-      const errorMessage = page.getByText(/Failed to load|Error/i);
+      const groupHeading = page.getByRole("heading", {
+        name: /(Dietary Restrictions|Allergies|Dislikes|Likes)/i,
+      });
 
       await expect(
-        emptyState.or(preferenceItem).or(errorMessage).first(),
+        emptyState.or(preferenceItem).or(groupHeading).first(),
       ).toBeVisible({ timeout: 10_000 });
     });
   });
@@ -95,39 +92,23 @@ test.describe("Preferences Management", () => {
 
     test("can add a dietary restriction", async ({ page }) => {
       await page.goto("/preferences");
-      await expect(
-        page.getByRole("heading", { name: /Preferences|Food Preferences/i }),
-      ).toBeVisible({
-        timeout: 30_000,
-      });
-
-      // Wait for loading spinner to disappear
-      const spinner = page.locator('[class*="animate-spin"]');
-      if ((await spinner.count()) > 0) {
-        await expect(spinner.first()).not.toBeVisible({ timeout: 60_000 });
-      }
+      await waitForPreferencesLoaded(page);
 
       // If vegetarian already exists from a prior run, just verify it
-      const existingVegetarian = page
+      const existingItem = page
         .locator("li")
         .filter({ hasText: "vegetarian" });
       if (
-        await existingVegetarian
-          .isVisible({ timeout: 2_000 })
-          .catch(() => false)
+        await existingItem.isVisible({ timeout: 5_000 }).catch(() => false)
       ) {
-        await expect(existingVegetarian).toBeVisible();
         return;
       }
 
-      // Wait for form to load
+      // Select dietary restriction type
       const typeSelector = page.getByLabel(/Type|Preference Type/i);
-      await expect(typeSelector).toBeVisible({ timeout: 10_000 });
-
-      // Select dietary restriction
       await typeSelector.selectOption("dietary_restriction");
 
-      // For dietary restriction, the API returns predefined types shown in a dropdown
+      // Use dropdown if available, otherwise text input
       const dietaryDropdown = page.getByLabel(/Dietary Restriction/i);
       const valueInput = page.getByLabel(/Value/i);
       if (
@@ -138,109 +119,67 @@ test.describe("Preferences Management", () => {
         await valueInput.fill("vegetarian");
       }
 
-      // Submit
       await page.getByRole("button", { name: /Add|Save|Submit/i }).click();
 
-      // Should show the added preference in the list
       await expect(
         page.locator("li").filter({ hasText: "vegetarian" }),
-      ).toBeVisible({
-        timeout: 10_000,
-      });
+      ).toBeVisible({ timeout: 30_000 });
     });
 
     test("can add an allergy", async ({ page }) => {
       await page.goto("/preferences");
-      await expect(
-        page.getByRole("heading", { name: /Preferences|Food Preferences/i }),
-      ).toBeVisible({
-        timeout: 30_000,
-      });
-
-      // Wait for loading spinner to disappear
-      const spinner = page.locator('[class*="animate-spin"]');
-      if ((await spinner.count()) > 0) {
-        await expect(spinner.first()).not.toBeVisible({ timeout: 60_000 });
-      }
+      await waitForPreferencesLoaded(page);
 
       // If peanuts already exists from a prior run, just verify it
-      const existingPeanuts = page
+      const existingItem = page
         .locator("li")
         .filter({ hasText: "peanuts" });
       if (
-        await existingPeanuts.isVisible({ timeout: 2_000 }).catch(() => false)
+        await existingItem.isVisible({ timeout: 5_000 }).catch(() => false)
       ) {
-        await expect(existingPeanuts).toBeVisible();
         return;
       }
 
       const typeSelector = page.getByLabel(/Type|Preference Type/i);
-      await expect(typeSelector).toBeVisible({ timeout: 10_000 });
-
-      // Select allergy
       await typeSelector.selectOption("allergy");
 
-      // Enter value (allergy type shows Value input, not dietary dropdown)
       const valueInput = page.getByLabel(/Value/i);
       await expect(valueInput).toBeVisible({ timeout: 5_000 });
       await valueInput.fill("peanuts");
 
-      // Submit
       await page.getByRole("button", { name: /Add|Save|Submit/i }).click();
 
-      // Should show the added allergy in the list
       await expect(
         page.locator("li").filter({ hasText: "peanuts" }),
-      ).toBeVisible({
-        timeout: 10_000,
-      });
+      ).toBeVisible({ timeout: 30_000 });
     });
 
     test("can add a dislike", async ({ page }) => {
       await page.goto("/preferences");
-      await expect(
-        page.getByRole("heading", { name: /Preferences|Food Preferences/i }),
-      ).toBeVisible({
-        timeout: 30_000,
-      });
-
-      // Wait for loading spinner to disappear
-      const spinner = page.locator('[class*="animate-spin"]');
-      if ((await spinner.count()) > 0) {
-        await expect(spinner.first()).not.toBeVisible({ timeout: 60_000 });
-      }
+      await waitForPreferencesLoaded(page);
 
       // If cilantro already exists from a prior run, just verify it
-      const existingCilantro = page
+      const existingItem = page
         .locator("li")
         .filter({ hasText: "cilantro" });
       if (
-        await existingCilantro.isVisible({ timeout: 2_000 }).catch(() => false)
+        await existingItem.isVisible({ timeout: 5_000 }).catch(() => false)
       ) {
-        await expect(existingCilantro).toBeVisible();
         return;
       }
 
       const typeSelector = page.getByLabel(/Type|Preference Type/i);
-      await expect(typeSelector).toBeVisible({ timeout: 10_000 });
-
-      // Select dislike
       await typeSelector.selectOption("dislike");
 
-      // Enter value (dislike type shows Value input, not dietary dropdown)
       const valueInput = page.getByLabel(/Value/i);
       await expect(valueInput).toBeVisible({ timeout: 5_000 });
       await valueInput.fill("cilantro");
 
-      // Submit
       await page.getByRole("button", { name: /Add|Save|Submit/i }).click();
 
-      // Should show the added dislike in the list
       await expect(
         page.locator("li").filter({ hasText: "cilantro" }),
-      ).toBeVisible({
-        timeout: 10_000,
-      });
+      ).toBeVisible({ timeout: 30_000 });
     });
   });
 
@@ -252,17 +191,7 @@ test.describe("Preferences Management", () => {
 
     test("preferences appear grouped by type", async ({ page }) => {
       await page.goto("/preferences");
-      await expect(
-        page.getByRole("heading", { name: /Preferences|Food Preferences/i }),
-      ).toBeVisible({
-        timeout: 30_000,
-      });
-
-      // Wait for loading
-      const spinner = page.locator('[class*="animate-spin"]');
-      if ((await spinner.count()) > 0) {
-        await expect(spinner.first()).not.toBeVisible({ timeout: 60_000 });
-      }
+      await waitForPreferencesLoaded(page);
 
       const emptyState = page.getByText(/No preferences|Add your first/i);
       if (await emptyState.isVisible().catch(() => false)) {
@@ -270,12 +199,9 @@ test.describe("Preferences Management", () => {
         return;
       }
 
-      // Should have group headings
       const groupHeadings = page.getByRole("heading", {
         name: /(Dietary Restrictions|Allergies|Dislikes|Likes)/i,
       });
-
-      // At least one group should be visible
       await expect(groupHeadings.first()).toBeVisible({ timeout: 10_000 });
     });
   });
@@ -288,42 +214,24 @@ test.describe("Preferences Management", () => {
 
     test("can delete a preference", async ({ page }) => {
       await page.goto("/preferences");
-      await expect(
-        page.getByRole("heading", { name: /Preferences|Food Preferences/i }),
-      ).toBeVisible({
-        timeout: 30_000,
-      });
-
-      // Wait for loading
-      const spinner = page.locator('[class*="animate-spin"]');
-      if ((await spinner.count()) > 0) {
-        await expect(spinner.first()).not.toBeVisible({ timeout: 60_000 });
-      }
+      await waitForPreferencesLoaded(page);
 
       const emptyState = page.getByText(/No preferences|Add your first/i);
-      const errorState = page.getByText(/Failed to load|Error/i);
-      if (
-        (await emptyState.isVisible().catch(() => false)) ||
-        (await errorState.isVisible().catch(() => false))
-      ) {
+      if (await emptyState.isVisible().catch(() => false)) {
         test.skip(true, "No preferences to delete");
         return;
       }
 
-      // Find the first delete button
       const deleteButton = page
         .getByRole("button", { name: /Delete|Remove/i })
         .first();
       await expect(deleteButton).toBeVisible({ timeout: 10_000 });
 
-      // Get the preference text before deletion
       const preferenceContainer = deleteButton.locator("..");
       const preferenceText = await preferenceContainer.textContent();
 
-      // Click delete
       await deleteButton.click();
 
-      // Preference should disappear
       if (preferenceText) {
         try {
           await expect(
