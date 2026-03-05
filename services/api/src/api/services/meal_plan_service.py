@@ -83,7 +83,7 @@ class MealPlanService:
                 MealPlan.status.in_(["draft", "active"]),
             )
         )
-        if existing.scalar_one_or_none() is not None:
+        if existing.scalars().first() is not None:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail="Household already has an active or in-progress meal plan",
