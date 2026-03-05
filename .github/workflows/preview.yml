@@ -650,6 +650,74 @@ jobs:
             echo "::add-mask::$AUTH0_USER_PASSWORD"
             echo "AUTH0_USER_TEST_PASSWORD=$AUTH0_USER_PASSWORD" >> $GITHUB_ENV
 
+      - name: Ensure Auth0 connection enabled for preview app
+        uses: azure/CLI@v2
+        env:
+          AUTH0_MGMT_DOMAIN: ${{ secrets.AUTH0_DOMAIN }}
+          AUTH0_MGMT_CLIENT_ID: ${{ secrets.AUTH0_CLIENT_ID }}
+          AUTH0_MGMT_CLIENT_SECRET: ${{ secrets.AUTH0_CLIENT_SECRET }}
+        with:
+          inlineScript: |
+            # Get the preview app's client_id from Key Vault
+            KV_NAME="${{ vars.KEY_VAULT_NAME || 'kv-ytsumm-prd' }}"
+            PREVIEW_CLIENT_ID=$(az keyvault secret show --vault-name "$KV_NAME" \
+              --name "meal-planner-auth0-preview-client-id" --query "value" -o tsv)
+
+            if [[ -z "$PREVIEW_CLIENT_ID" ]]; then
+              echo "::warning::Could not retrieve preview client ID from Key Vault — skipping"
+              exit 0
+            fi
+
+            # Get Auth0 Management API token
+            TOKEN=$(curl -sf --request POST \
+              --url "https://${AUTH0_MGMT_DOMAIN}/oauth/token" \
+              --header 'content-type: application/json' \
+              --data "{\"client_id\":\"${AUTH0_MGMT_CLIENT_ID}\",\"client_secret\":\"${AUTH0_MGMT_CLIENT_SECRET}\",\"audience\":\"https://${AUTH0_MGMT_DOMAIN}/api/v2/\",\"grant_type\":\"client_credentials\"}" \
+              | jq -r '.access_token')
+
+            if [[ -z "$TOKEN" || "$TOKEN" == "null" ]]; then
+              echo "::warning::Could not get Auth0 Management API token — skipping"
+              exit 0
+            fi
+
+            # Look up Username-Password-Authentication connection
+            CONNECTION_ID=$(curl -sf --request GET \
+              --url "https://${AUTH0_MGMT_DOMAIN}/api/v2/connections?name=Username-Password-Authentication&fields=id,enabled_clients" \
+              --header "authorization: Bearer ${TOKEN}" \
+              | jq -r '.[0].id')
+
+            if [[ -z "$CONNECTION_ID" || "$CONNECTION_ID" == "null" ]]; then
+              echo "::warning::Could not find Username-Password-Authentication connection — skipping"
+              exit 0
+            fi
+
+            # Check if preview client is already enabled
+            ALREADY_ENABLED=$(curl -sf --request GET \
+              --url "https://${AUTH0_MGMT_DOMAIN}/api/v2/connections/${CONNECTION_ID}?fields=enabled_clients" \
+              --header "authorization: Bearer ${TOKEN}" \
+              | jq -r --arg cid "$PREVIEW_CLIENT_ID" '.enabled_clients | index($cid)')
+
+            if [[ "$ALREADY_ENABLED" != "null" ]]; then
+              echo "✅ Preview client already enabled on Username-Password-Authentication connection"
+              exit 0
+            fi
+
+            # Add preview client to the connection's enabled_clients
+            CURRENT_CLIENTS=$(curl -sf --request GET \
+              --url "https://${AUTH0_MGMT_DOMAIN}/api/v2/connections/${CONNECTION_ID}?fields=enabled_clients" \
+              --header "authorization: Bearer ${TOKEN}" \
+              | jq -c '.enabled_clients')
+
+            NEW_CLIENTS=$(echo "$CURRENT_CLIENTS" | jq -c --arg cid "$PREVIEW_CLIENT_ID" '. += [$cid]')
+
+            curl -sf --request PATCH \
+              --url "https://${AUTH0_MGMT_DOMAIN}/api/v2/connections/${CONNECTION_ID}" \
+              --header "authorization: Bearer ${TOKEN}" \
+              --header 'content-type: application/json' \
+              --data "{\"enabled_clients\":${NEW_CLIENTS}}" > /dev/null
+
+            echo "✅ Enabled preview client ${PREVIEW_CLIENT_ID} on Username-Password-Authentication connection"
+
       - name: Wait for API to be ready
         uses: AshleyHollis/shared-infra/.github/actions/health-check@v1
         with:
