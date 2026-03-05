@@ -62,7 +62,11 @@ How to decide who handles what.
 17. **Ralph never stops** — When Ralph is active, process ALL work categories in parallel (untriaged + assigned + CI failures simultaneously). Never stop between rounds.
 18. **No idle agents** — After every batch, check: more tasks? quality improvements? missing tests? UX gaps? documentation? If anything exists, launch it. Don't wait for the user to ask.
 
-### Pipeline Monitoring (Definition of Done)
+### Discord Notifications (Mandatory)
+
+23. **Every agent MUST send Discord notifications** — Read the `squad-human-notification` skill before starting work. Agents must notify on: phase/task completion, errors blocking progress, questions needing input, and CI/pipeline results. Use the node.js script method (in the skill) which always works, even when Discord MCP tools aren't loaded.
+24. **Coordinator sends summary notifications** — After collecting results from agent batches, the coordinator sends a Discord summary to `#meal-planner` with what completed and what's next. This ensures the user gets push notifications on their phone even when away from the terminal.
+25. **Questions go to Discord first** — When an agent needs user input and `ask_user` isn't available (background mode), post the question to Discord and check for replies before making a default decision.
 
 19. **Never stop after pushing** — After pushing code, the coordinator MUST monitor the CI pipeline to completion. If CI fails, diagnose and fix immediately. Do not report success or wait for the user to notice failures.
 20. **Preview deployment gate** — After CI passes, monitor the Preview workflow. Verify it deploys successfully and E2E tests pass in the preview environment.

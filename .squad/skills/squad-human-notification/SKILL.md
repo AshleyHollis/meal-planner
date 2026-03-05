@@ -1,25 +1,49 @@
 # Squad Human Notification Skill
 
-Agents use Discord to notify the user when they need attention. Messages go to the project's Discord channel via the `discord` MCP server.
+Agents use Discord to notify the user when they need attention. Messages go to the project's Discord channel.
+
+**Confidence:** high — verified working 2026-03-05
 
 ## When to Notify
 
-| Situation                                 | Priority | Action                             |
-| ----------------------------------------- | -------- | ---------------------------------- |
-| Blocked — need decision or input          | High     | `send_message` with clear question |
-| Error — can't recover autonomously        | High     | `send_message` with error details  |
-| Work complete — milestone or feature done | Normal   | `send_message` with summary        |
-| FYI — progress update on long task        | Low      | `send_message` with brief update   |
+| Situation                                 | Priority | Action                              |
+| ----------------------------------------- | -------- | ----------------------------------- |
+| Blocked — need decision or input          | High     | Send message with clear question    |
+| Error — can't recover autonomously        | High     | Send message with error details     |
+| Work complete — milestone or feature done | Normal   | Send message with summary           |
+| Status update — batch/phase completed     | Normal   | Send message with progress summary  |
+| FYI — progress update on long task        | Low      | Send message with brief update      |
 
-Do NOT notify for routine operations (commits, test runs, file edits). Only notify when the user's attention is genuinely needed or when significant work completes.
+**ALWAYS notify on:**
+- Task/phase completion (what was done, what's next)
+- Questions that need user input
+- Errors that block progress
+- CI/pipeline results (pass or fail)
+
+Do NOT notify for routine operations (individual commits, single test runs, file edits). Batch related updates into one notification per work phase.
 
 ## How to Send Notifications
 
-Use the `send_message` MCP tool to post to the project's channel.
+### Method: Node.js script (reliable, always works)
+
+Use this PowerShell/node one-liner to send to `#meal-planner` (channel ID: `1479061992772997202`):
+
+```powershell
+node -e "const{Client,GatewayIntentBits}=require(process.env.USERPROFILE+'/.copilot/tools/discordmcp/node_modules/discord.js');const c=new Client({intents:[GatewayIntentBits.Guilds,GatewayIntentBits.GuildMessages]});c.once('ready',async()=>{const ch=await c.channels.fetch('1479061992772997202');await ch.send(process.argv[1]);c.destroy()});c.login(process.env.DISCORD_TOKEN)" "YOUR MESSAGE HERE"
+```
+
+**Channel IDs:**
+- `#meal-planner`: `1479061992772997202` (default for this project)
+- `#general`: `1479061129216135191`
+- `#yt-summarizer`: `1479062015220908154`
+
+### Fallback: Discord MCP tools
+
+If the `discord` MCP tools (`send_message`, `read_messages`) are available in the session, prefer those. Fall back to the node script method when MCP tools are unavailable.
 
 ### Check for user replies
 
-Use `read_messages` to poll for responses after posting a question. Check periodically if waiting on a decision. When a reply is found, acknowledge it and act on the decision.
+Use `read_messages` MCP tool or the node script with `channel.messages.fetch({limit:5})` to poll for responses after posting a question.
 
 ## Message Format
 
