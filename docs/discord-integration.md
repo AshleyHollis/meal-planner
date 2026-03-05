@@ -97,11 +97,11 @@ The bridge does **not** parse Copilot's output. It's fire-and-forget: inject the
 node copilot-bridge.cjs --repo-dir <path> [--channel <id>] [--interval <seconds>]
 ```
 
-| Flag | Default | Description |
-|------|---------|-------------|
-| `--repo-dir` | (required) | Path to your repo — Copilot runs here |
-| `--channel` | `1479061992772997202` | Discord channel ID to monitor |
-| `--interval` | `10` | How often to check Discord (seconds) |
+| Flag         | Default               | Description                           |
+| ------------ | --------------------- | ------------------------------------- |
+| `--repo-dir` | (required)            | Path to your repo — Copilot runs here |
+| `--channel`  | `1479061992772997202` | Discord channel ID to monitor         |
+| `--interval` | `10`                  | How often to check Discord (seconds)  |
 
 ### Sending Follow-Up Messages
 
@@ -153,6 +153,7 @@ If you prefer to type directly in the Copilot CLI terminal (the old way), you ca
 6. **Windows-focused** — Token fallback uses PowerShell. On macOS/Linux, export `DISCORD_TOKEN` in your shell.
 
 ---
+
 ---
 
 # Technical Reference
@@ -359,27 +360,27 @@ node -e "const{Client,GatewayIntentBits}=require(process.env.USERPROFILE+'/.copi
 
 ## File Reference
 
-| File | Location | Purpose |
-|------|----------|---------|
-| `copilot-bridge.cjs` | `~/.copilot/tools/discordmcp/` | Bridge: Discord polling + PTY management |
+| File                  | Location                       | Purpose                                         |
+| --------------------- | ------------------------------ | ----------------------------------------------- |
+| `copilot-bridge.cjs`  | `~/.copilot/tools/discordmcp/` | Bridge: Discord polling + PTY management        |
 | `discord-watcher.cjs` | `~/.copilot/tools/discordmcp/` | Standalone watcher (legacy, for non-bridge use) |
-| `build/index.js` | `~/.copilot/tools/discordmcp/` | MCP server entry point |
-| `bridge-status.json` | `~/.copilot/tools/discordmcp/` | Bridge runtime state |
-| `.last-read-id` | `~/.copilot/tools/discordmcp/` | Last processed Discord message ID |
-| `mcp-config.json` | `~/.copilot/` or `.copilot/` | Copilot CLI MCP server configuration |
+| `build/index.js`      | `~/.copilot/tools/discordmcp/` | MCP server entry point                          |
+| `bridge-status.json`  | `~/.copilot/tools/discordmcp/` | Bridge runtime state                            |
+| `.last-read-id`       | `~/.copilot/tools/discordmcp/` | Last processed Discord message ID               |
+| `mcp-config.json`     | `~/.copilot/` or `.copilot/`   | Copilot CLI MCP server configuration            |
 
 ---
 
 ## Troubleshooting
 
-| Problem | Fix |
-|---------|-----|
-| Bridge says "DISCORD_TOKEN not found" | Set token: `[Environment]::SetEnvironmentVariable("DISCORD_TOKEN", "token", "User")` |
-| Bridge says "File not found" when spawning Copilot | Install Copilot CLI via WinGet: `winget install GitHub.Copilot` |
-| Discord MCP tools not appearing in Copilot | Use absolute paths in `mcp-config.json`, restart Copilot CLI |
-| Bot doesn't see messages | Enable **Message Content Intent** in Discord Developer Portal → Bot |
-| Bridge picks up old messages on first run | Initialize `.last-read-id` (see step 6 in setup) |
-| `require is not defined` error | Rename file to `.cjs` (the discordmcp package uses ESM) |
+| Problem                                            | Fix                                                                                  |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| Bridge says "DISCORD_TOKEN not found"              | Set token: `[Environment]::SetEnvironmentVariable("DISCORD_TOKEN", "token", "User")` |
+| Bridge says "File not found" when spawning Copilot | Install Copilot CLI via WinGet: `winget install GitHub.Copilot`                      |
+| Discord MCP tools not appearing in Copilot         | Use absolute paths in `mcp-config.json`, restart Copilot CLI                         |
+| Bot doesn't see messages                           | Enable **Message Content Intent** in Discord Developer Portal → Bot                  |
+| Bridge picks up old messages on first run          | Initialize `.last-read-id` (see step 6 in setup)                                     |
+| `require is not defined` error                     | Rename file to `.cjs` (the discordmcp package uses ESM)                              |
 
 ---
 
@@ -391,7 +392,7 @@ Add these rules to `.squad/routing.md`:
 ### Discord Notifications (Mandatory)
 
 N. **Every agent MUST send Discord notifications** — Read the `squad-human-notification` skill.
-   Notify on: task completion, errors blocking progress, questions needing input, CI results.
+Notify on: task completion, errors blocking progress, questions needing input, CI results.
 N+1. **Coordinator sends summary notifications** — After agent batches, summarize what completed.
 ```
 
