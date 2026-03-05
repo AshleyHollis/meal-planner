@@ -14,24 +14,22 @@ import { test, expect } from "@playwright/test";
  */
 
 /**
- * Waits for the preferences page to fully load by waiting for the Add
- * Preference button to appear. This is more reliable than the spinner check
- * because useEffect may fire AFTER the initial render, causing spinner.count()
- * to return 0 before the spinner even appears.
+ * Waits for the preferences page to fully load by waiting for the group
+ * headings ("Dietary Restrictions", "Allergies", etc.) that only render
+ * after the API call completes. This is more reliable than checking for
+ * the spinner (race condition) or the Add button (renders before data loads).
  */
 async function waitForPreferencesLoaded(page: import("@playwright/test").Page) {
   await expect(
     page.getByRole("heading", { name: /Preferences|Food Preferences/i }),
   ).toBeVisible({ timeout: 30_000 });
 
-  // Wait for the Add Preference button — proves the component (including
-  // the async data fetch) has finished rendering.
-  await expect(
-    page.getByRole("button", { name: /Add Preference|Add|Save|Submit/i }),
-  ).toBeVisible({ timeout: 60_000 });
-
-  // Give React one more tick to finish rendering the preference list
-  await page.waitForTimeout(500);
+  // Wait for a preference group heading — proves the API data has loaded
+  // and the component has finished rendering the preference list.
+  const groupHeading = page.getByRole("heading", {
+    name: /(Dietary Restrictions|Allergies|Dislikes|Likes)/i,
+  });
+  await expect(groupHeading.first()).toBeVisible({ timeout: 120_000 });
 }
 
 test.describe("Preferences Management", () => {
