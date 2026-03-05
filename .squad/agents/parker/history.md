@@ -13,6 +13,45 @@
 
 ## Learnings
 
+### 2026-03-06: Kimi K2.5 Deployment Scaling Script — Production-Ready Automation
+
+**Task:** Ashley requested a script to increase Kimi K2.5 deployment capacity from 1 to 4 on Azure AI Foundry (aif-pai-dev-eus account).
+
+**Deliverable:**
+
+- **Script:** `scripts/scale-kimi-k25.sh` — Idempotent capacity scaling via Azure CLI
+  - **Default mode:** Dry-run (echoes command, no execution). User sees exactly what will run.
+  - **Execute mode:** `./scripts/scale-kimi-k25.sh --execute` performs the actual scaling
+  - **Pre-flight checks:** az login status, resource group existence, AI account existence, deployment existence
+  - **Post-flight verification:** Queries new capacity after scaling, confirms target reached
+  - **TPM mapping comments:** Capacity 1 = ~20K TPM, Capacity 4 = ~80K TPM (with explanation that token pricing unchanged)
+  - **Safety:** Uses `set -euo pipefail`, proper error handling, user guidance on expected downtime (~5 min)
+
+**Key Implementation Details:**
+
+1. Uses `az cognitiveservices account deployment create` (reuse mechanism: `create` also updates existing deployments)
+2. Retrieves current capacity via `properties.capabilities[0].capacity` query before/after
+3. Avoids hardcoded assumptions; queries Azure state instead
+4. Includes model name, version, format (MoonshotAI) to ensure consistency
+5. GlobalStandard SKU confirmed as correct for third-party models on Azure AI Foundry
+
+**Files Changed:**
+
+- `scripts/scale-kimi-k25.sh`: New script (193 lines, executable)
+- Commit: 5a41b70 (chore: add scale-kimi-k25.sh...)
+
+**Usage Pattern:**
+
+```bash
+# Preview what will happen
+./scripts/scale-kimi-k25.sh
+
+# Actually scale
+./scripts/scale-kimi-k25.sh --execute
+```
+
+**Key Learning:** Dry-run as default is safer for production infrastructure. Users see the exact Azure CLI command being executed, enabling review before automation.
+
 ### 2026-03-05: Kimi K2.5 Quota Optimization Research — Scaling Strategy & Cost Model
 
 **Task:** Ashley requested research on increasing Azure AI Foundry quota for Kimi K2.5 to optimize deployment.
