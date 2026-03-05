@@ -34,14 +34,14 @@ The token in the GitHub secret references a non-existent SWA (likely `swa-mealpl
 
 ## Resource Naming Reference (ytsumm → mealplan transition)
 
-| Resource type | Old name (ytsumm) | New/correct name |
-|---|---|---|
-| Resource group (shared) | `rg-ytsumm-prd` | still `rg-ytsumm-prd` |
-| Resource group (CI) | `rg-ytsumm-prd-ci` | still `rg-ytsumm-prd-ci` |
-| Key Vault (legacy) | `kv-ytsumm-prd` | legacy, auth0 only |
-| Key Vault (CI) | `kv-ytsumm-prd-ci` | use this for all CI secrets |
-| ACR (old) | `acrytsummprd` | not used for CI images |
-| ACR (CI) | `acrytsummprdci` | images pushed here |
-| SQL Server | `sql-mealplan-prd` | in `rg-ytsumm-prd` |
-| SWA | `swa-ytsumm-prd` | in `rg-ytsumm-prd-ci` |
-| AKS | `aks-ytsumm-prd-ci` | in `rg-ytsumm-prd-ci` |
+| Resource type           | Old name (ytsumm)   | New/correct name            |
+| ----------------------- | ------------------- | --------------------------- |
+| Resource group (shared) | `rg-ytsumm-prd`     | still `rg-ytsumm-prd`       |
+| Resource group (CI)     | `rg-ytsumm-prd-ci`  | still `rg-ytsumm-prd-ci`    |
+| Key Vault (legacy)      | `kv-ytsumm-prd`     | legacy, auth0 only          |
+| Key Vault (CI)          | `kv-ytsumm-prd-ci`  | use this for all CI secrets |
+| ACR (old)               | `acrytsummprd`      | not used for CI images      |
+| ACR (CI)                | `acrytsummprdci`    | images pushed here          |
+| SQL Server              | `sql-mealplan-prd`  | in `rg-ytsumm-prd`          |
+| SWA                     | `swa-ytsumm-prd`    | in `rg-ytsumm-prd-ci`       |
+| AKS                     | `aks-ytsumm-prd-ci` | in `rg-ytsumm-prd-ci`       |

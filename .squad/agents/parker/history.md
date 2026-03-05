@@ -20,22 +20,26 @@
 **Root Causes & Fixes:**
 
 #### Failure 1: Provision Preview DB — `ResourceNotFound: sql-mealplan-prd in rg-ytsumm-prd`
+
 - **Real cause:** OIDC service principal (subject: `repo:AshleyHollis/meal-planner:pull_request`) lacks RBAC on `rg-ytsumm-prd`. Azure returns ResourceNotFound when RBAC is absent (not 403).
 - **Secondary cause:** `vars.KEY_VAULT_NAME = kv-ytsumm-prd` (legacy, 3 auth0 secrets only) was being used for preview DB secrets. Should always use `kv-ytsumm-prd-ci` (Terraform-managed, all CI/runtime secrets).
 - **Code fix (committed):** Hardcoded `KEY_VAULT_NAME: kv-ytsumm-prd-ci` in `provision-preview-db` job instead of relying on `vars.KEY_VAULT_NAME`. Commit: `bd5e214`.
 - **Manual fix required:** Grant the SP `Contributor` (or `SQL DB Contributor`) on `rg-ytsumm-prd`.
 
 #### Failure 2: Deploy Frontend Preview — `BadRequest: No matching Static Web App found`
+
 - **Cause:** `SWA_DEPLOYMENT_TOKEN` GitHub secret holds the wrong token — points to a non-existent SWA (likely `swa-mealplan-prd`). The real SWA is `swa-ytsumm-prd` in `rg-ytsumm-prd-ci`.
 - **Code fix:** None needed — workflow code correctly uses `vars.SWA_NAME || 'swa-ytsumm-prd'` and `rg-ytsumm-prd-ci`.
 - **Manual fix required:** Retrieve correct deployment token from `swa-ytsumm-prd` and update GitHub secret `SWA_DEPLOYMENT_TOKEN`.
 
 #### Failure 3: Update Preview Overlay — `401 Unauthorized` pulling `acrytsummprdci.azurecr.io/meal-planner-api:pr-5-fc8b71e`
+
 - **Cause:** AKS kubelet identity has `AcrPull` on `acrytsummprd` (old/shared ACR) but NOT on `acrytsummprdci` (CI ACR where images are actually pushed).
 - **Code fix:** None needed — `shared.env` already correctly sets `ACR_NAME=acrytsummprdci`.
 - **Manual fix required:** Grant `AcrPull` role to AKS kubelet identity on `acrytsummprdci`.
 
 **Key Infrastructure Facts:**
+
 - Two resource groups: `rg-ytsumm-prd` (shared: SQL server, legacy KV) and `rg-ytsumm-prd-ci` (CI-managed: AKS, ACR, SWA, `kv-ytsumm-prd-ci`)
 - Two Key Vaults: `kv-ytsumm-prd` (legacy, auth0 only) and `kv-ytsumm-prd-ci` (all runtime/CI secrets)
 - Two ACRs: `acrytsummprd` (old, AKS has pull) and `acrytsummprdci` (CI pushes here, AKS LACKS pull)
@@ -86,6 +90,7 @@ az role assignment create \
 ```
 
 **Files Changed:**
+
 - `.github/workflows/preview.yml`: Hardcoded `KEY_VAULT_NAME: kv-ytsumm-prd-ci` in provision-preview-db job
 
 ### 2026-03-06: Meal Plan Generation Performance Investigation — Preview Deployment Bottleneck Analysis
