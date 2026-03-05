@@ -6,7 +6,7 @@
 resource "azurerm_static_web_app" "swa" {
   name                = "swa-${local.name_prefix}"
   resource_group_name = module.shared.resource_group_name
-  location            = module.shared.resource_group_location
+  location            = "eastasia" # SWA not available in centralindia
   sku_tier            = "Free"
   sku_size            = "Free"
 
