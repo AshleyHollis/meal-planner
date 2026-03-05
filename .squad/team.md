@@ -15,7 +15,7 @@
 | Dallas  | Lead           | `.squad/agents/dallas/charter.md`  | claude-opus-4.6   | ✅ Active  |
 | Ripley  | Backend Dev    | `.squad/agents/ripley/charter.md`  | claude-sonnet-4.6 | ✅ Active  |
 | Kane    | Frontend Dev   | `.squad/agents/kane/charter.md`    | claude-sonnet-4.6 | ✅ Active  |
-| Parker  | DevOps         | `.squad/agents/parker/charter.md`  | claude-haiku-4.5  | ✅ Active  |
+| Parker  | DevOps         | `.squad/agents/parker/charter.md`  | claude-sonnet-4.6 | ✅ Active  |
 | Lambert | Tester         | `.squad/agents/lambert/charter.md` | claude-haiku-4.5  | ✅ Active  |
 | Ash     | UX Reviewer    | `.squad/agents/ash/charter.md`     | claude-sonnet-4.6 | ✅ Active  |
 | Bishop  | Spec Architect | `.squad/agents/bishop/charter.md`  | claude-sonnet-4.6 | ✅ Active  |

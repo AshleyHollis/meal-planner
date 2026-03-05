@@ -13,6 +13,81 @@
 
 ## Learnings
 
+### 2026-03-07: Fix 3 Preview Pipeline Failures (PR #5, run 22713841694)
+
+**Task:** Three jobs failing in preview pipeline — Provision Preview DB, Deploy Frontend Preview, Update Preview Overlay.
+
+**Root Causes & Fixes:**
+
+#### Failure 1: Provision Preview DB — `ResourceNotFound: sql-mealplan-prd in rg-ytsumm-prd`
+- **Real cause:** OIDC service principal (subject: `repo:AshleyHollis/meal-planner:pull_request`) lacks RBAC on `rg-ytsumm-prd`. Azure returns ResourceNotFound when RBAC is absent (not 403).
+- **Secondary cause:** `vars.KEY_VAULT_NAME = kv-ytsumm-prd` (legacy, 3 auth0 secrets only) was being used for preview DB secrets. Should always use `kv-ytsumm-prd-ci` (Terraform-managed, all CI/runtime secrets).
+- **Code fix (committed):** Hardcoded `KEY_VAULT_NAME: kv-ytsumm-prd-ci` in `provision-preview-db` job instead of relying on `vars.KEY_VAULT_NAME`. Commit: `bd5e214`.
+- **Manual fix required:** Grant the SP `Contributor` (or `SQL DB Contributor`) on `rg-ytsumm-prd`.
+
+#### Failure 2: Deploy Frontend Preview — `BadRequest: No matching Static Web App found`
+- **Cause:** `SWA_DEPLOYMENT_TOKEN` GitHub secret holds the wrong token — points to a non-existent SWA (likely `swa-mealplan-prd`). The real SWA is `swa-ytsumm-prd` in `rg-ytsumm-prd-ci`.
+- **Code fix:** None needed — workflow code correctly uses `vars.SWA_NAME || 'swa-ytsumm-prd'` and `rg-ytsumm-prd-ci`.
+- **Manual fix required:** Retrieve correct deployment token from `swa-ytsumm-prd` and update GitHub secret `SWA_DEPLOYMENT_TOKEN`.
+
+#### Failure 3: Update Preview Overlay — `401 Unauthorized` pulling `acrytsummprdci.azurecr.io/meal-planner-api:pr-5-fc8b71e`
+- **Cause:** AKS kubelet identity has `AcrPull` on `acrytsummprd` (old/shared ACR) but NOT on `acrytsummprdci` (CI ACR where images are actually pushed).
+- **Code fix:** None needed — `shared.env` already correctly sets `ACR_NAME=acrytsummprdci`.
+- **Manual fix required:** Grant `AcrPull` role to AKS kubelet identity on `acrytsummprdci`.
+
+**Key Infrastructure Facts:**
+- Two resource groups: `rg-ytsumm-prd` (shared: SQL server, legacy KV) and `rg-ytsumm-prd-ci` (CI-managed: AKS, ACR, SWA, `kv-ytsumm-prd-ci`)
+- Two Key Vaults: `kv-ytsumm-prd` (legacy, auth0 only) and `kv-ytsumm-prd-ci` (all runtime/CI secrets)
+- Two ACRs: `acrytsummprd` (old, AKS has pull) and `acrytsummprdci` (CI pushes here, AKS LACKS pull)
+- SWA name: `swa-ytsumm-prd` in `rg-ytsumm-prd-ci`; hostname: `proud-hill-0940e7300.6.azurestaticapps.net`
+- `vars.KEY_VAULT_NAME` = `kv-ytsumm-prd` (wrong for preview DB provisioning)
+- `vars.AZURE_RESOURCE_GROUP` = `rg-ytsumm-prd` (correct for SQL server)
+
+**Manual Azure CLI Commands for Ashley:**
+
+```bash
+# ── FAILURE 1: Grant SP access to rg-ytsumm-prd ──────────────────────────────
+# Get SP object ID from the AZURE_CLIENT_ID GitHub secret
+AZURE_CLIENT_ID="<value from GitHub secret AZURE_CLIENT_ID>"
+SP_OBJECT_ID=$(az ad sp show --id "$AZURE_CLIENT_ID" --query id -o tsv)
+SUBSCRIPTION_ID=$(az account show --query id -o tsv)
+
+az role assignment create \
+  --role "Contributor" \
+  --assignee-object-id "$SP_OBJECT_ID" \
+  --assignee-principal-type ServicePrincipal \
+  --scope "/subscriptions/${SUBSCRIPTION_ID}/resourceGroups/rg-ytsumm-prd"
+
+# ── FAILURE 2: Update SWA_DEPLOYMENT_TOKEN GitHub secret ─────────────────────
+SWA_TOKEN=$(az staticwebapp secrets list \
+  --name swa-ytsumm-prd \
+  --resource-group rg-ytsumm-prd-ci \
+  --query "properties.apiKey" -o tsv)
+# Set this token as the GitHub secret SWA_DEPLOYMENT_TOKEN via:
+# GitHub UI → Settings → Secrets → Actions → SWA_DEPLOYMENT_TOKEN
+echo "New SWA token: $SWA_TOKEN"
+
+# ── FAILURE 3: Grant AKS kubelet AcrPull on acrytsummprdci ───────────────────
+AKS_KUBELET_ID=$(az aks show \
+  --name aks-ytsumm-prd-ci \
+  --resource-group rg-ytsumm-prd-ci \
+  --query identityProfile.kubeletidentity.objectId -o tsv)
+
+ACR_ID=$(az acr show \
+  --name acrytsummprdci \
+  --resource-group rg-ytsumm-prd-ci \
+  --query id -o tsv)
+
+az role assignment create \
+  --role AcrPull \
+  --assignee-object-id "$AKS_KUBELET_ID" \
+  --assignee-principal-type ServicePrincipal \
+  --scope "$ACR_ID"
+```
+
+**Files Changed:**
+- `.github/workflows/preview.yml`: Hardcoded `KEY_VAULT_NAME: kv-ytsumm-prd-ci` in provision-preview-db job
+
 ### 2026-03-06: Meal Plan Generation Performance Investigation — Preview Deployment Bottleneck Analysis
 
 **Task:** Ashley reported meal plan generation taking excessive time on preview deployment. Investigate infrastructure-level bottlenecks.
