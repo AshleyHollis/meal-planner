@@ -28,10 +28,10 @@ ADAPTATION_TIMEOUT = 8  # NFR-02: cook-time adaptation p95 < 10s
 
 
 # Azure counts max_tokens against the per-minute token rate limit upfront.
-# With 20K tokens/min and ~2.3K input tokens, total budget is ~14.5K.
-# Kimi K2.5 uses ~5K reasoning tokens that count toward max_tokens,
-# leaving ~7K for visible JSON content (enough for 7 recipes).
-_MAX_TOKENS = 12288
+# For Kimi K2.5 reasoning models, Azure applies a higher token multiplier,
+# so the effective limit per request is ~11K max_tokens (not 20K as stated).
+# 10000 is a safe value that avoids 429s with margin.
+_MAX_TOKENS = 10000
 
 # Approximate cost per 1K tokens (USD) for cost estimation
 _COST_PER_1K = {
