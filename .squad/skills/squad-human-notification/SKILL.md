@@ -6,15 +6,16 @@ Agents use Discord to notify the user when they need attention. Messages go to t
 
 ## When to Notify
 
-| Situation                                 | Priority | Action                              |
-| ----------------------------------------- | -------- | ----------------------------------- |
-| Blocked — need decision or input          | High     | Send message with clear question    |
-| Error — can't recover autonomously        | High     | Send message with error details     |
-| Work complete — milestone or feature done | Normal   | Send message with summary           |
-| Status update — batch/phase completed     | Normal   | Send message with progress summary  |
-| FYI — progress update on long task        | Low      | Send message with brief update      |
+| Situation                                 | Priority | Action                             |
+| ----------------------------------------- | -------- | ---------------------------------- |
+| Blocked — need decision or input          | High     | Send message with clear question   |
+| Error — can't recover autonomously        | High     | Send message with error details    |
+| Work complete — milestone or feature done | Normal   | Send message with summary          |
+| Status update — batch/phase completed     | Normal   | Send message with progress summary |
+| FYI — progress update on long task        | Low      | Send message with brief update     |
 
 **ALWAYS notify on:**
+
 - Task/phase completion (what was done, what's next)
 - Questions that need user input
 - Errors that block progress
@@ -33,6 +34,7 @@ node -e "const{Client,GatewayIntentBits}=require(process.env.USERPROFILE+'/.copi
 ```
 
 **Channel IDs:**
+
 - `#meal-planner`: `1479061992772997202` (default for this project)
 - `#general`: `1479061129216135191`
 - `#yt-summarizer`: `1479062015220908154`

@@ -68,7 +68,7 @@ How to decide who handles what.
 24. **Coordinator sends summary notifications** — After collecting results from agent batches, the coordinator sends a Discord summary to `#meal-planner` with what completed and what's next. This ensures the user gets push notifications on their phone even when away from the terminal.
 25. **Questions go to Discord first** — When an agent needs user input and `ask_user` isn't available (background mode), post the question to Discord and check for replies before making a default decision.
 
-19. **Never stop after pushing** — After pushing code, the coordinator MUST monitor the CI pipeline to completion. If CI fails, diagnose and fix immediately. Do not report success or wait for the user to notice failures.
-20. **Preview deployment gate** — After CI passes, monitor the Preview workflow. Verify it deploys successfully and E2E tests pass in the preview environment.
-21. **Visual smoke test is mandatory** — After preview deployment succeeds, auto-trigger the Visual Smoke Test ceremony (Rule 9). Feature work is NOT complete until the full pipeline passes: CI → Preview → E2E → Visual Smoke Test.
-22. **Pipeline failures are highest priority** — If a pipeline fails after a push, fixing it takes precedence over all other queued work. Route the fix to the appropriate agent (Ripley for backend, Kane for frontend, Parker for infra).
+26. **Never stop after pushing** — After pushing code, the coordinator MUST monitor the CI pipeline to completion. If CI fails, diagnose and fix immediately. Do not report success or wait for the user to notice failures.
+27. **Preview deployment gate** — After CI passes, monitor the Preview workflow. Verify it deploys successfully and E2E tests pass in the preview environment.
+28. **Visual smoke test is mandatory** — After preview deployment succeeds, auto-trigger the Visual Smoke Test ceremony (Rule 9). Feature work is NOT complete until the full pipeline passes: CI → Preview → E2E → Visual Smoke Test.
+29. **Pipeline failures are highest priority** — If a pipeline fails after a push, fixing it takes precedence over all other queued work. Route the fix to the appropriate agent (Ripley for backend, Kane for frontend, Parker for infra).
