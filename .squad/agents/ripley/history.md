@@ -432,3 +432,51 @@
 - UNIQUEIDENTIFIER mapped at Base via type_annotation_map = {UUID: UNIQUEIDENTIFIER}
 - Relationships use lazy='selectin' pattern throughout this codebase
 - __table_args__ tuple holds UniqueConstraint + Index entries at bottom of model class
+
+### Kimi K2.5 Slowness Investigation — Preview Deployment (2026-03-09)
+
+- **Branch:** 005-grocery-enhancements
+- **Commit:** 53dba9d — perf(worker): fix stagger lock, compress schema, add request diagnostics
+- **Reported symptom:** Meal plan generation taking a very long time on the preview deployment.
+
+#### Root Cause Analysis
+
+**Bug 1 (fixed): Stagger sleep held the semaphore slot (generator.py)**
+syncio.sleep(2 * index) was inside sync with semaphore:, meaning index=1 held a semaphore slot for 2 seconds before even starting the LLM call. For 3 meal types with Semaphore(2), this delayed index=2's start by 2s unnecessarily.
+Fix: moved sleep BEFORE sync with semaphore:, reduced to 1 * index seconds.
+
+**Bug 2 (fixed): Schema JSON with indent=2 wasted ~300 tokens per call (prompts.py)**
+json.dumps(model_json_schema(), indent=2) produced ~2500 chars vs ~1000 chars compact.
+Against 20K TPM / capacity=1, ~300 extra input tokens per call (×3 for multi-type = ~900 tokens wasted).
+Fix: removed indent=2 — compact schema JSON.
+
+**Bug 3 (fixed): No diagnostic logging for request params (llm_client.py)**
+No way to confirm from logs whether thinking=disabled was being sent or respected.
+Fix: added zure_request_params log (deployment, max_tokens, thinking_disabled=True, api_version) and added prompt_chars to llm_call_start.
+
+#### Likely Ongoing Bottleneck (not code-fixed, needs monitoring)
+
+The most probable cause of "very long time" on the preview deployment is **Azure AI Foundry rate limiting (429s)**:
+- capacity=1 → ~20K TPM
+- Each call = ~2K input + up to 4K output = ~6K tokens
+- 20K / 6K = 3.3 calls/minute max
+- If a previous call exhausted the token bucket, the next call gets a 429
+  with Retry-After ~60s → backoff = max(65, 15*attempt) → up to 65s wait
+- Worst case 3 attempts: 15s + 65s + 15s + 30s + 15s = ~140s = 2.3 minutes
+
+If thinking is NOT disabled (Azure proxy strips extra_body):
+- Thinking tokens run invisibly, consuming 2000-8000 extra tokens per call
+- Burns TPM budget 3-4× faster, causing immediate 429s after the first call
+
+**Monitoring action:** After deploying, check logs for:
+- 	hinking_not_disabled warning (means Azure stripped extra_body.thinking)
+- ate_limit_retry_after with high values (means 429s are occurring)
+- prompt_chars values in llm_call_start — if >8000 chars (~2000 tokens), the input is large
+
+#### Key Learnings
+
+- **Stagger sleep must be OUTSIDE the semaphore** — sleeping inside holds a slot during the wait period, reducing effective concurrency.
+- **Schema JSON indent adds ~300 tokens** — remove indent=2 to save meaningful TPM.
+- **Diagnostic logging is critical** for LLM latency debugging — without prompt_chars, deployment, and 	hinking_disabled in logs, diagnosing slow calls requires code inspection rather than log analysis.
+- **Azure 429s are the most likely "very long time" cause** for capacity=1 deployments with multi-type generation.
+- **thinking=disabled cannot be locally confirmed** — only verifiable via easoning_content in the response. If Azure strips extra_body, the safety net log (	hinking_not_disabled warning) is the only indicator.

@@ -13,6 +13,71 @@
 
 ## Learnings
 
+### 2026-03-06: Meal Plan Generation Performance Investigation — Preview Deployment Bottleneck Analysis
+
+**Task:** Ashley reported meal plan generation taking excessive time on preview deployment. Investigate infrastructure-level bottlenecks.
+
+**Key Findings:**
+
+**1. Worker Pod Configuration (Preview)**
+- **Replicas:** 1 pod (both base and preview overlay)
+- **CPU Limits:** 150m preview / 500m base (CPU throttling likely during long LLM calls)
+- **Memory Limits:** 256Mi preview / 512Mi base (adequate for worker process)
+- **Health Probes:** Liveness probe every 30s (10s initial delay) — no aggressive restart risk during extended LLM operations
+- **No Timeout/Concurrency Variables:** ConfigMap and manifests lack LLM_TIMEOUT, REQUEST_TIMEOUT, or worker concurrency settings
+
+**2. Azure AI Foundry Capacity (Current State)**
+- **Deployment:** `kimi-k25` in `aif-pai-dev-eus` account (East US)
+- **Current Capacity:** 1 (baseline ~20K TPM)
+- **Scale Script Status:** Ready (`scripts/scale-kimi-k25.sh` exists)
+  - Supports 1→4 capacity increase (~80K TPM, no cost impact)
+  - Default dry-run mode, `--execute` flag for actual scaling
+  - Pre/post-flight checks + verification included
+
+**3. Preview Overlay Configuration**
+- **Resource Constraints (vs. Base):**
+  - Worker: 25m CPU request (vs 50m base) — **BOTTLENECK**
+  - Worker: 64Mi memory request (vs 128Mi base) — tight but acceptable
+  - API: 50m CPU request (vs 100m base implied)
+- **No Preview-Specific LLM Tuning:** Same environment variables, queue poll interval (10s) as base
+- **No Health Probe Differences:** Same liveness probe config; won't cause cascading restarts
+
+**4. Configuration Gaps**
+- No environment variables for:
+  - LLM request timeout (could block indefinitely)
+  - Max parallel LLM calls (could cause contention)
+  - Worker queue batch size (could serialize requests)
+  - Connection pool size (could exhaust Azure OpenAI connections)
+
+**Root Cause Analysis:**
+
+Two tiers of slowness:
+
+1. **LLM Tier (Azure):** Single capacity unit (20K TPM) = single request bottleneck. Long-running requests (20-120s per Kimi K2.5) block downstream requests.
+2. **Worker Tier (K8s):** Single pod with 25m CPU limit (preview) causes throttling during LLM wait cycles. Worker cannot queue/process parallel requests efficiently.
+
+**Recommended Actions (Priority Order):**
+
+| Action | Impact | Effort | Cost |
+|--------|--------|--------|------|
+| **Scale Azure AI capacity 1→4** | 4x LLM throughput, 4x parallel requests | 5 min (script ready) | $0 (token cost unchanged) |
+| **Increase worker CPU limit in preview** | Reduce CPU throttling during LLM waits | 5 min (kustomization patch) | $0 |
+| **Add LLM_REQUEST_TIMEOUT env var** | Fail fast if LLM unresponsive | 10 min (add to configmap) | $0 |
+| **Increase worker replicas** | 2-3 pods distribute queue load | 10 min (kustomization patch) | ~$0.01/hour per pod |
+| **Model switch to GPT-4o-mini** | 80% cheaper, 4-8x faster | Code review required | 75% cost savings |
+
+**Immediate Fixes (Next 30 minutes):**
+
+1. Run `./scripts/scale-kimi-k25.sh --execute` to increase Azure capacity
+2. Patch preview kustomization: worker CPU limits 150m→300m (still safe)
+3. Verify worker pod logs for LLM latency improvement
+
+**Files for Reference:**
+
+- `k8s/overlays/preview/kustomization.yaml` lines 133-145 (worker resources patch)
+- `scripts/scale-kimi-k25.sh` (production-ready scaling automation)
+- `k8s/base/worker-deployment.yaml` lines 78-84 (resource requests/limits)
+
 ### 2026-03-06: Kimi K2.5 Deployment Scaling Script — Production-Ready Automation
 
 **Task:** Ashley requested a script to increase Kimi K2.5 deployment capacity from 1 to 4 on Azure AI Foundry (aif-pai-dev-eus account).
