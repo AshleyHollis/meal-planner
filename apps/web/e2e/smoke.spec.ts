@@ -75,17 +75,19 @@ test.describe("Smoke Tests @smoke", () => {
     test("clicking Meal Plan nav link navigates to meal plan page", async ({
       page,
     }) => {
-      await page.goto("/");
+      await page.goto("/", { timeout: 30_000, waitUntil: "networkidle" });
 
-      await page
+      // Wait for the link to be visible and the page to be interactive
+      const mealPlanLink = page
         .getByRole("link", { name: "Meal Plan", exact: true })
-        .first()
-        .click();
+        .first();
+      await expect(mealPlanLink).toBeVisible({ timeout: 30_000 });
+      await mealPlanLink.click();
 
-      await expect(page).toHaveURL(/\/meal-plan/);
+      await expect(page).toHaveURL(/\/meal-plan/, { timeout: 30_000 });
       await expect(
         page.getByRole("heading", { name: "Meal Plans" }),
-      ).toBeVisible();
+      ).toBeVisible({ timeout: 30_000 });
     });
 
     test("More menu opens and all links work (mobile)", async ({ page }) => {

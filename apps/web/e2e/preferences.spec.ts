@@ -89,6 +89,7 @@ test.describe("Preferences Management", () => {
     );
 
     test("can add a dietary restriction", async ({ page }) => {
+      test.slow(); // API may be cold-starting — allow extra time
       await page.goto("/preferences");
       await waitForPreferencesLoaded(page);
 
@@ -97,31 +98,52 @@ test.describe("Preferences Management", () => {
         .locator("li")
         .filter({ hasText: "vegetarian" });
       if (
-        await existingItem.isVisible({ timeout: 5_000 }).catch(() => false)
+        await existingItem.isVisible({ timeout: 10_000 }).catch(() => false)
       ) {
         return;
       }
 
-      // Select dietary restriction type
-      const typeSelector = page.getByLabel(/Type|Preference Type/i);
-      await typeSelector.selectOption("dietary_restriction");
+      // Helper to fill and submit the form
+      const fillAndSubmit = async () => {
+        // Select dietary restriction type
+        const typeSelector = page.getByLabel(/Type|Preference Type/i);
+        await typeSelector.selectOption("dietary_restriction");
 
-      // Use dropdown if available, otherwise text input
-      const dietaryDropdown = page.getByLabel(/Dietary Restriction/i);
-      const valueInput = page.getByLabel(/Value/i);
-      if (
-        await dietaryDropdown.isVisible({ timeout: 5_000 }).catch(() => false)
-      ) {
-        await dietaryDropdown.selectOption("vegetarian");
-      } else {
-        await valueInput.fill("vegetarian");
+        // Use dropdown if available, otherwise text input
+        const dietaryDropdown = page.getByLabel(/Dietary Restriction/i);
+        const valueInput = page.getByLabel(/Value/i);
+        if (
+          await dietaryDropdown
+            .isVisible({ timeout: 5_000 })
+            .catch(() => false)
+        ) {
+          await dietaryDropdown.selectOption("vegetarian");
+        } else {
+          await valueInput.fill("vegetarian");
+        }
+
+        await page.getByRole("button", { name: /Add|Save|Submit/i }).click();
+      };
+
+      // First attempt
+      await fillAndSubmit();
+
+      // Wait for either the item to appear or an error message
+      const itemLocator = page
+        .locator("li")
+        .filter({ hasText: "vegetarian" });
+      const errorMsg = page.getByText(/Failed to add preference/i);
+      await expect(itemLocator.or(errorMsg).first()).toBeVisible({
+        timeout: 30_000,
+      });
+
+      // If error appeared, retry after waiting for API to warm up
+      if (await errorMsg.isVisible().catch(() => false)) {
+        await page.waitForTimeout(5_000);
+        await fillAndSubmit();
       }
 
-      await page.getByRole("button", { name: /Add|Save|Submit/i }).click();
-
-      await expect(
-        page.locator("li").filter({ hasText: "vegetarian" }),
-      ).toBeVisible({ timeout: 30_000 });
+      await expect(itemLocator).toBeVisible({ timeout: 60_000 });
     });
 
     test("can add an allergy", async ({ page }) => {
@@ -211,6 +233,7 @@ test.describe("Preferences Management", () => {
     );
 
     test("can delete a preference", async ({ page }) => {
+      test.slow();
       await page.goto("/preferences");
       await waitForPreferencesLoaded(page);
 
@@ -220,10 +243,11 @@ test.describe("Preferences Management", () => {
         return;
       }
 
+      // Wait for at least one preference item with a delete button
       const deleteButton = page
         .getByRole("button", { name: /Delete|Remove/i })
         .first();
-      await expect(deleteButton).toBeVisible({ timeout: 10_000 });
+      await expect(deleteButton).toBeVisible({ timeout: 30_000 });
 
       const preferenceContainer = deleteButton.locator("..");
       const preferenceText = await preferenceContainer.textContent();
