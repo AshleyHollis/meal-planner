@@ -10,12 +10,14 @@
 #   - Azure CLI 2.60+
 #   - Logged in: az login && az account set --subscription 28aefbe7-e2af-4b4a-9ce1-92d6672c31bd
 #
-# Capacity → TPM Mapping (GlobalStandard SKU):
-#   - Capacity 1 = ~20K TPM (baseline)
-#   - Capacity 2 = ~40K TPM
-#   - Capacity 4 = ~80K TPM (target of this script)
-#   - Capacity 8 = ~160K TPM
-#   - Capacity 16 = ~320K TPM
+# Capacity → Limits Mapping (GlobalStandard SKU):
+#   - Capacity 1 = 1 req/min, 1K TPM
+#   - Capacity 2 = 2 req/min, 2K TPM
+#   - Capacity 4 = 4 req/min, 4K TPM (current)
+#   - Capacity 8 = 8 req/min, 8K TPM
+#   - Capacity 16 = 16 req/min, 16K TPM
+#
+# Note: Azure counts max_tokens (not actual output) against TPM upfront.
 #
 # Notes:
 #   - Token pricing is identical across all capacity levels (PAYGO model)
