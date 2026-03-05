@@ -114,7 +114,8 @@ test.describe("Recurring Meals Page (US4)", () => {
     // Wait for page content (button or error) instead of unreliable spinner check
     const errorBanner = page.locator("text=Failed to load recurring meals");
     const addButton = page.getByRole("button", {
-      name: /add recurring meal/i,
+      name: "Add Recurring Meal",
+      exact: true,
     });
 
     await expect(addButton.or(errorBanner).first()).toBeVisible({
@@ -154,7 +155,8 @@ test.describe("Recurring Meals Page (US4)", () => {
 
       // Wait for page content instead of unreliable spinner check
       const openFormButton = page.getByRole("button", {
-        name: /add recurring meal/i,
+        name: "Add Recurring Meal",
+        exact: true,
       });
       if (
         !(await openFormButton
