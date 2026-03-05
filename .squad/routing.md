@@ -18,6 +18,7 @@ How to decide who handles what.
 | UX completeness, feature feel, visual consistency | Ash      | Feature feels incomplete, missing interactions, inconsistent UI |
 | New feature, spec, plan, tasks, requirements      | Bishop   | "Build feature X", "Spec out Y", "Add feature Z"                |
 | Session logging                                   | Scribe   | Automatic — never needs routing                                 |
+| Human notification (blocked, error, done)         | Any      | Use `squad-human-notification` skill via Teams MCP              |
 
 ## Rules
 

@@ -81,11 +81,36 @@ Users configure MCP servers at these locations (checked in priority order):
 }
 ```
 
+## Sample Config — Microsoft Teams (Squad Notifications)
+
+```json
+{
+  "mcpServers": {
+    "teams": {
+      "command": "docker",
+      "args": ["run", "--rm", "-i", "ghcr.io/inditextech/mcp-teams-server:latest"],
+      "env": {
+        "TEAMS_APP_ID": "${TEAMS_APP_ID}",
+        "TEAMS_APP_PASSWORD": "${TEAMS_APP_PASSWORD}",
+        "TEAMS_APP_TYPE": "MultiTenant",
+        "TEAMS_APP_TENANT_ID": "${TEAMS_APP_TENANT_ID}",
+        "TEAM_ID": "${TEAM_ID}",
+        "TEAMS_CHANNEL_ID": "${TEAMS_CHANNEL_ID}"
+      }
+    }
+  }
+}
+```
+
+Tools: `create_thread`, `reply_to_thread`, `read_thread_replies`, `list_members`, `read_channel_messages`. See `squad-human-notification` skill for usage patterns.
+
 ## Authentication Notes
 
 - **GitHub MCP requires a separate token** from the `gh` CLI auth. Generate at https://github.com/settings/tokens
 - **Trello requires API key + token** from https://trello.com/power-ups/admin
 - **Azure requires service principal credentials** — see Azure docs for setup
 - **Aspire uses the dashboard URL** — typically `http://localhost:18888` during local dev
+
+- **Teams MCP requires Azure Bot Service credentials** — `TEAMS_APP_ID` and `TEAMS_APP_PASSWORD` from Key Vault (`squad-teams-app-id`, `squad-teams-app-password`). `TEAM_ID` and `TEAMS_CHANNEL_ID` are extracted from the Teams channel URL. See shared-infra `terraform/teams-bot.tf` for provisioning.
 
 Auth is a real blocker for some MCP servers. Users need separate tokens for GitHub MCP, Azure MCP, Trello MCP, etc. This is a documentation problem, not a code problem.
