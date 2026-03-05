@@ -12,10 +12,10 @@ This integration enables two-way communication between Discord and Copilot CLI s
 
 ### Two Modes
 
-| Mode | How it works | When to use |
-|------|-------------|-------------|
-| **Bridge** (primary) | Single process spawns Copilot in a PTY, polls Discord, injects messages | Always-on autonomous agent |
-| **Interactive** (fallback) | Human types in terminal, agent sends notifications to Discord | Manual CLI sessions |
+| Mode                       | How it works                                                            | When to use                |
+| -------------------------- | ----------------------------------------------------------------------- | -------------------------- |
+| **Bridge** (primary)       | Single process spawns Copilot in a PTY, polls Discord, injects messages | Always-on autonomous agent |
+| **Interactive** (fallback) | Human types in terminal, agent sends notifications to Discord           | Manual CLI sessions        |
 
 ## Prerequisites
 
@@ -459,11 +459,11 @@ node "$env:USERPROFILE\.copilot\tools\discordmcp\copilot-bridge.cjs" --repo-dir 
 
 **Options:**
 
-| Flag | Default | Description |
-|------|---------|-------------|
-| `--repo-dir` | (required) | Repo directory for the Copilot session |
-| `--channel` | `1479061992772997202` | Discord channel ID to monitor |
-| `--interval` | `10` | Poll interval in seconds |
+| Flag         | Default               | Description                            |
+| ------------ | --------------------- | -------------------------------------- |
+| `--repo-dir` | (required)            | Repo directory for the Copilot session |
+| `--channel`  | `1479061992772997202` | Discord channel ID to monitor          |
+| `--interval` | `10`                  | Poll interval in seconds               |
 
 **What the bridge does:**
 
@@ -481,7 +481,7 @@ node "$env:USERPROFILE\.copilot\tools\discordmcp\copilot-bridge.cjs" --repo-dir 
 
 Add this to your repo's `CLAUDE.md` so the inner Copilot session knows to post results to Discord:
 
-```markdown
+````markdown
 ## Discord Integration
 
 **Bridge mode** (primary): If the environment variable `COPILOT_BRIDGE` is `1`, you are running
@@ -490,7 +490,7 @@ inside the Copilot Bridge. The bridge handles all Discord I/O. On task completio
 $token = [Environment]::GetEnvironmentVariable("DISCORD_TOKEN", "User")
 node -e "const{Client,GatewayIntentBits}=require(process.env.USERPROFILE+'/.copilot/tools/discordmcp/node_modules/discord.js');const c=new Client({intents:[GatewayIntentBits.Guilds,GatewayIntentBits.GuildMessages]});c.once('ready',async()=>{const ch=await c.channels.fetch('YOUR_CHANNEL_ID');await ch.send(process.argv[1]);c.destroy()});c.login('$token')" "✅ **Task complete**: <brief summary>"
 \```
-```
+````
 
 ### Interactive Mode (Fallback)
 
@@ -570,16 +570,16 @@ Discord ◄── node one-liner ──── Copilot CLI (human types in termin
 
 ## File Reference
 
-| File | Location | Purpose |
-|------|----------|---------|
-| `discordmcp/` | `~/.copilot/tools/` | Discord MCP server + bridge tools |
-| `discordmcp/copilot-bridge.cjs` | `~/.copilot/tools/` | **Primary**: Bridge process (Discord polling + PTY management) |
-| `discordmcp/discord-watcher.cjs` | `~/.copilot/tools/` | Standalone watcher (legacy, for non-bridge use) |
-| `discordmcp/build/index.js` | `~/.copilot/tools/` | MCP server entry point (stdio protocol) |
-| `discordmcp/bridge-status.json` | `~/.copilot/tools/` | Bridge state file (created at runtime) |
-| `discordmcp/.last-read-id` | `~/.copilot/tools/` | Last processed Discord message ID |
-| `mcp-config.json` | `~/.copilot/` | User-level MCP config (all repos) |
-| `mcp-config.json` | `.copilot/` (repo) | Repo-level MCP config (this repo only) |
+| File                             | Location            | Purpose                                                        |
+| -------------------------------- | ------------------- | -------------------------------------------------------------- |
+| `discordmcp/`                    | `~/.copilot/tools/` | Discord MCP server + bridge tools                              |
+| `discordmcp/copilot-bridge.cjs`  | `~/.copilot/tools/` | **Primary**: Bridge process (Discord polling + PTY management) |
+| `discordmcp/discord-watcher.cjs` | `~/.copilot/tools/` | Standalone watcher (legacy, for non-bridge use)                |
+| `discordmcp/build/index.js`      | `~/.copilot/tools/` | MCP server entry point (stdio protocol)                        |
+| `discordmcp/bridge-status.json`  | `~/.copilot/tools/` | Bridge state file (created at runtime)                         |
+| `discordmcp/.last-read-id`       | `~/.copilot/tools/` | Last processed Discord message ID                              |
+| `mcp-config.json`                | `~/.copilot/`       | User-level MCP config (all repos)                              |
+| `mcp-config.json`                | `.copilot/` (repo)  | Repo-level MCP config (this repo only)                         |
 
 ## Troubleshooting
 
@@ -614,6 +614,7 @@ node "$env:USERPROFILE\.copilot\tools\discordmcp\copilot-bridge.cjs" --repo-dir 
 ```
 
 You'll see in the terminal:
+
 ```
 [Bridge] Starting Copilot Bridge...
 [Bridge] Discord connected → #meal-planner
@@ -623,6 +624,7 @@ You'll see in the terminal:
 ```
 
 And in Discord:
+
 ```
 🟢 Copilot Bridge online — send messages here to start work.
 Single persistent session. Responses posted asynchronously.
@@ -639,6 +641,7 @@ Please fix the login bug in src/auth.ts
 ```
 
 You'll see these responses in Discord:
+
 1. `📨 Message received from ashley` — bridge acknowledged your message
 2. `🤖 Processing (from ashley): "Please fix the login bug..."` — Copilot started working
 3. `✅ Task complete: Fixed null check in login handler` — Copilot finished (posted by the inner session)
@@ -702,3 +705,4 @@ Please set up Discord two-way communication for this repo. Follow the instructio
 
 The DISCORD_TOKEN should already be set as a User env var. If not, ask me for it.
 ```
+````
