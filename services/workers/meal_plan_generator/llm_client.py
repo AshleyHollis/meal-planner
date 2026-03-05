@@ -23,15 +23,15 @@ _MODELS = {
 }
 
 # Timeout defaults per use-case (seconds)
-GENERATION_TIMEOUT = 25  # NFR-01: meal plan generation p95 < 30s
+GENERATION_TIMEOUT = 60  # NFR-01: with thinking disabled, responses are fast; 60s gives headroom
 ADAPTATION_TIMEOUT = 8  # NFR-02: cook-time adaptation p95 < 10s
 
 
 # Azure counts max_tokens against the per-minute token rate limit upfront.
-# For Kimi K2.5 reasoning models, Azure applies a higher token multiplier,
-# so the effective limit per request is ~11K max_tokens (not 20K as stated).
-# 10000 is a safe value that avoids 429s with margin.
-_MAX_TOKENS = 10000
+# With thinking disabled, there are no invisible reasoning tokens consuming the budget.
+# 7 recipes produce ~2200 tokens of actual output; 4000 provides 1.8x headroom
+# while consuming only 4K of the 20K TPM limit (vs 10K previously).
+_MAX_TOKENS = 4000
 
 # Approximate cost per 1K tokens (USD) for cost estimation
 _COST_PER_1K = {
@@ -201,12 +201,12 @@ def _call_azure_openai(
 
     # Disable SDK retries — each retry re-sends the full prompt and Azure
     # counts input tokens against the 20K tokens/min rate limit even for 429s.
-    # We handle retries ourselves with 60s+ waits in the generator layer.
-    # 300s read timeout: at 20K tokens/min rate limit, a 10K-token response
-    # takes ~30s of model time but can be throttled to 2-3+ minutes.
+    # We handle retries ourselves in the generator layer.
+    # Use the caller-supplied timeout so GENERATION_TIMEOUT / ADAPTATION_TIMEOUT
+    # are actually respected (previously hardcoded to 300s and ignored).
     http_client = httpx.Client(
         verify=ca_bundle,
-        timeout=httpx.Timeout(300.0, connect=10.0),
+        timeout=httpx.Timeout(float(timeout), connect=10.0),
     )
 
     client = openai.AzureOpenAI(
@@ -220,10 +220,10 @@ def _call_azure_openai(
         model=deployment,
         max_tokens=_MAX_TOKENS,
         temperature=temperature,
-        # NOTE: Do NOT use response_format=json_object with reasoning models
-        # like Kimi K2.5 — their invisible thinking tokens corrupt the JSON,
-        # producing garbage like {"recipes":":[{",":":":",",":":":", ...}.
-        # Instead, rely on prompt instructions + _extract_json() post-processing.
+        # thinking disabled → no invisible reasoning tokens, so json_object mode
+        # is safe and produces clean JSON without post-processing workarounds.
+        response_format={"type": "json_object"},
+        extra_body={"thinking": {"type": "disabled"}},
         messages=[
             {"role": "system", "content": _JSON_SYSTEM_INSTRUCTION},
             {"role": "user", "content": prompt},

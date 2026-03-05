@@ -43,7 +43,7 @@ from .validator import validate_constraints
 
 logger = get_logger(__name__)
 
-MAX_RETRIES = 3
+MAX_RETRIES = 2
 
 
 async def generate_meal_plan(message_content: dict[str, Any]) -> None:
@@ -123,8 +123,8 @@ async def generate_meal_plan(message_content: dict[str, Any]) -> None:
             for i, mt in enumerate(effective_types):
                 # Rate-limit pacing: wait between calls to avoid token-bucket exhaustion
                 if i > 0:
-                    logger.info("rate_limit_pacing", wait_seconds=65, next_meal_type=mt)
-                    await asyncio.sleep(65)
+                    logger.info("rate_limit_pacing", wait_seconds=5, next_meal_type=mt)
+                    await asyncio.sleep(5)
                 single_prompt = build_prompt(
                     context["inventory"],
                     context["equipment"],
@@ -443,7 +443,7 @@ async def _generate_with_retries(
         # Azure charges tokens at request completion time, so after a long-running
         # request we need a full 60s+ window before the next one.
         if attempt > 1:
-            wait_secs = max(rate_limit_wait, 60 * attempt)
+            wait_secs = max(rate_limit_wait, 15 * attempt)
             logger.info("retry_backoff", wait_seconds=wait_secs, attempt=attempt)
             await asyncio.sleep(wait_secs)
             rate_limit_wait = 0  # reset after using it
