@@ -228,33 +228,37 @@ Meal plan generation is slow (2-5+ minutes, target <30s) because we deployed **K
 
 ### Recommendation: Switch to GPT-4o-mini
 
-| Metric | Kimi K2.5 | GPT-4o-mini | Delta |
-|---|---|---|---|
-| **Generation speed** | 10-20 tok/s | ~79 tok/s | **4-8x faster** |
-| **Time-to-first-token** | 5-30s (thinking) | ~1s | **5-30x faster** |
-| **JSON mode** | No (corrupts) | Native support | Eliminates repair code |
-| **Cost (per 1M tokens)** | $0.60 input, $3.00 output | $0.15 input, $0.60 output | **4-5x cheaper** |
-| **Est. cost per plan** | $0.06-0.10 | $0.01-0.02 | **75% cost reduction** |
+| Metric                   | Kimi K2.5                 | GPT-4o-mini               | Delta                  |
+| ------------------------ | ------------------------- | ------------------------- | ---------------------- |
+| **Generation speed**     | 10-20 tok/s               | ~79 tok/s                 | **4-8x faster**        |
+| **Time-to-first-token**  | 5-30s (thinking)          | ~1s                       | **5-30x faster**       |
+| **JSON mode**            | No (corrupts)             | Native support            | Eliminates repair code |
+| **Cost (per 1M tokens)** | $0.60 input, $3.00 output | $0.15 input, $0.60 output | **4-5x cheaper**       |
+| **Est. cost per plan**   | $0.06-0.10                | $0.01-0.02                | **75% cost reduction** |
 
 **Verdict:** GPT-4o-mini is the right tool. Single-dinner generation drops from 30-120s to **8-20s** (P0 changes). Multi-meal (breakfast+lunch+dinner) drops from 160-250s to **15-25s** (enables parallel generation).
 
 ### Implementation: 4 Phases (P0 alone = 80%+ improvement)
 
 **Phase 1 (P0 — Immediate, <1 hour):** Model switch + JSON mode
+
 - `llm_client.py`: Add `response_format="json_object"`, reduce max_tokens 10K→4K, reduce timeout 300s→60s
 - `generator.py`: Reduce retry backoff, simplify JSON repair to fallback-only
 - Azure: Deploy GPT-4o-mini, update Key Vault `azure-openai-deployment`
 
 **Phase 2 (P1 — Concurrency):** Parallel multi-meal generation
+
 - `generator.py`: Replace 65s sleep with `asyncio.gather()` (2 concurrent requests max)
 - Saves 65s × (N-1) per generation
 - Requires TPM quota increase to 60K (Azure Portal)
 
 **Phase 3 (P2 — Quality):** Strict structured outputs
+
 - Use Azure's strict JSON schema enforcement (`response_format: {"type": "json_schema", ...}`)
 - Eliminates ALL JSON parsing failures and validation retries
 
 **Phase 4 (P3 — Tuning):** Reduce token budget
+
 - Max_tokens=4000 provides 80% headroom for 7 recipes (~2200 tokens actual)
 - Reduces rate limit consumption by 60%
 

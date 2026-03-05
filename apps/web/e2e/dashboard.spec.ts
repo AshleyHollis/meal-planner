@@ -240,9 +240,7 @@ test.describe("Dashboard", () => {
           .isVisible({ timeout: 5_000 })
           .catch(() => false)
       ) {
-        await expect(
-          cuisineSection.or(cuisineButton).first(),
-        ).toBeVisible();
+        await expect(cuisineSection.or(cuisineButton).first()).toBeVisible();
       } else {
         test.skip(
           true,

@@ -11,7 +11,7 @@
 
 1. **Ripley (claude-sonnet-4.6, background):** ✅ COMPLETED SUCCESSFULLY
    - Implemented Tier 1 Kimi K2.5 optimizations in llm_client.py and generator.py
-   - Changes: Thinking disabled via extra_body, _MAX_TOKENS reduced (10K→4K), GENERATION_TIMEOUT corrected (25s→60s), JSON mode enabled, retry parameters tuned, pacing sleep reduced (65s→5s)
+   - Changes: Thinking disabled via extra_body, \_MAX_TOKENS reduced (10K→4K), GENERATION_TIMEOUT corrected (25s→60s), JSON mode enabled, retry parameters tuned, pacing sleep reduced (65s→5s)
    - Commit: a901093 on branch 005-grocery-enhancements
    - Impact: Single dinner 30-120s → 5-10s; multi-meal ~200s → ~15s
    - All existing tests pass (97 worker, 193 API)

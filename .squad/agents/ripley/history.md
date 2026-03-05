@@ -17,6 +17,7 @@
 **Task:** Implement Ashley's decision to keep Kimi K2.5 but disable thinking mode and tune all related knobs.
 
 **Changes made (commit a901093 on 005-grocery-enhancements):**
+
 - `llm_client.py` — `extra_body={"thinking": {"type": "disabled"}}` disables Kimi's 30-120s invisible reasoning overhead
 - `llm_client.py` — `response_format={"type": "json_object"}` re-enabled (safe now that thinking is off; no more JSON corruption)
 - `llm_client.py` — `_MAX_TOKENS` 10000 → 4000 (7 recipes ≈ 2200 tokens; 4K is 1.8x headroom without reasoning token budget)
@@ -27,6 +28,7 @@
 - `generator.py` — multi-meal pacing sleep `65s` → `5s` (4K tokens consume only 20% of 20K TPM)
 
 **Key patterns/decisions:**
+
 - `extra_body` is the correct OpenAI SDK field to pass provider-specific API extensions
 - Only `_call_azure_openai()` was changed — Anthropic and vanilla OpenAI paths untouched
 - Anthropic path still uses `_MAX_TOKENS = 4000` (shared constant) — acceptable since 4K is also fine there
@@ -46,12 +48,14 @@
 7. `substitution_service.py:234-253` — Grocery changes calculated but not persisted to DB
 
 **Quick Wins (4):**
+
 1. Reduce max_tokens from 10K to 4K (JSON mode doesn't need buffer)
 2. Set response_format="json_mode" in Azure client
 3. Remove JSON repair code once model switch complete
 4. Parallelize multi-meal generation (use asyncio.gather)
 
 **Structural Changes (5):**
+
 1. Add async context cache (avoid re-fetching preferences per meal)
 2. Implement concurrent meal generation (vs sequential sleep pacing)
 3. Add observability (timing spans per bottleneck)
@@ -367,7 +371,6 @@
 
 - **Test results:** 193 API tests pass, ruff clean. No schema migrations needed.
 
-
 ### Kimi K2.5 Optimization — Code Change Analysis (2026-03-09)
 
 - **Branch:** 005-grocery-enhancements
@@ -376,12 +379,13 @@
 ## Learnings
 
 - **xtra_body disables thinking tokens:** Kimi K2.5 via Azure AI Foundry supports xtra_body={"thinking": {"type": "disabled"}} in openai.AzureOpenAI.chat.completions.create(). This is the highest-impact single change — eliminates invisible reasoning tokens that burn rate limit budget and corrupt JSON.
-- **_call_azure_openai() ignores the 	imeout parameter:** The function signature accepts 	imeout: int but creates httpx.Client with a hardcoded 300.0 timeout instead of using the parameter. When wiring the timeout reduction (300s → 60s), the fix must use loat(timeout) in httpx.Timeout() to respect the caller's value.
-- **65s multi-meal sleep was calibrated for 10K tokens + Kimi thinking overhead:** With _MAX_TOKENS=4000 and thinking disabled, 5s is sufficient — or eliminate entirely with syncio.gather + semaphore(2).
+- **\_call_azure_openai() ignores the imeout parameter:** The function signature accepts imeout: int but creates httpx.Client with a hardcoded 300.0 timeout instead of using the parameter. When wiring the timeout reduction (300s → 60s), the fix must use loat(timeout) in httpx.Timeout() to respect the caller's value.
+- **65s multi-meal sleep was calibrated for 10K tokens + Kimi thinking overhead:** With \_MAX_TOKENS=4000 and thinking disabled, 5s is sufficient — or eliminate entirely with syncio.gather + semaphore(2).
 - **syncio.to_thread(call_llm, ...) is the safe path to parallel multi-meal generation:** It unblocks the event loop without rewriting the HTTP layer. Full AsyncAzureOpenAI migration is a follow-on after Tier 1 is validated.
-- **Double-serialization repair in _extract_json() is a Kimi thinking-mode artefact:** The {"recipes": "[{...}]"} corruption pattern (string-encoded array) was caused by thinking tokens mixing with the JSON response. Should disappear with thinking disabled. Do not remove repair code until PoC confirms this.
-- **Retry backoff logic:** max(rate_limit_wait, 60 * attempt) correctly uses the Retry-After header when present, but 60s floor is excessive with max_tokens=4000. Drop floor to 15 * attempt — the token bucket refills faster with smaller requests.
-- **JSON mode PoC must precede simplification:** esponse_format={"type": "json_object"} should be tested empirically after thinking is disabled. Azure's proxy layer for Kimi may or may not honour json_object the same way as native GPT-4 models.
+- **Double-serialization repair in \_extract_json() is a Kimi thinking-mode artefact:** The {"recipes": "[{...}]"} corruption pattern (string-encoded array) was caused by thinking tokens mixing with the JSON response. Should disappear with thinking disabled. Do not remove repair code until PoC confirms this.
+- **Retry backoff logic:** max(rate_limit_wait, 60 _ attempt) correctly uses the Retry-After header when present, but 60s floor is excessive with max_tokens=4000. Drop floor to 15 _ attempt — the token bucket refills faster with smaller requests.
+- **JSON mode PoC must precede simplification:**
+  esponse_format={"type": "json_object"} should be tested empirically after thinking is disabled. Azure's proxy layer for Kimi may or may not honour json_object the same way as native GPT-4 models.
 
 ### Tier 2 Optimisation — Parallel Multi-Meal Generation (2026-03-09)
 
@@ -390,6 +394,7 @@
 - **Scope:** Replace sequential multi-meal generation loop with asyncio.gather + semaphore.
 
 #### Changes made
+
 - Added `MAX_PARALLEL_LLM_CALLS = 2` constant at top of generator.py (TPM budget comment inline).
 - Replaced `for i, mt in enumerate(effective_types)` loop + 5s sleep with:
   - `asyncio.Semaphore(MAX_PARALLEL_LLM_CALLS)`
@@ -400,6 +405,7 @@
 - Single-meal-type `else` branch left completely unchanged.
 
 #### Key learnings
+
 - `asyncio.to_thread()` is the minimal, safe path to parallelise a sync HTTP helper without rewriting the HTTP layer. No AsyncAzureOpenAI migration required.
 - Index-based stagger (`2 * index` seconds) is preferable to a flat sleep: first task starts immediately, subsequent tasks have breathing room proportional to their position.
 - Worker venv does not include ruff — use `services\api\.venv\Scripts\ruff.exe` with `--config services\ruff.toml` for lint checks on worker code.

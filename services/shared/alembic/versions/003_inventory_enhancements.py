@@ -157,9 +157,8 @@ def upgrade() -> None:
             ),
         )
 
-    if _table_exists("MemberPreferences"):
-        if not _index_exists("ix_member_prefs_member"):
-            op.create_index("ix_member_prefs_member", "MemberPreferences", ["household_member_id"])
+    if _table_exists("MemberPreferences") and not _index_exists("ix_member_prefs_member"):
+        op.create_index("ix_member_prefs_member", "MemberPreferences", ["household_member_id"])
 
     if not _table_exists("RecipeFavorites"):
         op.create_table(
@@ -179,9 +178,8 @@ def upgrade() -> None:
             sa.UniqueConstraint("household_id", "recipe_id", name="uq_household_recipe"),
         )
 
-    if _table_exists("RecipeFavorites"):
-        if not _index_exists("ix_recipe_favorites_household"):
-            op.create_index("ix_recipe_favorites_household", "RecipeFavorites", ["household_id"])
+    if _table_exists("RecipeFavorites") and not _index_exists("ix_recipe_favorites_household"):
+        op.create_index("ix_recipe_favorites_household", "RecipeFavorites", ["household_id"])
 
     if not _table_exists("MealSlotRatings"):
         op.create_table(
@@ -204,9 +202,8 @@ def upgrade() -> None:
             sa.UniqueConstraint("meal_slot_id", "rated_by", name="uq_slot_rated_by"),
         )
 
-    if _table_exists("MealSlotRatings"):
-        if not _index_exists("ix_meal_slot_ratings_slot"):
-            op.create_index("ix_meal_slot_ratings_slot", "MealSlotRatings", ["meal_slot_id"])
+    if _table_exists("MealSlotRatings") and not _index_exists("ix_meal_slot_ratings_slot"):
+        op.create_index("ix_meal_slot_ratings_slot", "MealSlotRatings", ["meal_slot_id"])
 
     if not _column_exists("Recipes", "cuisine_type"):
         with op.batch_alter_table("Recipes", schema=None) as batch_op:

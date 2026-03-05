@@ -12,17 +12,20 @@
 Based on the optimization strategy from session 20260305T0700, team is now implementing performance enhancements to reduce meal plan generation latency from 30-120s down to 5-15s (Tier 1) and eliminate JSON corruption without switching models.
 
 ### Tier 1: Core Optimization (Ripley)
+
 - **Disable thinking mode:** Add `extra_body={"thinking": {"type": "disabled"}}` to API calls in llm_client.py
 - **Reduce token budget:** `_MAX_TOKENS` from 10,000 → 4,000
 - **Fix timeout bug:** HTTP timeout from 300s → 60s
 - **Enable JSON mode:** Add `response_format=json_object` to requests
 
 ### Tier 3: Polish (Ripley)
+
 - **Reduce retries:** MAX_RETRIES from 3 → 2
 - **Reduce backoff:** `60 * attempt` → `15 * attempt` in retry logic
 - **Simplify JSON extraction:** Clean up `_extract_json()` since thinking-disabled mode produces valid JSON
 
 ### Expected Outcome
+
 - Single dinner generation: **10-25s (down from 30-120s)**
 - JSON parse success: **~95% (up from ~80%)**
 - Cost reduction: **-60% TPM per request**
@@ -43,11 +46,11 @@ Kimi K2.5's thinking mode (invisible reasoning tokens) consumes 25-110s per requ
 
 ## Blockers & Risks
 
-| Risk | Mitigation |
-|------|-----------|
+| Risk                                              | Mitigation                                                          |
+| ------------------------------------------------- | ------------------------------------------------------------------- |
 | `extra_body` parameter unsupported by Azure proxy | Ripley PoC tests immediately; fallback to `reasoning_effort: "low"` |
-| JSON corruption persists | Validate json_object mode works before relying on it |
-| 60s timeout too tight | Monitor logs; adjust if Azure throttling causes timeouts |
+| JSON corruption persists                          | Validate json_object mode works before relying on it                |
+| 60s timeout too tight                             | Monitor logs; adjust if Azure throttling causes timeouts            |
 
 ---
 

@@ -177,7 +177,6 @@ Full architecture review across all 5 specs (001-MVP through 005-grocery-enhance
 
 Review written to `.squad/decisions/inbox/dallas-feature-review.md`.
 
-
 ### 2026-03-09: LLM Performance Investigation — Kimi K2.5 Root Cause Analysis
 
 **Trigger:** Ashley reported meal plan generation is slow. Requested comprehensive architectural analysis.
@@ -196,6 +195,7 @@ Review written to `.squad/decisions/inbox/dallas-feature-review.md`.
 **Implementation plan:** 4 phases, ~4-5 hours total. P0 changes (model switch + JSON mode + reduce max_tokens) deliver 80%+ improvement in <1 hour of code changes.
 
 **Key file paths:**
+
 - `services/workers/meal_plan_generator/llm_client.py` — Azure client, timeouts, max_tokens, JSON mode
 - `services/workers/meal_plan_generator/generator.py` — retry loop, pacing sleep, JSON repair
 - `services/workers/meal_plan_generator/prompts.py` — prompt construction
@@ -212,11 +212,13 @@ Review written to `.squad/decisions/inbox/dallas-feature-review.md`.
 **Key discovery — `thinking` parameter:** Kimi K2.5's API exposes `{"thinking": {"type": "disabled"}}` which completely eliminates the invisible chain-of-thought reasoning tokens (the 25-110s bottleneck). This is the single biggest optimization lever — it removes the core problem without switching models.
 
 **Additional levers found:**
+
 - `reasoning_effort`: "low"/"medium"/"high" — controls reasoning intensity
 - `budget_tokens`: caps max tokens used for reasoning (e.g., 1500 for substitution)
 - `max_tokens` is a GLOBAL budget for both reasoning + content — reducing from 10K to 4K cuts TPM reservation by 60%, directly enabling parallelism
 
 **Strategy written (4 tiers):**
+
 - **Tier 1:** Disable thinking + reduce max_tokens to 4000 → estimated 5-15s per generation (currently 30-120s)
 - **Tier 2:** + parallel multi-meal via asyncio.gather + reduce sleep 65s→2s → 3 meal types in 8-20s (currently 4-10 min)
 - **Tier 3:** + quota increase to 40K TPM + streaming → 6-15s for 3 meal types
@@ -233,10 +235,12 @@ Review written to `.squad/decisions/inbox/dallas-feature-review.md`.
 **Reviewed:** Ripley's Tier 1 + Tier 3 implementation of Kimi K2.5 optimization strategy.
 
 **Files reviewed:**
+
 - `services/workers/meal_plan_generator/llm_client.py` — `extra_body={"thinking": {"type": "disabled"}}`, `response_format=json_object`, timeout fix (300s→caller param), `_MAX_TOKENS=4000`
 - `services/workers/meal_plan_generator/generator.py` — `MAX_RETRIES=2`, 5s pacing sleep, `15s×attempt` backoff
 
 **Key decisions:**
+
 1. `extra_body` is correctly placed as kwarg to `client.chat.completions.create()` — OpenAI SDK passes it directly into HTTP request body.
 2. `response_format=json_object` is safe with thinking disabled — no reasoning tokens to corrupt structured output.
 3. `_MAX_TOKENS=4000` is sufficient for 7 recipes (~2200 tokens, 1.8x headroom) but would be insufficient if Azure proxy strips the thinking parameter. Existing `_recover_truncated_json()` + `finish_reason="length"` detection provides adequate safety net.

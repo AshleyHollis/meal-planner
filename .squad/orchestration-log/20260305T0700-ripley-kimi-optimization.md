@@ -13,6 +13,7 @@
 **Task:** Define exact code changes needed to implement Kimi K2.5 optimization (Tier 1 & 2) in `services/workers/meal_plan_generator/`.
 
 **Context:**
+
 - Ashley keeping Kimi K2.5; Dallas designed optimization strategy
 - Goal: Translate architectural strategy into executable code patches
 - Scope: llm_client.py, generator.py, config.py modifications
@@ -51,26 +52,26 @@
 
 ## Risk Assessment
 
-| Change | Risk Level | Why | Mitigation |
-|--------|-----------|-----|-----------|
-| 1.1: extra_body parameter | Low | `extra_body` is standard; unknown fields are ignored | PoC test immediately |
-| 1.2: max_tokens reduction | Low | 4K is 1.8x headroom for 7 recipes (~2200 tokens) | Monitor `finish_reason=length` |
-| 1.3: HTTP timeout | Low-Medium | 60s may be tight if Azure throttles; generator retry loop catches timeout | Watch first week logs for exceptions |
-| 1.4: json_object mode | Medium | Thinking-disabled may fix the JSON corruption; needs validation | PoC phase (step 6) |
-| 2.1: Async conversion | Low | asyncio.to_thread() is safe; full async rewrite is medium-risk | Prefer to_thread() for MVP |
-| 2.2: Parallel generation | Medium | Rate limit behavior needs monitoring; semaphore limits to 2 | Monitor 429 errors; increase stagger if needed |
+| Change                    | Risk Level | Why                                                                       | Mitigation                                     |
+| ------------------------- | ---------- | ------------------------------------------------------------------------- | ---------------------------------------------- |
+| 1.1: extra_body parameter | Low        | `extra_body` is standard; unknown fields are ignored                      | PoC test immediately                           |
+| 1.2: max_tokens reduction | Low        | 4K is 1.8x headroom for 7 recipes (~2200 tokens)                          | Monitor `finish_reason=length`                 |
+| 1.3: HTTP timeout         | Low-Medium | 60s may be tight if Azure throttles; generator retry loop catches timeout | Watch first week logs for exceptions           |
+| 1.4: json_object mode     | Medium     | Thinking-disabled may fix the JSON corruption; needs validation           | PoC phase (step 6)                             |
+| 2.1: Async conversion     | Low        | asyncio.to_thread() is safe; full async rewrite is medium-risk            | Prefer to_thread() for MVP                     |
+| 2.2: Parallel generation  | Medium     | Rate limit behavior needs monitoring; semaphore limits to 2               | Monitor 429 errors; increase stagger if needed |
 
 ---
 
 ## Expected Outcomes
 
-| Metric | Before | After Tier 1 | After Tier 2 |
-|--------|--------|--------------|--------------|
-| Single dinner | 30-120s | 10-25s | 8-20s |
-| 3 meal types | 4-10 min | 20-50s | 10-25s |
-| JSON parse success | ~80% | ~95% | ~99% (with json_object) |
-| TPM per call | 10,000 | 4,000 | 4,000 |
-| NFR-01 (p95 < 30s) | ❌ Failed | ✅ Met | ✅ Comfortable |
+| Metric             | Before    | After Tier 1 | After Tier 2            |
+| ------------------ | --------- | ------------ | ----------------------- |
+| Single dinner      | 30-120s   | 10-25s       | 8-20s                   |
+| 3 meal types       | 4-10 min  | 20-50s       | 10-25s                  |
+| JSON parse success | ~80%      | ~95%         | ~99% (with json_object) |
+| TPM per call       | 10,000    | 4,000        | 4,000                   |
+| NFR-01 (p95 < 30s) | ❌ Failed | ✅ Met       | ✅ Comfortable          |
 
 ---
 
@@ -78,7 +79,6 @@
 
 1. `services/workers/meal_plan_generator/llm_client.py`
    - Lines: 34 (max_tokens), 207-210 (timeout), 219-231 (extra_body)
-   
 2. `services/workers/meal_plan_generator/generator.py`
    - Lines: 46 (MAX_RETRIES), 120-156 (parallel), 445-448 (backoff), 579-637 (extract_json)
 

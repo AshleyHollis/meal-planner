@@ -157,7 +157,9 @@ test.describe("Recurring Meals Page (US4)", () => {
         name: /add recurring meal/i,
       });
       if (
-        !(await openFormButton.isVisible({ timeout: 60_000 }).catch(() => false))
+        !(await openFormButton
+          .isVisible({ timeout: 60_000 })
+          .catch(() => false))
       ) {
         test.skip(true, "Add button not available");
         return;

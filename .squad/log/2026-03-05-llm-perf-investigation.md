@@ -11,6 +11,7 @@
 Three-agent parallel investigation into meal plan generation performance. All agents converge on unified root cause (Kimi K2.5 reasoning model overhead) and recommendation (switch to GPT-4o-mini with native JSON mode).
 
 **Key Outcomes:**
+
 - ✅ Root cause identified: Reasoning model burns 30-120s on invisible thinking tokens
 - ✅ 7 bottlenecks quantified with line numbers
 - ✅ Model recommendation: GPT-4o-mini (4-8x faster, 4-5x cheaper, native JSON)

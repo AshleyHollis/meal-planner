@@ -59,11 +59,13 @@
 **Key Findings:**
 
 **Azure Quota Structure:**
+
 - Azure uses auto-tiering (Free → Tier 1-6) based on usage. Kimi K2.5 default: ~20K TPM quota.
 - Quotas apply per-subscription, per-region. Current account (aif-pai-dev-eus East US) can hold multiple deployments sharing same quota.
 - Automatic promotion triggers when 30-day rolling usage reaches ~80% of current tier limit.
 
 **Deployment Capacity Scaling (GlobalStandard SKU):**
+
 - Supported values: 1, 2, 4, 8, 16 (each roughly doubles throughput)
 - Current: capacity 1 = ~20K TPM
 - Increasing to capacity 4 = ~80K TPM (4x throughput, NO change to per-token cost)
@@ -71,28 +73,33 @@
 - Upgrade from 1→4: 5-min downtime, zero code changes, same PAYGO token cost
 
 **Quota Increase Paths:**
+
 1. **Auto-promotion (easiest):** Generate 50+ plans/day → 80%+ quota → Azure auto-promotes in 2-4 weeks
 2. **Portal request:** Submit manual request via Azure Quotas UI; ~1-2 business days approval
 3. **CLI:** `az quota update` command exists but may require portal confirmation
 
 **PTU (Provisioned Throughput Units) Option:**
+
 - For sustained high volume (>1M tokens/day), PTU pricing 25-40% cheaper than PAYGO
 - Break-even: ~1M tokens/day sustained (96% cost savings vs. PAYGO)
 - **MVP profile (50-500 plans/day):** PAYGO + capacity upgrade more cost-effective
 - PTU requires minimum commitment; oversized PTU = wasted spend
 
 **Cost Analysis (50 plans/day, 4K avg tokens/plan):**
+
 - Annual: ~72M tokens (~$147K PAYGO)
 - Capacity increase (1→4): Same token cost; 4x latency benefit
 - Multi-region: Only if quota exhausted; not needed for MVP
 - Model switch (separate Dallas decision): GPT-4o-mini 80% cheaper + 4x faster
 
 **Recommended Immediate Action:**
+
 - Increase capacity 1→4 (no cost penalty, latency benefit)
 - Monitor quota tier auto-promotion
 - At >1M tokens/day, evaluate PTU switch (can save 96% vs. PAYGO)
 
 **Deliverables:**
+
 - Decision document: `.squad/decisions/inbox/parker-kimi-k25-quota-optimization.md`
 - Scripts: `check-quota.sh`, `update-capacity.sh`, `request-quota-increase.sh` (ready to run)
 - Monitoring guidance: Quota utilization tracking + alert thresholds
@@ -104,11 +111,13 @@
 **Findings:** Azure deployment analysis for GPT-4o-mini as alternative to Kimi K2.5
 
 **Model Comparison:**
+
 - Kimi K2.5: ~20-120s per generation, $0.12/1M tokens input, $3.00/1M output
 - GPT-4o-mini: ~8-20s per generation, $0.15/1M tokens input, $0.60/1M output
 - **Impact:** 80% cheaper, 4-8x faster
 
 **Deployment Insights:**
+
 - Azure AI Foundry supports GPT-4o-mini via OpenAI-compatible endpoint
 - Existing aif-pai-dev-aue account (Australia East) compatible — no new infrastructure
 - Requires model switch in `services/workers/meal_plan_generator/llm_client.py` only
@@ -116,6 +125,7 @@
 - Request TPM quota increase from 20K to 60K for parallel generation support
 
 **Cost Savings (1000 monthly generations example):**
+
 - Current (Kimi K2.5): ~$120/month
 - Proposed (GPT-4o-mini): ~$30/month
 - **Savings:** $90/month (75% reduction)

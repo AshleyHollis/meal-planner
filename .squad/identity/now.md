@@ -13,6 +13,7 @@ active_issues:
 # ⚠️ COORDINATOR: READ THIS FIRST — NON-NEGOTIABLE
 
 **NEVER call task_complete or stop between work phases.** After collecting agent results:
+
 1. Identify ALL follow-up work (review, tests, next tier, docs, CI monitoring)
 2. Launch it IMMEDIATELY — no status report pause, no "want me to continue?"
 3. Only stop when there is genuinely NOTHING left to do AND tests pass AND CI is green

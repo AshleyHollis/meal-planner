@@ -9,6 +9,7 @@
 **Status:** Complete. Report at .squad/decisions/inbox/dallas-llm-performance-investigation.md
 
 **Key Findings:**
+
 - Root cause: Kimi K2.5 reasoning model mismatched for JSON generation
 - 7 bottlenecks quantified (thinking tokens, rate limit, timeout, sleep, repair code, retries, missing context)
 - Recommendation: Switch to GPT-4o-mini (4-8x faster, 4-5x cheaper, native JSON mode)

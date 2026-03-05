@@ -1960,6 +1960,7 @@ All 104 tests pass, TypeScript clean.
 **Changes Implemented:**
 
 **llm_client.py:**
+
 - `_MAX_TOKENS`: 10000 → 4000 (no reasoning tokens; 7 recipes ≈ 2200 tokens; 1.8x headroom)
 - `GENERATION_TIMEOUT`: 25s → 60s (thinking off requires correct timeout)
 - `httpx.Timeout`: hardcoded 300s → `float(timeout)` (bug fix: parameter was ignored)
@@ -1967,6 +1968,7 @@ All 104 tests pass, TypeScript clean.
 - `response_format`: not set → `{"type": "json_object"}` (safe now that thinking is off; no JSON corruption)
 
 **generator.py:**
+
 - `MAX_RETRIES`: 3 → 2 (JSON mode produces clean output; failures are rare)
 - retry backoff: `60 * attempt` → `15 * attempt` (4K tokens reset in ~12s at 20K TPM)
 - pacing sleep: 65s → 5s (4K tokens = 20% of 20K TPM; 5s spacing is safe)
@@ -1974,6 +1976,7 @@ All 104 tests pass, TypeScript clean.
 **Scope:** Only `_call_azure_openai()` modified — Anthropic and vanilla OpenAI paths unchanged. No prompt/schema files changed. No new env vars.
 
 **Expected Impact:**
+
 - Multi-meal plan generation: from ~200s (3 × 65s pacing + LLM time) to ~15s
 - Single plan: from 30-120s to ~5-10s (thinking overhead eliminated)
 - Rate limit risk reduced (4K tokens vs 10K per request)
@@ -1984,7 +1987,7 @@ Ashley has decided to **keep Kimi K2.5** rather than switch to GPT-4o-mini. The 
 
 ### Key Insight: Thinking Mode Disable
 
-**Kimi K2.5's primary bottleneck is invisible reasoning tokens.** The model exposes a 	hinking parameter via xtra_body={"thinking": {"type": "disabled"}} that eliminates chain-of-thought overhead entirely. This is a 10-100x latency win with minimal code change.
+**Kimi K2.5's primary bottleneck is invisible reasoning tokens.** The model exposes a hinking parameter via xtra_body={"thinking": {"type": "disabled"}} that eliminates chain-of-thought overhead entirely. This is a 10-100x latency win with minimal code change.
 
 ### Tier 1: Quick Wins (Thinking Disabled + Token Reduction)
 
@@ -1994,15 +1997,17 @@ Ashley has decided to **keep Kimi K2.5** rather than switch to GPT-4o-mini. The 
 **Impact:** Single dinner: 30-120s → 10-25s | 3 meal types: 4-10 min → 20-50s
 
 1. Add xtra_body={"thinking": {"type": "disabled"}} to Azure OpenAI API call
-2. Reduce _MAX_TOKENS from 10,000 to 4,000 (matches actual output size)
+2. Reduce \_MAX_TOKENS from 10,000 to 4,000 (matches actual output size)
 3. Reduce HTTP timeout from 300s to 60s (wire timeout parameter through)
-4. Reduce retry backoff from 60 * attempt to 15 * attempt
+4. Reduce retry backoff from 60 _ attempt to 15 _ attempt
 5. Reduce MAX_RETRIES from 3 to 2 (fewer retries needed with stable thinking-disabled mode)
 
 **PoC validation required:**
+
 - Run 5 generations with thinking disabled
 - Confirm: p50 latency < 15s, JSON validity, no quality regression
-- Test: esponse_format=json_object with thinking disabled (may eliminate JSON corruption)
+- Test:
+  esponse_format=json_object with thinking disabled (may eliminate JSON corruption)
 
 ### Tier 2: Parallelism (Multi-Meal Concurrent Generation)
 
@@ -2020,45 +2025,50 @@ Ashley has decided to **keep Kimi K2.5** rather than switch to GPT-4o-mini. The 
 
 ### Tier 3: Polish (Optional)
 
-- Simplify _extract_json() cleanup code (only if json_object mode PoC passes)
-- Test esponse_format=json_object with thinking disabled (may allow removal of JSON repair pipeline)
+- Simplify \_extract_json() cleanup code (only if json_object mode PoC passes)
+- Test
+  esponse_format=json_object with thinking disabled (may allow removal of JSON repair pipeline)
 
 ### Azure Quota & Infrastructure Changes (Parker)
 
 **Phase 1: Immediate**
+
 - Increase Azure deployment capacity 1 → 4: 4x throughput (no per-token cost increase)
 - Deployment change: --sku-capacity 1 → --sku-capacity 4 (~5 min downtime)
 - Benefit: Provides headroom for Tier 2 parallelism
 
 **Phase 2: Short-term Quota Monitoring**
+
 - Monitor utilization in Azure portal
 - If hitting 80%+: Azure auto-promotes to next tier (2-4 week timeline)
 - Alternatively: manual quota increase request to 40K-120K TPM (1-2 business days via portal)
 
 **Phase 3: PTU Evaluation (post-MVP)**
+
 - Only if sustained >500K tokens/day
 - Break-even threshold: ~1M tokens/day
 - At enterprise scale (1M+/day): 96% cost savings vs. PAYGO (/year PAYGO → .6K/year PTU)
 
 ### Expected Performance Outcomes
 
-| Metric | Before (Thinking ON) | After Tier 1 | After Tier 2 |
-|--------|----------------------|--------------|--------------|
-| Single dinner (7 recipes) | 30-120s | 10-25s | 8-20s |
-| 3 meal types (21 recipes) | 4-10 min | 20-50s | 10-25s |
-| p95 latency | >120s ❌ | ~25s ✅ | ~15s ✅ |
-| JSON parse success | ~80% | ~95% | ~99% (with json_object) |
-| Cost per dinner | .06-0.10 | .03-0.05 | .03-0.05 |
-| **NFR-01 Compliance** | ❌ | ✅ | ✅ |
+| Metric                    | Before (Thinking ON) | After Tier 1 | After Tier 2            |
+| ------------------------- | -------------------- | ------------ | ----------------------- |
+| Single dinner (7 recipes) | 30-120s              | 10-25s       | 8-20s                   |
+| 3 meal types (21 recipes) | 4-10 min             | 20-50s       | 10-25s                  |
+| p95 latency               | >120s ❌             | ~25s ✅      | ~15s ✅                 |
+| JSON parse success        | ~80%                 | ~95%         | ~99% (with json_object) |
+| Cost per dinner           | .06-0.10             | .03-0.05     | .03-0.05                |
+| **NFR-01 Compliance**     | ❌                   | ✅           | ✅                      |
 
 ### Risk Assessment
 
-| Risk | Severity | Mitigation |
-|------|----------|-----------|
-| xtra_body parameter unsupported by Azure proxy | High | PoC test immediately; fallback to easoning_effort: "low" or token starvation |
-| 60s HTTP timeout too tight during throttling | Medium | Monitor first week for timeout exceptions; adjust if needed |
-| Parallel calls trigger burst throttling | Medium | 2s stagger + semaphore (max 2) keeps blast radius manageable |
-| json_object mode still corrupts with thinking disabled | Medium | PoC phase validates before shipping; keep _extract_json() as safety net |
+| Risk                                                   | Severity | Mitigation                                                               |
+| ------------------------------------------------------ | -------- | ------------------------------------------------------------------------ |
+| xtra_body parameter unsupported by Azure proxy         | High     | PoC test immediately; fallback to                                        |
+| easoning_effort: "low" or token starvation             |
+| 60s HTTP timeout too tight during throttling           | Medium   | Monitor first week for timeout exceptions; adjust if needed              |
+| Parallel calls trigger burst throttling                | Medium   | 2s stagger + semaphore (max 2) keeps blast radius manageable             |
+| json_object mode still corrupts with thinking disabled | Medium   | PoC phase validates before shipping; keep \_extract_json() as safety net |
 
 ### Implementation Priority
 
@@ -2078,7 +2088,8 @@ Ashley has decided to **keep Kimi K2.5** rather than switch to GPT-4o-mini. The 
 ### References
 
 - **Dallas Decision:** dallas-kimi-k25-optimization-strategy.md (432 lines, full architecture + risk assessment)
-- **Ripley Decision:** ipley-kimi-k25-code-changes.md (417 lines, exact code changes + implementation order)
+- **Ripley Decision:**
+  ipley-kimi-k25-code-changes.md (417 lines, exact code changes + implementation order)
 - **Parker Decision:** parker-kimi-k25-quota-optimization.md (524 lines, Azure quota + deployment scripts)
 
 ### User Directive: CI/CD Pipeline & Visual Smoke Test Compliance
@@ -2087,12 +2098,12 @@ Ashley has decided to **keep Kimi K2.5** rather than switch to GPT-4o-mini. The 
 **Date:** 2026-03-04
 
 After pushing code changes, the team MUST:
+
 1. Monitor CI/CD pipelines for build status
 2. Wait for deployment to preview environment
 3. Run the Visual Smoke Test ceremony before declaring work complete
 
 **Why:** Never stop after pushing — the pipeline and visual verification are part of the definition of done. (Related: Decision 15 — Visual Smoke Test ceremony gate)
-
 
 ---
 
@@ -2116,16 +2127,16 @@ After pushing code changes, the team MUST:
 
 ### ✅ Correct
 
-| Change | Assessment |
-|--------|-----------|
-| `extra_body={"thinking": {"type": "disabled"}}` at line 226 | Correct placement — OpenAI SDK passes `extra_body` into HTTP request body |
-| `response_format={"type": "json_object"}` at line 225 | Safe with thinking disabled — no reasoning tokens to corrupt structured output |
-| Timeout fix (was hardcoded 300s, now `float(timeout)`) | No regression — all call paths propagate caller timeout; connect stays at 10s |
-| `_MAX_TOKENS = 4000` | Sufficient — 7 recipes produce ~2200 tokens, 1.8x headroom, only 4K of 20K TPM |
-| `GENERATION_TIMEOUT = 60` (was 300) | Good — with thinking disabled, 5-15s expected, 60s gives 4-12x headroom |
-| `MAX_RETRIES = 2` (was 3) | Safe — faster responses + json_object mode reduces failures; 2 retries adequate |
-| 5s pacing sleep between multi-meal calls | Safe — 4K max_tokens means each request reserves 20% of TPM; 5s recovery is conservative |
-| `max(rate_limit_wait, 15 * attempt)` backoff | Safe — attempt 2 gets 30s minimum; rate_limit_wait from server overrides upward |
+| Change                                                      | Assessment                                                                               |
+| ----------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `extra_body={"thinking": {"type": "disabled"}}` at line 226 | Correct placement — OpenAI SDK passes `extra_body` into HTTP request body                |
+| `response_format={"type": "json_object"}` at line 225       | Safe with thinking disabled — no reasoning tokens to corrupt structured output           |
+| Timeout fix (was hardcoded 300s, now `float(timeout)`)      | No regression — all call paths propagate caller timeout; connect stays at 10s            |
+| `_MAX_TOKENS = 4000`                                        | Sufficient — 7 recipes produce ~2200 tokens, 1.8x headroom, only 4K of 20K TPM           |
+| `GENERATION_TIMEOUT = 60` (was 300)                         | Good — with thinking disabled, 5-15s expected, 60s gives 4-12x headroom                  |
+| `MAX_RETRIES = 2` (was 3)                                   | Safe — faster responses + json_object mode reduces failures; 2 retries adequate          |
+| 5s pacing sleep between multi-meal calls                    | Safe — 4K max_tokens means each request reserves 20% of TPM; 5s recovery is conservative |
+| `max(rate_limit_wait, 15 * attempt)` backoff                | Safe — attempt 2 gets 30s minimum; rate_limit_wait from server overrides upward          |
 
 ### 🔧 Fixed
 
@@ -2136,11 +2147,13 @@ After pushing code changes, the team MUST:
 **The critical risk:** `extra_body={"thinking": {"type": "disabled"}}` is MoonshotAI-native. Azure AI Foundry proxy may strip or ignore it.
 
 **If thinking is NOT disabled:**
+
 - Reasoning tokens consume part of the 4000 max_tokens budget
 - 7-recipe output (~2200) + reasoning (~1000-3000) likely exceeds 4000
 - Result: truncated JSON, `finish_reason="length"`
 
 **Existing safety net (adequate for now):**
+
 1. `_extract_json(raw_response, truncated=(finish_reason == "length"))` detects truncation
 2. `_recover_truncated_json()` closes incomplete JSON structures to salvage partial results
 3. Logging at line 249-254 warns on `finish_reason="length"`
@@ -2152,8 +2165,6 @@ Add a diagnostic check after first successful Azure response: if `choice.message
 ## Decision
 
 Accept as-is. The truncation recovery + retry loop provides adequate fallback. Monitor `finish_reason="length"` warnings in production logs after deployment. If truncation rate exceeds 10%, escalate to Tier 2 (increase max_tokens to 6000 or add reasoning_content detection).
-
-
 
 ---
 
@@ -2171,6 +2182,7 @@ Ashley requested a reliable, safe way to scale Kimi K2.5 deployment capacity on 
 ## Decision
 
 **Create `scripts/scale-kimi-k25.sh`** — A production-grade Azure CLI automation script with:
+
 - **Dry-run by default** (no execute without explicit `--execute` flag)
 - **Pre-flight validation** (az login, resource group, AI account, deployment existence)
 - **Post-flight verification** (query and confirm new capacity)
@@ -2187,6 +2199,7 @@ Ashley requested a reliable, safe way to scale Kimi K2.5 deployment capacity on 
 ## Technical Details
 
 ### Capacity Scaling Model
+
 - **Current:** Capacity 1 = ~20K TPM
 - **Target:** Capacity 4 = ~80K TPM (4x throughput)
 - **Cost impact:** None (PAYGO token pricing unchanged; only throughput changes)
@@ -2194,6 +2207,7 @@ Ashley requested a reliable, safe way to scale Kimi K2.5 deployment capacity on 
 - **Code changes required:** None (worker pods continue using same credentials)
 
 ### Azure CLI Command
+
 ```bash
 az cognitiveservices account deployment create \
   --name aif-pai-dev-eus \
@@ -2211,6 +2225,7 @@ az cognitiveservices account deployment create \
 ### Script Behavior
 
 #### Dry-Run (Default)
+
 ```bash
 ./scripts/scale-kimi-k25.sh
 # Outputs:
@@ -2221,6 +2236,7 @@ az cognitiveservices account deployment create \
 ```
 
 #### Execute
+
 ```bash
 ./scripts/scale-kimi-k25.sh --execute
 # Runs the actual `az cognitiveservices account deployment create`
@@ -2230,21 +2246,21 @@ az cognitiveservices account deployment create \
 
 ## Alternatives Considered
 
-| Approach | Pros | Cons |
-|----------|------|------|
-| Manual Portal clicks | No automation risk | Manual, error-prone, not auditable |
-| Terraform module | IaC gold standard | Requires shared-infra code change, slower review |
-| **Automated script (chosen)** | Fast, transparent, version-controlled | Still requires human approval (--execute) |
-| GitHub Actions workflow | Fully automated | Overkill for one-time scaling task |
+| Approach                      | Pros                                  | Cons                                             |
+| ----------------------------- | ------------------------------------- | ------------------------------------------------ |
+| Manual Portal clicks          | No automation risk                    | Manual, error-prone, not auditable               |
+| Terraform module              | IaC gold standard                     | Requires shared-infra code change, slower review |
+| **Automated script (chosen)** | Fast, transparent, version-controlled | Still requires human approval (--execute)        |
+| GitHub Actions workflow       | Fully automated                       | Overkill for one-time scaling task               |
 
 ## Risks & Mitigations
 
-| Risk | Mitigation |
-|------|-----------|
-| Script runs without approval | Dry-run default requires explicit `--execute` flag |
-| Azure state changes unexpectedly | Pre-flight checks validate assumptions |
-| Capacity scaling fails silently | Post-flight verification queries Azure state |
-| User uncertain about impact | Comments explain TPM/cost mapping, expected downtime |
+| Risk                             | Mitigation                                           |
+| -------------------------------- | ---------------------------------------------------- |
+| Script runs without approval     | Dry-run default requires explicit `--execute` flag   |
+| Azure state changes unexpectedly | Pre-flight checks validate assumptions               |
+| Capacity scaling fails silently  | Post-flight verification queries Azure state         |
+| User uncertain about impact      | Comments explain TPM/cost mapping, expected downtime |
 
 ## Next Steps
 
@@ -2265,14 +2281,13 @@ az cognitiveservices account deployment create \
 - Post-flight verification confirms success
 - Dry-run default enables manual approval
 
-
 ---
 
 # Decision: asyncio.to_thread() is required for parallel LLM call execution
 
 **Author:** Ripley  
 **Date:** 2026-03-09  
-**Branch:** 005-grocery-enhancements  
+**Branch:** 005-grocery-enhancements
 
 ## Context
 
@@ -2307,4 +2322,3 @@ are in flight — doing so would block the event loop and defeat the parallelism
 
 Any future addition of a second async call site that invokes `call_llm()` MUST also
 use `asyncio.to_thread()` or an async HTTP client equivalent.
-

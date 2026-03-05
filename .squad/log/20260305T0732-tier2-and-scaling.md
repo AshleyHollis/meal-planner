@@ -115,15 +115,18 @@ Both agents worked in parallel and coordinated changes. All work committed to 00
 ## Deployment Readiness
 
 ### Code Changes (Ready)
+
 - Ripley's async implementation on `005-grocery-enhancements`
 - Tests passing
 - Code review complete
 
 ### Infrastructure (Ready for Manual Execution)
+
 - Parker's script ready; runs in dry-run mode by default
 - **Next step:** Execute `./scripts/scale-kimi-k25.sh --execute` when production scaling window opens
 
 ### Monitoring Requirements (Pending)
+
 - Watch production logs for `finish_reason="length"` (potential token truncation)
 - Monitor rate-limit exceptions during parallel meal generation
 - Track latency improvements on multi-meal requests
@@ -133,6 +136,7 @@ Both agents worked in parallel and coordinated changes. All work committed to 00
 ## Session Summary
 
 **Tier 2 release on track.** Both code and infrastructure changes complete and tested. Safe to deploy once:
+
 1. Visual Smoke Test ceremony passes (per User Directive: CI/CD Pipeline & Visual Smoke Test Compliance)
 2. Capacity scaling executed on-demand (Parker's script ready, dry-run verified)
 3. Production monitoring configured (log aggregation for rate limits, truncation, latency)

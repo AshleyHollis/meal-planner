@@ -22,11 +22,13 @@ The breakthrough insight: Kimi K2.5's API exposes a `thinking` parameter that di
 ## Critical Finding
 
 **Kimi K2.5 thinking mode can be disabled via:**
+
 ```python
 extra_body={"thinking": {"type": "disabled"}}
 ```
 
 This is the primary performance lever. With thinking disabled:
+
 - **Latency drops:** 30-120s → 5-15s per single dinner
 - **Token footprint:** 10,000 → 4,000 TPM per request
 - **JSON corruption eliminated:** Invisible thinking tokens no longer interfere with output
@@ -37,6 +39,7 @@ This is the primary performance lever. With thinking disabled:
 ## Implementation Tiers
 
 ### Tier 1: Quick Wins (Thinking Disabled + Token Reduction)
+
 - **Changes:** 4 modifications in llm_client.py + generator.py
 - **Risk:** Low
 - **Time:** ~2 hours (code) + 30 min PoC
@@ -44,12 +47,14 @@ This is the primary performance lever. With thinking disabled:
 - **Files:** `llm_client.py` (3 changes), `generator.py` (2 changes)
 
 **Changes:**
+
 1. Add `extra_body={"thinking": {"type": "disabled"}}` to API call
 2. Reduce `_MAX_TOKENS` from 10,000 to 4,000
 3. Reduce HTTP timeout from 300s to 60s
 4. Reduce retry backoff: `60 * attempt` → `15 * attempt`
 
 ### Tier 2: Parallelism (Multi-Meal Concurrent Generation)
+
 - **Changes:** `asyncio.gather` + semaphore in generator.py
 - **Risk:** Medium (rate limit behavior needs monitoring)
 - **Time:** ~1-2 hours
@@ -57,11 +62,13 @@ This is the primary performance lever. With thinking disabled:
 - **Prerequisite:** Tier 1 must be deployed first
 
 **Changes:**
+
 1. Convert `call_llm()` to async (asyncio.to_thread or full async rewrite)
 2. Replace sequential loop with `asyncio.gather` (max 2 concurrent)
 3. Remove 65s sleep (handled by parallelism)
 
 ### Tier 3: Polish (Optional)
+
 - Reduce MAX_RETRIES: 3 → 2
 - Simplify `_extract_json()` cleanup (only if json_object mode works)
 - Test `response_format=json_object` with thinking disabled
@@ -72,6 +79,7 @@ This is the primary performance lever. With thinking disabled:
 ## Infrastructure Changes (Parker)
 
 ### Phase 1: Immediate (Capacity Scaling)
+
 - Increase Azure deployment capacity: 1 → 4
 - **Impact:** 4x throughput (20K → 80K TPM estimated)
 - **Cost:** No increase (per-token pricing unchanged)
@@ -79,11 +87,13 @@ This is the primary performance lever. With thinking disabled:
 - **Benefit:** Supports Tier 2 parallelism with headroom
 
 ### Phase 2: Quota Monitoring
+
 - Monitor utilization in Azure portal
 - If hitting 80%+: auto-promotion triggers (2-4 week timeline)
 - Alternatively: proactive request to 120K TPM (1-2 business days)
 
 ### Phase 3: Long-term (PTU Evaluation)
+
 - Only if sustained >500K tokens/day
 - Break-even: ~1M tokens/day
 - Savings: 96% vs. PAYGO at enterprise scale
@@ -93,26 +103,26 @@ This is the primary performance lever. With thinking disabled:
 
 ## Risk Assessment
 
-| Risk | Severity | Mitigation |
-|------|----------|-----------|
-| `extra_body` parameter unsupported by Azure proxy | High | Immediate PoC test; fallback to `reasoning_effort: "low"` or token starvation |
-| JSON corruption persists despite thinking disabled | Medium | PoC phase validates json_object mode works before relying on it |
-| 60s HTTP timeout too tight | Medium | Monitor first week; adjust if Azure throttling causes timeouts |
-| Parallel calls trigger burst throttling | Medium | 2-5s stagger + semaphore (max 2) keep blast radius manageable |
-| Capacity scaling downtime | Medium | Schedule during low-traffic window |
+| Risk                                               | Severity | Mitigation                                                                    |
+| -------------------------------------------------- | -------- | ----------------------------------------------------------------------------- |
+| `extra_body` parameter unsupported by Azure proxy  | High     | Immediate PoC test; fallback to `reasoning_effort: "low"` or token starvation |
+| JSON corruption persists despite thinking disabled | Medium   | PoC phase validates json_object mode works before relying on it               |
+| 60s HTTP timeout too tight                         | Medium   | Monitor first week; adjust if Azure throttling causes timeouts                |
+| Parallel calls trigger burst throttling            | Medium   | 2-5s stagger + semaphore (max 2) keep blast radius manageable                 |
+| Capacity scaling downtime                          | Medium   | Schedule during low-traffic window                                            |
 
 ---
 
 ## Expected Performance
 
-| Metric | Before | Tier 1 | Tier 2 |
-|--------|--------|--------|--------|
-| Single dinner (7 recipes) | 30-120s | 10-25s | 8-20s |
-| 3 meal types (21 recipes) | 4-10 min | 20-50s | 10-25s |
-| p95 latency | >120s ❌ | ~25s ✅ | ~15s ✅ |
-| JSON parse success | ~80% | ~95% | ~99% |
-| Cost per dinner | $0.06-0.10 | $0.03-0.05 | $0.03-0.05 |
-| **NFR-01 Met** | ❌ | ✅ | ✅ |
+| Metric                    | Before     | Tier 1     | Tier 2     |
+| ------------------------- | ---------- | ---------- | ---------- |
+| Single dinner (7 recipes) | 30-120s    | 10-25s     | 8-20s      |
+| 3 meal types (21 recipes) | 4-10 min   | 20-50s     | 10-25s     |
+| p95 latency               | >120s ❌   | ~25s ✅    | ~15s ✅    |
+| JSON parse success        | ~80%       | ~95%       | ~99%       |
+| Cost per dinner           | $0.06-0.10 | $0.03-0.05 | $0.03-0.05 |
+| **NFR-01 Met**            | ❌         | ✅         | ✅         |
 
 ---
 

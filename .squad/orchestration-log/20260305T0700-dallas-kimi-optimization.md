@@ -13,6 +13,7 @@
 **Task:** Define comprehensive optimization strategy for Kimi K2.5 to meet NFR-01 (p95 < 30s for meal plan generation).
 
 **Context:**
+
 - Ashley decided to keep Kimi K2.5 instead of switching to GPT-4o-mini
 - Performance bottleneck: Kimi's invisible "thinking mode" consumes 25-110s of latency per request
 - Goal: Achieve <30s single-dinner generation and <45s for 3-meal-type generation without model switch
@@ -49,13 +50,13 @@
 
 ## Risk Assessment
 
-| Risk | Severity | Likelihood | Mitigation |
-|------|----------|------------|-----------|
-| Quality degradation with thinking off | Medium | Low-Medium | PoC phase validates before shipping |
-| `extra_body` parameter unsupported | High | Low-Medium | Test immediately in PoC; fallback to `reasoning_effort: "low"` |
-| Azure rate-limit behavior change | Medium | Low | PoC monitors actual TPM consumption |
-| Parallel calls trigger burst throttling | Medium | Medium | 2-5s stagger between parallel requests |
-| 60s HTTP timeout too tight | Medium | Medium | Monitor first week for timeout exceptions |
+| Risk                                    | Severity | Likelihood | Mitigation                                                     |
+| --------------------------------------- | -------- | ---------- | -------------------------------------------------------------- |
+| Quality degradation with thinking off   | Medium   | Low-Medium | PoC phase validates before shipping                            |
+| `extra_body` parameter unsupported      | High     | Low-Medium | Test immediately in PoC; fallback to `reasoning_effort: "low"` |
+| Azure rate-limit behavior change        | Medium   | Low        | PoC monitors actual TPM consumption                            |
+| Parallel calls trigger burst throttling | Medium   | Medium     | 2-5s stagger between parallel requests                         |
+| 60s HTTP timeout too tight              | Medium   | Medium     | Monitor first week for timeout exceptions                      |
 
 ---
 
