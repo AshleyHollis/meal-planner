@@ -651,6 +651,7 @@ jobs:
             echo "AUTH0_USER_TEST_PASSWORD=$AUTH0_USER_PASSWORD" >> $GITHUB_ENV
 
       - name: Ensure Auth0 connection enabled for preview app
+        continue-on-error: true
         uses: azure/CLI@v2
         env:
           AUTH0_MGMT_DOMAIN: ${{ secrets.AUTH0_DOMAIN }}
@@ -683,16 +684,23 @@ jobs:
             echo "Auth0 Management API token obtained"
 
             # Look up Username-Password-Authentication connection
+            # Auth0 v2 API may return array directly or paginated object with .connections key
             CONN_RESPONSE=$(curl -s --request GET \
               --url "https://${AUTH0_MGMT_DOMAIN}/api/v2/connections?name=Username-Password-Authentication&fields=id,enabled_clients" \
               --header "authorization: Bearer ${TOKEN}")
             echo "Connection lookup response length: ${#CONN_RESPONSE}"
 
-            CONNECTION_ID=$(echo "$CONN_RESPONSE" | jq -r '.[0].id // empty')
+            # Handle both array and object response formats
+            CONNECTION_ID=$(echo "$CONN_RESPONSE" | jq -r '
+              if type == "array" then .[0].id // empty
+              elif .connections then .connections[0].id // empty
+              elif .id then .id
+              else empty end')
 
             if [[ -z "$CONNECTION_ID" ]]; then
               echo "::warning::Could not find Username-Password-Authentication connection"
-              echo "Response: ${CONN_RESPONSE:0:500}"
+              echo "Response type: $(echo "$CONN_RESPONSE" | jq -r 'type')"
+              echo "Response keys: $(echo "$CONN_RESPONSE" | jq -r 'if type == "object" then keys | join(",") else "array[\(length)]" end')"
               exit 0
             fi
             echo "Found connection: ${CONNECTION_ID}"
