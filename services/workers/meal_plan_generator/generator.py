@@ -449,10 +449,10 @@ async def _generate_with_retries(
             rate_limit_wait = 0  # reset after using it
 
         try:
-            raw_response = call_llm(current_prompt)
+            raw_response, finish_reason = call_llm(current_prompt)
 
-            # Extract and repair JSON
-            cleaned = _extract_json(raw_response)
+            # Extract and repair JSON (with truncation recovery if needed)
+            cleaned = _extract_json(raw_response, truncated=(finish_reason == "length"))
 
             # Parse with Pydantic
             plan = GeneratedMealPlan.model_validate_json(cleaned)
@@ -520,11 +520,68 @@ def _parse_retry_after(exc: Exception) -> int:
     return 0
 
 
-def _extract_json(text: str) -> str:
+def _recover_truncated_json(text: str) -> str:
+    """Recover a truncated JSON response by closing incomplete structures.
+
+    When finish_reason=length, the JSON is cut mid-stream. Strategy:
+    1. Find the last complete recipe object (last '}' before a ',')
+    2. Close the recipes array and root object
+    3. Return valid (partial) JSON with however many complete recipes we got.
+    """
+    import json
+
+    # Try parsing as-is first
+    try:
+        json.loads(text)
+        return text
+    except (json.JSONDecodeError, ValueError):
+        pass
+
+    # Find the last complete recipe by looking for pattern: }, { or }, ]
+    # Walk backwards to find a valid closing point
+    last_complete = -1
+    depth = 0
+    in_string = False
+    escape = False
+    for i, ch in enumerate(text):
+        if escape:
+            escape = False
+            continue
+        if ch == "\\":
+            escape = True
+            continue
+        if ch == '"' and not escape:
+            in_string = not in_string
+            continue
+        if in_string:
+            continue
+        if ch == "{":
+            depth += 1
+        elif ch == "}":
+            depth -= 1
+            if depth == 1:
+                # This closes a recipe object (depth goes from 2 to 1)
+                last_complete = i
+
+    if last_complete > 0:
+        recovered = text[: last_complete + 1] + "]}"
+        try:
+            data = json.loads(recovered)
+            recipe_count = len(data.get("recipes", []))
+            logger.info("json_truncation_recovered", recipes_recovered=recipe_count)
+            return recovered
+        except (json.JSONDecodeError, ValueError):
+            pass
+
+    return text
+
+
+def _extract_json(text: str, *, truncated: bool = False) -> str:
     """Extract and repair JSON from LLM response.
 
     Handles: markdown fences, thinking blocks, non-JSON text wrapping,
-    and Kimi K2.5's tendency to serialize arrays as string values.
+    Kimi K2.5's tendency to serialize arrays as string values, and
+    truncated JSON when max_tokens is hit (finish_reason=length).
     """
     import json
     import re
@@ -548,6 +605,10 @@ def _extract_json(text: str) -> str:
     brace_end = stripped.rfind("}")
     if brace_end >= 0 and brace_end < len(stripped) - 1:
         stripped = stripped[: brace_end + 1]
+
+    # Truncation recovery: close incomplete JSON arrays/objects
+    if truncated:
+        stripped = _recover_truncated_json(stripped)
 
     # Repair known issue: recipes/suggestions double-serialized as string
     try:

@@ -64,7 +64,7 @@ def _resolve_model(provider: str) -> str:
     return settings.llm.model or _MODELS.get(provider, _MODELS["openai"])
 
 
-def call_llm(prompt: str, timeout: int = GENERATION_TIMEOUT) -> str:
+def call_llm(prompt: str, timeout: int = GENERATION_TIMEOUT) -> tuple[str, str | None]:
     """Call the configured LLM provider and return the response text.
 
     Args:
@@ -72,7 +72,9 @@ def call_llm(prompt: str, timeout: int = GENERATION_TIMEOUT) -> str:
         timeout: Request timeout in seconds (default: GENERATION_TIMEOUT).
 
     Returns:
-        The LLM response text.
+        Tuple of (response_text, finish_reason). finish_reason is "length"
+        when output was truncated at max_tokens, "stop" for normal completion,
+        or None when the provider doesn't report it.
 
     Raises:
         ValueError: If the configured provider is not supported.
@@ -111,7 +113,7 @@ def call_llm(prompt: str, timeout: int = GENERATION_TIMEOUT) -> str:
     return result
 
 
-def _call_anthropic(prompt: str, api_key: str, timeout: int, temperature: float) -> str:
+def _call_anthropic(prompt: str, api_key: str, timeout: int, temperature: float) -> tuple[str, str | None]:
     """Call Anthropic Claude API with system/user separation."""
     import anthropic
 
@@ -125,6 +127,7 @@ def _call_anthropic(prompt: str, api_key: str, timeout: int, temperature: float)
         messages=[{"role": "user", "content": prompt}],
     )
     text = response.content[0].text
+    finish_reason = response.stop_reason  # "end_turn" or "max_tokens"
 
     input_tokens = response.usage.input_tokens
     output_tokens = response.usage.output_tokens
@@ -137,10 +140,10 @@ def _call_anthropic(prompt: str, api_key: str, timeout: int, temperature: float)
         output_tokens=output_tokens,
         cost_usd=round(cost, 6),
     )
-    return text
+    return text, "length" if finish_reason == "max_tokens" else finish_reason
 
 
-def _call_openai(prompt: str, api_key: str, timeout: int, temperature: float) -> str:
+def _call_openai(prompt: str, api_key: str, timeout: int, temperature: float) -> tuple[str, str | None]:
     """Call OpenAI GPT API with JSON mode and system/user separation."""
     import openai
 
@@ -157,6 +160,7 @@ def _call_openai(prompt: str, api_key: str, timeout: int, temperature: float) ->
         ],
     )
     text = response.choices[0].message.content or ""
+    finish_reason = response.choices[0].finish_reason
 
     usage = response.usage
     input_tokens = usage.prompt_tokens if usage else 0
@@ -170,10 +174,10 @@ def _call_openai(prompt: str, api_key: str, timeout: int, temperature: float) ->
         output_tokens=output_tokens,
         cost_usd=round(cost, 6),
     )
-    return text
+    return text, finish_reason
 
 
-def _call_azure_openai(prompt: str, settings: object, timeout: int, temperature: float) -> str:
+def _call_azure_openai(prompt: str, settings: object, timeout: int, temperature: float) -> tuple[str, str | None]:
     """Call Azure OpenAI API with JSON mode and system/user separation."""
     import httpx
     import openai
@@ -242,4 +246,4 @@ def _call_azure_openai(prompt: str, settings: object, timeout: int, temperature:
             output_tokens=output_tokens,
             max_tokens=_MAX_TOKENS,
         )
-    return text
+    return text, finish_reason
