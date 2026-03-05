@@ -28,7 +28,7 @@ from ..models.meal_plan import (
 logger = get_logger(__name__)
 
 # LLM defaults for cook-time adaptation
-_ADAPT_TIMEOUT = 10
+_ADAPT_TIMEOUT = 120
 _ADAPT_MAX_TOKENS = 2048
 _MODELS = {
     "anthropic": "claude-sonnet-4-20250514",
@@ -552,11 +552,12 @@ def _call_llm(prompt: str) -> str:
             model=deployment,
             max_tokens=_ADAPT_MAX_TOKENS,
             temperature=temperature,
-            response_format={"type": "json_object"},
+            # NOTE: Do NOT use response_format=json_object with reasoning models
+            # like Kimi K2.5 — their invisible thinking tokens corrupt the JSON.
             messages=[
                 {
                     "role": "system",
-                    "content": "You are a recipe adaptation assistant. Respond ONLY with valid JSON.",
+                    "content": "You are a recipe adaptation assistant. Respond ONLY with valid JSON. No markdown, no explanation.",
                 },
                 {"role": "user", "content": prompt},
             ],
