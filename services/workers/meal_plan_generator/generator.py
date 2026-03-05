@@ -434,16 +434,19 @@ async def _generate_with_retries(
 
     current_prompt = prompt
     last_errors: list[str] = []
+    rate_limit_wait = 0  # seconds to wait from retry-after header
 
     for attempt in range(1, MAX_RETRIES + 1):
         logger.info("llm_attempt", attempt=attempt, max_retries=MAX_RETRIES)
 
         # Wait before retry (not before first attempt) to let rate limits reset.
-        # Must wait at least 60s for the full token-bucket window to reset.
+        # Azure charges tokens at request completion time, so after a long-running
+        # request we need a full 60s+ window before the next one.
         if attempt > 1:
-            wait_secs = 60 * attempt
+            wait_secs = max(rate_limit_wait, 60 * attempt)
             logger.info("retry_backoff", wait_seconds=wait_secs, attempt=attempt)
             await asyncio.sleep(wait_secs)
+            rate_limit_wait = 0  # reset after using it
 
         try:
             raw_response = call_llm(current_prompt)
@@ -477,6 +480,14 @@ async def _generate_with_retries(
             current_prompt = add_error_feedback(prompt, errors)
 
         except Exception as exc:
+            # Parse retry-after from rate limit errors for smarter backoff
+            exc_str = str(exc)
+            if "429" in exc_str or "RateLimitReached" in exc_str:
+                retry_after = _parse_retry_after(exc)
+                if retry_after > 0:
+                    rate_limit_wait = retry_after
+                    logger.info("rate_limit_retry_after", seconds=retry_after)
+
             # Log raw response preview for debugging parse/validation failures
             raw_preview = None
             with contextlib.suppress(NameError):
@@ -484,14 +495,29 @@ async def _generate_with_retries(
             logger.warning(
                 "llm_call_error",
                 attempt=attempt,
-                error=str(exc),
+                error=exc_str,
                 raw_response_preview=raw_preview,
             )
-            last_errors = [str(exc)]
-            current_prompt = add_error_feedback(prompt, str(exc))
+            last_errors = [exc_str]
+            current_prompt = add_error_feedback(prompt, exc_str)
 
     msg = f"Failed after {MAX_RETRIES} attempts. Last errors: {'; '.join(last_errors)}"
     raise ValueError(msg)
+
+
+def _parse_retry_after(exc: Exception) -> int:
+    """Extract retry-after seconds from a rate limit exception."""
+    # OpenAI SDK stores response headers on the exception
+    response = getattr(exc, "response", None)
+    if response is not None:
+        headers = getattr(response, "headers", {})
+        retry_after = headers.get("retry-after") or headers.get("Retry-After")
+        if retry_after:
+            try:
+                return int(float(retry_after)) + 5  # add 5s safety margin
+            except (ValueError, TypeError):
+                pass
+    return 0
 
 
 def _extract_json(text: str) -> str:

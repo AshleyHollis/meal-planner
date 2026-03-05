@@ -209,7 +209,10 @@ def _call_azure_openai(prompt: str, settings: object, timeout: int, temperature:
         model=deployment,
         max_tokens=_MAX_TOKENS,
         temperature=temperature,
-        response_format={"type": "json_object"},
+        # NOTE: Do NOT use response_format=json_object with reasoning models
+        # like Kimi K2.5 — their invisible thinking tokens corrupt the JSON,
+        # producing garbage like {"recipes":":[{",":":":",",":":":", ...}.
+        # Instead, rely on prompt instructions + _extract_json() post-processing.
         messages=[
             {"role": "system", "content": _JSON_SYSTEM_INSTRUCTION},
             {"role": "user", "content": prompt},
