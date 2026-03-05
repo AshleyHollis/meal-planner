@@ -1942,3 +1942,125 @@ All 104 tests pass, TypeScript clean.
 - DELETE /api/v1/meal-plans/{plan_id}/substitutions/{substitution_id} — undo
 
 **Notes:** All tests use graceful skip logic with clear messages. No TypeScript errors. No impact on existing test suite.
+
+## Session 2026-03-05 Kimi K2.5 Optimization Strategy
+
+**Status:** Completed & Merged from Inbox  
+**Agents:** Dallas (Lead), Ripley (Backend), Parker (DevOps)  
+**Decision:** Keep Kimi K2.5. Optimize with thinking-disabled mode + parallelism.
+
+### Strategic Decision
+
+Ashley has decided to **keep Kimi K2.5** rather than switch to GPT-4o-mini. The team designed a comprehensive three-tier optimization strategy to bring meal plan generation latency from 30-120s to 5-15s (Tier 1) and 8-20s for 3-meal-type generation (Tier 2), meeting NFR-01 (p95 < 30s).
+
+### Key Insight: Thinking Mode Disable
+
+**Kimi K2.5's primary bottleneck is invisible reasoning tokens.** The model exposes a 	hinking parameter via xtra_body={"thinking": {"type": "disabled"}} that eliminates chain-of-thought overhead entirely. This is a 10-100x latency win with minimal code change.
+
+### Tier 1: Quick Wins (Thinking Disabled + Token Reduction)
+
+**Changes:** 5 modifications across llm_client.py and generator.py  
+**Risk:** Low  
+**Time:** ~2 hours (code + PoC)  
+**Impact:** Single dinner: 30-120s → 10-25s | 3 meal types: 4-10 min → 20-50s
+
+1. Add xtra_body={"thinking": {"type": "disabled"}} to Azure OpenAI API call
+2. Reduce _MAX_TOKENS from 10,000 to 4,000 (matches actual output size)
+3. Reduce HTTP timeout from 300s to 60s (wire timeout parameter through)
+4. Reduce retry backoff from 60 * attempt to 15 * attempt
+5. Reduce MAX_RETRIES from 3 to 2 (fewer retries needed with stable thinking-disabled mode)
+
+**PoC validation required:**
+- Run 5 generations with thinking disabled
+- Confirm: p50 latency < 15s, JSON validity, no quality regression
+- Test: esponse_format=json_object with thinking disabled (may eliminate JSON corruption)
+
+### Tier 2: Parallelism (Multi-Meal Concurrent Generation)
+
+**Changes:** Async LLM client + asyncio.gather with semaphore  
+**Risk:** Medium (rate limit behavior needs monitoring)  
+**Time:** ~1-2 hours  
+**Impact:** 3 meal types: 4-10 min → 8-20s (parallel generation)  
+**Prerequisite:** Tier 1 must be deployed first
+
+1. Convert call_llm() to async using syncio.to_thread() or full AsyncAzureOpenAI rewrite
+2. Replace sequential meal generation loop (120-156 in generator.py) with syncio.gather + semaphore (max 2 concurrent)
+3. Remove 65s inter-meal sleep (handled by parallelism with 2s stagger)
+
+**Why this works:** Tier 1 reduces per-call TPM footprint to 4,000. Three parallel calls = 12,000 TPM (60% of 20K TPM budget), with 2-5s stagger to avoid burst throttling.
+
+### Tier 3: Polish (Optional)
+
+- Simplify _extract_json() cleanup code (only if json_object mode PoC passes)
+- Test esponse_format=json_object with thinking disabled (may allow removal of JSON repair pipeline)
+
+### Azure Quota & Infrastructure Changes (Parker)
+
+**Phase 1: Immediate**
+- Increase Azure deployment capacity 1 → 4: 4x throughput (no per-token cost increase)
+- Deployment change: --sku-capacity 1 → --sku-capacity 4 (~5 min downtime)
+- Benefit: Provides headroom for Tier 2 parallelism
+
+**Phase 2: Short-term Quota Monitoring**
+- Monitor utilization in Azure portal
+- If hitting 80%+: Azure auto-promotes to next tier (2-4 week timeline)
+- Alternatively: manual quota increase request to 40K-120K TPM (1-2 business days via portal)
+
+**Phase 3: PTU Evaluation (post-MVP)**
+- Only if sustained >500K tokens/day
+- Break-even threshold: ~1M tokens/day
+- At enterprise scale (1M+/day): 96% cost savings vs. PAYGO (/year PAYGO → .6K/year PTU)
+
+### Expected Performance Outcomes
+
+| Metric | Before (Thinking ON) | After Tier 1 | After Tier 2 |
+|--------|----------------------|--------------|--------------|
+| Single dinner (7 recipes) | 30-120s | 10-25s | 8-20s |
+| 3 meal types (21 recipes) | 4-10 min | 20-50s | 10-25s |
+| p95 latency | >120s ❌ | ~25s ✅ | ~15s ✅ |
+| JSON parse success | ~80% | ~95% | ~99% (with json_object) |
+| Cost per dinner | .06-0.10 | .03-0.05 | .03-0.05 |
+| **NFR-01 Compliance** | ❌ | ✅ | ✅ |
+
+### Risk Assessment
+
+| Risk | Severity | Mitigation |
+|------|----------|-----------|
+| xtra_body parameter unsupported by Azure proxy | High | PoC test immediately; fallback to easoning_effort: "low" or token starvation |
+| 60s HTTP timeout too tight during throttling | Medium | Monitor first week for timeout exceptions; adjust if needed |
+| Parallel calls trigger burst throttling | Medium | 2s stagger + semaphore (max 2) keeps blast radius manageable |
+| json_object mode still corrupts with thinking disabled | Medium | PoC phase validates before shipping; keep _extract_json() as safety net |
+
+### Implementation Priority
+
+1. **Tier 1 (thinking disabled + 4K tokens):** DO FIRST — Highest impact, lowest risk, smallest change (~20 lines)
+2. **Tier 2 (parallel generation):** DO SECOND — High impact for multi-meal, medium risk, needs monitoring
+3. **Tier 3 (streaming + polish):** DO IF NEEDED — Only pursue if Tier 2 doesn't meet NFR-01
+
+### Next Steps
+
+1. Ripley: Implement Tier 1 code changes
+2. Ripley: Run PoC (5 generations, validate thinking disabled works)
+3. Ripley: Test json_object mode (if PoC passes)
+4. Parker: Increase Azure capacity 1 → 4
+5. Ripley: Implement Tier 2 parallelism
+6. Team: Monitor production logs (rate limits, timeouts, latency, quality)
+
+### References
+
+- **Dallas Decision:** dallas-kimi-k25-optimization-strategy.md (432 lines, full architecture + risk assessment)
+- **Ripley Decision:** ipley-kimi-k25-code-changes.md (417 lines, exact code changes + implementation order)
+- **Parker Decision:** parker-kimi-k25-quota-optimization.md (524 lines, Azure quota + deployment scripts)
+
+### User Directive: CI/CD Pipeline & Visual Smoke Test Compliance
+
+**Author:** Ashley Hollis (via Copilot)  
+**Date:** 2026-03-04
+
+After pushing code changes, the team MUST:
+1. Monitor CI/CD pipelines for build status
+2. Wait for deployment to preview environment
+3. Run the Visual Smoke Test ceremony before declaring work complete
+
+**Why:** Never stop after pushing — the pipeline and visual verification are part of the definition of done. (Related: Decision 15 — Visual Smoke Test ceremony gate)
+

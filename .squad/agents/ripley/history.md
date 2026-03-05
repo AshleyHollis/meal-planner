@@ -347,3 +347,19 @@
 - Mirrors the worker \_persist_plan() pattern exactly.
 
 - **Test results:** 193 API tests pass, ruff clean. No schema migrations needed.
+
+
+### Kimi K2.5 Optimization — Code Change Analysis (2026-03-09)
+
+- **Branch:** 005-grocery-enhancements
+- **Scope:** Analyze exact code changes to optimize Kimi K2.5 performance without switching models. Decision written to .squad/decisions/inbox/ripley-kimi-k25-code-changes.md.
+
+## Learnings
+
+- **xtra_body disables thinking tokens:** Kimi K2.5 via Azure AI Foundry supports xtra_body={"thinking": {"type": "disabled"}} in openai.AzureOpenAI.chat.completions.create(). This is the highest-impact single change — eliminates invisible reasoning tokens that burn rate limit budget and corrupt JSON.
+- **_call_azure_openai() ignores the 	imeout parameter:** The function signature accepts 	imeout: int but creates httpx.Client with a hardcoded 300.0 timeout instead of using the parameter. When wiring the timeout reduction (300s → 60s), the fix must use loat(timeout) in httpx.Timeout() to respect the caller's value.
+- **65s multi-meal sleep was calibrated for 10K tokens + Kimi thinking overhead:** With _MAX_TOKENS=4000 and thinking disabled, 5s is sufficient — or eliminate entirely with syncio.gather + semaphore(2).
+- **syncio.to_thread(call_llm, ...) is the safe path to parallel multi-meal generation:** It unblocks the event loop without rewriting the HTTP layer. Full AsyncAzureOpenAI migration is a follow-on after Tier 1 is validated.
+- **Double-serialization repair in _extract_json() is a Kimi thinking-mode artefact:** The {"recipes": "[{...}]"} corruption pattern (string-encoded array) was caused by thinking tokens mixing with the JSON response. Should disappear with thinking disabled. Do not remove repair code until PoC confirms this.
+- **Retry backoff logic:** max(rate_limit_wait, 60 * attempt) correctly uses the Retry-After header when present, but 60s floor is excessive with max_tokens=4000. Drop floor to 15 * attempt — the token bucket refills faster with smaller requests.
+- **JSON mode PoC must precede simplification:** esponse_format={"type": "json_object"} should be tested empirically after thinking is disabled. Azure's proxy layer for Kimi may or may not honour json_object the same way as native GPT-4 models.

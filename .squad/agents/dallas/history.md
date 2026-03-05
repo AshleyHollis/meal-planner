@@ -204,3 +204,26 @@ Review written to `.squad/decisions/inbox/dallas-feature-review.md`.
 **Decision written to:** `.squad/decisions/inbox/dallas-llm-performance-investigation.md`
 
 **Status:** Decision 7 merged into decisions.md (2026-03-05). Cross-agent investigation complete: Ripley (backend bottleneck analysis), Parker (Azure deployment + cost analysis) converge on same recommendation. All three agents confirmed GPT-4o-mini as optimal model swap with minimal code impact.
+
+### 2026-03-09: Kimi K2.5 Optimization Strategy — Thinking Mode Control
+
+**Trigger:** Ashley decided to keep Kimi K2.5 (not switch to GPT-4o-mini). Tasked with creating an optimization strategy.
+
+**Key discovery — `thinking` parameter:** Kimi K2.5's API exposes `{"thinking": {"type": "disabled"}}` which completely eliminates the invisible chain-of-thought reasoning tokens (the 25-110s bottleneck). This is the single biggest optimization lever — it removes the core problem without switching models.
+
+**Additional levers found:**
+- `reasoning_effort`: "low"/"medium"/"high" — controls reasoning intensity
+- `budget_tokens`: caps max tokens used for reasoning (e.g., 1500 for substitution)
+- `max_tokens` is a GLOBAL budget for both reasoning + content — reducing from 10K to 4K cuts TPM reservation by 60%, directly enabling parallelism
+
+**Strategy written (4 tiers):**
+- **Tier 1:** Disable thinking + reduce max_tokens to 4000 → estimated 5-15s per generation (currently 30-120s)
+- **Tier 2:** + parallel multi-meal via asyncio.gather + reduce sleep 65s→2s → 3 meal types in 8-20s (currently 4-10 min)
+- **Tier 3:** + quota increase to 40K TPM + streaming → 6-15s for 3 meal types
+- **Tier 0 baseline:** current state for comparison
+
+**Critical PoC validation needed:** Whether Azure AI Foundry proxy passes `extra_body={"thinking": ...}` through to Kimi K2.5. If not, fallbacks are `reasoning_effort: "low"` (Azure-native) or token starvation (max_tokens=3000).
+
+**Secondary win if thinking disabled:** May re-enable `response_format=json_object` — the JSON corruption documented in `llm_client.py:223-226` was caused by invisible thinking tokens interfering with structured output. No thinking tokens = no corruption = no need for `_extract_json()` post-processing.
+
+**Decision written to:** `.squad/decisions/inbox/dallas-kimi-k25-optimization-strategy.md`
