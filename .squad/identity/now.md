@@ -12,6 +12,15 @@ active_issues:
 
 # ⚠️ COORDINATOR: READ THIS FIRST — NON-NEGOTIABLE
 
+## Session Startup — Discord (do this BEFORE anything else)
+
+1. **Start Discord watcher** (detached): `node "$env:USERPROFILE\.copilot\tools\discordmcp\discord-watcher.cjs" --interval 10`
+2. **Send "session started" notification** to `#meal-planner` (channel `1479061992772997202`) so the user knows this session is live
+3. **Check inbox** for messages sent while offline: read `~/.copilot/tools/discordmcp/inbox.json`
+4. **Throughout the session**: check inbox after every agent batch and before task_complete
+
+## Continuous Execution — NEVER stop between work phases
+
 **NEVER call task_complete or stop between work phases.** After collecting agent results:
 
 1. Identify ALL follow-up work (review, tests, next tier, docs, CI monitoring)
