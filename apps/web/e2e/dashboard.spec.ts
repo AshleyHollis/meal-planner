@@ -213,7 +213,7 @@ test.describe("Dashboard", () => {
       // Wait for loading
       const spinner = page.locator('[class*="animate-spin"]');
       if ((await spinner.count()) > 0) {
-        await expect(spinner.first()).not.toBeVisible({ timeout: 30_000 });
+        await expect(spinner.first()).not.toBeVisible({ timeout: 60_000 });
       }
 
       // Cuisine section should be visible (if implemented on dashboard)
