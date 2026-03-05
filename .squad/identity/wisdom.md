@@ -48,6 +48,12 @@ Reusable patterns and heuristics learned through work. NOT transcripts — each 
 
 **Avoid:** Stopping and waiting for user input between task phases.
 **Why:** Breaks the pipeline. Collect results → launch next wave → report. The user sees continuous progress, not start-stop cycles.
+**Concrete failure (2026-03-05):** During Kimi K2.5 optimization, Coordinator stopped after Tier 1 to ask "Want me to keep going with Tier 2?" — user had already said "implement" which means all tiers. Same thing after review/testing phase — stopped again instead of launching Tier 2 + Parker scaling. User had to prompt twice. This wasted 2 turns.
+**Rule:** "Implement" means implement EVERYTHING in the plan. After each phase completes, immediately launch the next phase. Only call task_complete when ALL phases are done AND tests pass AND code is pushed.
+
+**Avoid:** Calling task_complete prematurely.
+**Why:** The Coordinator marked optimization work "complete" after Tier 1+3, before Tier 2 (parallel generation) or capacity scaling were done. task_complete means the ENTIRE user request is finished — not just the current batch.
+**Rule:** Before calling task_complete, verify: Is there more work in the plan? Are there follow-up items? Is CI green? Is the feature deployed? If any answer is "yes, there's more", DON'T call task_complete.
 
 **Avoid:** Cost-saving model downgrades without explicit user request.
 **Why:** User has explicitly said premium request cost is not a concern. Use the highest-quality models specified in team.md charters. Never downgrade to haiku for code-writing agents.

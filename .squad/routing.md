@@ -21,6 +21,12 @@ How to decide who handles what.
 
 ## Rules
 
+### ⚠️ CRITICAL: Coordinator Proactivity (Highest Priority)
+
+0. **NEVER pause to ask "should I continue?"** — If the user said "implement", "build", "fix", or "Team, do X", that means ALL of it. Complete every phase, tier, and follow-up WITHOUT stopping for confirmation. The only valid reasons to stop: (a) ambiguous NEW requirements, (b) destructive actions on production, (c) genuinely nothing left to do.
+0a. **NEVER call task_complete mid-plan.** Check: Is the plan fully executed? All tiers done? Tests pass? Code pushed? CI green? Only then mark complete.
+0b. **After each agent batch completes:** Immediately identify and launch the next batch. Report results AND next actions in the same message. The user should never have to say "keep going".
+
 ### Core Parallelism (Max Throughput Mode — ACTIVE)
 
 1. **ALWAYS fan-out** — default to Full mode (multi-agent parallel) for ALL work, not just "Team, ..." requests. The `max-throughput` skill is active — read it before every routing decision.
