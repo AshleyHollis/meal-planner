@@ -113,7 +113,9 @@ def call_llm(prompt: str, timeout: int = GENERATION_TIMEOUT) -> tuple[str, str |
     return result
 
 
-def _call_anthropic(prompt: str, api_key: str, timeout: int, temperature: float) -> tuple[str, str | None]:
+def _call_anthropic(
+    prompt: str, api_key: str, timeout: int, temperature: float
+) -> tuple[str, str | None]:
     """Call Anthropic Claude API with system/user separation."""
     import anthropic
 
@@ -143,7 +145,9 @@ def _call_anthropic(prompt: str, api_key: str, timeout: int, temperature: float)
     return text, "length" if finish_reason == "max_tokens" else finish_reason
 
 
-def _call_openai(prompt: str, api_key: str, timeout: int, temperature: float) -> tuple[str, str | None]:
+def _call_openai(
+    prompt: str, api_key: str, timeout: int, temperature: float
+) -> tuple[str, str | None]:
     """Call OpenAI GPT API with JSON mode and system/user separation."""
     import openai
 
@@ -177,7 +181,9 @@ def _call_openai(prompt: str, api_key: str, timeout: int, temperature: float) ->
     return text, finish_reason
 
 
-def _call_azure_openai(prompt: str, settings: object, timeout: int, temperature: float) -> tuple[str, str | None]:
+def _call_azure_openai(
+    prompt: str, settings: object, timeout: int, temperature: float
+) -> tuple[str, str | None]:
     """Call Azure OpenAI API with JSON mode and system/user separation."""
     import httpx
     import openai
