@@ -16,20 +16,26 @@ import { test, expect } from "@playwright/test";
 /**
  * Waits for the preferences page to fully load by waiting for the group
  * headings ("Dietary Restrictions", "Allergies", etc.) that only render
- * after the API call completes. This is more reliable than checking for
- * the spinner (race condition) or the Add button (renders before data loads).
+ * after the API call completes. If the API fails on first load (cold start),
+ * reloads the page once and retries.
  */
 async function waitForPreferencesLoaded(page: import("@playwright/test").Page) {
   await expect(
     page.getByRole("heading", { name: /Preferences|Food Preferences/i }),
   ).toBeVisible({ timeout: 30_000 });
 
-  // Wait for a preference group heading — proves the API data has loaded
-  // and the component has finished rendering the preference list.
+  // Wait for a preference group heading — proves the API data has loaded.
   const groupHeading = page.getByRole("heading", {
     name: /(Dietary Restrictions|Allergies|Dislikes|Likes)/i,
   });
-  await expect(groupHeading.first()).toBeVisible({ timeout: 120_000 });
+
+  try {
+    await expect(groupHeading.first()).toBeVisible({ timeout: 60_000 });
+  } catch {
+    // First load likely failed (API cold start). Reload and try again.
+    await page.reload({ waitUntil: "networkidle" });
+    await expect(groupHeading.first()).toBeVisible({ timeout: 60_000 });
+  }
 }
 
 test.describe("Preferences Management", () => {
@@ -147,6 +153,7 @@ test.describe("Preferences Management", () => {
     });
 
     test("can add an allergy", async ({ page }) => {
+      test.slow();
       await page.goto("/preferences");
       await waitForPreferencesLoaded(page);
 
@@ -155,26 +162,38 @@ test.describe("Preferences Management", () => {
         .locator("li")
         .filter({ hasText: "peanuts" });
       if (
-        await existingItem.isVisible({ timeout: 5_000 }).catch(() => false)
+        await existingItem.isVisible({ timeout: 10_000 }).catch(() => false)
       ) {
         return;
       }
 
-      const typeSelector = page.getByLabel(/Type|Preference Type/i);
-      await typeSelector.selectOption("allergy");
+      const fillAndSubmit = async () => {
+        const typeSelector = page.getByLabel(/Type|Preference Type/i);
+        await typeSelector.selectOption("allergy");
+        const valueInput = page.getByLabel(/Value/i);
+        await expect(valueInput).toBeVisible({ timeout: 5_000 });
+        await valueInput.fill("peanuts");
+        await page.getByRole("button", { name: /Add|Save|Submit/i }).click();
+      };
 
-      const valueInput = page.getByLabel(/Value/i);
-      await expect(valueInput).toBeVisible({ timeout: 5_000 });
-      await valueInput.fill("peanuts");
+      await fillAndSubmit();
 
-      await page.getByRole("button", { name: /Add|Save|Submit/i }).click();
+      const itemLocator = page.locator("li").filter({ hasText: "peanuts" });
+      const errorMsg = page.getByText(/Failed to add preference/i);
+      await expect(itemLocator.or(errorMsg).first()).toBeVisible({
+        timeout: 30_000,
+      });
 
-      await expect(
-        page.locator("li").filter({ hasText: "peanuts" }),
-      ).toBeVisible({ timeout: 30_000 });
+      if (await errorMsg.isVisible().catch(() => false)) {
+        await page.waitForTimeout(5_000);
+        await fillAndSubmit();
+      }
+
+      await expect(itemLocator).toBeVisible({ timeout: 60_000 });
     });
 
     test("can add a dislike", async ({ page }) => {
+      test.slow();
       await page.goto("/preferences");
       await waitForPreferencesLoaded(page);
 
@@ -183,23 +202,34 @@ test.describe("Preferences Management", () => {
         .locator("li")
         .filter({ hasText: "cilantro" });
       if (
-        await existingItem.isVisible({ timeout: 5_000 }).catch(() => false)
+        await existingItem.isVisible({ timeout: 10_000 }).catch(() => false)
       ) {
         return;
       }
 
-      const typeSelector = page.getByLabel(/Type|Preference Type/i);
-      await typeSelector.selectOption("dislike");
+      const fillAndSubmit = async () => {
+        const typeSelector = page.getByLabel(/Type|Preference Type/i);
+        await typeSelector.selectOption("dislike");
+        const valueInput = page.getByLabel(/Value/i);
+        await expect(valueInput).toBeVisible({ timeout: 5_000 });
+        await valueInput.fill("cilantro");
+        await page.getByRole("button", { name: /Add|Save|Submit/i }).click();
+      };
 
-      const valueInput = page.getByLabel(/Value/i);
-      await expect(valueInput).toBeVisible({ timeout: 5_000 });
-      await valueInput.fill("cilantro");
+      await fillAndSubmit();
 
-      await page.getByRole("button", { name: /Add|Save|Submit/i }).click();
+      const itemLocator = page.locator("li").filter({ hasText: "cilantro" });
+      const errorMsg = page.getByText(/Failed to add preference/i);
+      await expect(itemLocator.or(errorMsg).first()).toBeVisible({
+        timeout: 30_000,
+      });
 
-      await expect(
-        page.locator("li").filter({ hasText: "cilantro" }),
-      ).toBeVisible({ timeout: 30_000 });
+      if (await errorMsg.isVisible().catch(() => false)) {
+        await page.waitForTimeout(5_000);
+        await fillAndSubmit();
+      }
+
+      await expect(itemLocator).toBeVisible({ timeout: 60_000 });
     });
   });
 

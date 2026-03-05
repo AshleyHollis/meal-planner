@@ -413,6 +413,17 @@ setup("seed test data", async ({ request, baseURL }) => {
   );
 
   // ── Step 4: Create a meal plan ────────────────────────────────────────
+  // First, warm up the preferences endpoint (not seeded, so it's cold when
+  // preferences tests run — causing them to fail on GET/POST).
+  console.log("[seed-data] Warming up preferences endpoint...");
+  const dietaryTypesResp = await request.get(
+    `${API_URL}/api/v1/preferences/dietary-types`,
+    { headers },
+  );
+  console.log(
+    `[seed-data] Preferences warm-up: dietary-types ${dietaryTypesResp.status()}`,
+  );
+
   console.log("[seed-data] Creating meal plan...");
   const weekStart = getNextMonday();
   const planResp = await request.post(`${API_URL}/api/v1/meal-plans`, {
