@@ -12,6 +12,25 @@
 
 ## Learnings
 
+### 2026-03-06: Kimi K2.5 Tier 1 + Tier 3 Optimizations Implemented
+
+**Task:** Implement Ashley's decision to keep Kimi K2.5 but disable thinking mode and tune all related knobs.
+
+**Changes made (commit a901093 on 005-grocery-enhancements):**
+- `llm_client.py` — `extra_body={"thinking": {"type": "disabled"}}` disables Kimi's 30-120s invisible reasoning overhead
+- `llm_client.py` — `response_format={"type": "json_object"}` re-enabled (safe now that thinking is off; no more JSON corruption)
+- `llm_client.py` — `_MAX_TOKENS` 10000 → 4000 (7 recipes ≈ 2200 tokens; 4K is 1.8x headroom without reasoning token budget)
+- `llm_client.py` — Timeout bug fixed: `httpx.Timeout(300.0)` was hardcoded, ignoring the `timeout` parameter. Now uses `httpx.Timeout(float(timeout), connect=10.0)`.
+- `llm_client.py` — `GENERATION_TIMEOUT` 25s → 60s (25s was too tight; 60s is realistic with thinking off)
+- `generator.py` — `MAX_RETRIES` 3 → 2 (JSON mode = clean output = rare failures)
+- `generator.py` — retry backoff `60*attempt` → `15*attempt` (4K tokens reset in ~12s)
+- `generator.py` — multi-meal pacing sleep `65s` → `5s` (4K tokens consume only 20% of 20K TPM)
+
+**Key patterns/decisions:**
+- `extra_body` is the correct OpenAI SDK field to pass provider-specific API extensions
+- Only `_call_azure_openai()` was changed — Anthropic and vanilla OpenAI paths untouched
+- Anthropic path still uses `_MAX_TOKENS = 4000` (shared constant) — acceptable since 4K is also fine there
+
 ### 2026-03-05: LLM Performance Investigation — Code-Level Bottleneck Analysis
 
 **Task:** Cross-agent investigation into meal plan generation slowness. Parallel with Dallas (LLM analysis) and Parker (Azure/cost analysis).
