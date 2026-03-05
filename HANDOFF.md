@@ -158,7 +158,7 @@ The seed-data creates a meal plan but it stays in `draft` status because the wor
 2. Pre-seed a completed meal plan with slots directly via SQL/API (skip the worker)
 3. Accept that meal-plan and grocery tests skip in preview (worker requires LLM)
 
-Check if Azure OpenAI secrets exist: `az keyvault secret list --vault-name kv-ytsumm-prd --query "[?starts_with(name, 'meal-planner-openai')]"` or check `infra/terraform/key-vault-secrets.tf`.
+Check if Azure OpenAI secrets exist: `az keyvault secret list --vault-name kv-ytsumm-prd-ci --query "[?starts_with(name, 'meal-planner-openai')]"` or check `infra/terraform/key-vault-secrets.tf`.
 
 Also check if the worker deployment exists in preview: `kubectl get deployments -n preview-pr-1 | grep worker`.
 

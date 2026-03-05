@@ -9,7 +9,7 @@
 #   PR_NUMBER              - Pull request number
 #   AZURE_SQL_SERVER       - SQL server name (e.g. sql-mealplan-prd)
 #   AZURE_RESOURCE_GROUP   - Resource group containing the SQL server
-#   KEY_VAULT_NAME         - Key Vault name (e.g. kv-ytsumm-prd)
+#   KEY_VAULT_NAME         - Key Vault name (e.g. kv-ytsumm-prd-ci)
 #   SQL_ADMIN_USERNAME     - SQL admin username
 #   SQL_ADMIN_PASSWORD     - SQL admin password
 # =============================================================================

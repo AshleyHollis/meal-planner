@@ -265,7 +265,7 @@ RecipeStep (N) >--- EquipmentMode (1, nullable)
 | ----------------------------- | ------------ | --------------------------------------------------------------- |
 | Auth0 tenant                  | Deployed     | BFF pattern configured, test users exist                        |
 | AKS cluster                   | Deployed     | Shared with yt-summarizer                                       |
-| ACR (acrytsummprd.azurecr.io) | Deployed     | Shared container registry                                       |
+| ACR (acrytsummprdci.azurecr.io) | Deployed     | Shared container registry                                       |
 | Azure Key Vault               | Deployed     | Shared secrets management                                       |
 | GitHub Actions CI/CD          | Configured   | 9-phase pipeline, OIDC auth                                     |
 | ArgoCD                        | Deployed     | GitOps on AKS                                                   |

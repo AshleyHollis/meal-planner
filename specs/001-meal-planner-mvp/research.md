@@ -62,7 +62,7 @@ The yt-summarizer project (`C:\Users\ashle\Source\GitHub\AshleyHollis\yt-summari
 | Resource        | Details                                               |
 | --------------- | ----------------------------------------------------- |
 | AKS Cluster     | Single-node, cost-optimized                           |
-| ACR             | `acrytsummprd.azurecr.io` (shared container registry) |
+| ACR             | `acrytsummprdci.azurecr.io` (shared container registry) |
 | Key Vault       | Centralized secrets management                        |
 | Auth0 Tenant    | Already configured with BFF pattern                   |
 | GitHub OIDC     | Federated identity for CI/CD (no long-lived secrets)  |

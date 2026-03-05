@@ -12,10 +12,10 @@ resources:
 
 images:
   - name: meal-planner-api
-    newName: acrytsummprd.azurecr.io/meal-planner-api
+    newName: acrytsummprdci.azurecr.io/meal-planner-api
     newTag: latest
   - name: meal-planner-worker
-    newName: acrytsummprd.azurecr.io/meal-planner-worker
+    newName: acrytsummprdci.azurecr.io/meal-planner-worker
     newTag: latest
 
 patches:

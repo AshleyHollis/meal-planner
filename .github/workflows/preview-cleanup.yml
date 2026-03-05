@@ -54,8 +54,8 @@ jobs:
         env:
           PR_NUMBER: ${{ github.event.pull_request.number }}
           AZURE_SQL_SERVER: ${{ vars.AZURE_SQL_SERVER || 'sql-mealplan-prd' }}
-          AZURE_RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP || 'rg-ytsumm-prd' }}
-          KEY_VAULT_NAME: ${{ vars.KEY_VAULT_NAME || 'kv-ytsumm-prd' }}
+          AZURE_RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP || 'rg-ytsumm-prd-ci' }}
+          KEY_VAULT_NAME: ${{ vars.KEY_VAULT_NAME || 'kv-ytsumm-prd-ci' }}
 
       - name: Delete preview overlay from preview-overlays branch
         id: overlay-cleanup
@@ -177,5 +177,5 @@ jobs:
       - name: Delete PR images from ACR
         uses: AshleyHollis/shared-infra/.github/actions/cleanup-acr-images@v1
         with:
-          acr-name: ${{ vars.ACR_NAME || 'acrytsummprd' }}
+          acr-name: ${{ vars.ACR_NAME || 'acrytsummprdci' }}
           pr-number: ${{ github.event.pull_request.number }}

@@ -14,10 +14,10 @@ resources:
 # Image tags - updated by deploy-prod.yml workflow on merge
 images:
   - name: meal-planner-api
-    newName: acrytsummprd.azurecr.io/meal-planner-api
+    newName: acrytsummprdci.azurecr.io/meal-planner-api
     newTag: ${IMAGE_TAG}
   - name: meal-planner-worker
-    newName: acrytsummprd.azurecr.io/meal-planner-worker
+    newName: acrytsummprdci.azurecr.io/meal-planner-worker
     newTag: ${IMAGE_TAG}
 
 # Production-specific patches (all inline for consistency)

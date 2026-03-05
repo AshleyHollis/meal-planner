@@ -137,7 +137,7 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           swa-name: ${{ vars.SWA_NAME || 'swa-ytsumm-prd' }}
-          resource-group: ${{ vars.AZURE_RESOURCE_GROUP || 'rg-ytsumm-prd' }}
+          resource-group: ${{ vars.AZURE_RESOURCE_GROUP || 'rg-ytsumm-prd-ci' }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
           dry-run: "false"
           min-age-hours: "1"
@@ -177,9 +177,9 @@ jobs:
         continue-on-error: true
         shell: bash
         run: |
-          KV_NAME="${{ vars.KEY_VAULT_NAME || 'kv-ytsumm-prd' }}"
+          KV_NAME="${{ vars.KEY_VAULT_NAME || 'kv-ytsumm-prd-ci' }}"
           SWA_NAME="${{ vars.SWA_NAME || 'swa-ytsumm-prd' }}"
-          RG="${{ vars.AZURE_RESOURCE_GROUP || 'rg-ytsumm-prd' }}"
+          RG="${{ vars.AZURE_RESOURCE_GROUP || 'rg-ytsumm-prd-ci' }}"
           # SWA CLI normalizes environment names by removing hyphens (pr-1 → pr1)
           DEPLOY_ENV=$(echo "${{ inputs.deployment-environment }}" | tr -d '-')
 
@@ -236,7 +236,7 @@ jobs:
           else
             # Fallback to default hostname
             SWA_NAME="${{ vars.SWA_NAME || 'swa-ytsumm-prd' }}"
-            RG="${{ vars.AZURE_RESOURCE_GROUP || 'rg-ytsumm-prd' }}"
+            RG="${{ vars.AZURE_RESOURCE_GROUP || 'rg-ytsumm-prd-ci' }}"
             SWA_HOSTNAME=$(az staticwebapp show --name "$SWA_NAME" --resource-group "$RG" --query defaultHostname -o tsv)
             echo "static_web_app_url=https://${SWA_HOSTNAME}" >> "$GITHUB_OUTPUT"
             echo "SWA URL (fallback): https://${SWA_HOSTNAME}"
