@@ -382,3 +382,27 @@
 - **Double-serialization repair in _extract_json() is a Kimi thinking-mode artefact:** The {"recipes": "[{...}]"} corruption pattern (string-encoded array) was caused by thinking tokens mixing with the JSON response. Should disappear with thinking disabled. Do not remove repair code until PoC confirms this.
 - **Retry backoff logic:** max(rate_limit_wait, 60 * attempt) correctly uses the Retry-After header when present, but 60s floor is excessive with max_tokens=4000. Drop floor to 15 * attempt — the token bucket refills faster with smaller requests.
 - **JSON mode PoC must precede simplification:** esponse_format={"type": "json_object"} should be tested empirically after thinking is disabled. Azure's proxy layer for Kimi may or may not honour json_object the same way as native GPT-4 models.
+
+### Tier 2 Optimisation — Parallel Multi-Meal Generation (2026-03-09)
+
+- **Branch:** 005-grocery-enhancements
+- **Commit:** 217885b — `perf(worker): parallel multi-meal generation with asyncio.gather + semaphore`
+- **Scope:** Replace sequential multi-meal generation loop with asyncio.gather + semaphore.
+
+#### Changes made
+- Added `MAX_PARALLEL_LLM_CALLS = 2` constant at top of generator.py (TPM budget comment inline).
+- Replaced `for i, mt in enumerate(effective_types)` loop + 5s sleep with:
+  - `asyncio.Semaphore(MAX_PARALLEL_LLM_CALLS)`
+  - Inner `async def _generate_meal_type(index, mt)` that acquires semaphore, sleeps `2 * index` seconds for stagger, builds prompt, calls `_generate_with_retries`.
+  - `asyncio.gather(*[_generate_meal_type(i, mt) for i, mt in enumerate(effective_types)])`
+  - Result flattening: `all_recipes = [r for type_plan in results for r in type_plan.recipes]`
+- Wrapped `call_llm(current_prompt)` → `await asyncio.to_thread(call_llm, current_prompt)` in `_generate_with_retries` so sync HTTP calls don't block the event loop during concurrent execution.
+- Single-meal-type `else` branch left completely unchanged.
+
+#### Key learnings
+- `asyncio.to_thread()` is the minimal, safe path to parallelise a sync HTTP helper without rewriting the HTTP layer. No AsyncAzureOpenAI migration required.
+- Index-based stagger (`2 * index` seconds) is preferable to a flat sleep: first task starts immediately, subsequent tasks have breathing room proportional to their position.
+- Worker venv does not include ruff — use `services\api\.venv\Scripts\ruff.exe` with `--config services\ruff.toml` for lint checks on worker code.
+- Worker tests run via `uv run pytest tests\` from the workers directory (pytest not installed in the venv directly, uv resolves it).
+- **Test results:** 97 worker tests pass, ruff clean.
+- **Expected perf gain:** 3 meal types: 25-55s → 9-19s wall-clock (semaphore-bounded parallel + 4s stagger vs 3× sequential + 2× 5s pacing).
