@@ -64,6 +64,7 @@ Python 3.12 (backend/workers), TypeScript 5 (frontend): Follow standard conventi
 **Discord Monitoring — How It Works:**
 
 Three processes work together:
+
 - **Watcher** (detached): polls Discord every 10s, writes to inbox.json, **auto-acknowledges** on Discord ("📨 Message received")
 - **Notifier** (non-detached async): watches inbox.json every 2s, exits when new messages appear
 - **Agent**: reads inbox at checkpoints and when notifier exits
@@ -71,6 +72,7 @@ Three processes work together:
 The watcher auto-acknowledges so the user always gets instant feedback on Discord. The agent processes the full message at the next checkpoint.
 
 **Important**: The notifier gets killed when `task_complete` is called or shells are cleaned up. Always restart it after completing a task:
+
 ```powershell
 Remove-Item "$env:USERPROFILE\.copilot\tools\discordmcp\inbox.json" -ErrorAction SilentlyContinue
 # Start as mode="async" (NOT detached) with shellId="inbox-notifier"
