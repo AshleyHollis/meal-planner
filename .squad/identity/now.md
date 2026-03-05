@@ -12,18 +12,11 @@ active_issues:
 
 # ⚠️ COORDINATOR: READ THIS FIRST — NON-NEGOTIABLE
 
-## Session Startup — Discord (do this BEFORE anything else)
+## Discord Integration
 
-1. **Check inbox.json** (may have messages from previous session's watcher)
-2. **Start Discord watcher** (detached): `node "$env:USERPROFILE\.copilot\tools\discordmcp\discord-watcher.cjs" --interval 10`
-3. **Send "session started" notification** to `#meal-planner` (channel `1479061992772997202`)
-4. **Wait 15 seconds** for watcher's first poll, then check inbox again — process any messages found
-5. **Start inbox notifier** (NON-detached async, shellId="inbox-notifier"): `node "$env:USERPROFILE\.copilot\tools\discordmcp\inbox-notifier.cjs"`
-6. **NEVER call task_complete within 60s of session-started notification** — give user time to respond
+**Bridge mode** (`COPILOT_BRIDGE=1`): The bridge handles all Discord I/O. Just post results to Discord on task completion (see CLAUDE.md for the one-liner).
 
-**Continuous monitoring**: The inbox-notifier exits when new messages arrive, triggering a system_notification. When notified: read output → process message → clear inbox → restart notifier.
-
-**Throughout session**: Check inbox before EVERY task_complete and after every agent batch.
+**Interactive mode** (no bridge): Send a session-started notification to `#meal-planner` on first message (see CLAUDE.md for the one-liner).
 
 ## Continuous Execution — NEVER stop between work phases
 

@@ -28,62 +28,19 @@ Python 3.12 (backend/workers), TypeScript 5 (frontend): Follow standard conventi
 
 <!-- MANUAL ADDITIONS START -->
 
-## Session Startup — Discord Notifications
+## Discord Integration
 
-**On EVERY session start, BEFORE doing anything else:**
-
-1. Check inbox for any messages sent while offline (from previous watcher session):
-   ```powershell
-   if (Test-Path "$env:USERPROFILE\.copilot\tools\discordmcp\inbox.json") {
-       Get-Content "$env:USERPROFILE\.copilot\tools\discordmcp\inbox.json" | ConvertFrom-Json | Format-Table
-   }
-   ```
-2. Start the Discord watcher daemon (detached background process):
-   ```powershell
-   node "$env:USERPROFILE\.copilot\tools\discordmcp\discord-watcher.cjs" --interval 10
-   ```
-3. Send a "session started" notification to Discord `#meal-planner` (channel `1479061992772997202`):
-   ```powershell
-   $token = [Environment]::GetEnvironmentVariable("DISCORD_TOKEN", "User")
-   node -e "const{Client,GatewayIntentBits}=require(process.env.USERPROFILE+'/.copilot/tools/discordmcp/node_modules/discord.js');const c=new Client({intents:[GatewayIntentBits.Guilds,GatewayIntentBits.GuildMessages]});c.once('ready',async()=>{const ch=await c.channels.fetch('1479061992772997202');await ch.send(process.argv[1]);c.destroy()});c.login('$token')" "🟢 **Session started** — Copilot CLI is online and monitoring this channel. Send messages here to start work."
-   ```
-4. Wait 15 seconds for the watcher to connect and do its first poll, then check inbox again:
-   ```powershell
-   Start-Sleep -Seconds 15
-   if (Test-Path "$env:USERPROFILE\.copilot\tools\discordmcp\inbox.json") {
-       Get-Content "$env:USERPROFILE\.copilot\tools\discordmcp\inbox.json" | ConvertFrom-Json | Format-Table
-   }
-   ```
-5. If inbox has messages, process them BEFORE doing anything else.
-6. Start the inbox notifier (NON-detached async — alerts on new messages):
-   ```powershell
-   # Start as mode="async" (NOT detached) with shellId="inbox-notifier"
-   node "$env:USERPROFILE\.copilot\tools\discordmcp\inbox-notifier.cjs"
-   ```
-
-**Discord Monitoring — How It Works:**
-
-Three processes work together:
-
-- **Watcher** (detached): polls Discord every 10s, writes to inbox.json, **auto-acknowledges** on Discord ("📨 Message received")
-- **Notifier** (non-detached async): watches inbox.json every 2s, exits when new messages appear
-- **Agent**: reads inbox at checkpoints and when notifier exits
-
-The watcher auto-acknowledges so the user always gets instant feedback on Discord. The agent processes the full message at the next checkpoint.
-
-**Important**: The notifier gets killed when `task_complete` is called or shells are cleaned up. Always restart it after completing a task:
-
+**Bridge mode** (primary): If the environment variable `COPILOT_BRIDGE` is `1`, you are running inside the Copilot Bridge — a persistent PTY session fed by Discord messages. The bridge handles all Discord I/O. On task completion, post a summary to Discord:
 ```powershell
-Remove-Item "$env:USERPROFILE\.copilot\tools\discordmcp\inbox.json" -ErrorAction SilentlyContinue
-# Start as mode="async" (NOT detached) with shellId="inbox-notifier"
-node "$env:USERPROFILE\.copilot\tools\discordmcp\inbox-notifier.cjs"
+$token = [Environment]::GetEnvironmentVariable("DISCORD_TOKEN", "User")
+node -e "const{Client,GatewayIntentBits}=require(process.env.USERPROFILE+'/.copilot/tools/discordmcp/node_modules/discord.js');const c=new Client({intents:[GatewayIntentBits.Guilds,GatewayIntentBits.GuildMessages]});c.once('ready',async()=>{const ch=await c.channels.fetch('1479061992772997202');await ch.send(process.argv[1]);c.destroy()});c.login('$token')" "✅ **Task complete**: <brief summary>"
 ```
 
-**Additional rules (MANDATORY):**
-
-- **Before EVERY `task_complete` call**: Check inbox.json first. If there are unread messages, process them instead of completing.
-- **After every agent batch**: Check inbox.json for new messages.
-- **NEVER call `task_complete` within 60 seconds of sending the session-started notification** — give the user time to respond.
+**Interactive mode** (fallback): If `COPILOT_BRIDGE` is not set, send a session-started notification on first message:
+```powershell
+$token = [Environment]::GetEnvironmentVariable("DISCORD_TOKEN", "User")
+node -e "const{Client,GatewayIntentBits}=require(process.env.USERPROFILE+'/.copilot/tools/discordmcp/node_modules/discord.js');const c=new Client({intents:[GatewayIntentBits.Guilds,GatewayIntentBits.GuildMessages]});c.once('ready',async()=>{const ch=await c.channels.fetch('1479061992772997202');await ch.send(process.argv[1]);c.destroy()});c.login('$token')" "🟢 **Session started** — Copilot CLI is online."
+```
 
 See `docs/discord-integration.md` for full setup reference.
 

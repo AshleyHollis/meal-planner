@@ -4,11 +4,18 @@
 
 ## Overview
 
-This integration enables:
+This integration enables two-way communication between Discord and Copilot CLI sessions:
 
-- **Outbound**: Copilot agents send status updates, questions, and error reports to a Discord channel
-- **Inbound**: A background watcher daemon monitors Discord for human messages and queues them for the Copilot session to process
-- **Two-way**: Agents post questions → user replies on Discord → agent reads reply and acts on it
+- **Outbound**: Copilot agents post status updates, results, and questions to Discord
+- **Inbound**: The bridge polls Discord for human messages and injects them into Copilot
+- **Persistent**: A single long-running Copilot session per repo, fed by Discord messages
+
+### Two Modes
+
+| Mode | How it works | When to use |
+|------|-------------|-------------|
+| **Bridge** (primary) | Single process spawns Copilot in a PTY, polls Discord, injects messages | Always-on autonomous agent |
+| **Interactive** (fallback) | Human types in terminal, agent sends notifications to Discord | Manual CLI sessions |
 
 ## Prerequisites
 
@@ -440,59 +447,59 @@ Create `.squad/skills/squad-human-notification/SKILL.md` — see the full skill 
 Add this block to your `CLAUDE.md` (the Copilot CLI custom instruction file). This ensures it runs at the very start of every session, before any user request is processed:
 
 ````markdown
-## Session Startup — Discord Notifications
+## Session Startup
 
-**On EVERY session start, BEFORE doing anything else:**
+### Bridge Mode (Primary — Recommended)
 
-1. Check inbox for any messages sent while offline (from previous watcher session):
-   ```powershell
-   if (Test-Path "$env:USERPROFILE\.copilot\tools\discordmcp\inbox.json") {
-       Get-Content "$env:USERPROFILE\.copilot\tools\discordmcp\inbox.json" | ConvertFrom-Json | Format-Table
-   }
-   ```
-````
+Start the bridge as a detached background process. It spawns a single Copilot CLI session in a PTY, polls Discord for messages, and injects them as user input:
 
-2. Start the Discord watcher daemon (detached background process):
-   ```powershell
-   node "$env:USERPROFILE\.copilot\tools\discordmcp\discord-watcher.cjs" --interval 10
-   ```
-3. Send a "session started" notification to Discord `#your-channel` (channel `YOUR_CHANNEL_ID`):
-   ```powershell
-   $token = [Environment]::GetEnvironmentVariable("DISCORD_TOKEN", "User")
-   node -e "const{Client,GatewayIntentBits}=require(process.env.USERPROFILE+'/.copilot/tools/discordmcp/node_modules/discord.js');const c=new Client({intents:[GatewayIntentBits.Guilds,GatewayIntentBits.GuildMessages]});c.once('ready',async()=>{const ch=await c.channels.fetch('YOUR_CHANNEL_ID');await ch.send(process.argv[1]);c.destroy()});c.login('$token')" "🟢 **Session started** — Copilot CLI is online and monitoring this channel. Send messages here to start work."
-   ```
-4. Wait 15 seconds for the watcher to connect and do its first poll, then check inbox again:
-   ```powershell
-   Start-Sleep -Seconds 15
-   if (Test-Path "$env:USERPROFILE\.copilot\tools\discordmcp\inbox.json") {
-       Get-Content "$env:USERPROFILE\.copilot\tools\discordmcp\inbox.json" | ConvertFrom-Json | Format-Table
-   }
-   ```
-5. If inbox has messages, process them BEFORE doing anything else.
-6. Start the inbox notifier (NON-detached async — triggers system_notification on new messages):
-   ```powershell
-   # Start as mode="async" (NOT detached) with shellId="inbox-notifier"
-   node "$env:USERPROFILE\.copilot\tools\discordmcp\inbox-notifier.cjs"
-   ```
+```powershell
+node "$env:USERPROFILE\.copilot\tools\discordmcp\copilot-bridge.cjs" --repo-dir "C:\path\to\your\repo"
+```
 
-**Continuous Discord Monitoring (via inbox-notifier):**
+**Options:**
 
-The inbox-notifier watches inbox.json and **exits** when new messages appear. This exit triggers a `system_notification` that wakes the agent even when idle. When you receive a system_notification about the inbox-notifier exiting:
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--repo-dir` | (required) | Repo directory for the Copilot session |
+| `--channel` | `1479061992772997202` | Discord channel ID to monitor |
+| `--interval` | `10` | Poll interval in seconds |
 
-1. Read the notifier output (it contains the message content)
-2. Process the Discord message (route work, reply on Discord, etc.)
-3. Clear the inbox: `Remove-Item "$env:USERPROFILE\.copilot\tools\discordmcp\inbox.json"`
-4. **Restart the notifier** (same command as step 6 above) to watch for the next message
+**What the bridge does:**
 
-**Additional rules (MANDATORY):**
+1. Connects to Discord and spawns `copilot --yolo` in a PTY
+2. Announces "🟢 Copilot Bridge online" on Discord
+3. Polls channel every 10s for new human messages
+4. Auto-acks each message: "📨 Message received"
+5. Types the message into the Copilot PTY
+6. Confirms input accepted: "🤖 Processing"
+7. Copilot processes the request asynchronously
+8. Copilot posts results back to Discord itself (via CLAUDE.md rules)
+9. If Copilot exits, bridge auto-restarts it in 5s
 
-- **Before EVERY `task_complete` call**: Check inbox.json first. If there are unread messages, process them instead of completing.
-- **After every agent batch**: Check inbox.json for new messages.
-- **NEVER call `task_complete` within 60 seconds of sending the session-started notification** — give the user time to respond.
+**CLAUDE.md configuration for bridge mode:**
 
-````
+Add this to your repo's `CLAUDE.md` so the inner Copilot session knows to post results to Discord:
 
-> ⚠️ **This MUST go in `CLAUDE.md`**, not in routing rules or agent instructions. `CLAUDE.md` is loaded as the `custom_instruction` and is guaranteed to be read before the first user message. Routing rules and agent files are only read when the coordinator explicitly opens them.
+```markdown
+## Discord Integration
+
+**Bridge mode** (primary): If the environment variable `COPILOT_BRIDGE` is `1`, you are running
+inside the Copilot Bridge. The bridge handles all Discord I/O. On task completion, post a summary:
+\```powershell
+$token = [Environment]::GetEnvironmentVariable("DISCORD_TOKEN", "User")
+node -e "const{Client,GatewayIntentBits}=require(process.env.USERPROFILE+'/.copilot/tools/discordmcp/node_modules/discord.js');const c=new Client({intents:[GatewayIntentBits.Guilds,GatewayIntentBits.GuildMessages]});c.once('ready',async()=>{const ch=await c.channels.fetch('YOUR_CHANNEL_ID');await ch.send(process.argv[1]);c.destroy()});c.login('$token')" "✅ **Task complete**: <brief summary>"
+\```
+```
+
+### Interactive Mode (Fallback)
+
+For manual CLI sessions where a human types in the terminal, add a session-started notification to CLAUDE.md:
+
+```powershell
+$token = [Environment]::GetEnvironmentVariable("DISCORD_TOKEN", "User")
+node -e "const{Client,GatewayIntentBits}=require(process.env.USERPROFILE+'/.copilot/tools/discordmcp/node_modules/discord.js');const c=new Client({intents:[GatewayIntentBits.Guilds,GatewayIntentBits.GuildMessages]});c.once('ready',async()=>{const ch=await c.channels.fetch('YOUR_CHANNEL_ID');await ch.send(process.argv[1]);c.destroy()});c.login('$token')" "🟢 **Session started** — Copilot CLI is online."
+```
 
 ### First-Time Setup: Initialize Last-Read Marker
 
@@ -514,11 +521,13 @@ c.once('ready',async()=>{
 });
 c.login('$token');
 "
-````
+```
 
 ---
 
 ## Architecture
+
+### Bridge Mode (Primary)
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -526,55 +535,51 @@ c.login('$token');
 │  ┌─────────────────────────────────────────────────┐    │
 │  │ #project-channel                                │    │
 │  │   Human: "Please fix the login bug"             │    │
-│  │   Bot: "🔧 Ripley: Working on login fix..."     │    │
-│  │   Human: "Also check the API timeout"           │    │
-│  │   Bot: "✅ Login fix complete, checking API..."  │    │
+│  │   Bot: "📨 Message received from ashley"        │    │
+│  │   Bot: "🤖 Processing (from ashley)..."         │    │
+│  │   Bot: "✅ Task complete: Fixed login bug"      │    │
 │  └──────────────┬───────────────────▲──────────────┘    │
 └─────────────────┼───────────────────┼───────────────────┘
                   │ polls every 10s   │ sends messages
                   ▼                   │
 ┌─────────────────────────────────────────────────────────┐
-│  discord-watcher.cjs (detached background process)      │
-│  - Polls channel for human (non-bot) messages           │
-│  - Writes new messages to inbox.json                    │
-│  - Tracks last-read-id to avoid duplicates              │
-└──────────────┬──────────────────────────────────────────┘
-               │ writes
-               ▼
-┌──────────────────────────┐
-│  ~/.copilot/tools/       │
-│    discordmcp/           │
-│      inbox.json          │◄── Coordinator reads after each agent batch
-│      .last-read-id       │
-│      build/index.js      │◄── MCP server (loaded by Copilot at session start)
-│      node_modules/       │◄── discord.js (used by watcher + send scripts)
-└──────────────────────────┘
-               ▲
-               │ reads inbox, sends via node one-liner
-┌──────────────────────────────────────────────────────────┐
-│  Copilot CLI Session                                     │
-│  ┌──────────────────┐  ┌──────────────────────────────┐  │
-│  │ Squad Coordinator │──│ Spawned Agents               │  │
-│  │ - Checks inbox   │  │ - Send Discord notifications │  │
-│  │ - Routes work    │  │ - Report status/errors       │  │
-│  │ - Acknowledges   │  │ - Ask questions on Discord   │  │
-│  └──────────────────┘  └──────────────────────────────┘  │
-└──────────────────────────────────────────────────────────┘
+│  copilot-bridge.cjs (single process)                    │
+│  ┌─────────────────┐  ┌─────────────────────────────┐   │
+│  │ Discord Client   │  │ PTY (node-pty)             │   │
+│  │ - Poll channel   │──│ - Spawns copilot --yolo    │   │
+│  │ - Auto-ack msgs  │  │ - Injects messages via     │   │
+│  │ - Post status    │  │   ptyProcess.write()       │   │
+│  └─────────────────┘  │ - Auto-restarts on exit     │   │
+│                        └─────────────┬───────────────┘   │
+│                                      │                   │
+│                        ┌─────────────▼───────────────┐   │
+│                        │ Copilot CLI Session          │   │
+│                        │ - COPILOT_BRIDGE=1           │   │
+│                        │ - Reads CLAUDE.md            │   │
+│                        │ - Posts results to Discord   │   │
+│                        │ - Single persistent session  │   │
+│                        └─────────────────────────────┘   │
+└─────────────────────────────────────────────────────────┘
+```
+
+### Interactive Mode (Fallback)
+
+```
+Discord ◄── node one-liner ──── Copilot CLI (human types in terminal)
 ```
 
 ## File Reference
 
-| File                             | Location                                  | Purpose                                           |
-| -------------------------------- | ----------------------------------------- | ------------------------------------------------- |
-| `discordmcp/`                    | `~/.copilot/tools/`                       | Discord MCP server (cloned from v-3/discordmcp)   |
-| `discordmcp/build/index.js`      | `~/.copilot/tools/`                       | MCP server entry point (stdio protocol)           |
-| `discordmcp/discord-watcher.cjs` | `~/.copilot/tools/`                       | Background watcher daemon                         |
-| `discordmcp/inbox-notifier.cjs`  | `~/.copilot/tools/`                       | Inbox file watcher (triggers system_notification) |
-| `discordmcp/inbox.json`          | `~/.copilot/tools/`                       | Queued human messages (created by watcher)        |
-| `discordmcp/.last-read-id`       | `~/.copilot/tools/`                       | Last processed Discord message ID                 |
-| `mcp-config.json`                | `~/.copilot/`                             | User-level MCP config (all repos)                 |
-| `mcp-config.json`                | `.copilot/` (repo)                        | Repo-level MCP config (this repo only)            |
-| `SKILL.md`                       | `.squad/skills/squad-human-notification/` | Agent notification skill                          |
+| File | Location | Purpose |
+|------|----------|---------|
+| `discordmcp/` | `~/.copilot/tools/` | Discord MCP server + bridge tools |
+| `discordmcp/copilot-bridge.cjs` | `~/.copilot/tools/` | **Primary**: Bridge process (Discord polling + PTY management) |
+| `discordmcp/discord-watcher.cjs` | `~/.copilot/tools/` | Standalone watcher (legacy, for non-bridge use) |
+| `discordmcp/build/index.js` | `~/.copilot/tools/` | MCP server entry point (stdio protocol) |
+| `discordmcp/bridge-status.json` | `~/.copilot/tools/` | Bridge state file (created at runtime) |
+| `discordmcp/.last-read-id` | `~/.copilot/tools/` | Last processed Discord message ID |
+| `mcp-config.json` | `~/.copilot/` | User-level MCP config (all repos) |
+| `mcp-config.json` | `.copilot/` (repo) | Repo-level MCP config (this repo only) |
 
 ## Troubleshooting
 
@@ -591,11 +596,93 @@ c.login('$token');
 
 ## Limitations
 
-1. **Startup timing gap**: The watcher takes ~5-10 seconds to connect to Discord and do its first poll. Messages sent during this window may not appear in the inbox until the second poll cycle. The protocol mitigates this with a 15-second wait after starting the watcher.
-2. **Session-scoped processes**: Both the watcher and notifier run per-session. Between Copilot CLI sessions, messages queue in Discord and are picked up when the next session starts (the watcher reads `.last-read-id` from the previous session and fetches everything after it).
-3. **Polling, not real-time**: The watcher polls Discord every ~10s, the notifier polls inbox.json every ~2s. Total worst-case latency from Discord message to agent notification: ~12 seconds.
-4. **Single channel**: The watcher monitors one channel at a time. Use `--channel` to change the target.
-5. **Windows-only token fallback**: The `getToken()` function uses PowerShell to read User env vars, which is Windows-specific. On macOS/Linux, ensure `DISCORD_TOKEN` is exported in the shell environment.
+1. **Polling, not real-time**: The bridge polls Discord every ~10s. Worst-case latency from Discord message to Copilot processing: ~10 seconds.
+2. **Single channel**: The bridge monitors one channel at a time. Use `--channel` to change the target.
+3. **One message at a time**: Messages are queued and processed sequentially. If Copilot is working on a long task, new messages wait.
+4. **Windows-only token fallback**: The `getToken()` function uses PowerShell to read User env vars. On macOS/Linux, ensure `DISCORD_TOKEN` is exported in the shell environment.
+5. **Premium request cost**: Each Discord message consumes Copilot premium requests (same as typing in the CLI).
+6. **No session resume**: If the bridge process dies, a new Copilot session starts (no `--continue`). Session context is lost.
+
+## How to Use (User Guide)
+
+### Starting the Bridge
+
+Open a terminal in your repo directory and run:
+
+```powershell
+node "$env:USERPROFILE\.copilot\tools\discordmcp\copilot-bridge.cjs" --repo-dir "C:\path\to\your\repo"
+```
+
+You'll see in the terminal:
+```
+[Bridge] Starting Copilot Bridge...
+[Bridge] Discord connected → #meal-planner
+[Bridge] Spawning copilot --yolo in C:\path\to\your\repo
+[Bridge] Copilot session ready
+[Bridge] Online — polling Discord and accepting commands
+```
+
+And in Discord:
+```
+🟢 Copilot Bridge online — send messages here to start work.
+Single persistent session. Responses posted asynchronously.
+```
+
+**That's it.** The bridge is now running. You don't need to open Copilot CLI separately — the bridge spawns and manages it for you.
+
+### Sending Work via Discord
+
+Just type a message in the Discord channel:
+
+```
+Please fix the login bug in src/auth.ts
+```
+
+You'll see these responses in Discord:
+1. `📨 Message received from ashley` — bridge acknowledged your message
+2. `🤖 Processing (from ashley): "Please fix the login bug..."` — Copilot started working
+3. `✅ Task complete: Fixed null check in login handler` — Copilot finished (posted by the inner session)
+
+### Sending Follow-up Messages
+
+You can send messages while Copilot is still working. They're queued and processed in order:
+
+```
+Also check the API timeout issue
+```
+
+→ `📨 Message received from ashley — agent is busy, queued for processing.`
+
+### Checking Status
+
+The bridge writes its current state to `~/.copilot/tools/discordmcp/bridge-status.json`:
+
+```powershell
+Get-Content "$env:USERPROFILE\.copilot\tools\discordmcp\bridge-status.json" | ConvertFrom-Json
+```
+
+### Stopping the Bridge
+
+Press `Ctrl+C` in the terminal where the bridge is running. Or if running detached, find and stop the process:
+
+```powershell
+Get-Process -Name node | Where-Object { $_.CommandLine -like '*copilot-bridge*' } | Stop-Process
+```
+
+### Running as a Background Service
+
+To run the bridge detached (survives terminal close):
+
+```powershell
+Start-Process -NoNewWindow node -ArgumentList "$env:USERPROFILE\.copilot\tools\discordmcp\copilot-bridge.cjs", "--repo-dir", "C:\path\to\your\repo"
+```
+
+Or from within a Copilot CLI session (detached async):
+
+```powershell
+# mode="async", detach: true
+node "$env:USERPROFILE\.copilot\tools\discordmcp\copilot-bridge.cjs" --repo-dir "C:\path\to\your\repo"
+```
 
 ## Copy-Paste Setup Prompt
 
@@ -605,13 +692,13 @@ Use this prompt in a new Copilot CLI session to set up Discord integration from 
 Please set up Discord two-way communication for this repo. Follow the instructions in docs/discord-integration.md. Specifically:
 
 1. Install the Discord MCP server at ~/.copilot/tools/discordmcp/ (clone v-3/discordmcp, npm install, npm build)
-2. Configure MCP in both ~/.copilot/mcp-config.json and .copilot/mcp-config.json (use ABSOLUTE paths, not ${USERPROFILE})
-3. Create the discord-watcher.cjs file at ~/.copilot/tools/discordmcp/
-4. Create the inbox-notifier.cjs file at ~/.copilot/tools/discordmcp/
-5. Add the Session Startup block to CLAUDE.md (update the channel ID to match our project's Discord channel)
+2. Install node-pty: cd ~/.copilot/tools/discordmcp && npm install node-pty
+3. Create the copilot-bridge.cjs file at ~/.copilot/tools/discordmcp/
+4. Configure MCP in both ~/.copilot/mcp-config.json and .copilot/mcp-config.json (use ABSOLUTE paths, not ${USERPROFILE})
+5. Add the Discord Integration block to CLAUDE.md (update the channel ID to match our project's Discord channel)
 6. Set DISCORD_TOKEN as a User env var if not already set
 7. Initialize the last-read-id marker
-7. Verify by sending a test message to Discord
+8. Verify by starting the bridge and sending a test message from Discord
 
 The DISCORD_TOKEN should already be set as a User env var. If not, ask me for it.
 ```
