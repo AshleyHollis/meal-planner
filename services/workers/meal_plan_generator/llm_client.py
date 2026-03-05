@@ -86,7 +86,13 @@ def call_llm(prompt: str, timeout: int = GENERATION_TIMEOUT) -> tuple[str, str |
     temperature = settings.llm.temperature
 
     start = time.monotonic()
-    logger.info("llm_call_start", provider=provider, temperature=temperature, timeout_s=timeout)
+    logger.info(
+        "llm_call_start",
+        provider=provider,
+        temperature=temperature,
+        timeout_s=timeout,
+        prompt_chars=len(prompt),
+    )
 
     try:
         # Prefer Azure OpenAI when configured, regardless of provider setting
@@ -215,6 +221,16 @@ def _call_azure_openai(
         api_version=llm.azure_api_version,
         http_client=http_client,
         max_retries=0,
+    )
+    # Confirm thinking=disabled is being sent — critical for performance.
+    # Azure AI Foundry may silently strip unknown extra_body fields; the
+    # reasoning_content check below is the safety net.
+    logger.info(
+        "azure_request_params",
+        deployment=deployment,
+        max_tokens=_MAX_TOKENS,
+        thinking_disabled=True,
+        api_version=llm.azure_api_version,
     )
     response = client.chat.completions.create(
         model=deployment,

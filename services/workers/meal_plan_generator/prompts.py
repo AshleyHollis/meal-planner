@@ -84,7 +84,8 @@ def _get_schema_json() -> str:
     # Import here to avoid circular imports at module level
     from meal_plan_generator.schemas import GeneratedMealPlan
 
-    return json.dumps(GeneratedMealPlan.model_json_schema(), indent=2)
+    # Compact (no indent) to minimise input tokens — saves ~300 tokens vs indent=2.
+    return json.dumps(GeneratedMealPlan.model_json_schema())
 
 
 def format_equipment(equipment: list[Equipment]) -> str:

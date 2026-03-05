@@ -125,10 +125,11 @@ async def generate_meal_plan(message_content: dict[str, Any]) -> None:
             semaphore = asyncio.Semaphore(MAX_PARALLEL_LLM_CALLS)
 
             async def _generate_meal_type(index: int, mt: str) -> GeneratedMealPlan:
+                # Stagger BEFORE acquiring semaphore so the slot is not held
+                # during the sleep (which would block lower-priority tasks).
+                if index > 0:
+                    await asyncio.sleep(index)  # 1s per slot — enough to spread burst
                 async with semaphore:
-                    # 2s stagger per slot to avoid simultaneous burst on token bucket
-                    if index > 0:
-                        await asyncio.sleep(2 * index)
                     single_prompt = build_prompt(
                         context["inventory"],
                         context["equipment"],
