@@ -1,7 +1,7 @@
 """Meal plan generation orchestrator with retry logic.
 
 Loads context from DB, builds prompt, calls LLM, validates,
-retries up to 3x, and persists results to the database.
+retries up to 2x, and persists results to the database.
 """
 
 from __future__ import annotations
@@ -45,12 +45,15 @@ logger = get_logger(__name__)
 
 MAX_RETRIES = 2
 
+# TPM budget: 20K TPM / ~5K tokens per call (prompt + 4K output) ≈ 4 max concurrent; use 2 to be safe.
+MAX_PARALLEL_LLM_CALLS = 2
+
 
 async def generate_meal_plan(message_content: dict[str, Any]) -> None:
     """Generate a meal plan from a queue message.
 
     Loads household context from DB, builds an LLM prompt, calls the LLM,
-    validates constraints, retries up to 3x on failure, and persists all
+    validates constraints, retries up to 2x on failure, and persists all
     generated data (recipes, ingredients, steps, meal slots, grocery list)
     to the database.
 
@@ -118,41 +121,48 @@ async def generate_meal_plan(message_content: dict[str, Any]) -> None:
         effective_types = meal_types or ["dinner"]
 
         if len(effective_types) > 1:
-            # Multi-meal: generate per-type for reliability (LLM only reliably produces 7 at once)
-            all_recipes = []
-            for i, mt in enumerate(effective_types):
-                # Rate-limit pacing: wait between calls to avoid token-bucket exhaustion
-                if i > 0:
-                    logger.info("rate_limit_pacing", wait_seconds=5, next_meal_type=mt)
-                    await asyncio.sleep(5)
-                single_prompt = build_prompt(
-                    context["inventory"],
-                    context["equipment"],
-                    context["expiring"],
-                    meal_types=[mt],
-                    member_preferences=context.get("member_preferences"),
-                    recent_meals=context.get("recent_meals"),
-                    favorites=context.get("favorites"),
-                    rating_insights=context.get("rating_insights"),
-                    cuisine_preferences=context.get("cuisine_preferences"),
-                    recurring_constraints=context.get("recurring_templates"),
-                    leftovers=context.get("leftovers"),
-                    freezer_items=context.get("freezer_items"),
-                )
-                type_plan = await _generate_with_retries(
-                    single_prompt,
-                    inventory_names,
-                    equipment_modes,
-                    allergen_ingredients=context.get("allergen_ingredients"),
-                    cuisine_preferences=context.get("cuisine_preferences"),
-                    meal_types=[mt],
-                )
-                for r in type_plan.recipes:
-                    r.meal_type = mt
-                all_recipes.extend(type_plan.recipes)
-                logger.info(
-                    "multi_meal_type_generated", meal_type=mt, recipes=len(type_plan.recipes)
-                )
+            # Multi-meal: generate per-type in parallel (bounded by semaphore) for speed.
+            semaphore = asyncio.Semaphore(MAX_PARALLEL_LLM_CALLS)
+
+            async def _generate_meal_type(index: int, mt: str) -> GeneratedMealPlan:
+                async with semaphore:
+                    # 2s stagger per slot to avoid simultaneous burst on token bucket
+                    if index > 0:
+                        await asyncio.sleep(2 * index)
+                    single_prompt = build_prompt(
+                        context["inventory"],
+                        context["equipment"],
+                        context["expiring"],
+                        meal_types=[mt],
+                        member_preferences=context.get("member_preferences"),
+                        recent_meals=context.get("recent_meals"),
+                        favorites=context.get("favorites"),
+                        rating_insights=context.get("rating_insights"),
+                        cuisine_preferences=context.get("cuisine_preferences"),
+                        recurring_constraints=context.get("recurring_templates"),
+                        leftovers=context.get("leftovers"),
+                        freezer_items=context.get("freezer_items"),
+                    )
+                    logger.info("parallel_meal_type_start", meal_type=mt, index=index)
+                    type_plan = await _generate_with_retries(
+                        single_prompt,
+                        inventory_names,
+                        equipment_modes,
+                        allergen_ingredients=context.get("allergen_ingredients"),
+                        cuisine_preferences=context.get("cuisine_preferences"),
+                        meal_types=[mt],
+                    )
+                    for r in type_plan.recipes:
+                        r.meal_type = mt
+                    logger.info(
+                        "multi_meal_type_generated", meal_type=mt, recipes=len(type_plan.recipes)
+                    )
+                    return type_plan
+
+            results = await asyncio.gather(
+                *[_generate_meal_type(i, mt) for i, mt in enumerate(effective_types)]
+            )
+            all_recipes = [r for type_plan in results for r in type_plan.recipes]
             plan = GeneratedMealPlan(recipes=all_recipes)
         else:
             plan = await _generate_with_retries(
@@ -449,7 +459,7 @@ async def _generate_with_retries(
             rate_limit_wait = 0  # reset after using it
 
         try:
-            raw_response, finish_reason = call_llm(current_prompt)
+            raw_response, finish_reason = await asyncio.to_thread(call_llm, current_prompt)
 
             # Extract and repair JSON (with truncation recovery if needed)
             cleaned = _extract_json(raw_response, truncated=(finish_reason == "length"))
