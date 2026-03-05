@@ -18,7 +18,10 @@ active_issues:
 2. **Start Discord watcher** (detached): `node "$env:USERPROFILE\.copilot\tools\discordmcp\discord-watcher.cjs" --interval 10`
 3. **Send "session started" notification** to `#meal-planner` (channel `1479061992772997202`)
 4. **Wait 15 seconds** for watcher's first poll, then check inbox again — process any messages found
-5. **NEVER call task_complete within 60s of session-started notification** — give user time to respond
+5. **Start inbox notifier** (NON-detached async, shellId="inbox-notifier"): `node "$env:USERPROFILE\.copilot\tools\discordmcp\inbox-notifier.cjs"`
+6. **NEVER call task_complete within 60s of session-started notification** — give user time to respond
+
+**Continuous monitoring**: The inbox-notifier exits when new messages arrive, triggering a system_notification. When notified: read output → process message → clear inbox → restart notifier.
 
 **Throughout session**: Check inbox before EVERY task_complete and after every agent batch.
 

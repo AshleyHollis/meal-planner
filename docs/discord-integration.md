@@ -5,7 +5,6 @@
 ## Overview
 
 This integration enables:
-
 - **Outbound**: Copilot agents send status updates, questions, and error reports to a Discord channel
 - **Inbound**: A background watcher daemon monitors Discord for human messages and queues them for the Copilot session to process
 - **Two-way**: Agents post questions → user replies on Discord → agent reads reply and acts on it
@@ -20,7 +19,7 @@ Create a Discord bot at https://discord.com/developers/applications:
 2. Go to **Bot** tab → click **Reset Token** → **copy the token** (you'll need it below)
 3. Under **Privileged Gateway Intents**, enable:
    - ✅ Message Content Intent
-   - ✅ Server Members Intent
+   - ✅ Server Members Intent  
    - ✅ Presence Intent (optional)
 4. Go to **OAuth2** → **URL Generator**:
    - Scopes: `bot`
@@ -32,13 +31,11 @@ Create a Discord bot at https://discord.com/developers/applications:
 Set `DISCORD_TOKEN` as a **persistent User environment variable** (not a system/machine variable — user-level survives reboots and is accessible to detached processes):
 
 **PowerShell:**
-
 ```powershell
 [Environment]::SetEnvironmentVariable("DISCORD_TOKEN", "your-bot-token-here", "User")
 ```
 
 **Verify:**
-
 ```powershell
 [Environment]::GetEnvironmentVariable("DISCORD_TOKEN", "User")
 # Should print your token
@@ -49,12 +46,10 @@ Set `DISCORD_TOKEN` as a **persistent User environment variable** (not a system/
 ### 3. Find Your Channel IDs
 
 After the bot joins your server, find channel IDs by:
-
 - Enabling Developer Mode in Discord (Settings → Advanced → Developer Mode)
 - Right-clicking a channel → Copy Channel ID
 
 Or run this after setup:
-
 ```powershell
 node -e "
 const{Client,GatewayIntentBits}=require(process.env.USERPROFILE+'/.copilot/tools/discordmcp/node_modules/discord.js');
@@ -97,7 +92,6 @@ Test-Path "$env:USERPROFILE\.copilot\tools\discordmcp\build\index.js"
 Add the Discord MCP server to your Copilot CLI config. Choose one or both locations:
 
 **User-level** (`~/.copilot/mcp-config.json`) — applies to all repos:
-
 ```json
 {
   "mcpServers": {
@@ -117,7 +111,6 @@ Add the Discord MCP server to your Copilot CLI config. Choose one or both locati
 ```
 
 **Repo-level** (`.copilot/mcp-config.json`) — applies to this repo only:
-
 ```json
 {
   "mcpServers": {
@@ -155,52 +148,42 @@ The watcher is a Node.js script that runs as a background daemon, polling Discor
  * Usage: node discord-watcher.cjs [--interval 10] [--channel CHANNEL_ID]
  * Env: DISCORD_TOKEN (reads from User env vars if not in process.env)
  */
-const { Client, GatewayIntentBits } = require("discord.js");
-const fs = require("fs");
-const path = require("path");
-const { execSync } = require("child_process");
+const { Client, GatewayIntentBits } = require('discord.js');
+const fs = require('fs');
+const path = require('path');
+const { execSync } = require('child_process');
 
 function getToken() {
   if (process.env.DISCORD_TOKEN) return process.env.DISCORD_TOKEN;
   try {
     const result = execSync(
-      "powershell -NoProfile -Command \"[Environment]::GetEnvironmentVariable('DISCORD_TOKEN', 'User')\"",
-      { encoding: "utf8" },
+      'powershell -NoProfile -Command "[Environment]::GetEnvironmentVariable(\'DISCORD_TOKEN\', \'User\')"',
+      { encoding: 'utf8' }
     ).trim();
     if (result) return result;
   } catch {}
-  throw new Error("DISCORD_TOKEN not found");
+  throw new Error('DISCORD_TOKEN not found');
 }
 
 const DISCORD_TOKEN = getToken();
 const args = process.argv.slice(2);
-const intervalIdx = args.indexOf("--interval");
-const channelIdx = args.indexOf("--channel");
-const POLL_INTERVAL =
-  intervalIdx !== -1 ? parseInt(args[intervalIdx + 1]) * 1000 : 10000;
-const CHANNEL_ID =
-  channelIdx !== -1 ? args[channelIdx + 1] : "YOUR_DEFAULT_CHANNEL_ID";
-const INBOX_FILE = path.join(__dirname, "inbox.json");
-const LAST_READ_FILE = path.join(__dirname, ".last-read-id");
+const intervalIdx = args.indexOf('--interval');
+const channelIdx = args.indexOf('--channel');
+const POLL_INTERVAL = intervalIdx !== -1 ? parseInt(args[intervalIdx + 1]) * 1000 : 10000;
+const CHANNEL_ID = channelIdx !== -1 ? args[channelIdx + 1] : 'YOUR_DEFAULT_CHANNEL_ID';
+const INBOX_FILE = path.join(__dirname, 'inbox.json');
+const LAST_READ_FILE = path.join(__dirname, '.last-read-id');
 
 let lastReadId = null;
-try {
-  lastReadId = fs.readFileSync(LAST_READ_FILE, "utf8").trim();
-} catch {}
+try { lastReadId = fs.readFileSync(LAST_READ_FILE, 'utf8').trim(); } catch {}
 
 const client = new Client({
-  intents: [
-    GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent,
-  ],
+  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent]
 });
 
-client.once("ready", () => {
+client.once('ready', () => {
   console.log(`[Discord Watcher] Online as ${client.user.tag}`);
-  console.log(
-    `[Discord Watcher] Monitoring channel ${CHANNEL_ID} every ${POLL_INTERVAL / 1000}s`,
-  );
+  console.log(`[Discord Watcher] Monitoring channel ${CHANNEL_ID} every ${POLL_INTERVAL/1000}s`);
   poll();
   setInterval(poll, POLL_INTERVAL);
 });
@@ -211,28 +194,20 @@ async function poll() {
     const opts = { limit: 10 };
     if (lastReadId) opts.after = lastReadId;
     const messages = await channel.messages.fetch(opts);
-    const humanMsgs = messages
-      .filter((m) => !m.author.bot)
-      .sort((a, b) => a.createdTimestamp - b.createdTimestamp);
+    const humanMsgs = messages.filter(m => !m.author.bot).sort((a, b) => a.createdTimestamp - b.createdTimestamp);
     if (humanMsgs.size > 0) {
-      const inbox = humanMsgs.map((m) => ({
-        id: m.id,
-        author: m.author.username,
-        content: m.content,
-        timestamp: m.createdAt.toISOString(),
+      const inbox = humanMsgs.map(m => ({
+        id: m.id, author: m.author.username,
+        content: m.content, timestamp: m.createdAt.toISOString()
       }));
       let existing = [];
-      try {
-        existing = JSON.parse(fs.readFileSync(INBOX_FILE, "utf8"));
-      } catch {}
-      const allIds = new Set(existing.map((e) => e.id));
-      const newMsgs = inbox.filter((m) => !allIds.has(m.id));
+      try { existing = JSON.parse(fs.readFileSync(INBOX_FILE, 'utf8')); } catch {}
+      const allIds = new Set(existing.map(e => e.id));
+      const newMsgs = inbox.filter(m => !allIds.has(m.id));
       if (newMsgs.length > 0) {
         existing.push(...newMsgs);
         fs.writeFileSync(INBOX_FILE, JSON.stringify(existing, null, 2));
-        console.log(
-          `[Discord Watcher] ${newMsgs.length} new message(s) from: ${newMsgs.map((m) => m.author).join(", ")}`,
-        );
+        console.log(`[Discord Watcher] ${newMsgs.length} new message(s) from: ${newMsgs.map(m => m.author).join(', ')}`);
       }
       const lastMsg = humanMsgs.last();
       lastReadId = lastMsg.id;
@@ -249,6 +224,74 @@ client.login(DISCORD_TOKEN);
 > ⚠️ **File must be `.cjs`** (CommonJS), not `.js`. The discordmcp package uses `"type": "module"` in its `package.json`, so `.js` files are treated as ESM and `require()` won't work.
 
 > ⚠️ **Replace `YOUR_DEFAULT_CHANNEL_ID`** with your project's default Discord channel ID.
+
+### Step 3b: Install the Inbox Notifier (Continuous Monitoring)
+
+The inbox notifier watches `inbox.json` for new messages and **exits** when found. When run as a non-detached async process in Copilot CLI, the exit triggers a `system_notification` that wakes the agent — even when idle. This solves the "agent can't poll continuously" limitation.
+
+**Create the file** at `~/.copilot/tools/discordmcp/inbox-notifier.cjs`:
+
+```javascript
+#!/usr/bin/env node
+/**
+ * Inbox notifier — watches inbox.json for new messages and exits when found.
+ * Designed to run as a NON-DETACHED async process in Copilot CLI.
+ * When this process exits, the runtime sends a system_notification,
+ * waking the agent to process the Discord message.
+ *
+ * Usage: node inbox-notifier.cjs
+ * The agent should restart this after processing each batch of messages.
+ */
+const fs = require('fs');
+const path = require('path');
+
+const INBOX_FILE = path.join(__dirname, 'inbox.json');
+const POLL_INTERVAL = 2000; // check every 2 seconds
+
+// Baseline: count of messages already in inbox (already seen by agent)
+let baselineCount = 0;
+try {
+  const data = JSON.parse(fs.readFileSync(INBOX_FILE, 'utf8'));
+  baselineCount = data.length;
+} catch {}
+
+console.log(`[Inbox Notifier] Watching for new messages (baseline: ${baselineCount})`);
+
+const timer = setInterval(() => {
+  try {
+    if (!fs.existsSync(INBOX_FILE)) return;
+    const data = JSON.parse(fs.readFileSync(INBOX_FILE, 'utf8'));
+    if (data.length > baselineCount) {
+      const newMsgs = data.slice(baselineCount);
+      console.log(`\n📨 NEW DISCORD MESSAGE(S):`);
+      for (const msg of newMsgs) {
+        console.log(`  From: ${msg.author} | Time: ${msg.timestamp}`);
+        console.log(`  Message: ${msg.content}\n`);
+      }
+      clearInterval(timer);
+      process.exit(0);
+    }
+  } catch {
+    // inbox.json being written or doesn't exist yet — retry next cycle
+  }
+}, POLL_INTERVAL);
+```
+
+> ⚠️ **File must be `.cjs`** (CommonJS), same as the watcher.
+
+**Architecture: How continuous monitoring works:**
+
+```
+Discord → Watcher (detached, polls Discord, writes inbox.json)
+               ↓
+         inbox.json ← Notifier (non-detached, polls file every 2s)
+               ↓
+         Notifier exits when new messages appear
+               ↓
+         system_notification → Agent wakes up
+               ↓
+         Agent processes message → clears inbox → restarts notifier
+```
 
 ### Step 4: Verify Everything Works
 
@@ -307,7 +350,6 @@ node -e "const{Client,GatewayIntentBits}=require('$($env:USERPROFILE -replace '\
 ### Reading Messages (Inbound)
 
 **One-shot read** (get recent messages):
-
 ```powershell
 $token = [Environment]::GetEnvironmentVariable("DISCORD_TOKEN", "User")
 
@@ -325,7 +367,6 @@ c.login('$token');
 ```
 
 **Continuous monitoring** (watcher daemon):
-
 ```powershell
 # Start as detached background process (survives session end)
 node "$env:USERPROFILE\.copilot\tools\discordmcp\discord-watcher.cjs" --interval 10 --channel YOUR_CHANNEL_ID
@@ -369,7 +410,7 @@ Create `.squad/skills/squad-human-notification/SKILL.md` — see the full skill 
 
 Add this block to your `CLAUDE.md` (the Copilot CLI custom instruction file). This ensures it runs at the very start of every session, before any user request is processed:
 
-````markdown
+```markdown
 ## Session Startup — Discord Notifications
 
 **On EVERY session start, BEFORE doing anything else:**
@@ -380,8 +421,6 @@ Add this block to your `CLAUDE.md` (the Copilot CLI custom instruction file). Th
        Get-Content "$env:USERPROFILE\.copilot\tools\discordmcp\inbox.json" | ConvertFrom-Json | Format-Table
    }
    ```
-````
-
 2. Start the Discord watcher daemon (detached background process):
    ```powershell
    node "$env:USERPROFILE\.copilot\tools\discordmcp\discord-watcher.cjs" --interval 10
@@ -399,14 +438,27 @@ Add this block to your `CLAUDE.md` (the Copilot CLI custom instruction file). Th
    }
    ```
 5. If inbox has messages, process them BEFORE doing anything else.
+6. Start the inbox notifier (NON-detached async — triggers system_notification on new messages):
+   ```powershell
+   # Start as mode="async" (NOT detached) with shellId="inbox-notifier"
+   node "$env:USERPROFILE\.copilot\tools\discordmcp\inbox-notifier.cjs"
+   ```
 
-**Throughout the session (MANDATORY — never skip these):**
+**Continuous Discord Monitoring (via inbox-notifier):**
+
+The inbox-notifier watches inbox.json and **exits** when new messages appear. This exit triggers a `system_notification` that wakes the agent even when idle. When you receive a system_notification about the inbox-notifier exiting:
+
+1. Read the notifier output (it contains the message content)
+2. Process the Discord message (route work, reply on Discord, etc.)
+3. Clear the inbox: `Remove-Item "$env:USERPROFILE\.copilot\tools\discordmcp\inbox.json"`
+4. **Restart the notifier** (same command as step 6 above) to watch for the next message
+
+**Additional rules (MANDATORY):**
 
 - **Before EVERY `task_complete` call**: Check inbox.json first. If there are unread messages, process them instead of completing.
 - **After every agent batch**: Check inbox.json for new messages.
 - **NEVER call `task_complete` within 60 seconds of sending the session-started notification** — give the user time to respond.
-
-````
+```
 
 > ⚠️ **This MUST go in `CLAUDE.md`**, not in routing rules or agent instructions. `CLAUDE.md` is loaded as the `custom_instruction` and is guaranteed to be read before the first user message. Routing rules and agent files are only read when the coordinator explicitly opens them.
 
@@ -430,7 +482,7 @@ c.once('ready',async()=>{
 });
 c.login('$token');
 "
-````
+```
 
 ---
 
@@ -480,38 +532,38 @@ c.login('$token');
 
 ## File Reference
 
-| File                             | Location                                  | Purpose                                         |
-| -------------------------------- | ----------------------------------------- | ----------------------------------------------- |
-| `discordmcp/`                    | `~/.copilot/tools/`                       | Discord MCP server (cloned from v-3/discordmcp) |
-| `discordmcp/build/index.js`      | `~/.copilot/tools/`                       | MCP server entry point (stdio protocol)         |
-| `discordmcp/discord-watcher.cjs` | `~/.copilot/tools/`                       | Background watcher daemon                       |
-| `discordmcp/inbox.json`          | `~/.copilot/tools/`                       | Queued human messages (created by watcher)      |
-| `discordmcp/.last-read-id`       | `~/.copilot/tools/`                       | Last processed Discord message ID               |
-| `mcp-config.json`                | `~/.copilot/`                             | User-level MCP config (all repos)               |
-| `mcp-config.json`                | `.copilot/` (repo)                        | Repo-level MCP config (this repo only)          |
-| `SKILL.md`                       | `.squad/skills/squad-human-notification/` | Agent notification skill                        |
+| File | Location | Purpose |
+|------|----------|---------|
+| `discordmcp/` | `~/.copilot/tools/` | Discord MCP server (cloned from v-3/discordmcp) |
+| `discordmcp/build/index.js` | `~/.copilot/tools/` | MCP server entry point (stdio protocol) |
+| `discordmcp/discord-watcher.cjs` | `~/.copilot/tools/` | Background watcher daemon |
+| `discordmcp/inbox-notifier.cjs` | `~/.copilot/tools/` | Inbox file watcher (triggers system_notification) |
+| `discordmcp/inbox.json` | `~/.copilot/tools/` | Queued human messages (created by watcher) |
+| `discordmcp/.last-read-id` | `~/.copilot/tools/` | Last processed Discord message ID |
+| `mcp-config.json` | `~/.copilot/` | User-level MCP config (all repos) |
+| `mcp-config.json` | `.copilot/` (repo) | Repo-level MCP config (this repo only) |
+| `SKILL.md` | `.squad/skills/squad-human-notification/` | Agent notification skill |
 
 ## Troubleshooting
 
-| Problem                                         | Cause                                     | Fix                                                      |
-| ----------------------------------------------- | ----------------------------------------- | -------------------------------------------------------- |
-| Discord MCP tools not appearing                 | MCP config uses `${USERPROFILE}` in args  | Use absolute path instead                                |
-| Discord MCP tools not appearing                 | Session started before config was saved   | Restart Copilot CLI session                              |
-| `TokenInvalid` error                            | `DISCORD_TOKEN` not in environment        | Set as User env var (see Prerequisites)                  |
-| Watcher crashes with `require is not defined`   | File has `.js` extension                  | Rename to `.cjs` (CommonJS)                              |
-| Watcher doesn't pick up messages                | `Message Content Intent` not enabled      | Enable in Discord Developer Portal → Bot                 |
-| Watcher picks up old messages                   | `.last-read-id` not initialized           | Run the initialization script (see Session Startup)      |
-| Bot can't see channels                          | Bot not added to server                   | Re-generate OAuth2 URL and add bot                       |
+| Problem | Cause | Fix |
+|---------|-------|-----|
+| Discord MCP tools not appearing | MCP config uses `${USERPROFILE}` in args | Use absolute path instead |
+| Discord MCP tools not appearing | Session started before config was saved | Restart Copilot CLI session |
+| `TokenInvalid` error | `DISCORD_TOKEN` not in environment | Set as User env var (see Prerequisites) |
+| Watcher crashes with `require is not defined` | File has `.js` extension | Rename to `.cjs` (CommonJS) |
+| Watcher doesn't pick up messages | `Message Content Intent` not enabled | Enable in Discord Developer Portal → Bot |
+| Watcher picks up old messages | `.last-read-id` not initialized | Run the initialization script (see Session Startup) |
+| Bot can't see channels | Bot not added to server | Re-generate OAuth2 URL and add bot |
 | `${DISCORD_TOKEN}` is empty in detached process | Detached processes don't inherit env vars | Watcher uses `getToken()` fallback to read from User env |
 
 ## Limitations
 
-1. **Agent cannot continuously monitor inbox**: The Copilot CLI agent only processes when a user sends a message via the CLI. It cannot poll `inbox.json` in the background. Discord messages are picked up at discrete checkpoints: session start, between tasks, before `task_complete`. If you need an immediate response, send the message via the CLI rather than Discord.
-2. **Startup timing gap**: The watcher takes ~5-10 seconds to connect to Discord and do its first poll. Messages sent during this window may not appear in the inbox until the second poll cycle. The protocol mitigates this with a 15-second wait after starting the watcher.
-3. **Session-scoped watcher**: The watcher daemon runs per-session. Between Copilot CLI sessions, messages queue in Discord and are picked up when the next session starts (the watcher reads `.last-read-id` from the previous session and fetches everything after it).
-4. **Polling, not real-time**: The watcher polls every N seconds (default: 10). There's a slight delay between a Discord message and the agent seeing it.
-5. **Single channel**: The watcher monitors one channel at a time. Use `--channel` to change the target.
-6. **Windows-only token fallback**: The `getToken()` function uses PowerShell to read User env vars, which is Windows-specific. On macOS/Linux, ensure `DISCORD_TOKEN` is exported in the shell environment.
+1. **Startup timing gap**: The watcher takes ~5-10 seconds to connect to Discord and do its first poll. Messages sent during this window may not appear in the inbox until the second poll cycle. The protocol mitigates this with a 15-second wait after starting the watcher.
+2. **Session-scoped processes**: Both the watcher and notifier run per-session. Between Copilot CLI sessions, messages queue in Discord and are picked up when the next session starts (the watcher reads `.last-read-id` from the previous session and fetches everything after it).
+3. **Polling, not real-time**: The watcher polls Discord every ~10s, the notifier polls inbox.json every ~2s. Total worst-case latency from Discord message to agent notification: ~12 seconds.
+4. **Single channel**: The watcher monitors one channel at a time. Use `--channel` to change the target.
+5. **Windows-only token fallback**: The `getToken()` function uses PowerShell to read User env vars, which is Windows-specific. On macOS/Linux, ensure `DISCORD_TOKEN` is exported in the shell environment.
 
 ## Copy-Paste Setup Prompt
 
@@ -523,9 +575,10 @@ Please set up Discord two-way communication for this repo. Follow the instructio
 1. Install the Discord MCP server at ~/.copilot/tools/discordmcp/ (clone v-3/discordmcp, npm install, npm build)
 2. Configure MCP in both ~/.copilot/mcp-config.json and .copilot/mcp-config.json (use ABSOLUTE paths, not ${USERPROFILE})
 3. Create the discord-watcher.cjs file at ~/.copilot/tools/discordmcp/
-4. Add the Session Startup block to CLAUDE.md (update the channel ID to match our project's Discord channel)
-5. Set DISCORD_TOKEN as a User env var if not already set
-6. Initialize the last-read-id marker
+4. Create the inbox-notifier.cjs file at ~/.copilot/tools/discordmcp/
+5. Add the Session Startup block to CLAUDE.md (update the channel ID to match our project's Discord channel)
+6. Set DISCORD_TOKEN as a User env var if not already set
+7. Initialize the last-read-id marker
 7. Verify by sending a test message to Discord
 
 The DISCORD_TOKEN should already be set as a User env var. If not, ask me for it.
