@@ -29,7 +29,7 @@ logger = get_logger(__name__)
 
 # LLM defaults for cook-time adaptation
 _ADAPT_TIMEOUT = 120
-_ADAPT_MAX_TOKENS = 2048
+_ADAPT_MAX_TOKENS = 8000  # Kimi K2.5 reasoning tokens consume budget; needs headroom
 _MODELS = {
     "anthropic": "claude-sonnet-4-20250514",
     "openai": "gpt-4o",
@@ -563,6 +563,7 @@ def _call_llm(prompt: str) -> str:
             ],
         )
         text = response.choices[0].message.content or ""
+        actual_provider = "azure_openai"
     elif provider == "anthropic":
         import anthropic
 
@@ -576,6 +577,7 @@ def _call_llm(prompt: str) -> str:
             messages=[{"role": "user", "content": prompt}],
         )
         text = response.content[0].text
+        actual_provider = "anthropic"
     elif provider == "openai":
         import openai
 
@@ -595,11 +597,12 @@ def _call_llm(prompt: str) -> str:
             ],
         )
         text = response.choices[0].message.content or ""
+        actual_provider = "openai"
     else:
         msg = f"Unsupported LLM provider: {provider}"
         raise ValueError(msg)
 
-    logger.info("adapt_llm_call_complete", provider=provider, raw_length=len(text))
+    logger.info("adapt_llm_call_complete", provider=actual_provider, raw_length=len(text))
 
     # Extract JSON from reasoning model responses (Kimi K2.5 may include
     # <think>...</think> blocks, markdown fences, or other wrapper text).
