@@ -233,6 +233,17 @@ def _call_azure_openai(
     text = choice.message.content or ""
     finish_reason = choice.finish_reason
 
+    # Safety net: detect if Azure proxy ignored the thinking=disabled param.
+    # If reasoning_content is present, thinking was NOT disabled — log a warning
+    # so we can fall back (e.g., increase max_tokens or use reasoning_effort).
+    reasoning = getattr(choice.message, "reasoning_content", None)
+    if reasoning:
+        logger.warning(
+            "thinking_not_disabled",
+            reasoning_tokens=len(reasoning),
+            hint="Azure proxy may have stripped extra_body.thinking param",
+        )
+
     usage = response.usage
     input_tokens = usage.prompt_tokens if usage else 0
     output_tokens = usage.completion_tokens if usage else 0
