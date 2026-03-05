@@ -2093,3 +2093,63 @@ After pushing code changes, the team MUST:
 
 **Why:** Never stop after pushing — the pipeline and visual verification are part of the definition of done. (Related: Decision 15 — Visual Smoke Test ceremony gate)
 
+
+---
+
+# Decision: Kimi K2.5 Optimization Code Review — APPROVED
+
+**Date:** 2026-03-09
+**Author:** Dallas (Lead)
+**Status:** APPROVED with minor fix applied
+**Scope:** Tier 1 (llm_client.py) + Tier 3 (generator.py) changes
+
+## Verdict
+
+**APPROVE.** Implementation is solid. One docstring bug fixed inline.
+
+## Files Reviewed
+
+1. `services/workers/meal_plan_generator/llm_client.py` — Tier 1 (thinking control, JSON mode, timeout, max_tokens)
+2. `services/workers/meal_plan_generator/generator.py` — Tier 3 (retry count, pacing sleep, backoff)
+
+## Findings
+
+### ✅ Correct
+
+| Change | Assessment |
+|--------|-----------|
+| `extra_body={"thinking": {"type": "disabled"}}` at line 226 | Correct placement — OpenAI SDK passes `extra_body` into HTTP request body |
+| `response_format={"type": "json_object"}` at line 225 | Safe with thinking disabled — no reasoning tokens to corrupt structured output |
+| Timeout fix (was hardcoded 300s, now `float(timeout)`) | No regression — all call paths propagate caller timeout; connect stays at 10s |
+| `_MAX_TOKENS = 4000` | Sufficient — 7 recipes produce ~2200 tokens, 1.8x headroom, only 4K of 20K TPM |
+| `GENERATION_TIMEOUT = 60` (was 300) | Good — with thinking disabled, 5-15s expected, 60s gives 4-12x headroom |
+| `MAX_RETRIES = 2` (was 3) | Safe — faster responses + json_object mode reduces failures; 2 retries adequate |
+| 5s pacing sleep between multi-meal calls | Safe — 4K max_tokens means each request reserves 20% of TPM; 5s recovery is conservative |
+| `max(rate_limit_wait, 15 * attempt)` backoff | Safe — attempt 2 gets 30s minimum; rate_limit_wait from server overrides upward |
+
+### 🔧 Fixed
+
+- **Stale docstrings** at generator.py lines 4 and 53: "retries up to 3x" → "retries up to 2x". Applied directly.
+
+### ⚠️ Risk: Azure Proxy May Strip `thinking` Parameter
+
+**The critical risk:** `extra_body={"thinking": {"type": "disabled"}}` is MoonshotAI-native. Azure AI Foundry proxy may strip or ignore it.
+
+**If thinking is NOT disabled:**
+- Reasoning tokens consume part of the 4000 max_tokens budget
+- 7-recipe output (~2200) + reasoning (~1000-3000) likely exceeds 4000
+- Result: truncated JSON, `finish_reason="length"`
+
+**Existing safety net (adequate for now):**
+1. `_extract_json(raw_response, truncated=(finish_reason == "length"))` detects truncation
+2. `_recover_truncated_json()` closes incomplete JSON structures to salvage partial results
+3. Logging at line 249-254 warns on `finish_reason="length"`
+4. Retry loop with error feedback can recover on second attempt
+
+**Recommendation for follow-up (not blocking):**
+Add a diagnostic check after first successful Azure response: if `choice.message.reasoning_content` is present and non-empty, thinking was NOT disabled. Log a warning like `"thinking_not_disabled_fallback"` so the team knows to escalate `_MAX_TOKENS` or pursue alternative controls (`reasoning_effort: "low"`).
+
+## Decision
+
+Accept as-is. The truncation recovery + retry loop provides adequate fallback. Monitor `finish_reason="length"` warnings in production logs after deployment. If truncation rate exceeds 10%, escalate to Tier 2 (increase max_tokens to 6000 or add reasoning_content detection).
+

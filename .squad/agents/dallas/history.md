@@ -227,3 +227,24 @@ Review written to `.squad/decisions/inbox/dallas-feature-review.md`.
 **Secondary win if thinking disabled:** May re-enable `response_format=json_object` — the JSON corruption documented in `llm_client.py:223-226` was caused by invisible thinking tokens interfering with structured output. No thinking tokens = no corruption = no need for `_extract_json()` post-processing.
 
 **Decision written to:** `.squad/decisions/inbox/dallas-kimi-k25-optimization-strategy.md`
+
+### 2026-03-09: Kimi K2.5 Optimization Code Review — APPROVED
+
+**Reviewed:** Ripley's Tier 1 + Tier 3 implementation of Kimi K2.5 optimization strategy.
+
+**Files reviewed:**
+- `services/workers/meal_plan_generator/llm_client.py` — `extra_body={"thinking": {"type": "disabled"}}`, `response_format=json_object`, timeout fix (300s→caller param), `_MAX_TOKENS=4000`
+- `services/workers/meal_plan_generator/generator.py` — `MAX_RETRIES=2`, 5s pacing sleep, `15s×attempt` backoff
+
+**Key decisions:**
+1. `extra_body` is correctly placed as kwarg to `client.chat.completions.create()` — OpenAI SDK passes it directly into HTTP request body.
+2. `response_format=json_object` is safe with thinking disabled — no reasoning tokens to corrupt structured output.
+3. `_MAX_TOKENS=4000` is sufficient for 7 recipes (~2200 tokens, 1.8x headroom) but would be insufficient if Azure proxy strips the thinking parameter. Existing `_recover_truncated_json()` + `finish_reason="length"` detection provides adequate safety net.
+4. Timeout fix has no regression path — all callers propagate timeout correctly.
+5. Retry/backoff parameters (2 retries, 5s pacing, 30s backoff) are well-calibrated for reduced latency profile.
+
+**Bug fixed:** Two stale docstrings in generator.py ("retries up to 3x" → "retries up to 2x") at lines 4 and 53.
+
+**Outstanding risk:** Azure AI Foundry proxy may strip the `thinking` parameter. Recommended follow-up: add `reasoning_content` detection in response to confirm thinking is actually disabled. Monitor `finish_reason="length"` warnings post-deployment.
+
+**Decision written to:** `.squad/decisions/inbox/dallas-kimi-review.md`
