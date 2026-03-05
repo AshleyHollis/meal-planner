@@ -47,6 +47,7 @@ _JSON_SYSTEM_INSTRUCTION = (
     "The 'recipes' key MUST contain a JSON array, NOT a string. "
     'Correct: {"recipes": [{"title": "Pasta", ...}]} '
     'Wrong: {"recipes": "[{\\"title\\": \\"Pasta\\"}]"} '
+    "Be concise: 1-sentence descriptions, 4-8 ingredients, 3-5 steps per recipe. "
     "No markdown fences, no code blocks, no explanation, no thinking text."
 )
 

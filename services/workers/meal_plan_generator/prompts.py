@@ -20,6 +20,7 @@ CRITICAL REQUIREMENTS:
 5. Respond ONLY with valid JSON matching the schema — no comments, no trailing commas
 6. Prioritize using ingredients from the provided inventory, especially items expiring soon. Recipes MAY include ingredients not in inventory — those will be added to the grocery list.
 7. Every recipe must have at least one step
+8. Be CONCISE: 1-sentence descriptions, 4-8 ingredients, 3-5 steps per recipe
 
 OUTPUT SCHEMA:
 {schema_json}
@@ -70,7 +71,8 @@ CRITICAL REQUIREMENTS:
 4. Equipment-specific steps with mode, temperature, duration
 5. Respond ONLY with valid JSON matching the schema — no comments, no trailing commas
 6. Prioritize using ingredients from the provided inventory, especially items expiring soon. Recipes MAY include ingredients not in inventory — those will be added to the grocery list.
-7. Every recipe must have at least one step{type_instructions}
+7. Every recipe must have at least one step
+8. Be CONCISE: 1-sentence descriptions, 4-8 ingredients, 3-5 steps per recipe{type_instructions}
 
 OUTPUT SCHEMA:
 {{schema_json}}
