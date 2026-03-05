@@ -55,20 +55,27 @@ Python 3.12 (backend/workers), TypeScript 5 (frontend): Follow standard conventi
    }
    ```
 5. If inbox has messages, process them BEFORE doing anything else.
-6. Start the inbox notifier (NON-detached async — triggers system_notification on new messages):
+6. Start the inbox notifier (NON-detached async — alerts on new messages):
    ```powershell
    # Start as mode="async" (NOT detached) with shellId="inbox-notifier"
    node "$env:USERPROFILE\.copilot\tools\discordmcp\inbox-notifier.cjs"
    ```
 
-**Continuous Discord Monitoring (via inbox-notifier):**
+**Discord Monitoring — How It Works:**
 
-The inbox-notifier watches inbox.json and **exits** when new messages appear. This exit triggers a `system_notification` that wakes the agent even when idle. When you receive a system_notification about the inbox-notifier exiting:
+Three processes work together:
+- **Watcher** (detached): polls Discord every 10s, writes to inbox.json, **auto-acknowledges** on Discord ("📨 Message received")
+- **Notifier** (non-detached async): watches inbox.json every 2s, exits when new messages appear
+- **Agent**: reads inbox at checkpoints and when notifier exits
 
-1. Read the notifier output (it contains the message content)
-2. Process the Discord message (route work, reply on Discord, etc.)
-3. Clear the inbox: `Remove-Item "$env:USERPROFILE\.copilot\tools\discordmcp\inbox.json"`
-4. **Restart the notifier** (same command as step 6 above) to watch for the next message
+The watcher auto-acknowledges so the user always gets instant feedback on Discord. The agent processes the full message at the next checkpoint.
+
+**Important**: The notifier gets killed when `task_complete` is called or shells are cleaned up. Always restart it after completing a task:
+```powershell
+Remove-Item "$env:USERPROFILE\.copilot\tools\discordmcp\inbox.json" -ErrorAction SilentlyContinue
+# Start as mode="async" (NOT detached) with shellId="inbox-notifier"
+node "$env:USERPROFILE\.copilot\tools\discordmcp\inbox-notifier.cjs"
+```
 
 **Additional rules (MANDATORY):**
 
