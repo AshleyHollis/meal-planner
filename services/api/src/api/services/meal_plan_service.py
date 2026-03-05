@@ -599,7 +599,37 @@ def _call_llm(prompt: str) -> str:
         msg = f"Unsupported LLM provider: {provider}"
         raise ValueError(msg)
 
-    logger.info("adapt_llm_call_complete", provider=provider)
+    logger.info("adapt_llm_call_complete", provider=provider, raw_length=len(text))
+
+    # Extract JSON from reasoning model responses (Kimi K2.5 may include
+    # <think>...</think> blocks, markdown fences, or other wrapper text).
+    text = _extract_json_from_llm(text)
+    return text
+
+
+def _extract_json_from_llm(text: str) -> str:
+    """Extract clean JSON from LLM response, handling thinking blocks and fences."""
+    import re
+
+    if not text:
+        return text
+
+    # Strip <think>...</think> blocks (Kimi K2.5 reasoning)
+    text = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL).strip()
+
+    # Strip markdown code fences
+    if "```" in text:
+        lines = text.split("\n")
+        lines = [ln for ln in lines if not ln.strip().startswith("```")]
+        text = "\n".join(lines).strip()
+
+    # Find JSON object or array
+    for start_char, end_char in [("{", "}"), ("[", "]")]:
+        start = text.find(start_char)
+        end = text.rfind(end_char)
+        if start != -1 and end > start:
+            return text[start : end + 1]
+
     return text
 
 
