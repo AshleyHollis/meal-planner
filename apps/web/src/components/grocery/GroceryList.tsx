@@ -109,7 +109,9 @@ function GroceryList({
     }
   }
 
-  function handleTripCompletionRequested(checkedItems: GroceryListType["items"]) {
+  function handleTripCompletionRequested(
+    checkedItems: GroceryListType["items"],
+  ) {
     setTripCompletionItems(checkedItems);
     setShowTripCompleteDialog(true);
   }
@@ -173,7 +175,9 @@ function GroceryList({
                   key={item.id}
                   item={item}
                   onChanged={onProductLinked ?? onChanged}
-                  tripChecked={selectedShop ? tripCheckedIds.has(item.id) : undefined}
+                  tripChecked={
+                    selectedShop ? tripCheckedIds.has(item.id) : undefined
+                  }
                   onTripCheck={selectedShop ? handleItemTripCheck : undefined}
                 />
               ))}

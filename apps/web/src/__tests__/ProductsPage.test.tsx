@@ -127,10 +127,14 @@ describe("ProductsPage", () => {
       .closest("section");
     expect(pantrySection).not.toBeNull();
     expect(
-      within(pantrySection as HTMLElement).getByText("Diamond · Sea Salt Flakes"),
+      within(pantrySection as HTMLElement).getByText(
+        "Diamond · Sea Salt Flakes",
+      ),
     ).toBeDefined();
     expect(
-      within(pantrySection as HTMLElement).getByText("MasterFoods · Black Pepper"),
+      within(pantrySection as HTMLElement).getByText(
+        "MasterFoods · Black Pepper",
+      ),
     ).toBeDefined();
   });
 });

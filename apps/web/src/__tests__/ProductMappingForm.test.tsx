@@ -117,6 +117,8 @@ describe("ProductMappingForm", () => {
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
 
     expect(createProduct).not.toHaveBeenCalled();
-    expect(screen.getByText("Select an ingredient before saving")).toBeDefined();
+    expect(
+      screen.getByText("Select an ingredient before saving"),
+    ).toBeDefined();
   });
 });

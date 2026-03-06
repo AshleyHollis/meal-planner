@@ -43,18 +43,21 @@ function ProductMappingForm({
   const [ingredientQuery, setIngredientQuery] = useState(
     existingProduct?.ingredient_name ?? ingredientName ?? "",
   );
-  const [selectedIngredientId, setSelectedIngredientId] = useState<string | null>(
-    existingProduct?.ingredient_id ?? ingredientId ?? null,
-  );
-  const [ingredientSuggestions, setIngredientSuggestions] = useState<Ingredient[]>(
-    [],
-  );
+  const [selectedIngredientId, setSelectedIngredientId] = useState<
+    string | null
+  >(existingProduct?.ingredient_id ?? ingredientId ?? null);
+  const [ingredientSuggestions, setIngredientSuggestions] = useState<
+    Ingredient[]
+  >([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const resolvedIngredientId =
-    existingProduct?.ingredient_id ?? ingredientId ?? selectedIngredientId ?? "";
+    existingProduct?.ingredient_id ??
+    ingredientId ??
+    selectedIngredientId ??
+    "";
   const resolvedIngredientName =
     existingProduct?.ingredient_name ?? ingredientName ?? ingredientQuery;
 

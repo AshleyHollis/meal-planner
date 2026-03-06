@@ -152,18 +152,20 @@ async function createFreshMealPlan(
 
       if (attempt < 2) {
         console.warn(
-          `[seed-data] Fresh meal plan attempt ${attempt}/2 hit 409. Retrying after re-checking blockers: ${blockers
-            .map((plan) => `${plan.id} (${plan.status})`)
-            .join(", ") || "none reported"}`,
+          `[seed-data] Fresh meal plan attempt ${attempt}/2 hit 409. Retrying after re-checking blockers: ${
+            blockers.map((plan) => `${plan.id} (${plan.status})`).join(", ") ||
+            "none reported"
+          }`,
         );
         await new Promise((resolve) => setTimeout(resolve, 1_000));
         continue;
       }
 
       throw new Error(
-        `[seed-data] Fresh meal plan creation still hit 409 after cleanup. Remaining blockers: ${blockers
-          .map((plan) => `${plan.id} (${plan.status})`)
-          .join(", ") || "unknown"}`,
+        `[seed-data] Fresh meal plan creation still hit 409 after cleanup. Remaining blockers: ${
+          blockers.map((plan) => `${plan.id} (${plan.status})`).join(", ") ||
+          "unknown"
+        }`,
       );
     }
 

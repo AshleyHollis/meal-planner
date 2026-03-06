@@ -89,7 +89,8 @@ describe("GroceryList", () => {
   });
 
   it("routes trip completion through the inventory dialog before submitting", async () => {
-    const { checkGroceryItem, completeShopping } = await import("@/services/api");
+    const { checkGroceryItem, completeShopping } =
+      await import("@/services/api");
     vi.mocked(completeShopping).mockResolvedValue([]);
     const onChanged = vi.fn();
     const { container } = render(

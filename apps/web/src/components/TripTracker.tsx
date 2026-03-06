@@ -2,7 +2,11 @@
 
 import type { GroceryItem } from "@/types";
 import { getShopDisplayName } from "@/lib/shop-utils";
-import { getTripProgress, getTripState, setItemChecked } from "@/services/tripStorage";
+import {
+  getTripProgress,
+  getTripState,
+  setItemChecked,
+} from "@/services/tripStorage";
 
 interface TripTrackerProps {
   groceryListId: string;
