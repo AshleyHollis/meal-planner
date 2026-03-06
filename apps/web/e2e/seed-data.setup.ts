@@ -187,9 +187,12 @@ async function deleteMealPlanIfPresent(
   headers: Record<string, string>,
   planId: string,
 ): Promise<void> {
-  const deleteResp = await request.delete(`${API_URL}/api/v1/meal-plans/${planId}`, {
-    headers,
-  });
+  const deleteResp = await request.delete(
+    `${API_URL}/api/v1/meal-plans/${planId}`,
+    {
+      headers,
+    },
+  );
 
   if (deleteResp.status() === 204 || deleteResp.status() === 404) {
     console.log(`[seed-data] Removed failed meal plan ${planId}`);
@@ -625,7 +628,9 @@ setup("seed test data", async ({ request, baseURL }) => {
           return;
         } else if (updated.status === "failed") {
           const errorMessage = updated.error_message?.trim() || "unknown error";
-          if (errorMessage.toLowerCase().includes("llm may not be configured")) {
+          if (
+            errorMessage.toLowerCase().includes("llm may not be configured")
+          ) {
             console.warn(
               `[seed-data] Fresh meal plan failed after ${elapsed}s due to preview LLM configuration: ${errorMessage}`,
             );
