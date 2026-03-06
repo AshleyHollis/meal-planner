@@ -182,6 +182,25 @@ async function createFreshMealPlan(
   throw new Error("[seed-data] Failed to create a fresh meal plan");
 }
 
+async function deleteMealPlanIfPresent(
+  request: APIRequestContext,
+  headers: Record<string, string>,
+  planId: string,
+): Promise<void> {
+  const deleteResp = await request.delete(`${API_URL}/api/v1/meal-plans/${planId}`, {
+    headers,
+  });
+
+  if (deleteResp.status() === 204 || deleteResp.status() === 404) {
+    console.log(`[seed-data] Removed failed meal plan ${planId}`);
+    return;
+  }
+
+  console.warn(
+    `[seed-data] Failed to remove failed meal plan ${planId}: HTTP ${deleteResp.status()}`,
+  );
+}
+
 setup("seed test data", async ({ request, baseURL }) => {
   if (!process.env.USE_EXTERNAL_SERVER) {
     console.log("[seed-data] Skipping (USE_EXTERNAL_SERVER not set)");
@@ -590,6 +609,7 @@ setup("seed test data", async ({ request, baseURL }) => {
       const updated = (await statusResp.json()) as {
         id: string;
         status: string;
+        error_message?: string | null;
         slots?: Array<{ id: string }>;
       };
 
@@ -604,8 +624,19 @@ setup("seed test data", async ({ request, baseURL }) => {
           );
           return;
         } else if (updated.status === "failed") {
+          const errorMessage = updated.error_message?.trim() || "unknown error";
+          if (errorMessage.toLowerCase().includes("llm may not be configured")) {
+            console.warn(
+              `[seed-data] Fresh meal plan failed after ${elapsed}s due to preview LLM configuration: ${errorMessage}`,
+            );
+            await deleteMealPlanIfPresent(request, headers, plan.id);
+            console.warn(
+              "[seed-data] Continuing without a generated meal plan; plan-dependent specs will self-skip",
+            );
+            return;
+          }
           throw new Error(
-            `[seed-data] Fresh meal plan failed after ${elapsed}s (LLM may not be configured)`,
+            `[seed-data] Fresh meal plan failed after ${elapsed}s: ${errorMessage}`,
           );
         }
         throw new Error(
