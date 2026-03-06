@@ -1,7 +1,14 @@
 "use client";
 
+import { useState } from "react";
+import Image from "next/image";
 import type { QuickSuggestion } from "@/types";
 import { Button } from "./ui/Button";
+import {
+  getMealImageUrl,
+  getMealCategory,
+  getCategoryColor,
+} from "@/lib/meal-images";
 
 interface QuickSuggestionCardProps {
   suggestion: QuickSuggestion;
@@ -12,8 +19,34 @@ function QuickSuggestionCard({
   suggestion,
   onCookThis,
 }: QuickSuggestionCardProps) {
+  const [imgFailed, setImgFailed] = useState(false);
+  const imgUrl = getMealImageUrl(suggestion.title, 400, 200);
+  const cat = getMealCategory(suggestion.title);
+  const grad = getCategoryColor(cat);
+
   return (
     <div className="flex flex-col overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
+      {/* Meal image / gradient fallback */}
+      {imgUrl && !imgFailed ? (
+        <div className="relative h-36 w-full flex-shrink-0">
+          <Image
+            src={imgUrl}
+            alt={suggestion.title}
+            fill
+            className="object-cover"
+            placeholder="empty"
+            onError={() => setImgFailed(true)}
+          />
+        </div>
+      ) : (
+        <div
+          className={`flex h-24 w-full items-center justify-center bg-gradient-to-br ${grad}`}
+        >
+          <span className="text-3xl font-bold text-white/80 drop-shadow">
+            {suggestion.title.charAt(0).toUpperCase()}
+          </span>
+        </div>
+      )}
       <div className="p-4">
         <h3 className="font-semibold text-gray-900">{suggestion.title}</h3>
         {suggestion.description && (

@@ -138,10 +138,10 @@ patches:
         path: /spec/template/spec/containers/0/resources
         value:
           requests:
-            cpu: 25m
-            memory: 64Mi
+            cpu: 50m
+            memory: 128Mi
           limits:
-            cpu: 150m
+            cpu: 300m
             memory: 256Mi
 
   # Reduced resources for preview migration job

@@ -42,7 +42,7 @@ class GeneratedRecipe(BaseModel):
 class GeneratedMealPlan(BaseModel):
     """Pydantic model for LLM structured output of a complete meal plan."""
 
-    recipes: list[GeneratedRecipe]  # Exactly 7
+    recipes: list[GeneratedRecipe]  # 7 per meal type
 
 
 class QuickSuggestionPlan(BaseModel):

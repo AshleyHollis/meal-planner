@@ -72,11 +72,9 @@ def validate_constraints(
                             f"{label} step {step.step_order}: unknown mode '{mode}' for '{eq_name}'"
                         )
 
-        # 4. Ingredients must be referenced (exist in inventory) — skip if inventory is empty
-        if inventory:
-            for ing in recipe.ingredients:
-                if ing.ingredient_name.lower() not in inventory:
-                    errors.append(f"{label}: ingredient '{ing.ingredient_name}' not in inventory")
+        # 4. Inventory check REMOVED — recipes may include ingredients not in
+        #    inventory; those will be added to the grocery list.  The prompt
+        #    already prioritizes inventory items, so this is guidance not a gate.
 
         # 5. Allergen check — no recipe should contain allergen ingredients
         if allergen_ingredients:

@@ -10,9 +10,11 @@ from ..dependencies import get_inventory_service
 from ..models.inventory import (
     CreateInventoryItem,
     DefrostReminder,
+    InventoryItemDetailResponse,
     InventoryItemResponse,
     UpdateInventoryItem,
 )
+from ..models.product import ProductSummary
 from ..services.inventory_service import InventoryService
 
 router = APIRouter(prefix="/api/v1/inventory", tags=["inventory"])
@@ -36,6 +38,23 @@ async def get_defrost_reminders(
     """Get defrost reminders for upcoming meal plan slots using freezer items."""
     reminders = await service.get_defrost_reminders(days_ahead)
     return [DefrostReminder.model_validate(r) for r in reminders]
+
+
+@router.get("/{item_id}", response_model=InventoryItemDetailResponse)
+async def get_inventory_item(
+    item_id: UUID,
+    service: InventoryService = Depends(get_inventory_service),  # noqa: B008
+) -> InventoryItemDetailResponse:
+    """Get a single inventory item with ingredient details and associated product mapping."""
+    result = await service.get_item(item_id)
+    if result is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Item not found")
+    item, product = result
+    base = InventoryItemResponse.model_validate(item)
+    product_data = ProductSummary.model_validate(product) if product is not None else None
+    return InventoryItemDetailResponse(
+        **base.model_dump(exclude={"expiry_status"}), product=product_data
+    )
 
 
 @router.post("", response_model=InventoryItemResponse, status_code=status.HTTP_201_CREATED)

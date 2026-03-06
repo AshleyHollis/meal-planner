@@ -36,8 +36,8 @@
 
 ## Model
 
-- **Preferred:** claude-haiku-4.5
-- **Rationale:** DevOps tasks are mechanical — haiku tier for cost efficiency
+- **Preferred:** claude-sonnet-4.6
+- **Rationale:** Complex Azure infrastructure debugging requires stronger reasoning
 
 ## Collaboration
 

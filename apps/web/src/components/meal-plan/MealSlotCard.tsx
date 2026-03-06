@@ -19,6 +19,7 @@ import {
 } from "@/lib/meal-images";
 import { LeftoverForm } from "../leftover/LeftoverForm";
 import { SubstitutionDialog } from "../SubstitutionDialog";
+import { useToast } from "../ui/Toast";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -100,6 +101,7 @@ function MealSlotCard({
   );
   const [loadingRating, setLoadingRating] = useState(false);
   const [expanded, setExpanded] = useState(false);
+  const { showToast } = useToast();
 
   useEffect(() => {
     if (isCooked && planId && !existingRating && !loadingRating) {
@@ -107,7 +109,7 @@ function MealSlotCard({
       import("@/services/api")
         .then(({ getRating }) => getRating(planId, slot.id))
         .then((rating) => setExistingRating(rating))
-        .catch((err) => console.error("Failed to load rating:", err))
+        .catch(() => showToast("Failed to load rating.", "error"))
         .finally(() => setLoadingRating(false));
     }
   }, [isCooked, planId, slot.id, existingRating, loadingRating]);

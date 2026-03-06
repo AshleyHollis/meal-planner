@@ -2,20 +2,24 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
 from fastapi import HTTPException, status
 from shared.config import get_settings
+from shared.db.models.inventory import InventoryItem
 from shared.db.models.meal_plan import MealPlan, MealSlot
+from shared.db.models.recipe import Recipe, RecipeIngredient, RecipeStep
 from shared.logging.config import get_logger
 from shared.queue.client import enqueue_message
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..models.meal_plan import (
     CreateMealPlan,
+    SaveVariationRequest,
     UpdateMealSlot,
     UpdatePlanStatus,
     UpdateSlotStatus,
@@ -24,8 +28,8 @@ from ..models.meal_plan import (
 logger = get_logger(__name__)
 
 # LLM defaults for cook-time adaptation
-_ADAPT_TIMEOUT = 10
-_ADAPT_MAX_TOKENS = 2048
+_ADAPT_TIMEOUT = 120
+_ADAPT_MAX_TOKENS = 8000  # Kimi K2.5 reasoning tokens consume budget; needs headroom
 _MODELS = {
     "anthropic": "claude-sonnet-4-20250514",
     "openai": "gpt-4o",
@@ -79,7 +83,7 @@ class MealPlanService:
                 MealPlan.status.in_(["draft", "active"]),
             )
         )
-        if existing.scalar_one_or_none() is not None:
+        if existing.scalars().first() is not None:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail="Household already has an active or in-progress meal plan",
@@ -107,6 +111,45 @@ class MealPlanService:
 
         return plan
 
+    async def retry_plan(self, plan_id: UUID) -> MealPlan | None:
+        """Reset a failed meal plan to draft and re-enqueue generation.
+
+        Returns None if plan not found. Raises 409 if plan is not in failed state.
+        """
+        stmt = select(MealPlan).where(
+            MealPlan.id == plan_id,
+            MealPlan.household_id == self.household_id,
+        )
+        result = await self.session.execute(stmt)
+        plan = result.scalar_one_or_none()
+        if plan is None:
+            return None
+
+        if plan.status != "failed":
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Only failed plans can be retried (current status: {plan.status})",
+            )
+
+        # Clear existing slots/recipes from the failed attempt
+        slots_stmt = select(MealSlot).where(MealSlot.meal_plan_id == plan_id)
+        slots_result = await self.session.execute(slots_stmt)
+        for slot in slots_result.scalars().all():
+            await self.session.delete(slot)
+
+        plan.status = "draft"
+        plan.error_message = None
+        await self.session.flush()
+
+        message = {
+            "meal_plan_id": str(plan.id),
+            "household_id": str(self.household_id),
+            "week_start_date": plan.week_start_date.isoformat(),
+        }
+        enqueue_message(message)
+
+        return plan
+
     async def get_plan(
         self,
         plan_id: UUID,
@@ -128,15 +171,63 @@ class MealPlanService:
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def list_plans(self) -> list[MealPlan]:
-        """Return all meal plans for the household, newest first."""
-        stmt = (
-            select(MealPlan)
-            .where(MealPlan.household_id == self.household_id)
-            .order_by(MealPlan.created_at.desc())
-        )
+    async def list_plans(
+        self,
+        status: str | None = None,
+        sort: str = "created_at",
+        order: str = "desc",
+    ) -> list[MealPlan]:
+        """Return all meal plans for the household with optional filtering and sorting."""
+        _sort_cols = {
+            "created_at": MealPlan.created_at,
+            "week_start_date": MealPlan.week_start_date,
+        }
+        sort_col = _sort_cols.get(sort, MealPlan.created_at)
+        stmt = select(MealPlan).where(MealPlan.household_id == self.household_id)
+        if status:
+            stmt = stmt.where(MealPlan.status == status)
+        stmt = stmt.order_by(sort_col.asc()) if order == "asc" else stmt.order_by(sort_col.desc())
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
+
+    async def get_stats(self) -> dict:
+        """Return aggregate stats for the household's meal plans."""
+        # Plans grouped by status
+        plans_stmt = (
+            select(MealPlan.status, func.count(MealPlan.id))
+            .where(MealPlan.household_id == self.household_id)
+            .group_by(MealPlan.status)
+        )
+        plans_result = await self.session.execute(plans_stmt)
+        plans_by_status: dict[str, int] = {row[0]: row[1] for row in plans_result.all()}
+
+        # Total meals cooked across all plans
+        cooked_stmt = (
+            select(func.count(MealSlot.id))
+            .join(MealPlan)
+            .where(
+                MealPlan.household_id == self.household_id,
+                MealSlot.status == "cooked",
+            )
+        )
+        cooked_result = await self.session.execute(cooked_stmt)
+        total_meals_cooked: int = cooked_result.scalar() or 0
+
+        # Inventory items expiring within 7 days
+        soon = datetime.now(UTC) + timedelta(days=7)
+        expiring_stmt = select(func.count(InventoryItem.id)).where(
+            InventoryItem.household_id == self.household_id,
+            InventoryItem.expiry_date.isnot(None),
+            InventoryItem.expiry_date <= soon,
+        )
+        expiring_result = await self.session.execute(expiring_stmt)
+        items_expiring_soon: int = expiring_result.scalar() or 0
+
+        return {
+            "plans_by_status": plans_by_status,
+            "total_meals_cooked": total_meals_cooked,
+            "items_expiring_soon": items_expiring_soon,
+        }
 
     async def update_slot(
         self,
@@ -191,6 +282,13 @@ class MealPlanService:
 
         deductions = None
 
+        # 409 guard: prevent double-cook
+        if data.status == "cooked" and slot.cooked_at is not None:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Meal slot already marked as cooked",
+            )
+
         # If transitioning to cooked and wasn't already cooked
         if data.status == "cooked" and slot.status != "cooked" and slot.recipe_id is not None:
             from .inventory_service import InventoryService
@@ -199,7 +297,7 @@ class MealPlanService:
             deductions = await inv_service.deduct_for_recipe(slot.recipe_id)
 
         slot.status = data.status
-        if data.status in ("cooked", "skipped"):
+        if data.status == "cooked":
             slot.cooked_at = datetime.now(UTC)
         else:
             slot.cooked_at = None
@@ -224,6 +322,151 @@ class MealPlanService:
         plan.status = data.status
         await self.session.flush()
         return plan
+
+    async def delete_plan(self, plan_id: UUID) -> None:
+        """Delete a meal plan and its slots.
+
+        Only plans with status "failed" or "completed" can be deleted.
+
+        Raises:
+            HTTPException 404: If plan not found.
+            HTTPException 409: If plan status is not failed or completed.
+        """
+        stmt = select(MealPlan).where(
+            MealPlan.id == plan_id,
+            MealPlan.household_id == self.household_id,
+        )
+        result = await self.session.execute(stmt)
+        plan = result.scalar_one_or_none()
+
+        if plan is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Meal plan not found",
+            )
+
+        if plan.status not in ("failed", "completed"):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Cannot delete meal plan with status '{plan.status}'. Only 'failed' or 'completed' plans can be deleted.",
+            )
+
+        # Delete the plan (cascade will delete slots automatically)
+        await self.session.delete(plan)
+        await self.session.flush()
+
+    async def adapt_slot(
+        self,
+        plan_id: UUID,
+        slot_id: UUID,
+        effort_level: str,
+    ) -> dict | None:
+        """Adapt a meal slot's recipe for a different effort level via LLM.
+
+        Loads the slot + recipe, calls adapt_recipe() in a thread pool (sync LLM call),
+        and returns the adapted recipe dict. Returns None if slot or recipe not found.
+        """
+        stmt = (
+            select(MealSlot)
+            .join(MealPlan)
+            .where(
+                MealSlot.id == slot_id,
+                MealSlot.meal_plan_id == plan_id,
+                MealPlan.household_id == self.household_id,
+            )
+        )
+        result = await self.session.execute(stmt)
+        slot = result.scalar_one_or_none()
+        if slot is None or slot.recipe is None:
+            return None
+
+        recipe = slot.recipe
+        recipe_dict = {
+            "title": recipe.title,
+            "description": recipe.description or "",
+            "servings": recipe.servings,
+            "steps": [
+                {
+                    "step_order": step.step_order,
+                    "instruction": step.instruction,
+                    "duration_min": step.duration_min,
+                }
+                for step in sorted(recipe.steps, key=lambda s: s.step_order)
+            ],
+        }
+
+        adapted = await asyncio.to_thread(self.adapt_recipe, recipe_dict, effort_level)
+        return {
+            "plan_id": str(plan_id),
+            "slot_id": str(slot_id),
+            "recipe_id": str(recipe.id),
+            "title": recipe.title,
+            "effort_level": effort_level,
+            "adapted_steps": adapted.get("steps", []),
+        }
+
+    async def save_variation(
+        self,
+        recipe_id: UUID,
+        data: SaveVariationRequest,
+    ) -> dict | None:
+        """Save a recipe variation as a new recipe row for future reuse.
+
+        Creates a copy of the original recipe with source_recipe_id pointing back.
+        Copies all ingredients and steps. Returns None if original not found.
+        """
+        stmt = select(Recipe).where(
+            Recipe.id == recipe_id,
+            Recipe.household_id == self.household_id,
+        )
+        result = await self.session.execute(stmt)
+        original = result.scalar_one_or_none()
+        if original is None:
+            return None
+
+        variation = Recipe(
+            household_id=self.household_id,
+            title=data.title or f"{original.title} (variation)",
+            description=data.notes or original.description,
+            servings=original.servings,
+            prep_time_min=original.prep_time_min,
+            cook_time_min=original.cook_time_min,
+            is_ai_generated=original.is_ai_generated,
+            source_recipe_id=original.id,
+            cuisine_type=original.cuisine_type,
+        )
+        self.session.add(variation)
+        await self.session.flush()
+
+        for ri in original.ingredients:
+            self.session.add(
+                RecipeIngredient(
+                    recipe_id=variation.id,
+                    ingredient_id=ri.ingredient_id,
+                    quantity=ri.quantity,
+                    unit=ri.unit,
+                    is_optional=ri.is_optional,
+                )
+            )
+        for step in original.steps:
+            self.session.add(
+                RecipeStep(
+                    recipe_id=variation.id,
+                    step_order=step.step_order,
+                    instruction=step.instruction,
+                    equipment_mode_id=step.equipment_mode_id,
+                    temperature=step.temperature,
+                    duration_min=step.duration_min,
+                )
+            )
+        await self.session.flush()
+
+        return {
+            "recipe_id": str(original.id),
+            "variation_id": str(variation.id),
+            "title": variation.title,
+            "status": "saved",
+        }
 
     @staticmethod
     def adapt_recipe(
@@ -275,34 +518,121 @@ def _call_llm(prompt: str) -> str:
     settings = get_settings()
     provider = settings.llm.provider
     api_key = settings.llm.api_key
+    temperature = settings.llm.temperature
+    model_override = settings.llm.model
 
-    logger.info("adapt_llm_call_start", provider=provider)
+    logger.info("adapt_llm_call_start", provider=provider, temperature=temperature)
 
-    if provider == "anthropic":
+    # Prefer Azure OpenAI when configured, regardless of LLM_PROVIDER setting
+    if settings.llm.is_azure_configured:
+        import httpx
+        import openai
+
+        llm = settings.llm
+        deployment = llm.azure_deployment or model_override or _MODELS["openai"]
+        try:
+            import certifi
+
+            ca_bundle = certifi.where()
+        except ImportError:
+            ca_bundle = True  # type: ignore[assignment]
+
+        http_client = httpx.Client(
+            verify=ca_bundle,
+            timeout=httpx.Timeout(float(_ADAPT_TIMEOUT) + 5.0, connect=10.0),
+        )
+        client = openai.AzureOpenAI(
+            api_key=llm.azure_api_key,
+            azure_endpoint=llm.azure_endpoint,
+            api_version=llm.azure_api_version,
+            http_client=http_client,
+            max_retries=0,
+        )
+        response = client.chat.completions.create(
+            model=deployment,
+            max_tokens=_ADAPT_MAX_TOKENS,
+            temperature=temperature,
+            # NOTE: Do NOT use response_format=json_object with reasoning models
+            # like Kimi K2.5 — their invisible thinking tokens corrupt the JSON.
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You are a recipe adaptation assistant. Respond ONLY with valid JSON. No markdown, no explanation.",
+                },
+                {"role": "user", "content": prompt},
+            ],
+        )
+        text = response.choices[0].message.content or ""
+        actual_provider = "azure_openai"
+    elif provider == "anthropic":
         import anthropic
 
+        model = model_override or _MODELS["anthropic"]
         client = anthropic.Anthropic(api_key=api_key, timeout=_ADAPT_TIMEOUT)
         response = client.messages.create(
-            model=_MODELS["anthropic"],
+            model=model,
             max_tokens=_ADAPT_MAX_TOKENS,
+            temperature=temperature,
+            system="You are a recipe adaptation assistant. Respond ONLY with valid JSON.",
             messages=[{"role": "user", "content": prompt}],
         )
         text = response.content[0].text
+        actual_provider = "anthropic"
     elif provider == "openai":
         import openai
 
+        model = model_override or _MODELS["openai"]
         client = openai.OpenAI(api_key=api_key, timeout=_ADAPT_TIMEOUT)
         response = client.chat.completions.create(
-            model=_MODELS["openai"],
+            model=model,
             max_tokens=_ADAPT_MAX_TOKENS,
-            messages=[{"role": "user", "content": prompt}],
+            temperature=temperature,
+            response_format={"type": "json_object"},
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You are a recipe adaptation assistant. Respond ONLY with valid JSON.",
+                },
+                {"role": "user", "content": prompt},
+            ],
         )
         text = response.choices[0].message.content or ""
+        actual_provider = "openai"
     else:
         msg = f"Unsupported LLM provider: {provider}"
         raise ValueError(msg)
 
-    logger.info("adapt_llm_call_complete", provider=provider)
+    logger.info("adapt_llm_call_complete", provider=actual_provider, raw_length=len(text))
+
+    # Extract JSON from reasoning model responses (Kimi K2.5 may include
+    # <think>...</think> blocks, markdown fences, or other wrapper text).
+    text = _extract_json_from_llm(text)
+    return text
+
+
+def _extract_json_from_llm(text: str) -> str:
+    """Extract clean JSON from LLM response, handling thinking blocks and fences."""
+    import re
+
+    if not text:
+        return text
+
+    # Strip <think>...</think> blocks (Kimi K2.5 reasoning)
+    text = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL).strip()
+
+    # Strip markdown code fences
+    if "```" in text:
+        lines = text.split("\n")
+        lines = [ln for ln in lines if not ln.strip().startswith("```")]
+        text = "\n".join(lines).strip()
+
+    # Find JSON object or array
+    for start_char, end_char in [("{", "}"), ("[", "]")]:
+        start = text.find(start_char)
+        end = text.rfind(end_char)
+        if start != -1 and end > start:
+            return text[start : end + 1]
+
     return text
 
 

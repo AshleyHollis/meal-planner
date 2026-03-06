@@ -1,11 +1,13 @@
 """Meal plan generation orchestrator with retry logic.
 
 Loads context from DB, builds prompt, calls LLM, validates,
-retries up to 3x, and persists results to the database.
+retries up to 2x, and persists results to the database.
 """
 
 from __future__ import annotations
 
+import asyncio
+import contextlib
 from collections import defaultdict
 from datetime import datetime, timedelta
 from typing import Any
@@ -18,10 +20,12 @@ from shared.db.models import (
     HouseholdMember,
     Ingredient,
     InventoryItem,
+    Leftover,
     MealPlan,
     MealSlot,
     MealSlotRating,
     MemberPreference,
+    Product,
     Recipe,
     RecipeFavorite,
     RecipeIngredient,
@@ -39,14 +43,17 @@ from .validator import validate_constraints
 
 logger = get_logger(__name__)
 
-MAX_RETRIES = 3
+MAX_RETRIES = 2
+
+# TPM budget: 20K TPM / ~5K tokens per call (prompt + 4K output) ≈ 4 max concurrent; use 2 to be safe.
+MAX_PARALLEL_LLM_CALLS = 2
 
 
 async def generate_meal_plan(message_content: dict[str, Any]) -> None:
     """Generate a meal plan from a queue message.
 
     Loads household context from DB, builds an LLM prompt, calls the LLM,
-    validates constraints, retries up to 3x on failure, and persists all
+    validates constraints, retries up to 2x on failure, and persists all
     generated data (recipes, ingredients, steps, meal slots, grocery list)
     to the database.
 
@@ -95,6 +102,8 @@ async def generate_meal_plan(message_content: dict[str, Any]) -> None:
             rating_insights=context.get("rating_insights"),
             cuisine_preferences=context.get("cuisine_preferences"),
             recurring_constraints=context.get("recurring_templates"),
+            leftovers=context.get("leftovers"),
+            freezer_items=context.get("freezer_items"),
         )
 
         # Build lookup data for validator
@@ -109,14 +118,62 @@ async def generate_meal_plan(message_content: dict[str, Any]) -> None:
             equipment_modes[eq.name] = [m.name for m in modes]
 
         # 3. Call LLM with retry loop
-        plan = await _generate_with_retries(
-            prompt,
-            inventory_names,
-            equipment_modes,
-            allergen_ingredients=context.get("allergen_ingredients"),
-            cuisine_preferences=context.get("cuisine_preferences"),
-            meal_types=meal_types,
-        )
+        effective_types = meal_types or ["dinner"]
+
+        if len(effective_types) > 1:
+            # Multi-meal: generate per-type in parallel (bounded by semaphore) for speed.
+            semaphore = asyncio.Semaphore(MAX_PARALLEL_LLM_CALLS)
+
+            async def _generate_meal_type(index: int, mt: str) -> GeneratedMealPlan:
+                # Stagger BEFORE acquiring semaphore so the slot is not held
+                # during the sleep (which would block lower-priority tasks).
+                if index > 0:
+                    await asyncio.sleep(index)  # 1s per slot — enough to spread burst
+                async with semaphore:
+                    single_prompt = build_prompt(
+                        context["inventory"],
+                        context["equipment"],
+                        context["expiring"],
+                        meal_types=[mt],
+                        member_preferences=context.get("member_preferences"),
+                        recent_meals=context.get("recent_meals"),
+                        favorites=context.get("favorites"),
+                        rating_insights=context.get("rating_insights"),
+                        cuisine_preferences=context.get("cuisine_preferences"),
+                        recurring_constraints=context.get("recurring_templates"),
+                        leftovers=context.get("leftovers"),
+                        freezer_items=context.get("freezer_items"),
+                    )
+                    logger.info("parallel_meal_type_start", meal_type=mt, index=index)
+                    type_plan = await _generate_with_retries(
+                        single_prompt,
+                        inventory_names,
+                        equipment_modes,
+                        allergen_ingredients=context.get("allergen_ingredients"),
+                        cuisine_preferences=context.get("cuisine_preferences"),
+                        meal_types=[mt],
+                    )
+                    for r in type_plan.recipes:
+                        r.meal_type = mt
+                    logger.info(
+                        "multi_meal_type_generated", meal_type=mt, recipes=len(type_plan.recipes)
+                    )
+                    return type_plan
+
+            results = await asyncio.gather(
+                *[_generate_meal_type(i, mt) for i, mt in enumerate(effective_types)]
+            )
+            all_recipes = [r for type_plan in results for r in type_plan.recipes]
+            plan = GeneratedMealPlan(recipes=all_recipes)
+        else:
+            plan = await _generate_with_retries(
+                prompt,
+                inventory_names,
+                equipment_modes,
+                allergen_ingredients=context.get("allergen_ingredients"),
+                cuisine_preferences=context.get("cuisine_preferences"),
+                meal_types=meal_types,
+            )
 
         # 4. Persist to DB
         await _persist_plan(
@@ -207,6 +264,17 @@ async def _load_context(
         # Fetch active recurring meal templates
         recurring_templates = await _fetch_recurring_templates(session, household_id)
 
+        # Fetch leftovers (not yet used)
+        leftovers_result = await session.execute(
+            select(Leftover)
+            .where(Leftover.household_id == household_id)
+            .where(Leftover.used_at.is_(None))
+        )
+        leftovers = list(leftovers_result.scalars().all())
+
+        # Freezer items: inventory items stored in the freezer
+        freezer_items = [item for item in inventory if item.location == "freezer"]
+
     return {
         "inventory": inventory,
         "equipment": equipment,
@@ -218,6 +286,8 @@ async def _load_context(
         "allergen_ingredients": allergen_ingredients if allergen_ingredients else None,
         "cuisine_preferences": cuisine_preferences,
         "recurring_templates": recurring_templates if recurring_templates else None,
+        "leftovers": leftovers if leftovers else None,
+        "freezer_items": freezer_items if freezer_items else None,
     }
 
 
@@ -375,15 +445,25 @@ async def _generate_with_retries(
 
     current_prompt = prompt
     last_errors: list[str] = []
+    rate_limit_wait = 0  # seconds to wait from retry-after header
 
     for attempt in range(1, MAX_RETRIES + 1):
         logger.info("llm_attempt", attempt=attempt, max_retries=MAX_RETRIES)
 
-        try:
-            raw_response = call_llm(current_prompt)
+        # Wait before retry (not before first attempt) to let rate limits reset.
+        # Azure charges tokens at request completion time, so after a long-running
+        # request we need a full 60s+ window before the next one.
+        if attempt > 1:
+            wait_secs = max(rate_limit_wait, 15 * attempt)
+            logger.info("retry_backoff", wait_seconds=wait_secs, attempt=attempt)
+            await asyncio.sleep(wait_secs)
+            rate_limit_wait = 0  # reset after using it
 
-            # Strip markdown fences if present
-            cleaned = _extract_json(raw_response)
+        try:
+            raw_response, finish_reason = await asyncio.to_thread(call_llm, current_prompt)
+
+            # Extract and repair JSON (with truncation recovery if needed)
+            cleaned = _extract_json(raw_response, truncated=(finish_reason == "length"))
 
             # Parse with Pydantic
             plan = GeneratedMealPlan.model_validate_json(cleaned)
@@ -411,28 +491,160 @@ async def _generate_with_retries(
             current_prompt = add_error_feedback(prompt, errors)
 
         except Exception as exc:
+            # Parse retry-after from rate limit errors for smarter backoff
+            exc_str = str(exc)
+            if "429" in exc_str or "RateLimitReached" in exc_str:
+                retry_after = _parse_retry_after(exc)
+                if retry_after > 0:
+                    rate_limit_wait = retry_after
+                    logger.info("rate_limit_retry_after", seconds=retry_after)
+
+            # Log raw response preview for debugging parse/validation failures
+            raw_preview = None
+            with contextlib.suppress(NameError):
+                raw_preview = raw_response[:500] if raw_response else None
             logger.warning(
                 "llm_call_error",
                 attempt=attempt,
-                error=str(exc),
+                error=exc_str,
+                raw_response_preview=raw_preview,
             )
-            last_errors = [str(exc)]
-            current_prompt = add_error_feedback(prompt, str(exc))
+            last_errors = [exc_str]
+            current_prompt = add_error_feedback(prompt, exc_str)
 
     msg = f"Failed after {MAX_RETRIES} attempts. Last errors: {'; '.join(last_errors)}"
     raise ValueError(msg)
 
 
-def _extract_json(text: str) -> str:
-    """Extract JSON from LLM response, stripping markdown fences."""
+def _parse_retry_after(exc: Exception) -> int:
+    """Extract retry-after seconds from a rate limit exception."""
+    # OpenAI SDK stores response headers on the exception
+    response = getattr(exc, "response", None)
+    if response is not None:
+        headers = getattr(response, "headers", {})
+        retry_after = headers.get("retry-after") or headers.get("Retry-After")
+        if retry_after:
+            try:
+                return int(float(retry_after)) + 5  # add 5s safety margin
+            except (ValueError, TypeError):
+                pass
+    return 0
+
+
+def _recover_truncated_json(text: str) -> str:
+    """Recover a truncated JSON response by closing incomplete structures.
+
+    When finish_reason=length, the JSON is cut mid-stream. Strategy:
+    1. Find the last complete recipe object (last '}' before a ',')
+    2. Close the recipes array and root object
+    3. Return valid (partial) JSON with however many complete recipes we got.
+    """
+    import json
+
+    # Try parsing as-is first
+    try:
+        json.loads(text)
+        return text
+    except (json.JSONDecodeError, ValueError):
+        pass
+
+    # Find the last complete recipe by looking for pattern: }, { or }, ]
+    # Walk backwards to find a valid closing point
+    last_complete = -1
+    depth = 0
+    in_string = False
+    escape = False
+    for i, ch in enumerate(text):
+        if escape:
+            escape = False
+            continue
+        if ch == "\\":
+            escape = True
+            continue
+        if ch == '"' and not escape:
+            in_string = not in_string
+            continue
+        if in_string:
+            continue
+        if ch == "{":
+            depth += 1
+        elif ch == "}":
+            depth -= 1
+            if depth == 1:
+                # This closes a recipe object (depth goes from 2 to 1)
+                last_complete = i
+
+    if last_complete > 0:
+        recovered = text[: last_complete + 1] + "]}"
+        try:
+            data = json.loads(recovered)
+            recipe_count = len(data.get("recipes", []))
+            logger.info("json_truncation_recovered", recipes_recovered=recipe_count)
+            return recovered
+        except (json.JSONDecodeError, ValueError):
+            pass
+
+    return text
+
+
+def _extract_json(text: str, *, truncated: bool = False) -> str:
+    """Extract and repair JSON from LLM response.
+
+    Handles: markdown fences, thinking blocks, non-JSON text wrapping,
+    Kimi K2.5's tendency to serialize arrays as string values, and
+    truncated JSON when max_tokens is hit (finish_reason=length).
+    """
+    import json
+    import re
+
     stripped = text.strip()
+
+    # Remove thinking/reasoning blocks
+    stripped = re.sub(r"<think>.*?</think>", "", stripped, flags=re.DOTALL).strip()
+
+    # Remove markdown fences
     if stripped.startswith("```"):
-        # Remove opening fence (with optional language tag)
         first_newline = stripped.index("\n")
         stripped = stripped[first_newline + 1 :]
-        # Remove closing fence
         if stripped.endswith("```"):
             stripped = stripped[:-3].strip()
+
+    # Extract JSON object if surrounded by non-JSON text
+    brace_start = stripped.find("{")
+    if brace_start > 0:
+        stripped = stripped[brace_start:]
+    brace_end = stripped.rfind("}")
+    if brace_end >= 0 and brace_end < len(stripped) - 1:
+        stripped = stripped[: brace_end + 1]
+
+    # Truncation recovery: close incomplete JSON arrays/objects
+    if truncated:
+        stripped = _recover_truncated_json(stripped)
+
+    # Repair known issue: recipes/suggestions double-serialized as string
+    try:
+        data = json.loads(stripped)
+        if isinstance(data, dict):
+            repaired = False
+            for key in ("recipes", "suggestions"):
+                if key in data and isinstance(data[key], str):
+                    val = data[key].strip()
+                    # Strip leading colon if present
+                    if val.startswith(":"):
+                        val = val[1:].strip()
+                    try:
+                        parsed = json.loads(val)
+                        if isinstance(parsed, list):
+                            data[key] = parsed
+                            repaired = True
+                    except (json.JSONDecodeError, ValueError):
+                        pass
+            if repaired:
+                logger.info("json_repaired", repaired_keys=list(data.keys()))
+                stripped = json.dumps(data)
+    except (json.JSONDecodeError, ValueError):
+        pass
+
     return stripped
 
 
@@ -562,6 +774,15 @@ async def _persist_plan(
         session.add(grocery_list)
         await session.flush()
 
+        # Build product shop lookup: ingredient_id → shop
+        products_result = await session.execute(
+            select(Product).where(Product.household_id == household_id)
+        )
+        product_shop_map: dict[Any, str | None] = {
+            p.ingredient_id: p.shop for p in products_result.scalars().all()
+        }
+
+        grocery_items: list[GroceryItem] = []
         for ing_name, need in grocery_needs.items():
             on_hand = inv_map.get(ing_name, 0.0)
             needed = need["quantity"] - on_hand
@@ -577,12 +798,17 @@ async def _persist_plan(
                 ingredient_id=ing_id,
                 quantity_needed=needed,
                 unit=need["unit"],
+                preferred_store=product_shop_map.get(ing_id),
             )
             session.add(gi)
+            grocery_items.append(gi)
 
         # Update meal plan status to active
         result = await session.execute(select(MealPlan).where(MealPlan.id == meal_plan_id))
-        meal_plan = result.scalar_one()
+        meal_plan = result.scalar_one_or_none()
+        if meal_plan is None:
+            logger.warning("persist_plan_skipped", meal_plan_id=meal_plan_id, reason="not_found")
+            return
         meal_plan.status = "active"
         meal_plan.error_message = None
 
@@ -627,7 +853,10 @@ async def _mark_failed(db: Any, meal_plan_id: str, error_message: str) -> None:
     try:
         async with db.session() as session:
             result = await session.execute(select(MealPlan).where(MealPlan.id == meal_plan_id))
-            meal_plan = result.scalar_one()
+            meal_plan = result.scalar_one_or_none()
+            if meal_plan is None:
+                logger.warning("mark_failed_skipped", meal_plan_id=meal_plan_id, reason="not_found")
+                return
             meal_plan.status = "failed"
             meal_plan.error_message = error_message
     except Exception as exc:

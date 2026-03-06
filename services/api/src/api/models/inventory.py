@@ -8,6 +8,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field, computed_field
 
+from .product import ProductSummary
+
 
 class CreateInventoryItem(BaseModel):
     """Request body for adding an inventory item."""
@@ -73,6 +75,12 @@ class InventoryItemResponse(BaseModel):
         if days_remaining <= 3:
             return "expiring"
         return "safe"
+
+
+class InventoryItemDetailResponse(InventoryItemResponse):
+    """Extended inventory item response with associated product mapping."""
+
+    product: ProductSummary | None = None
 
 
 class DeductionResult(BaseModel):

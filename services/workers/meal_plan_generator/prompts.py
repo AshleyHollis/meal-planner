@@ -18,8 +18,9 @@ CRITICAL REQUIREMENTS:
 3. Each recipe: EXACTLY 2 servings, realistic prep/cook times
 4. Equipment-specific steps with mode, temperature, duration
 5. Respond ONLY with valid JSON matching the schema — no comments, no trailing commas
-6. Use ingredient names that match the provided inventory list
+6. Prioritize using ingredients from the provided inventory, especially items expiring soon. Recipes MAY include ingredients not in inventory — those will be added to the grocery list.
 7. Every recipe must have at least one step
+8. Be CONCISE: 1-sentence descriptions, 4-8 ingredients, 3-5 steps per recipe
 
 OUTPUT SCHEMA:
 {schema_json}
@@ -69,8 +70,9 @@ CRITICAL REQUIREMENTS:
 3. Each recipe: EXACTLY 2 servings, realistic prep/cook times
 4. Equipment-specific steps with mode, temperature, duration
 5. Respond ONLY with valid JSON matching the schema — no comments, no trailing commas
-6. Use ingredient names that match the provided inventory list
-7. Every recipe must have at least one step{type_instructions}
+6. Prioritize using ingredients from the provided inventory, especially items expiring soon. Recipes MAY include ingredients not in inventory — those will be added to the grocery list.
+7. Every recipe must have at least one step
+8. Be CONCISE: 1-sentence descriptions, 4-8 ingredients, 3-5 steps per recipe{type_instructions}
 
 OUTPUT SCHEMA:
 {{schema_json}}
@@ -82,7 +84,8 @@ def _get_schema_json() -> str:
     # Import here to avoid circular imports at module level
     from meal_plan_generator.schemas import GeneratedMealPlan
 
-    return json.dumps(GeneratedMealPlan.model_json_schema(), indent=2)
+    # Compact (no indent) to minimise input tokens — saves ~300 tokens vs indent=2.
+    return json.dumps(GeneratedMealPlan.model_json_schema())
 
 
 def format_equipment(equipment: list[Equipment]) -> str:

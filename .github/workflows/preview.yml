@@ -643,12 +643,73 @@ jobs:
         uses: azure/CLI@v2
         with:
           inlineScript: |
-            AUTH0_USER_EMAIL=$(az keyvault secret show --vault-name "kv-ytsumm-prd-ci" --name "meal-planner-auth0-user-test-email" --query "value" -o tsv)
-            AUTH0_USER_PASSWORD=$(az keyvault secret show --vault-name "kv-ytsumm-prd-ci" --name "meal-planner-auth0-user-test-password" --query "value" -o tsv)
+            KV_CI="kv-ytsumm-prd-ci"
+            AUTH0_USER_EMAIL=$(az keyvault secret show --vault-name "$KV_CI" --name "meal-planner-auth0-user-test-email" --query "value" -o tsv)
+            AUTH0_USER_PASSWORD=$(az keyvault secret show --vault-name "$KV_CI" --name "meal-planner-auth0-user-test-password" --query "value" -o tsv)
 
             echo "AUTH0_USER_TEST_EMAIL=$AUTH0_USER_EMAIL" >> $GITHUB_ENV
             echo "::add-mask::$AUTH0_USER_PASSWORD"
             echo "AUTH0_USER_TEST_PASSWORD=$AUTH0_USER_PASSWORD" >> $GITHUB_ENV
+
+      - name: Ensure Auth0 connection enabled for preview app
+        continue-on-error: true
+        uses: azure/CLI@v2
+        with:
+          inlineScript: |
+            # Read Auth0 Terraform M2M credentials from Key Vault
+            # (BFF secrets.AUTH0_CLIENT_ID doesn't support client_credentials grant)
+            KV_CI="kv-ytsumm-prd-ci"
+            AUTH0_DOMAIN=$(az keyvault secret show --vault-name "$KV_CI" \
+              --name "auth0-terraform-domain" --query "value" -o tsv 2>/dev/null || echo "")
+            AUTH0_CLIENT_ID=$(az keyvault secret show --vault-name "$KV_CI" \
+              --name "auth0-terraform-client-id" --query "value" -o tsv 2>/dev/null || echo "")
+            AUTH0_CLIENT_SECRET=$(az keyvault secret show --vault-name "$KV_CI" \
+              --name "auth0-terraform-client-secret" --query "value" -o tsv 2>/dev/null || echo "")
+
+            if [[ -z "$AUTH0_DOMAIN" || -z "$AUTH0_CLIENT_ID" || -z "$AUTH0_CLIENT_SECRET" ]]; then
+              echo "::warning::Could not retrieve Auth0 Terraform M2M credentials from Key Vault — skipping"
+              exit 0
+            fi
+
+            PREVIEW_CLIENT_ID=$(az keyvault secret show --vault-name "$KV_CI" \
+              --name "meal-planner-auth0-preview-client-id" --query "value" -o tsv 2>/dev/null || echo "")
+            CONNECTION_ID=$(az keyvault secret show --vault-name "$KV_CI" \
+              --name "meal-planner-auth0-connection-id" --query "value" -o tsv 2>/dev/null || echo "")
+
+            if [[ -z "$PREVIEW_CLIENT_ID" || -z "$CONNECTION_ID" ]]; then
+              echo "::warning::Missing preview client ID or connection ID in Key Vault — skipping"
+              exit 0
+            fi
+            echo "Preview client: ${PREVIEW_CLIENT_ID:0:8}... Connection: ${CONNECTION_ID}"
+
+            # Get Auth0 Management API token using Terraform M2M credentials
+            TOKEN=$(curl -s --request POST \
+              --url "https://${AUTH0_DOMAIN}/oauth/token" \
+              --header 'content-type: application/json' \
+              --data "{\"client_id\":\"${AUTH0_CLIENT_ID}\",\"client_secret\":\"${AUTH0_CLIENT_SECRET}\",\"audience\":\"https://${AUTH0_DOMAIN}/api/v2/\",\"grant_type\":\"client_credentials\"}" \
+              | jq -r '.access_token // empty')
+
+            if [[ -z "$TOKEN" ]]; then
+              echo "::warning::Could not get Auth0 Management API token — skipping"
+              exit 0
+            fi
+            echo "Auth0 Management API token obtained"
+
+            # Use PATCH /connections/{id}/clients (new API, replaces deprecated enabled_clients)
+            PATCH_RESPONSE=$(curl -s -w "\n%{http_code}" --request PATCH \
+              --url "https://${AUTH0_DOMAIN}/api/v2/connections/${CONNECTION_ID}/clients" \
+              --header "authorization: Bearer ${TOKEN}" \
+              --header 'content-type: application/json' \
+              --data "[{\"client_id\":\"${PREVIEW_CLIENT_ID}\",\"status\":true}]")
+            HTTP_CODE=$(echo "$PATCH_RESPONSE" | tail -1)
+            BODY=$(echo "$PATCH_RESPONSE" | sed '$d')
+
+            if [[ "$HTTP_CODE" -ge 200 && "$HTTP_CODE" -lt 300 ]]; then
+              echo "✅ Preview client enabled on Auth0 connection (HTTP ${HTTP_CODE})"
+            else
+              echo "::warning::PATCH /connections/${CONNECTION_ID}/clients returned HTTP ${HTTP_CODE}"
+              echo "Response: ${BODY:0:500}"
+            fi
 
       - name: Wait for API to be ready
         uses: AshleyHollis/shared-infra/.github/actions/health-check@v1
@@ -696,7 +757,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           pr-number: ${{ needs.detect-changes.outputs.pr_number }}
           test-outcome: ${{ steps.run-tests.outcome }}
-          preview-url: ${{ needs.get-ingress.outputs.preview_url }}
+          preview-url: ${{ steps.base-url.outputs.base_url }}
           commit-sha: ${{ needs.detect-changes.outputs.pr_head_sha }}
           run-id: ${{ github.run_id }}
           repository: ${{ github.repository }}

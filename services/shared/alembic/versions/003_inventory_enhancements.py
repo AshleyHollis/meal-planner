@@ -1,11 +1,14 @@
-"""Add inventory enhancement tables and columns.
+"""Add inventory and personalization tables.
 
 Revision ID: 003
 Revises: 002
 Create Date: 2026-03-02
 
 This migration is IDEMPOTENT. It checks for the existence of each object
-before creating it, making it safe to run multiple times.
+before creating it, making it safe to run against databases at any state.
+
+Merges the previously-split 003_inventory_enhancements and 003_personalization
+into a single migration to fix duplicate-revision-ID errors on fresh databases.
 """
 
 import sqlalchemy as sa
@@ -48,11 +51,11 @@ def _index_exists(index: str) -> bool:
 
 
 def upgrade() -> None:
-    # Add defrost_hours to InventoryItems
+    # --- Inventory enhancements ---
+
     if not _column_exists("InventoryItems", "defrost_hours"):
         op.add_column("InventoryItems", sa.Column("defrost_hours", sa.Integer(), nullable=True))
 
-    # Leftovers table
     if not _table_exists("Leftovers"):
         op.create_table(
             "Leftovers",
@@ -82,12 +85,12 @@ def upgrade() -> None:
             sa.ForeignKeyConstraint(["household_id"], ["Households.id"]),
             sa.CheckConstraint("portions > 0", name="ck_leftover_portions"),
         )
-    if not _index_exists("ix_leftovers_household"):
-        op.create_index("ix_leftovers_household", "Leftovers", ["household_id"])
-    if not _index_exists("ix_leftovers_slot"):
-        op.create_index("ix_leftovers_slot", "Leftovers", ["meal_slot_id"])
 
-    # StapleIngredients table
+    if _table_exists("Leftovers"):
+        if not _index_exists("ix_leftovers_household"):
+            op.create_index("ix_leftovers_household", "Leftovers", ["household_id"])
+        if not _index_exists("ix_leftovers_slot"):
+            op.create_index("ix_leftovers_slot", "Leftovers", ["meal_slot_id"])
     if not _table_exists("StapleIngredients"):
         op.create_table(
             "StapleIngredients",
@@ -116,16 +119,111 @@ def upgrade() -> None:
             ),
             sa.CheckConstraint("min_threshold > 0", name="ck_staple_threshold"),
         )
-    if not _index_exists("ix_staple_household"):
-        op.create_index("ix_staple_household", "StapleIngredients", ["household_id"])
-    if not _index_exists("ix_staple_ingredient"):
-        op.create_index("ix_staple_ingredient", "StapleIngredients", ["ingredient_id"])
+
+    if _table_exists("StapleIngredients"):
+        if not _index_exists("ix_staple_household"):
+            op.create_index("ix_staple_household", "StapleIngredients", ["household_id"])
+        if not _index_exists("ix_staple_ingredient"):
+            op.create_index("ix_staple_ingredient", "StapleIngredients", ["ingredient_id"])
+
+    # --- Personalization tables ---
+
+    if not _table_exists("MemberPreferences"):
+        op.create_table(
+            "MemberPreferences",
+            sa.Column("id", UNIQUEIDENTIFIER(), nullable=False, server_default=sa.text("NEWID()")),
+            sa.Column("household_member_id", UNIQUEIDENTIFIER(), nullable=False),
+            sa.Column("preference_type", sa.String(30), nullable=False),
+            sa.Column("value", sa.String(200), nullable=False),
+            sa.Column("ingredient_id", UNIQUEIDENTIFIER(), nullable=True),
+            sa.Column("notes", sa.String(500), nullable=True),
+            sa.Column(
+                "created_at",
+                sa.DateTime(),
+                nullable=False,
+                server_default=sa.text("SYSUTCDATETIME()"),
+            ),
+            sa.Column(
+                "updated_at",
+                sa.DateTime(),
+                nullable=False,
+                server_default=sa.text("SYSUTCDATETIME()"),
+            ),
+            sa.PrimaryKeyConstraint("id"),
+            sa.ForeignKeyConstraint(["household_member_id"], ["HouseholdMembers.id"]),
+            sa.ForeignKeyConstraint(["ingredient_id"], ["Ingredients.id"]),
+            sa.UniqueConstraint(
+                "household_member_id", "preference_type", "value", name="uq_member_pref_type_value"
+            ),
+        )
+
+    if _table_exists("MemberPreferences") and not _index_exists("ix_member_prefs_member"):
+        op.create_index("ix_member_prefs_member", "MemberPreferences", ["household_member_id"])
+
+    if not _table_exists("RecipeFavorites"):
+        op.create_table(
+            "RecipeFavorites",
+            sa.Column("id", UNIQUEIDENTIFIER(), nullable=False, server_default=sa.text("NEWID()")),
+            sa.Column("household_id", UNIQUEIDENTIFIER(), nullable=False),
+            sa.Column("recipe_id", UNIQUEIDENTIFIER(), nullable=False),
+            sa.Column(
+                "created_at",
+                sa.DateTime(),
+                nullable=False,
+                server_default=sa.text("SYSUTCDATETIME()"),
+            ),
+            sa.PrimaryKeyConstraint("id"),
+            sa.ForeignKeyConstraint(["household_id"], ["Households.id"]),
+            sa.ForeignKeyConstraint(["recipe_id"], ["Recipes.id"]),
+            sa.UniqueConstraint("household_id", "recipe_id", name="uq_household_recipe"),
+        )
+
+    if _table_exists("RecipeFavorites") and not _index_exists("ix_recipe_favorites_household"):
+        op.create_index("ix_recipe_favorites_household", "RecipeFavorites", ["household_id"])
+
+    if not _table_exists("MealSlotRatings"):
+        op.create_table(
+            "MealSlotRatings",
+            sa.Column("id", UNIQUEIDENTIFIER(), nullable=False, server_default=sa.text("NEWID()")),
+            sa.Column("meal_slot_id", UNIQUEIDENTIFIER(), nullable=False),
+            sa.Column("rated_by", UNIQUEIDENTIFIER(), nullable=False),
+            sa.Column("rating", sa.Integer(), nullable=False),
+            sa.Column("feedback", sa.String(500), nullable=True),
+            sa.Column(
+                "created_at",
+                sa.DateTime(),
+                nullable=False,
+                server_default=sa.text("SYSUTCDATETIME()"),
+            ),
+            sa.PrimaryKeyConstraint("id"),
+            sa.ForeignKeyConstraint(["meal_slot_id"], ["MealSlots.id"]),
+            sa.ForeignKeyConstraint(["rated_by"], ["HouseholdMembers.id"]),
+            sa.CheckConstraint("rating >= 1 AND rating <= 5", name="ck_rating_range"),
+            sa.UniqueConstraint("meal_slot_id", "rated_by", name="uq_slot_rated_by"),
+        )
+
+    if _table_exists("MealSlotRatings") and not _index_exists("ix_meal_slot_ratings_slot"):
+        op.create_index("ix_meal_slot_ratings_slot", "MealSlotRatings", ["meal_slot_id"])
+
+    if not _column_exists("Recipes", "cuisine_type"):
+        with op.batch_alter_table("Recipes", schema=None) as batch_op:
+            batch_op.add_column(sa.Column("cuisine_type", sa.String(50), nullable=True))
 
 
 def downgrade() -> None:
-    if _table_exists("StapleIngredients"):
-        op.drop_table("StapleIngredients")
-    if _table_exists("Leftovers"):
-        op.drop_table("Leftovers")
-    if _column_exists("InventoryItems", "defrost_hours"):
-        op.drop_column("InventoryItems", "defrost_hours")
+    conn = op.get_bind()
+    conn.execute(
+        sa.text(
+            "IF COL_LENGTH('Recipes','cuisine_type') IS NOT NULL ALTER TABLE Recipes DROP COLUMN cuisine_type"
+        )
+    )
+    conn.execute(sa.text("DROP TABLE IF EXISTS MealSlotRatings"))
+    conn.execute(sa.text("DROP TABLE IF EXISTS RecipeFavorites"))
+    conn.execute(sa.text("DROP TABLE IF EXISTS MemberPreferences"))
+    conn.execute(sa.text("DROP TABLE IF EXISTS StapleIngredients"))
+    conn.execute(sa.text("DROP TABLE IF EXISTS Leftovers"))
+    conn.execute(
+        sa.text(
+            "IF COL_LENGTH('InventoryItems','defrost_hours') IS NOT NULL ALTER TABLE InventoryItems DROP COLUMN defrost_hours"
+        )
+    )

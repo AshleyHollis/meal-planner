@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useCallback, useEffect, useState } from "react";
+import { use, useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 
 import type { GroceryList as GroceryListType, GroceryItem } from "@/types";
@@ -8,6 +8,8 @@ import { getGroceryList, ApiError } from "@/services/api";
 import { Spinner } from "@/components/ui/Spinner";
 import { GroceryList } from "@/components/grocery/GroceryList";
 import { CompleteShoppingDialog } from "@/components/grocery/CompleteShoppingDialog";
+import { clearTripsForList, isNewList } from "@/services/tripStorage";
+import { formatCurrency } from "@/lib/format-currency";
 
 interface GroceryListPageProps {
   params: Promise<{ id: string }>;
@@ -37,8 +39,19 @@ export default function GroceryListPage({ params }: GroceryListPageProps) {
   }, [id]);
 
   useEffect(() => {
+    document.title = "Grocery List | Meal Planner";
+  }, []);
+
+  useEffect(() => {
     void fetchList();
   }, [fetchList]);
+
+  // Clear stale trip state when grocery list ID changes (new meal plan)
+  useEffect(() => {
+    if (id && isNewList(id)) {
+      clearTripsForList(id);
+    }
+  }, [id]);
 
   const handleChanged = () => {
     void fetchList();
@@ -46,6 +59,13 @@ export default function GroceryListPage({ params }: GroceryListPageProps) {
 
   const checkedItems: GroceryItem[] =
     groceryList?.items.filter((item) => item.is_checked) ?? [];
+
+  const estimatedCost = useMemo(() => {
+    if (!groceryList) return 0;
+    return groceryList.items
+      .filter((i) => i.product?.price != null)
+      .reduce((sum, i) => sum + i.product!.price!, 0);
+  }, [groceryList]);
 
   return (
     <main className="mx-auto max-w-2xl px-4 py-8 lg:max-w-7xl">
@@ -67,7 +87,14 @@ export default function GroceryListPage({ params }: GroceryListPageProps) {
         )}
       </div>
 
-      <h1 className="mb-6 text-2xl font-bold text-gray-900">Grocery List</h1>
+      <div className="mb-6 flex items-baseline justify-between">
+        <h1 className="text-2xl font-bold text-gray-900">Grocery List</h1>
+        {estimatedCost > 0 && (
+          <span className="text-lg font-semibold text-green-700">
+            Est. {formatCurrency(estimatedCost)}
+          </span>
+        )}
+      </div>
 
       {loading && (
         <div className="flex justify-center py-12">

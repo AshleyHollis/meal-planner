@@ -22,6 +22,7 @@ from .services.leftover_service import LeftoverService
 from .services.meal_history_service import MealHistoryService
 from .services.meal_plan_service import MealPlanService
 from .services.preference_service import PreferenceService
+from .services.product_service import ProductService
 from .services.quick_suggestion_service import QuickSuggestionService
 from .services.rating_service import RatingService
 from .services.recurring_meal_service import RecurringMealService
@@ -83,6 +84,14 @@ def get_preference_service(
 ) -> PreferenceService:
     """Dependency: household-scoped preference service."""
     return PreferenceService(session, household_id)
+
+
+def get_product_service(
+    session: AsyncSession = Depends(get_session),  # noqa: B008
+    household_id: UUID = Depends(get_current_household_id),  # noqa: B008
+) -> ProductService:
+    """Dependency: household-scoped product service."""
+    return ProductService(session, household_id)
 
 
 def get_rating_service(

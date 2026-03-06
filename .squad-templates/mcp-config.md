@@ -81,11 +81,31 @@ Users configure MCP servers at these locations (checked in priority order):
 }
 ```
 
+## Sample Config — Discord (Squad Notifications)
+
+```json
+{
+  "mcpServers": {
+    "discord": {
+      "command": "node",
+      "args": ["${DISCORD_MCP_PATH}/build/index.js"],
+      "env": {
+        "DISCORD_TOKEN": "${DISCORD_TOKEN}"
+      }
+    }
+  }
+}
+```
+
+Tools: `send_message`, `read_messages`. See `squad-human-notification` skill for usage patterns. Uses [v-3/discordmcp](https://github.com/v-3/discordmcp).
+
 ## Authentication Notes
 
 - **GitHub MCP requires a separate token** from the `gh` CLI auth. Generate at https://github.com/settings/tokens
 - **Trello requires API key + token** from https://trello.com/power-ups/admin
 - **Azure requires service principal credentials** — see Azure docs for setup
 - **Aspire uses the dashboard URL** — typically `http://localhost:18888` during local dev
+
+- **Discord MCP requires a bot token** — create at https://discord.com/developers/applications. Enable Message Content Intent. Token stored in Key Vault as `squad-discord-bot-token`.
 
 Auth is a real blocker for some MCP servers. Users need separate tokens for GitHub MCP, Azure MCP, Trello MCP, etc. This is a documentation problem, not a code problem.

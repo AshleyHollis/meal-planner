@@ -291,7 +291,7 @@ class TestSlotOperations:
         )
         assert updated is not None
         assert updated.status == "skipped"
-        assert updated.cooked_at is not None
+        assert updated.cooked_at is None
 
     async def test_revert_slot_to_planned_clears_cooked_at(self, session: AsyncSession, household):
         plan = await _make_plan(session, household.id, status="active")
@@ -378,9 +378,7 @@ class TestCreatePlanEnqueuesMessage:
         svc = MealPlanService(session, household.id)
         monday = _next_monday()
         cuisines = ["italian", "mexican"]
-        plan = await svc.create_plan(
-            CreateMealPlan(week_start_date=monday, cuisine_preferences=cuisines)
-        )
+        await svc.create_plan(CreateMealPlan(week_start_date=monday, cuisine_preferences=cuisines))
 
         mock_enqueue.assert_called_once()
         call_args = mock_enqueue.call_args[0][0]
@@ -393,8 +391,87 @@ class TestCreatePlanEnqueuesMessage:
         """Test that queue message works without cuisine_preferences."""
         svc = MealPlanService(session, household.id)
         monday = _next_monday()
-        plan = await svc.create_plan(CreateMealPlan(week_start_date=monday))
+        await svc.create_plan(CreateMealPlan(week_start_date=monday))
 
         mock_enqueue.assert_called_once()
         call_args = mock_enqueue.call_args[0][0]
         assert "cuisine_preferences" not in call_args
+
+
+# ---------------------------------------------------------------------------
+# Delete meal plan
+# ---------------------------------------------------------------------------
+
+
+class TestDeleteMealPlan:
+    async def test_delete_failed_plan(self, session: AsyncSession, household):
+        """Test that a failed plan can be deleted."""
+        plan = await _make_plan(session, household.id, status="failed")
+        await _make_slot(session, plan.id, day=0)
+        await _make_slot(session, plan.id, day=1)
+
+        svc = MealPlanService(session, household.id)
+        await svc.delete_plan(plan.id)
+
+        # Verify plan and slots are gone
+        result = await svc.get_plan(plan.id)
+        assert result is None
+
+    async def test_delete_completed_plan(self, session: AsyncSession, household):
+        """Test that a completed plan can be deleted."""
+        plan = await _make_plan(session, household.id, status="completed")
+        await _make_slot(session, plan.id, day=0)
+
+        svc = MealPlanService(session, household.id)
+        await svc.delete_plan(plan.id)
+
+        result = await svc.get_plan(plan.id)
+        assert result is None
+
+    async def test_delete_active_plan_raises_409(self, session: AsyncSession, household):
+        """Test that an active plan cannot be deleted."""
+        plan = await _make_plan(session, household.id, status="active")
+        svc = MealPlanService(session, household.id)
+
+        from fastapi import HTTPException
+
+        with pytest.raises(HTTPException) as exc_info:
+            await svc.delete_plan(plan.id)
+        assert exc_info.value.status_code == 409
+        assert "Cannot delete meal plan with status 'active'" in exc_info.value.detail
+
+    async def test_delete_draft_plan_raises_409(self, session: AsyncSession, household):
+        """Test that a draft plan cannot be deleted."""
+        plan = await _make_plan(session, household.id, status="draft")
+        svc = MealPlanService(session, household.id)
+
+        from fastapi import HTTPException
+
+        with pytest.raises(HTTPException) as exc_info:
+            await svc.delete_plan(plan.id)
+        assert exc_info.value.status_code == 409
+        assert "Cannot delete meal plan with status 'draft'" in exc_info.value.detail
+
+    async def test_delete_nonexistent_plan_raises_404(self, session: AsyncSession, household):
+        """Test that attempting to delete a non-existent plan returns 404."""
+        svc = MealPlanService(session, household.id)
+
+        from fastapi import HTTPException
+
+        with pytest.raises(HTTPException) as exc_info:
+            await svc.delete_plan(uuid4())
+        assert exc_info.value.status_code == 404
+        assert "Meal plan not found" in exc_info.value.detail
+
+    async def test_delete_plan_scoped_to_household(self, session: AsyncSession, household):
+        """Test that a household can only delete its own plans."""
+        plan = await _make_plan(session, household.id, status="failed")
+
+        # Different household tries to delete
+        svc_other = MealPlanService(session, uuid4())
+
+        from fastapi import HTTPException
+
+        with pytest.raises(HTTPException) as exc_info:
+            await svc_other.delete_plan(plan.id)
+        assert exc_info.value.status_code == 404

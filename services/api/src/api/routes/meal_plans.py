@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+from typing import Literal
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from ..dependencies import get_meal_plan_service
 from ..models.meal_plan import (
@@ -13,7 +14,9 @@ from ..models.meal_plan import (
     DeductionItem,
     MealPlanDetailResponse,
     MealPlanResponse,
+    MealPlanStatsResponse,
     MealSlotResponse,
+    SaveVariationRequest,
     UpdateMealSlot,
     UpdatePlanStatus,
     UpdateSlotStatus,
@@ -36,11 +39,27 @@ async def create_meal_plan(
 
 @router.get("", response_model=list[MealPlanResponse])
 async def list_meal_plans(
+    status: str | None = Query(
+        None, description="Filter by plan status (draft, active, completed, failed)"
+    ),
+    sort: Literal["created_at", "week_start_date"] = Query(
+        "created_at", description="Field to sort by"
+    ),
+    order: Literal["asc", "desc"] = Query("desc", description="Sort direction"),
     service: MealPlanService = Depends(get_meal_plan_service),  # noqa: B008
 ) -> list[MealPlanResponse]:
-    """List all meal plans for the household."""
-    plans = await service.list_plans()
+    """List all meal plans for the household with optional filtering and sorting."""
+    plans = await service.list_plans(status=status, sort=sort, order=order)
     return [MealPlanResponse.model_validate(p) for p in plans]
+
+
+@router.get("/stats", response_model=MealPlanStatsResponse)
+async def get_meal_plan_stats(
+    service: MealPlanService = Depends(get_meal_plan_service),  # noqa: B008
+) -> MealPlanStatsResponse:
+    """Return aggregate stats for the household's meal plans."""
+    stats = await service.get_stats()
+    return MealPlanStatsResponse(**stats)
 
 
 @router.get("/active", response_model=MealPlanDetailResponse)
@@ -81,6 +100,29 @@ async def update_plan_status(
     return MealPlanResponse.model_validate(plan)
 
 
+@router.delete("/{plan_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_meal_plan(
+    plan_id: UUID,
+    service: MealPlanService = Depends(get_meal_plan_service),  # noqa: B008
+) -> None:
+    """Delete a meal plan. Only failed or completed plans can be deleted."""
+    await service.delete_plan(plan_id)
+
+
+@router.post(
+    "/{plan_id}/retry", response_model=MealPlanResponse, status_code=status.HTTP_202_ACCEPTED
+)
+async def retry_meal_plan(
+    plan_id: UUID,
+    service: MealPlanService = Depends(get_meal_plan_service),  # noqa: B008
+) -> MealPlanResponse:
+    """Retry a failed meal plan by resetting to draft and re-queuing generation."""
+    plan = await service.retry_plan(plan_id)
+    if plan is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Meal plan not found")
+    return MealPlanResponse.model_validate(plan)
+
+
 @router.patch("/{plan_id}/slots/{slot_id}", response_model=MealSlotResponse)
 async def update_meal_slot(
     plan_id: UUID,
@@ -102,14 +144,11 @@ async def adapt_meal_slot(
     body: AdaptRequest,
     service: MealPlanService = Depends(get_meal_plan_service),  # noqa: B008
 ) -> dict:
-    """Adapt a meal slot recipe to a different effort/cook-time level."""
-    # TODO: implement adaptation logic in service layer
-    return {
-        "plan_id": str(plan_id),
-        "slot_id": str(slot_id),
-        "effort_level": body.effort_level,
-        "status": "accepted",
-    }
+    """Adapt a meal slot recipe to a different effort/cook-time level via LLM."""
+    result = await service.adapt_slot(plan_id, slot_id, body.effort_level)
+    if result is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Meal slot not found")
+    return result
 
 
 @router.patch("/{plan_id}/slots/{slot_id}/status", response_model=MealSlotResponse)
@@ -129,14 +168,14 @@ async def update_slot_status(
     return response
 
 
-@recipes_router.post("/{recipe_id}/save-variation")
+@recipes_router.post("/{recipe_id}/save-variation", status_code=status.HTTP_201_CREATED)
 async def save_recipe_variation(
     recipe_id: UUID,
+    body: SaveVariationRequest,
     service: MealPlanService = Depends(get_meal_plan_service),  # noqa: B008
 ) -> dict:
     """Save a recipe variation for future use."""
-    # TODO: implement save-variation logic in service layer
-    return {
-        "recipe_id": str(recipe_id),
-        "status": "saved",
-    }
+    result = await service.save_variation(recipe_id, body)
+    if result is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Recipe not found")
+    return result

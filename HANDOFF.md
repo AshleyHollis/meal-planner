@@ -1,28 +1,130 @@
-# Agent Handoff: Meal Planner MVP - E2E Test Seeding
+# Agent Handoff: Meal Planner — Phase 2 UX Overhaul
 
 ## Branch & PR
 
-- **Branch**: `001-meal-planner-mvp`
-- **PR**: #1 (against `master`)
+- **Branch**: `005-grocery-enhancements`
+- **PR**: #5 (against `master`)
 - **Repo**: `AshleyHollis/meal-planner`
+- **Team**: Dallas (Lead), Ripley (Backend), Kane (Frontend), Parker (DevOps), Lambert (Tester)
 
-## Current Task
+## Current Status
 
-**Get all 36 E2E tests passing** (currently 24 passed, 12 skipped, 0 failed).
+✅ **Code work complete** — all 5 agent commits merged to branch  
+⚠️ **CI blocked** — 4 frontend test assertion mismatches (see "Blocking Issues" below)
 
-The last pipeline run was `22566812328` — check `gh run view 22566812328` for details.
+## What Was Built (Phase 2)
+
+### UX & Navigation (Dallas, commit ba39aca)
+
+- Fixed MealHistoryList dead import
+- Fixed EmptyState double-button edge case
+- Skeleton loaders for async states
+- Mobile-first navigation: 5 tabs + "More" slide-up menu (secondary menu items)
+- Status filter tabs on meal plans (All, Active, Completed, Failed, Draft)
+- Delete failed meal plans with 2-level confirmation dialog
+- Card-based layouts with visual status indicators
+
+### Backend API (Ripley, commit 5742a7d)
+
+- **GET /api/v1/meal-plans** filtering & sorting
+  - Query params: `status`, `sort` (created_at|week_start_date), `order` (asc|desc)
+  - Defaults preserved for backward compatibility
+- **GET /api/v1/meal-plans/stats** — new stats endpoint
+  - `plans_by_status: dict[str, int]` — count per status value
+  - `total_meals_cooked: int` — all cooked MealSlots across all plans
+  - `items_expiring_soon: int` — inventory items expiring ≤ 7 days
+- **GroceryListResponse** enhancements
+  - `total_price: float | None` — sum of product prices
+  - `store_totals: dict[str, float]` — per-store price breakdown
+- All 193 API tests pass
+
+### Frontend Components (Kane, commit 6b60450)
+
+- **Toast notification system** (ToastProvider + useToast hook)
+  - Positioned above mobile nav (`bottom-24`) and desktop (`bottom-6`)
+  - Auto-dismiss at 3.5s
+  - Pure Tailwind + React state (no external library)
+- **Meal plan generation progress indicator** (3-step animated)
+- **Relative date formatting utility** (e.g., "2d ago", "1h left")
+- **Card hover/active effects** for visual feedback
+- **Mobile touch-friendly grocery checkboxes** (44px targets, WCAG 2.1 AA)
+- Build clean, no errors
+
+### E2E Test Coverage (Lambert, commit 3c3f8c1)
+
+- **26 new E2E tests** for Phase 1 UX overhaul
+  - Navigation: 2 tests for mobile "More" menu (open, close, navigation)
+  - Meal plans: 24 tests across 4 suites
+    - Status filter tabs: All, Active, Completed, Failed, Draft filtering
+    - Delete failed plans: button visibility, confirmation, cancel flow
+    - Empty state: display when no plans exist
+- All tests follow squad conventions (test.skip, getByRole, proper timeouts)
+- TypeScript compiles clean
+- No breaking changes to existing test files
+
+## Current Blocking Issue
+
+**CI run #22651713954 failed** — Frontend Quality tests have text mismatch assertions:
+
+| File                       | Test             | Expected              | Actual         | Line |
+| -------------------------- | ---------------- | --------------------- | -------------- | ---- |
+| `MealHistoryList.test.tsx` | No data state    | "No meal history yet" | "No Meals Yet" | 51   |
+| `ExpiryBadge.test.tsx`     | Expiry text (7d) | "Expires in 7d"       | "7d left"      | 39   |
+| `ExpiryBadge.test.tsx`     | Expiry text (2d) | "Expires in 2d"       | "2d left"      | 46   |
+| `ExpiryBadge.test.tsx`     | Expiry text (0d) | "Expires in 0d"       | "0d left"      | 53   |
+
+**Root Cause:** Component UI text was updated (Phase 2 work) but test assertions were not synchronized.
+
+**Impact:** Pipeline correctly halts preview deployment. No infrastructure issues.
+
+**Solution:** Update test expectations to match component rendering.
 
 ## What's Working
 
-- Auth0 login flow (auth.setup.ts gets storage state)
-- Seed-data setup: gets access token, finds 5 ingredients, adds 5 inventory items via API
-- Database migrations: 14 tables created, 107 seeded ingredients (alembic version 002)
-- API auth middleware: JWT validation with JWKS fetch (using urllib, not httpx)
-- All CI checks pass (lint, test, security scan, build)
+- Auth0 login flow and session state
+- API filtering, sorting, and stats endpoints
+- Toast notifications and progress indicators
+- Mobile navigation restructure
+- E2E test infrastructure
+- 193 API tests (Ripley)
+- Build and TypeScript compilation (Kane, Lambert)
 
-## What's Still Broken (12 Skipped Tests)
+## What's Blocked
 
-### Problem 1: Inventory GET returns data via API but browser gets CORS error (5 tests)
+- Preview deployment: CI blocked by test assertion failures (see "Current Blocking Issue")
+
+## Next Steps
+
+1. **Fix test assertions** to match component UI text (4 failing tests)
+2. **Push corrected tests** to trigger CI run #2
+3. **Preview deployment** auto-runs on CI success
+4. **E2E tests** execute against live preview environment
+5. **Merge PR #5** once E2E tests pass
+
+## Key Files (Phase 2 Changes)
+
+| File                                              | Purpose                               | Agent     |
+| ------------------------------------------------- | ------------------------------------- | --------- |
+| `apps/web/src/components/ui/Toast.tsx`            | Toast provider and hook               | Kane      |
+| `apps/web/src/app/layout.tsx`                     | ToastProvider mount point             | Kane      |
+| `apps/web/src/components/MealPlanProgress.tsx`    | 3-step progress indicator             | Kane      |
+| `apps/web/src/utils/relativeDates.ts`             | Relative date formatting              | Kane      |
+| `apps/web/src/__tests__/MealHistoryList.test.tsx` | ⚠️ Text mismatch (line 51)            | Needs fix |
+| `apps/web/src/__tests__/ExpiryBadge.test.tsx`     | ⚠️ Text mismatches (lines 39, 46, 53) | Needs fix |
+| `apps/web/e2e/smoke.spec.ts`                      | Navigation E2E tests (+2)             | Lambert   |
+| `apps/web/e2e/meal-plan.spec.ts`                  | Meal plan E2E tests (+24)             | Lambert   |
+| `services/api/src/api/routes/meal_plans.py`       | Filtering & stats endpoints           | Ripley    |
+| `services/api/src/api/models/responses.py`        | GroceryListResponse updates           | Ripley    |
+
+## Team Notes
+
+- **Dallas (Code Review):** Approved Phase 1, fixed 2 minor issues, commit ba39aca
+- **Ripley (Backend):** All 193 API tests passing, filtering/stats/grocery totals working, commit 5742a7d
+- **Kane (Frontend):** Toast system, progress indicator, relative dates, touch targets, clean build, commit 6b60450
+- **Parker (DevOps):** Found CI test failures, no infra issues, pipeline functioning correctly
+- **Lambert (Tester):** 26 new E2E tests ready for CI, TypeScript clean, commit 3c3f8c1
+
+## Previous Session Context (MVP)
 
 **Files**: `apps/web/e2e/inventory.spec.ts` — Edit, Remove, Expiry Badge, Autocomplete, Add Item tests
 

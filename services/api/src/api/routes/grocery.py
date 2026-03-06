@@ -8,12 +8,14 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from ..dependencies import get_grocery_service
 from ..models.grocery import (
+    AddStaplesRequest,
     CompleteShoppingRequest,
     GroceryItemResponse,
     GroceryListResponse,
     UpdateGroceryItem,
 )
 from ..models.inventory import InventoryItemResponse
+from ..models.product import ProductSummary
 from ..services.grocery_service import GroceryService
 
 router = APIRouter(tags=["grocery"])
@@ -27,14 +29,51 @@ async def get_grocery_list(
     meal_plan_id: UUID,
     service: GroceryService = Depends(get_grocery_service),  # noqa: B008
 ) -> GroceryListResponse:
-    """Return the grocery list for a meal plan."""
-    grocery_list = await service.get_grocery_list(meal_plan_id)
+    """Return the grocery list for a meal plan, enriched with ingredient and product data."""
+    grocery_list, products_lookup = await service.get_enriched_grocery_list(meal_plan_id)
     if grocery_list is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Grocery list not found",
         )
-    return GroceryListResponse.model_validate(grocery_list)
+
+    enriched_items: list[GroceryItemResponse] = []
+    total_price: float = 0.0
+    store_totals: dict[str, float] = {}
+    has_any_price = False
+
+    for item in grocery_list.items:
+        ingredient_name = item.ingredient.name if item.ingredient else ""
+        ingredient_category = item.ingredient.category if item.ingredient else ""
+        product = products_lookup.get(item.ingredient_id)
+        product_summary = ProductSummary.model_validate(product) if product else None
+        enriched_items.append(
+            GroceryItemResponse(
+                id=item.id,
+                ingredient_id=item.ingredient_id,
+                quantity_needed=item.quantity_needed,
+                unit=item.unit,
+                is_checked=item.is_checked,
+                preferred_store=item.preferred_store,
+                ingredient_name=ingredient_name,
+                ingredient_category=ingredient_category,
+                product=product_summary,
+            )
+        )
+        if product and product.price is not None:
+            has_any_price = True
+            total_price += float(product.price)
+            store = product.shop or "Other"
+            store_totals[store] = store_totals.get(store, 0.0) + float(product.price)
+
+    return GroceryListResponse(
+        id=grocery_list.id,
+        meal_plan_id=grocery_list.meal_plan_id,
+        created_at=grocery_list.created_at,
+        items=enriched_items,
+        total_price=round(total_price, 2) if has_any_price else None,
+        store_totals={k: round(v, 2) for k, v in store_totals.items()},
+    )
 
 
 @router.patch(
@@ -75,3 +114,41 @@ async def complete_shopping(
         [item.model_dump() for item in body.purchased_items],
     )
     return [InventoryItemResponse.model_validate(i) for i in items]
+
+
+@router.post(
+    "/api/v1/grocery-lists/{grocery_list_id}/add-staples",
+    response_model=GroceryListResponse,
+    status_code=status.HTTP_200_OK,
+)
+async def add_staples_to_grocery_list(
+    grocery_list_id: UUID,
+    body: AddStaplesRequest,
+    service: GroceryService = Depends(get_grocery_service),  # noqa: B008
+) -> GroceryListResponse:
+    """Bulk-add household staples to a grocery list (FR-009)."""
+    grocery_list = await service.add_staples_to_list(grocery_list_id, body.staple_ids)
+    if grocery_list is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Grocery list not found",
+        )
+    items = [
+        GroceryItemResponse(
+            id=item.id,
+            ingredient_id=item.ingredient_id,
+            quantity_needed=item.quantity_needed,
+            unit=item.unit,
+            is_checked=item.is_checked,
+            preferred_store=item.preferred_store,
+            ingredient_name=item.ingredient.name if item.ingredient else "",
+            ingredient_category=item.ingredient.category if item.ingredient else "",
+        )
+        for item in grocery_list.items
+    ]
+    return GroceryListResponse(
+        id=grocery_list.id,
+        meal_plan_id=grocery_list.meal_plan_id,
+        created_at=grocery_list.created_at,
+        items=items,
+    )

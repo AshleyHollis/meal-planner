@@ -65,3 +65,7 @@ specs/.current-spec
 
 # Local dev secrets (template tracked, local values ignored)
 services/aspire/AppHost/appsettings.Development.json
+
+# Playwright screenshots (root only)
+/page-*.png
+/page-*.jpeg

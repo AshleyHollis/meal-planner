@@ -94,8 +94,12 @@ async def async_main() -> None:
             for msg in messages:
                 try:
                     logger.info("message_received", message_id=msg["id"])
-                    await generate_meal_plan(msg["content"])
+                    # Delete message BEFORE processing to prevent infinite retries.
+                    # The generator has its own 3-attempt retry logic; failed plans
+                    # get status="failed" in DB, so queue-level retries are redundant
+                    # and cause stuck queues when plans can never succeed.
                     queue_client.delete_message(msg["id"], msg["pop_receipt"])
+                    await generate_meal_plan(msg["content"])
                     logger.info("plan_generated", message_id=msg["id"])
                 except Exception as e:
                     logger.error("plan_generation_failed", message_id=msg["id"], error=str(e))

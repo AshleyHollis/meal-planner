@@ -11,6 +11,10 @@ export default function RecurringMealsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    document.title = "Recurring Meals | Meal Planner";
+  }, []);
+
   const fetchTemplates = useCallback(async () => {
     try {
       setError(null);
@@ -34,7 +38,7 @@ export default function RecurringMealsPage() {
   }, [fetchTemplates]);
 
   return (
-    <main className="mx-auto max-w-2xl px-4 py-8">
+    <main className="mx-auto max-w-2xl px-4 py-8 lg:max-w-7xl">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Recurring Meals</h1>
         <p className="mt-1 text-sm text-gray-500">
@@ -50,7 +54,13 @@ export default function RecurringMealsPage() {
 
       {error && (
         <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-          {error}
+          <p>{error}</p>
+          <button
+            onClick={() => void fetchTemplates()}
+            className="mt-2 text-sm font-medium text-red-700 underline hover:text-red-900"
+          >
+            Try Again
+          </button>
         </div>
       )}
 

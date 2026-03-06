@@ -7,6 +7,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from .product import ProductSummary
+
 # --- Request models ---
 
 
@@ -22,12 +24,19 @@ class PurchasedItem(BaseModel):
     ingredient_id: UUID
     quantity: float = Field(gt=0)
     unit: str
+    expiry_date: datetime | None = None
 
 
 class CompleteShoppingRequest(BaseModel):
     """Request body for completing a shopping trip."""
 
     purchased_items: list[PurchasedItem]
+
+
+class AddStaplesRequest(BaseModel):
+    """Request body for bulk-adding staples to a grocery list."""
+
+    staple_ids: list[UUID]
 
 
 # --- Response models ---
@@ -44,6 +53,9 @@ class GroceryItemResponse(BaseModel):
     unit: str
     is_checked: bool
     preferred_store: str | None
+    ingredient_name: str = ""
+    ingredient_category: str = ""
+    product: ProductSummary | None = None
 
 
 class GroceryListResponse(BaseModel):
@@ -55,3 +67,5 @@ class GroceryListResponse(BaseModel):
     meal_plan_id: UUID
     created_at: datetime
     items: list[GroceryItemResponse] = Field(default_factory=list)
+    total_price: float | None = None
+    store_totals: dict[str, float] = Field(default_factory=dict)

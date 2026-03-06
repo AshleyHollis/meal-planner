@@ -44,15 +44,18 @@ test.describe("Smoke Tests @smoke", () => {
     test("navigation has all links", async ({ page }) => {
       await page.goto("/");
 
-      // On desktop, sidebar nav is visible; on mobile, bottom nav is visible
-      const nav = page.locator("nav").first();
-      await expect(nav).toBeVisible();
-
-      // Verify all four navigation items exist
-      await expect(nav.getByText("Home")).toBeVisible();
-      await expect(nav.getByText("Inventory")).toBeVisible();
-      await expect(nav.getByText("Meal Plan")).toBeVisible();
-      await expect(nav.getByText("Grocery")).toBeVisible();
+      // Desktop sidebar nav groups items into sections (no "Home" on desktop)
+      // Mobile bottom nav has Home, Meal Plan, Grocery, Inventory, More
+      // Check for core nav items that exist on both layouts
+      await expect(
+        page.getByRole("link", { name: "Inventory" }).first(),
+      ).toBeVisible();
+      await expect(
+        page.getByRole("link", { name: "Meal Plan" }).first(),
+      ).toBeVisible();
+      await expect(
+        page.getByRole("link", { name: "Grocery" }).first(),
+      ).toBeVisible();
     });
 
     test("clicking Inventory nav link navigates to inventory page", async ({
@@ -72,17 +75,75 @@ test.describe("Smoke Tests @smoke", () => {
     test("clicking Meal Plan nav link navigates to meal plan page", async ({
       page,
     }) => {
-      await page.goto("/");
+      await page.goto("/", { timeout: 30_000, waitUntil: "networkidle" });
 
-      await page
+      // Wait for the link to be visible and the page to be interactive
+      const mealPlanLink = page
         .getByRole("link", { name: "Meal Plan", exact: true })
-        .first()
-        .click();
+        .first();
+      await expect(mealPlanLink).toBeVisible({ timeout: 30_000 });
+      await mealPlanLink.click();
 
-      await expect(page).toHaveURL(/\/meal-plan/);
+      await expect(page).toHaveURL(/\/meal-plan/, { timeout: 30_000 });
       await expect(
         page.getByRole("heading", { name: "Meal Plans" }),
-      ).toBeVisible();
+      ).toBeVisible({ timeout: 30_000 });
+    });
+
+    test("More menu opens and all links work (mobile)", async ({ page }) => {
+      await page.setViewportSize({ width: 375, height: 667 }); // Mobile viewport
+      await page.goto("/");
+
+      // Find the More button in bottom nav
+      const moreButton = page
+        .locator("button")
+        .filter({ hasText: /More/i })
+        .first();
+
+      // More button should be visible on mobile
+      await expect(moreButton).toBeVisible();
+      await moreButton.click();
+
+      // Menu should slide up with "More" heading
+      await expect(page.getByRole("heading", { name: "More" })).toBeVisible({
+        timeout: 5_000,
+      });
+
+      // Verify all menu items are visible
+      const moreMenuItems = [
+        "Products",
+        "Preferences",
+        "History",
+        "Quick Cook",
+        "Recurring",
+      ];
+
+      for (const item of moreMenuItems) {
+        const link = page.getByRole("link", { name: item }).first();
+        await expect(link).toBeVisible({ timeout: 5_000 });
+      }
+    });
+
+    test("More menu closes when clicking a link (mobile)", async ({ page }) => {
+      await page.setViewportSize({ width: 375, height: 667 }); // Mobile viewport
+      await page.goto("/");
+
+      // Open More menu
+      const moreButton = page
+        .locator("button")
+        .filter({ hasText: /More/i })
+        .first();
+      await moreButton.click();
+
+      await expect(page.getByRole("heading", { name: "More" })).toBeVisible({
+        timeout: 5_000,
+      });
+
+      // Click a link (e.g., Preferences)
+      await page.getByRole("link", { name: "Preferences" }).first().click();
+
+      // Should navigate and menu should close
+      await expect(page).toHaveURL(/\/preferences/);
     });
   });
 

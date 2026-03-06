@@ -8,6 +8,7 @@ from uuid import UUID
 from shared.db.models.grocery import GroceryItem, GroceryList
 from shared.db.models.inventory import InventoryItem
 from shared.db.models.meal_plan import MealPlan
+from shared.db.models.product import Product
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -28,6 +29,26 @@ class GroceryService:
         stmt = select(GroceryList).where(GroceryList.meal_plan_id == meal_plan_id)
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
+
+    async def get_enriched_grocery_list(
+        self,
+        meal_plan_id: UUID,
+    ) -> tuple[GroceryList | None, dict[UUID, Product]]:
+        """Return the grocery list and a lookup of ingredient_id → Product."""
+        grocery_list = await self.get_grocery_list(meal_plan_id)
+        if grocery_list is None or not grocery_list.items:
+            return grocery_list, {}
+
+        ingredient_ids = [item.ingredient_id for item in grocery_list.items]
+        products_stmt = select(Product).where(
+            Product.household_id == self.household_id,
+            Product.ingredient_id.in_(ingredient_ids),
+        )
+        products_result = await self.session.execute(products_stmt)
+        products_lookup: dict[UUID, Product] = {
+            p.ingredient_id: p for p in products_result.scalars().all()
+        }
+        return grocery_list, products_lookup
 
     async def check_item(
         self,
@@ -138,6 +159,13 @@ class GroceryService:
             if remaining > 0:
                 grocery_entries.append((ing_id, remaining, unit))
 
+        # 4.5. Build product shop lookup: ingredient_id → preferred_store
+        products_stmt = select(Product).where(Product.household_id == self.household_id)
+        products_result = await self.session.execute(products_stmt)
+        product_shop_map: dict[UUID, str | None] = {
+            p.ingredient_id: p.shop for p in products_result.scalars().all()
+        }
+
         # 5. Remove existing grocery list if present
         existing_stmt = select(GroceryList).where(GroceryList.meal_plan_id == meal_plan_id)
         existing_result = await self.session.execute(existing_stmt)
@@ -153,9 +181,59 @@ class GroceryService:
                 ingredient_id=ing_id,
                 quantity_needed=qty,
                 unit=unit,
+                preferred_store=product_shop_map.get(ing_id),
             )
             for ing_id, qty, unit in grocery_entries
         ]
         self.session.add(grocery_list)
         await self.session.flush()
+        return grocery_list
+
+    async def add_staples_to_list(
+        self,
+        grocery_list_id: UUID,
+        staple_ids: list[UUID],
+    ) -> GroceryList | None:
+        """Bulk-add household staples to a grocery list.
+
+        Looks up each staple by ID, then adds a GroceryItem for each to the list.
+        Skips duplicates (ingredients already on the list).
+        Returns the updated grocery list, or None if not found.
+        """
+        from shared.db.models.staple_ingredient import StapleIngredient
+
+        # Load grocery list
+        gl_result = await self.session.execute(
+            select(GroceryList).where(GroceryList.id == grocery_list_id)
+        )
+        grocery_list = gl_result.scalar_one_or_none()
+        if grocery_list is None:
+            return None
+
+        # Build set of existing ingredient_ids on the list
+        existing_ids = {item.ingredient_id for item in grocery_list.items}
+
+        # Look up requested staples belonging to this household
+        staples_result = await self.session.execute(
+            select(StapleIngredient).where(
+                StapleIngredient.household_id == self.household_id,
+                StapleIngredient.id.in_(staple_ids),
+            )
+        )
+        staples = list(staples_result.scalars().all())
+
+        for staple in staples:
+            if staple.ingredient_id in existing_ids:
+                continue
+            new_item = GroceryItem(
+                grocery_list_id=grocery_list_id,
+                ingredient_id=staple.ingredient_id,
+                quantity_needed=staple.min_threshold,
+                unit=staple.unit,
+            )
+            self.session.add(new_item)
+            existing_ids.add(staple.ingredient_id)
+
+        await self.session.flush()
+        await self.session.refresh(grocery_list, attribute_names=["items"])
         return grocery_list

@@ -1,4 +1,11 @@
-"""LLM client abstraction supporting Anthropic and OpenAI providers."""
+"""LLM client abstraction supporting Anthropic and OpenAI providers.
+
+Improvements:
+- System/user prompt separation for better instruction following
+- Temperature control (default 0.7) for consistent structured output
+- JSON response format enforcement for OpenAI/Azure providers
+- Configurable model via LLM_MODEL env var
+"""
 
 from __future__ import annotations
 
@@ -6,27 +13,44 @@ import time
 
 from shared.config import get_settings
 from shared.logging.config import get_logger
-from tenacity import retry, stop_after_attempt, wait_exponential
 
 logger = get_logger(__name__)
 
-# Model defaults per provider
+# Model defaults per provider (used when LLM_MODEL is not set)
 _MODELS = {
     "anthropic": "claude-sonnet-4-20250514",
     "openai": "gpt-4o",
 }
 
 # Timeout defaults per use-case (seconds)
-GENERATION_TIMEOUT = 25  # NFR-01: meal plan generation p95 < 30s
+GENERATION_TIMEOUT = 60  # NFR-01: with thinking disabled, responses are fast; 60s gives headroom
 ADAPTATION_TIMEOUT = 8  # NFR-02: cook-time adaptation p95 < 10s
 
-_MAX_TOKENS = 8192
+
+# Azure counts max_tokens against the per-minute token rate limit upfront.
+# With thinking disabled, there are no invisible reasoning tokens consuming the budget.
+# 7 recipes produce ~2200 tokens of actual output; 2500 provides 1.14x headroom.
+# At capacity 4, Kimi K2.5 has 4000 TPM — keeping max_tokens low minimises
+# upfront reservation so more calls fit within the rate-limit window.
+_MAX_TOKENS = 2500
 
 # Approximate cost per 1K tokens (USD) for cost estimation
 _COST_PER_1K = {
     "anthropic": {"input": 0.003, "output": 0.015},
     "openai": {"input": 0.005, "output": 0.015},
 }
+
+# System instruction for JSON output — explicit about structure to prevent
+# Kimi K2.5 from serializing the recipes array as a string value.
+_JSON_SYSTEM_INSTRUCTION = (
+    "You are a meal planning assistant. "
+    "You MUST respond with ONLY a single JSON object. "
+    "The 'recipes' key MUST contain a JSON array, NOT a string. "
+    'Correct: {"recipes": [{"title": "Pasta", ...}]} '
+    'Wrong: {"recipes": "[{\\"title\\": \\"Pasta\\"}]"} '
+    "Be concise: 1-sentence descriptions, 4-8 ingredients, 3-5 steps per recipe. "
+    "No markdown fences, no code blocks, no explanation, no thinking text."
+)
 
 
 def _estimate_cost(provider: str, input_tokens: int, output_tokens: int) -> float:
@@ -35,12 +59,13 @@ def _estimate_cost(provider: str, input_tokens: int, output_tokens: int) -> floa
     return (input_tokens / 1000 * rates["input"]) + (output_tokens / 1000 * rates["output"])
 
 
-@retry(
-    stop=stop_after_attempt(2),
-    wait=wait_exponential(multiplier=1, min=1, max=10),
-    reraise=True,
-)
-def call_llm(prompt: str, timeout: int = GENERATION_TIMEOUT) -> str:
+def _resolve_model(provider: str) -> str:
+    """Resolve model name from settings or provider default."""
+    settings = get_settings()
+    return settings.llm.model or _MODELS.get(provider, _MODELS["openai"])
+
+
+def call_llm(prompt: str, timeout: int = GENERATION_TIMEOUT) -> tuple[str, str | None]:
     """Call the configured LLM provider and return the response text.
 
     Args:
@@ -48,7 +73,9 @@ def call_llm(prompt: str, timeout: int = GENERATION_TIMEOUT) -> str:
         timeout: Request timeout in seconds (default: GENERATION_TIMEOUT).
 
     Returns:
-        The LLM response text.
+        Tuple of (response_text, finish_reason). finish_reason is "length"
+        when output was truncated at max_tokens, "stop" for normal completion,
+        or None when the provider doesn't report it.
 
     Raises:
         ValueError: If the configured provider is not supported.
@@ -57,18 +84,25 @@ def call_llm(prompt: str, timeout: int = GENERATION_TIMEOUT) -> str:
     settings = get_settings()
     provider = settings.llm.provider
     api_key = settings.llm.api_key
+    temperature = settings.llm.temperature
 
     start = time.monotonic()
-    logger.info("llm_call_start", provider=provider, timeout_s=timeout)
+    logger.info(
+        "llm_call_start",
+        provider=provider,
+        temperature=temperature,
+        timeout_s=timeout,
+        prompt_chars=len(prompt),
+    )
 
     try:
         # Prefer Azure OpenAI when configured, regardless of provider setting
         if settings.llm.is_azure_configured:
-            result = _call_azure_openai(prompt, settings, timeout)
+            result = _call_azure_openai(prompt, settings, timeout, temperature)
         elif provider == "anthropic":
-            result = _call_anthropic(prompt, api_key, timeout)
+            result = _call_anthropic(prompt, api_key, timeout, temperature)
         elif provider == "openai":
-            result = _call_openai(prompt, api_key, timeout)
+            result = _call_openai(prompt, api_key, timeout, temperature)
         else:
             msg = f"Unsupported LLM provider: {provider}"
             raise ValueError(msg)
@@ -86,17 +120,23 @@ def call_llm(prompt: str, timeout: int = GENERATION_TIMEOUT) -> str:
     return result
 
 
-def _call_anthropic(prompt: str, api_key: str, timeout: int) -> str:
-    """Call Anthropic Claude API."""
+def _call_anthropic(
+    prompt: str, api_key: str, timeout: int, temperature: float
+) -> tuple[str, str | None]:
+    """Call Anthropic Claude API with system/user separation."""
     import anthropic
 
+    model = _resolve_model("anthropic")
     client = anthropic.Anthropic(api_key=api_key, timeout=timeout)
     response = client.messages.create(
-        model=_MODELS["anthropic"],
+        model=model,
         max_tokens=_MAX_TOKENS,
+        temperature=temperature,
+        system=_JSON_SYSTEM_INSTRUCTION,
         messages=[{"role": "user", "content": prompt}],
     )
     text = response.content[0].text
+    finish_reason = response.stop_reason  # "end_turn" or "max_tokens"
 
     input_tokens = response.usage.input_tokens
     output_tokens = response.usage.output_tokens
@@ -104,25 +144,34 @@ def _call_anthropic(prompt: str, api_key: str, timeout: int) -> str:
     logger.info(
         "llm_usage",
         provider="anthropic",
-        model=_MODELS["anthropic"],
+        model=model,
         input_tokens=input_tokens,
         output_tokens=output_tokens,
         cost_usd=round(cost, 6),
     )
-    return text
+    return text, "length" if finish_reason == "max_tokens" else finish_reason
 
 
-def _call_openai(prompt: str, api_key: str, timeout: int) -> str:
-    """Call OpenAI GPT API."""
+def _call_openai(
+    prompt: str, api_key: str, timeout: int, temperature: float
+) -> tuple[str, str | None]:
+    """Call OpenAI GPT API with JSON mode and system/user separation."""
     import openai
 
+    model = _resolve_model("openai")
     client = openai.OpenAI(api_key=api_key, timeout=timeout)
     response = client.chat.completions.create(
-        model=_MODELS["openai"],
+        model=model,
         max_tokens=_MAX_TOKENS,
-        messages=[{"role": "user", "content": prompt}],
+        temperature=temperature,
+        response_format={"type": "json_object"},
+        messages=[
+            {"role": "system", "content": _JSON_SYSTEM_INSTRUCTION},
+            {"role": "user", "content": prompt},
+        ],
     )
     text = response.choices[0].message.content or ""
+    finish_reason = response.choices[0].finish_reason
 
     usage = response.usage
     input_tokens = usage.prompt_tokens if usage else 0
@@ -131,21 +180,23 @@ def _call_openai(prompt: str, api_key: str, timeout: int) -> str:
     logger.info(
         "llm_usage",
         provider="openai",
-        model=_MODELS["openai"],
+        model=model,
         input_tokens=input_tokens,
         output_tokens=output_tokens,
         cost_usd=round(cost, 6),
     )
-    return text
+    return text, finish_reason
 
 
-def _call_azure_openai(prompt: str, settings: object, timeout: int) -> str:
-    """Call Azure OpenAI API."""
+def _call_azure_openai(
+    prompt: str, settings: object, timeout: int, temperature: float
+) -> tuple[str, str | None]:
+    """Call Azure OpenAI API with JSON mode and system/user separation."""
     import httpx
     import openai
 
     llm = settings.llm  # type: ignore[attr-defined]
-    deployment = llm.azure_deployment or _MODELS["openai"]
+    deployment = llm.azure_deployment or _resolve_model("openai")
 
     # Explicitly use certifi CA bundle to avoid Aspire's SSL_CERT_DIR override
     try:
@@ -155,10 +206,14 @@ def _call_azure_openai(prompt: str, settings: object, timeout: int) -> str:
     except ImportError:
         ca_bundle = True  # type: ignore[assignment]
 
-    # Use a generous timeout (LLM calls can take 30s+) and disable SDK retries
+    # Disable SDK retries — each retry re-sends the full prompt and Azure
+    # counts input tokens against the 20K tokens/min rate limit even for 429s.
+    # We handle retries ourselves in the generator layer.
+    # Use the caller-supplied timeout so GENERATION_TIMEOUT / ADAPTATION_TIMEOUT
+    # are actually respected (previously hardcoded to 300s and ignored).
     http_client = httpx.Client(
         verify=ca_bundle,
-        timeout=httpx.Timeout(60.0, connect=10.0),
+        timeout=httpx.Timeout(float(timeout), connect=10.0),
     )
 
     client = openai.AzureOpenAI(
@@ -168,12 +223,43 @@ def _call_azure_openai(prompt: str, settings: object, timeout: int) -> str:
         http_client=http_client,
         max_retries=0,
     )
+    # Confirm thinking=disabled is being sent — critical for performance.
+    # Azure AI Foundry may silently strip unknown extra_body fields; the
+    # reasoning_content check below is the safety net.
+    logger.info(
+        "azure_request_params",
+        deployment=deployment,
+        max_tokens=_MAX_TOKENS,
+        thinking_disabled=True,
+        api_version=llm.azure_api_version,
+    )
     response = client.chat.completions.create(
         model=deployment,
         max_tokens=_MAX_TOKENS,
-        messages=[{"role": "user", "content": prompt}],
+        temperature=temperature,
+        # thinking disabled → no invisible reasoning tokens, so json_object mode
+        # is safe and produces clean JSON without post-processing workarounds.
+        response_format={"type": "json_object"},
+        extra_body={"thinking": {"type": "disabled"}},
+        messages=[
+            {"role": "system", "content": _JSON_SYSTEM_INSTRUCTION},
+            {"role": "user", "content": prompt},
+        ],
     )
-    text = response.choices[0].message.content or ""
+    choice = response.choices[0]
+    text = choice.message.content or ""
+    finish_reason = choice.finish_reason
+
+    # Safety net: detect if Azure proxy ignored the thinking=disabled param.
+    # If reasoning_content is present, thinking was NOT disabled — log a warning
+    # so we can fall back (e.g., increase max_tokens or use reasoning_effort).
+    reasoning = getattr(choice.message, "reasoning_content", None)
+    if reasoning:
+        logger.warning(
+            "thinking_not_disabled",
+            reasoning_tokens=len(reasoning),
+            hint="Azure proxy may have stripped extra_body.thinking param",
+        )
 
     usage = response.usage
     input_tokens = usage.prompt_tokens if usage else 0
@@ -185,6 +271,13 @@ def _call_azure_openai(prompt: str, settings: object, timeout: int) -> str:
         model=deployment,
         input_tokens=input_tokens,
         output_tokens=output_tokens,
+        finish_reason=finish_reason,
         cost_usd=round(cost, 6),
     )
-    return text
+    if finish_reason == "length":
+        logger.warning(
+            "llm_response_truncated",
+            output_tokens=output_tokens,
+            max_tokens=_MAX_TOKENS,
+        )
+    return text, finish_reason

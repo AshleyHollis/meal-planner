@@ -9,6 +9,7 @@ import {
   ApiError,
 } from "@/services/api";
 import { Button } from "./ui/Button";
+import { EmptyState } from "./ui/EmptyState";
 
 const DAY_NAMES = [
   "Monday",
@@ -37,6 +38,7 @@ function RecurringMealManager({ initialTemplates }: RecurringMealManagerProps) {
   const [error, setError] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const handleAdd = async () => {
     setSubmitting(true);
@@ -66,6 +68,7 @@ function RecurringMealManager({ initialTemplates }: RecurringMealManagerProps) {
   const handleDelete = async (id: string) => {
     // Optimistic update
     setTemplates((prev) => prev.filter((t) => t.id !== id));
+    setConfirmDeleteId(null);
     try {
       await deleteRecurringMeal(id);
     } catch (err) {
@@ -107,9 +110,13 @@ function RecurringMealManager({ initialTemplates }: RecurringMealManagerProps) {
       )}
 
       {templates.length === 0 && !adding && (
-        <p className="py-8 text-center text-sm text-gray-500">
-          No recurring meals set up yet.
-        </p>
+        <EmptyState
+          icon="🔁"
+          title="No Recurring Meals"
+          description="Set up meals that repeat every week on a fixed schedule."
+          actionLabel="Add Recurring Meal"
+          onAction={() => setAdding(true)}
+        />
       )}
 
       {templates.length > 0 && (
@@ -169,14 +176,34 @@ function RecurringMealManager({ initialTemplates }: RecurringMealManagerProps) {
                     >
                       Edit
                     </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => void handleDelete(t.id)}
-                      className="text-red-600 hover:bg-red-50 hover:text-red-700"
-                    >
-                      Delete
-                    </Button>
+                    {confirmDeleteId === t.id ? (
+                      <>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => void handleDelete(t.id)}
+                          className="text-red-600 hover:bg-red-50 hover:text-red-700"
+                        >
+                          Confirm
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setConfirmDeleteId(null)}
+                        >
+                          Cancel
+                        </Button>
+                      </>
+                    ) : (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setConfirmDeleteId(t.id)}
+                        className="text-red-600 hover:bg-red-50 hover:text-red-700"
+                      >
+                        Delete
+                      </Button>
+                    )}
                   </>
                 )}
               </div>

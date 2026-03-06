@@ -47,6 +47,13 @@ class AdaptRequest(BaseModel):
     effort_level: Literal["quick", "standard", "elaborate"]
 
 
+class SaveVariationRequest(BaseModel):
+    """Request body for saving a recipe variation."""
+
+    title: str | None = None
+    notes: str | None = None
+
+
 class UpdateMealSlot(BaseModel):
     """Request body for swapping a meal slot's recipe."""
 
@@ -160,3 +167,11 @@ class MealPlanDetailResponse(BaseModel):
     error_message: str | None
     created_at: datetime
     slots: list[MealSlotResponse] = Field(default_factory=list)
+
+
+class MealPlanStatsResponse(BaseModel):
+    """Aggregate stats for a household's meal plans."""
+
+    plans_by_status: dict[str, int]
+    total_meals_cooked: int
+    items_expiring_soon: int

@@ -1,7 +1,7 @@
 """Add RecurringMealTemplates table for planning enhancements.
 
-Revision ID: 005
-Revises: 004
+Revision ID: 006
+Revises: 005
 Create Date: 2026-03-10
 
 This migration is IDEMPOTENT. It checks for the existence of each object
@@ -12,8 +12,8 @@ import sqlalchemy as sa
 from alembic import op
 from sqlalchemy.dialects.mssql import UNIQUEIDENTIFIER
 
-revision = "005"
-down_revision = "004"
+revision = "006"
+down_revision = "005"
 branch_labels = None
 depends_on = None
 

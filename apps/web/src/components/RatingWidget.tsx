@@ -104,9 +104,10 @@ export function RatingWidget({
           <button
             key={star}
             type="button"
-            className="cursor-pointer text-3xl transition-colors hover:scale-110"
+            disabled={isSubmitting}
+            className={`cursor-pointer text-3xl transition-colors hover:scale-110 disabled:cursor-not-allowed disabled:opacity-50`}
             onClick={() => setRating(star)}
-            onMouseEnter={() => setHoveredRating(star)}
+            onMouseEnter={() => !isSubmitting && setHoveredRating(star)}
             onMouseLeave={() => setHoveredRating(0)}
             aria-label={`Rate ${star} star${star > 1 ? "s" : ""}`}
           >
@@ -119,6 +120,11 @@ export function RatingWidget({
             </span>
           </button>
         ))}
+        {isSubmitting && (
+          <span className="ml-2 text-xs text-gray-400 animate-pulse">
+            Saving…
+          </span>
+        )}
       </div>
 
       {/* Feedback textarea */}

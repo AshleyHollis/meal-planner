@@ -101,6 +101,33 @@ class InventoryService:
         await self.session.flush()
         return True
 
+    async def get_item(self, item_id: UUID) -> tuple[InventoryItem, object] | None:
+        """Return a single inventory item with its optional product mapping.
+
+        Returns None if the item is not found.
+        """
+        from shared.db.models.product import Product
+
+        stmt = (
+            select(InventoryItem)
+            .options(selectinload(InventoryItem.ingredient))
+            .where(
+                InventoryItem.id == item_id,
+                InventoryItem.household_id == self.household_id,
+            )
+        )
+        result = await self.session.execute(stmt)
+        item = result.scalar_one_or_none()
+        if item is None:
+            return None
+        product_stmt = select(Product).where(
+            Product.household_id == self.household_id,
+            Product.ingredient_id == item.ingredient_id,
+        )
+        product_result = await self.session.execute(product_stmt)
+        product = product_result.scalar_one_or_none()
+        return item, product
+
     async def deduct_for_recipe(self, recipe_id: UUID) -> list[dict]:
         """Deduct recipe ingredient quantities from household inventory.
 

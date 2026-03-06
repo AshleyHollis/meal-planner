@@ -48,7 +48,7 @@ describe("MealHistoryList", () => {
       />,
     );
 
-    expect(screen.getByText(/No meal history yet/i)).toBeDefined();
+    expect(screen.getByText(/No Meals Yet/i)).toBeDefined();
   });
 
   it("renders list of meal history items", () => {

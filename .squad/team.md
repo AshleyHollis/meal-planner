@@ -15,8 +15,10 @@
 | Dallas  | Lead           | `.squad/agents/dallas/charter.md`  | claude-opus-4.6   | ✅ Active  |
 | Ripley  | Backend Dev    | `.squad/agents/ripley/charter.md`  | claude-sonnet-4.6 | ✅ Active  |
 | Kane    | Frontend Dev   | `.squad/agents/kane/charter.md`    | claude-sonnet-4.6 | ✅ Active  |
-| Parker  | DevOps         | `.squad/agents/parker/charter.md`  | claude-haiku-4.5  | ✅ Active  |
+| Parker  | DevOps         | `.squad/agents/parker/charter.md`  | claude-sonnet-4.6 | ✅ Active  |
 | Lambert | Tester         | `.squad/agents/lambert/charter.md` | claude-haiku-4.5  | ✅ Active  |
+| Ash     | UX Reviewer    | `.squad/agents/ash/charter.md`     | claude-sonnet-4.6 | ✅ Active  |
+| Bishop  | Spec Architect | `.squad/agents/bishop/charter.md`  | claude-sonnet-4.6 | ✅ Active  |
 | Scribe  | Session Logger | `.squad/agents/scribe/charter.md`  | claude-haiku-4.5  | 📋 Silent  |
 | Ralph   | Work Monitor   | —                                  | —                 | 🔄 Monitor |
 
@@ -27,8 +29,8 @@
 - **Description:** AI-powered meal planner that tracks pantry inventory, generates weekly dinner plans using LLM, and produces consolidated grocery lists
 - **Created:** 2026-03-02T08:27:00Z
 - **Repo:** AshleyHollis/meal-planner
-- **Branch:** 001-meal-planner-mvp
-- **PR:** #1
+- **Branch:** 005-grocery-enhancements
+- **PR:** (pending)
 
 ## Issue Source
 

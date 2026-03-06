@@ -22,6 +22,7 @@ import type {
   StapleIngredient,
   StapleSuggestion,
   DefrostReminder,
+  Product,
   SubstitutionResult,
   QuickSuggestionsResponse,
   RecurringMealTemplate,
@@ -201,6 +202,8 @@ export interface UpdateGroceryItemBody {
 export interface PurchasedItem {
   ingredient_id: string;
   quantity: number;
+  unit: string;
+  expiry_date?: string;
 }
 
 export interface CompleteShoppingBody {
@@ -217,6 +220,27 @@ export interface CreateStapleBody {
   ingredient_id: string;
   min_threshold: number;
   unit: string;
+}
+
+// --- Product request bodies ---
+
+export interface CreateProductBody {
+  ingredient_id: string;
+  brand: string;
+  product_name: string;
+  size_desc?: string | null;
+  price?: number | null;
+  shop?: string | null;
+  notes?: string | null;
+}
+
+export interface UpdateProductBody {
+  brand?: string | null;
+  product_name?: string | null;
+  size_desc?: string | null;
+  price?: number | null;
+  shop?: string | null;
+  notes?: string | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -247,6 +271,10 @@ export async function updateInventoryItem(
     method: "PATCH",
     body: JSON.stringify(body),
   });
+}
+
+export async function getInventoryItem(itemId: string): Promise<InventoryItem> {
+  return fetchApi<InventoryItem>(`/api/v1/inventory/${itemId}`);
 }
 
 export async function removeInventoryItem(itemId: string): Promise<void> {
@@ -319,6 +347,18 @@ export async function updatePlanStatus(
   return fetchApi<MealPlan>(`/api/v1/meal-plans/${planId}/status`, {
     method: "PATCH",
     body: JSON.stringify(body),
+  });
+}
+
+export async function deleteMealPlan(planId: string): Promise<void> {
+  return fetchApi<void>(`/api/v1/meal-plans/${planId}`, {
+    method: "DELETE",
+  });
+}
+
+export async function retryMealPlan(planId: string): Promise<MealPlan> {
+  return fetchApi<MealPlan>(`/api/v1/meal-plans/${planId}/retry`, {
+    method: "POST",
   });
 }
 
@@ -585,6 +625,47 @@ export async function getDefrostReminders(
 }
 
 // ---------------------------------------------------------------------------
+// Products
+// ---------------------------------------------------------------------------
+
+export async function getProducts(): Promise<Product[]> {
+  return fetchApi<Product[]>("/api/v1/products");
+}
+
+export async function createProduct(body: CreateProductBody): Promise<Product> {
+  return fetchApi<Product>("/api/v1/products", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+export async function updateProduct(
+  productId: string,
+  body: UpdateProductBody,
+): Promise<Product> {
+  return fetchApi<Product>(`/api/v1/products/${productId}`, {
+    method: "PUT",
+    body: JSON.stringify(body),
+  });
+}
+
+export async function deleteProduct(productId: string): Promise<void> {
+  return fetchApi<void>(`/api/v1/products/${productId}`, {
+    method: "DELETE",
+  });
+}
+
+export async function getProduct(productId: string): Promise<Product> {
+  return fetchApi<Product>(`/api/v1/products/${productId}`);
+}
+
+export async function searchProducts(query: string): Promise<Product[]> {
+  return fetchApi<Product[]>(
+    `/api/v1/products/search?q=${encodeURIComponent(query)}`,
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Substitution
 // ---------------------------------------------------------------------------
 
@@ -613,6 +694,26 @@ export async function getQuickSuggestions(
   return fetchApi<QuickSuggestionsResponse>(
     `/api/v1/quick-suggestions${params}`,
   );
+}
+
+export interface CookSuggestionResponse {
+  title: string;
+  deductions: Record<string, unknown>[];
+}
+
+export async function cookSuggestion(suggestion: {
+  title: string;
+  ingredients: {
+    name: string;
+    quantity: number;
+    unit: string;
+    on_hand: boolean;
+  }[];
+}): Promise<CookSuggestionResponse> {
+  return fetchApi<CookSuggestionResponse>("/api/v1/quick-suggestions/cook", {
+    method: "POST",
+    body: JSON.stringify(suggestion),
+  });
 }
 
 // ---------------------------------------------------------------------------

@@ -33,26 +33,26 @@ describe("ExpiryBadge", () => {
     });
   });
 
-  describe("items expiring within 2 days (amber)", () => {
-    it("renders warning variant when expiring tomorrow", () => {
+  describe("items expiring within 3 days (urgent)", () => {
+    it("renders error variant when expiring tomorrow", () => {
       renderBadge("2025-06-16");
-      const badge = screen.getByText("Expires in 1d");
+      const badge = screen.getByText("1d left");
       expect(badge).toBeDefined();
-      expect(badge.className).toContain("bg-yellow-100");
+      expect(badge.className).toContain("bg-red-100");
     });
 
-    it("renders warning variant when expiring in 2 days", () => {
+    it("renders error variant when expiring in 2 days", () => {
       renderBadge("2025-06-17");
-      const badge = screen.getByText("Expires in 2d");
+      const badge = screen.getByText("2d left");
       expect(badge).toBeDefined();
-      expect(badge.className).toContain("bg-yellow-100");
+      expect(badge.className).toContain("bg-red-100");
     });
 
-    it("renders warning variant when expiring today", () => {
+    it("renders error variant when expiring today", () => {
       renderBadge("2025-06-15");
-      const badge = screen.getByText("Expires in 0d");
+      const badge = screen.getByText("0d left");
       expect(badge).toBeDefined();
-      expect(badge.className).toContain("bg-yellow-100");
+      expect(badge.className).toContain("bg-red-100");
     });
   });
 

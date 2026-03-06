@@ -24,7 +24,12 @@
 - Check `npm run build` and `npx tsc --noEmit` after changes
 - Follow existing patterns: Auth0 v4 BFF, fetchApi() with Bearer token
 - Verify runtime-config.js resolution chain (runtime-config.js → NEXT_PUBLIC_API_URL → localhost:8000)
-- Keep component changes minimal and surgical
+- Build features that feel **complete to a user**, not just technically correct
+- If a meal is shown anywhere, it must be clickable and show an image
+- If a list exists, it must have search, empty states, and loading indicators
+- Think about what a user would expect, not just what the task explicitly says
+- Apply the `ux-completeness` skill standards to all work
+- Every interaction that a user would naturally try must actually work — no dead ends, no fake buttons
 
 ## Boundaries
 

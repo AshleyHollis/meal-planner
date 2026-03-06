@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(wc -l apps/web/src/app/*.tsx apps/web/src/components/*.tsx apps/web/src/components/*/*.tsx)",
+      "WebFetch(domain:bradygaster.github.io)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:marcusfelling.com)",
+      "WebFetch(domain:benleane83.github.io)",
+      "WebFetch(domain:www.tamirdresher.com)",
+      "Bash(git add .squad/agents/kane/charter.md .squad/casting/registry.json .squad/ceremonies.md .squad/decisions.md .squad/identity/now.md .squad/identity/wisdom.md .squad/routing.md .squad/team.md .squad/agents/ash/charter.md .squad/agents/ash/history.md .squad/skills/ux-completeness/SKILL.md)",
+      "Bash(git commit:*)",
+      "Bash(git add .squad/decisions.md .squad/identity/now.md .squad/identity/wisdom.md .squad/routing.md .squad/skills/max-throughput/SKILL.md)",
+      "Bash(git add .squad/agents/bishop/charter.md .squad/agents/bishop/history.md .squad/skills/spec-workflow/SKILL.md .squad/casting/registry.json .squad/ceremonies.md .squad/decisions.md .squad/routing.md .squad/team.md)"
+    ]
+  }
+}

@@ -517,7 +517,16 @@ describe("Grocery API methods", () => {
 
   it("completeShopping calls POST /api/v1/grocery-lists/:id/complete", async () => {
     const api = await freshApi();
-    const body = { purchased_items: [{ ingredient_id: "i1", quantity: 500 }] };
+    const body = {
+      purchased_items: [
+        {
+          ingredient_id: "i1",
+          quantity: 500,
+          unit: "g",
+          expiry_date: "2026-03-20",
+        },
+      ],
+    };
     fetchMock
       .mockResolvedValueOnce(tokenResponse())
       .mockResolvedValueOnce(mockResponse([{ id: "inv1" }]));

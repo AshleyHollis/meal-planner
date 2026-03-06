@@ -1,4 +1,4 @@
-# Dallas — History
+﻿# Dallas — History
 
 ## Project Context
 
@@ -8,6 +8,62 @@
 - **Branch:** 001-meal-planner-mvp (PR #1)
 - **State:** Phases 1-4 complete. 140 unit tests pass. 24/36 E2E tests pass, 12 skipped.
 - **Remaining:** Phase 5-6 — Fix CORS (5 tests), fix meal plan seeding (7 tests), PR lifecycle
+
+### 2026-03-04: Quality Fix Sprint — Complete Audit & Team Execution
+
+- **Trigger:** Ashley reported "Generate Plan" failing on dashboard. Overall app quality too low. Directive: production quality builds, comprehensive E2E coverage.
+- **Method:** Comprehensive source code + live preview testing. Spawned Dallas, Kane, Ripley, Lambert for distributed fixes.
+- **Audit findings:** 16 issues (P0-P3) across frontend, backend, and test layers.
+
+**P0 — Critical (FIXED):**
+
+- Dashboard Generate Plan fails with 409 because it doesn't auto-complete existing draft/active plans before calling createMealPlan(). Meal plan page has working implementation.
+- **Fix (Kane):** Dashboard now calls listMealPlans() before createMealPlan(), auto-completes existing plans, matches meal plan page logic (f1d988a)
+
+**P1 — High (ADDRESSED):**
+
+- Inconsistencies between dashboard and meal plan page (no duplicated functions, unified error handling, draft plan detection)
+- Dashboard shows generic error message; meal plan page shows API detail
+- **Pattern for future fixes:** Use Inventory page error model: show detail + Retry button
+
+**P2 — Medium (IN PROGRESS):**
+
+- Quick Suggestions "Cook This" button is fake (no API call) — misleading to users
+- Hardcoded currency formats and CURRENT_MEMBER_ID placeholder
+- Products page silent delete failure (empty catch block)
+- Desktop sidebar missing Home/Dashboard link
+
+**P3 — Low (DOCUMENTED):**
+
+- Code duplication (DAY_LABELS in 3 places, getNextMonday in 2 places)
+- No E2E coverage for dashboard Generate (THIS WAS THE GAP)
+- No ErrorBoundary wrappers on pages
+- Missing page-specific browser tab titles
+- Unused WeeklyPlanView component
+
+**Team Execution:**
+
+- **Kane (Frontend):** Fixed dashboard Generate (P0), working on P1-P2 refactors
+- **Ripley (Backend):** Fixed 2 worker robustness bugs (scalar_one_or_none pattern) — prevents double failures when plan deleted during generation
+- **Lambert (Testing):** Added 23 E2E tests across 2 new files, closed all 6 coverage gaps, achieved 100% flow coverage
+- **Dallas (Audit):** Documented all 16 issues with priority, rationale, and assignments for future work
+
+**Quality Standard Directives Captured:**
+
+1. Error handling: Always extract and display API error detail (never generic messages)
+2. DRY: Extract shared utilities (dates, currency, labels) to @/lib/
+3. Parity: Dashboard and dedicated page must use same logic for shared actions
+4. E2E coverage: Every user-facing action (button click + API call) must have E2E test
+5. No fake actions: If a button says "Cook This", it must actually do that
+6. Toast vs inline: Toast for transient confirmations; inline for blocking errors
+
+**Cross-Agent Outcomes:**
+
+- ✅ P0 blocker fixed (Dashboard Generate working)
+- ✅ Worker resilience improved (scalar_one_or_none pattern established)
+- ✅ E2E gaps closed (33/33 flows covered, 100% coverage)
+- ✅ Quality standards documented for future work
+- **Next phase:** P1-P2 cleanup, establish linting rules, enforce quality gates
 
 ## Learnings
 
@@ -57,3 +113,142 @@ Key file paths:
 - `services/workers/meal_plan_generator/generator.py:461` — Slot creation hardcodes meal_type="dinner"
 - `services/api/src/api/services/meal_plan_service.py` — \_call_llm() pattern for synchronous LLM calls
 - `services/workers/meal_plan_generator/prompts.py` — build_prompt() already accepts personalization kwargs
+
+### 2026-03-04: Phase 1 UX Overhaul Code Review
+
+Full code review of commit `ad0dfa8` (16 files, 845 insertions). Verdict: **APPROVED with minor fixes**.
+
+**DELETE endpoint (meal_plans.py):** Solid. Auth enforced via `get_meal_plan_service` dependency injection (household-scoped). All edge cases covered: 404 for nonexistent/other household, 409 for active/draft status. Only failed/completed plans deletable. Cascade deletes slots. 6 tests cover all paths.
+
+**Navigation restructure (layout.tsx):** Clean implementation. Desktop sidebar with section grouping, 5-item mobile bottom nav with "More" slide-up sheet pattern. Active detection correctly uses exact match for "/" and startsWith for others. Backdrop dismiss + stopPropagation on panel. Safe-area-inset handling for mobile.
+
+**Skeleton + EmptyState components:** Well-designed, reusable. Skeleton has 3 variants (text/circular/rectangular) with sensible defaults. EmptyState supports icon/title/description + optional action (link or callback).
+
+**Fixes applied (commit ba39aca):**
+
+1. Removed dead `useState` import from `MealHistoryList.tsx`
+2. Fixed `EmptyState` double-button edge case — `onAction` now takes precedence over `actionHref`
+
+**Notes for future:**
+
+- Meal plan list page only exposes delete for `failed` plans in UI, but API supports `completed` too. Intentional scope reduction for MVP.
+- `EmptyState` icon prop uses emoji strings (not React components) — keep consistent.
+
+### 2026-03-04: Quality Audit — Dashboard Generate Plan Failure
+
+**Root cause of Generate Plan failure on dashboard:** State mismatch. API rejects `POST /api/v1/meal-plans` with 409 if any `draft` or `active` plan exists. Dashboard's `getActiveMealPlan()` only finds `active` plans (not `draft`). When a `draft` plan exists (worker never completed), dashboard shows "Plan Your Week" but clicking Generate gets 409.
+
+The meal plan page (`/meal-plan`) has the correct pattern: it lists ALL plans, finds any `active`/`draft`, and auto-completes them before creating. Dashboard was never updated with this logic (Decision 13 only applied to the meal plan page).
+
+**Key inconsistencies found:**
+
+- Dashboard `handleGenerate()` — no auto-complete, generic error message, missing `meal_types` param
+- `getNextMonday()` duplicated in 2 files instead of shared `@/lib/date-utils.ts`
+- `DAY_LABELS` duplicated in 3 places
+- Quick Suggestions "Cook This" button is fake — shows success toast but makes no API call
+- Error handling inconsistent across pages (some show detail + retry, some show generic text)
+- No E2E test covers the dashboard Generate flow — that's why this shipped
+
+**Full audit written to:** `.squad/decisions/inbox/dallas-quality-audit.md`
+
+**Key learning:** When the same user action (Generate Plan) exists on 2+ pages, extract it to a shared hook or utility. Otherwise the copy without tests WILL drift.
+
+### 2026-03-04: Comprehensive 5-Spec Feature Review
+
+Full architecture review across all 5 specs (001-MVP through 005-grocery-enhancements). 14 findings total: 3 critical, 6 important, 5 minor.
+
+**Critical gaps:**
+
+1. **Worker doesn't fetch leftovers or freezer items** — `prompts.py` has formatters, `build_prompt()` has params, but `_load_context()` never loads the data. Two spec 002 requirements (FR-006, FR-013) are wired at the prompt layer but disconnected at the data layer.
+2. **ShoppingTrip model completely missing** — spec 005 US2 (shop-filtered trips, per-trip check-off) is entirely unimplemented. No model, no routes, no service.
+3. **Substitution doesn't persist grocery changes** — `_calculate_grocery_changes()` returns a diff in the response but never writes to GroceryItem/GroceryList tables.
+
+**Key integration insight:** The pattern across all cross-feature gaps is the same: the _interface_ is defined (prompt params, response models, route stubs) but the _data pipeline_ is incomplete. This suggests a top-down design approach where contracts were written first but data-fetching implementations lagged. Future work should audit any function that accepts optional params and verify the caller actually passes data.
+
+**Metrics:** Of 17 cross-feature integration points checked, 11 are fully working, 6 are missing. The working integrations (preferences → prompt, ratings → prompt, cuisine → prompt, recurring → slots, allergens → substitution, product → grocery) are solid and well-implemented.
+
+**File paths for fixes:**
+
+- Leftovers/freezer: `services/workers/meal_plan_generator/generator.py:145-222` (add to \_load_context)
+- ShoppingTrip: New model in `services/shared/shared/db/models/`, new routes/service
+- Grocery persist: `services/api/src/api/services/substitution_service.py:234-253` (call regenerate_grocery_list)
+- Add-staples: `services/api/src/api/routes/staple_routes.py` (new endpoint)
+- Cook This: `services/api/src/api/routes/quick_suggestions.py` (new POST endpoint)
+
+Review written to `.squad/decisions/inbox/dallas-feature-review.md`.
+
+### 2026-03-09: LLM Performance Investigation — Kimi K2.5 Root Cause Analysis
+
+**Trigger:** Ashley reported meal plan generation is slow. Requested comprehensive architectural analysis.
+
+**Root cause:** Kimi K2.5 (1T parameter reasoning model) is fundamentally wrong for structured JSON generation. Key bottlenecks:
+
+1. **Invisible thinking tokens** — reasoning model burns 30-120s on chain-of-thought before producing output, counted against rate limit and output budget
+2. **20K TPM rate limit** with `max_tokens=10000` — single request reserves half the per-minute budget
+3. **300s HTTP read timeout** — masks slowness instead of failing fast
+4. **65s inter-call sleep** for multi-meal pacing — sequential generation compounds latency
+5. **JSON repair code** needed because Kimi corrupts JSON output (can't use `response_format`)
+6. **Retry backoff 60s x attempt** — rate limit recovery adds 1-3 minutes per retry
+
+**Key recommendation:** Switch to GPT-4o-mini. It's 4-8x faster (79 tok/s vs ~10-20), 4-5x cheaper, supports native JSON mode, and eliminates the need for JSON repair. Single dinner generation drops from 30-120s to 8-20s. NFR-01 (p95 < 30s) becomes achievable.
+
+**Implementation plan:** 4 phases, ~4-5 hours total. P0 changes (model switch + JSON mode + reduce max_tokens) deliver 80%+ improvement in <1 hour of code changes.
+
+**Key file paths:**
+
+- `services/workers/meal_plan_generator/llm_client.py` — Azure client, timeouts, max_tokens, JSON mode
+- `services/workers/meal_plan_generator/generator.py` — retry loop, pacing sleep, JSON repair
+- `services/workers/meal_plan_generator/prompts.py` — prompt construction
+- `services/shared/shared/config.py` — LLM settings, Azure config properties
+
+**Decision written to:** `.squad/decisions/inbox/dallas-llm-performance-investigation.md`
+
+**Status:** Decision 7 merged into decisions.md (2026-03-05). Cross-agent investigation complete: Ripley (backend bottleneck analysis), Parker (Azure deployment + cost analysis) converge on same recommendation. All three agents confirmed GPT-4o-mini as optimal model swap with minimal code impact.
+
+### 2026-03-09: Kimi K2.5 Optimization Strategy — Thinking Mode Control
+
+**Trigger:** Ashley decided to keep Kimi K2.5 (not switch to GPT-4o-mini). Tasked with creating an optimization strategy.
+
+**Key discovery — `thinking` parameter:** Kimi K2.5's API exposes `{"thinking": {"type": "disabled"}}` which completely eliminates the invisible chain-of-thought reasoning tokens (the 25-110s bottleneck). This is the single biggest optimization lever — it removes the core problem without switching models.
+
+**Additional levers found:**
+
+- `reasoning_effort`: "low"/"medium"/"high" — controls reasoning intensity
+- `budget_tokens`: caps max tokens used for reasoning (e.g., 1500 for substitution)
+- `max_tokens` is a GLOBAL budget for both reasoning + content — reducing from 10K to 4K cuts TPM reservation by 60%, directly enabling parallelism
+
+**Strategy written (4 tiers):**
+
+- **Tier 1:** Disable thinking + reduce max_tokens to 4000 → estimated 5-15s per generation (currently 30-120s)
+- **Tier 2:** + parallel multi-meal via asyncio.gather + reduce sleep 65s→2s → 3 meal types in 8-20s (currently 4-10 min)
+- **Tier 3:** + quota increase to 40K TPM + streaming → 6-15s for 3 meal types
+- **Tier 0 baseline:** current state for comparison
+
+**Critical PoC validation needed:** Whether Azure AI Foundry proxy passes `extra_body={"thinking": ...}` through to Kimi K2.5. If not, fallbacks are `reasoning_effort: "low"` (Azure-native) or token starvation (max_tokens=3000).
+
+**Secondary win if thinking disabled:** May re-enable `response_format=json_object` — the JSON corruption documented in `llm_client.py:223-226` was caused by invisible thinking tokens interfering with structured output. No thinking tokens = no corruption = no need for `_extract_json()` post-processing.
+
+**Decision written to:** `.squad/decisions/inbox/dallas-kimi-k25-optimization-strategy.md`
+
+### 2026-03-09: Kimi K2.5 Optimization Code Review — APPROVED
+
+**Reviewed:** Ripley's Tier 1 + Tier 3 implementation of Kimi K2.5 optimization strategy.
+
+**Files reviewed:**
+
+- `services/workers/meal_plan_generator/llm_client.py` — `extra_body={"thinking": {"type": "disabled"}}`, `response_format=json_object`, timeout fix (300s→caller param), `_MAX_TOKENS=4000`
+- `services/workers/meal_plan_generator/generator.py` — `MAX_RETRIES=2`, 5s pacing sleep, `15s×attempt` backoff
+
+**Key decisions:**
+
+1. `extra_body` is correctly placed as kwarg to `client.chat.completions.create()` — OpenAI SDK passes it directly into HTTP request body.
+2. `response_format=json_object` is safe with thinking disabled — no reasoning tokens to corrupt structured output.
+3. `_MAX_TOKENS=4000` is sufficient for 7 recipes (~2200 tokens, 1.8x headroom) but would be insufficient if Azure proxy strips the thinking parameter. Existing `_recover_truncated_json()` + `finish_reason="length"` detection provides adequate safety net.
+4. Timeout fix has no regression path — all callers propagate timeout correctly.
+5. Retry/backoff parameters (2 retries, 5s pacing, 30s backoff) are well-calibrated for reduced latency profile.
+
+**Bug fixed:** Two stale docstrings in generator.py ("retries up to 3x" → "retries up to 2x") at lines 4 and 53.
+
+**Outstanding risk:** Azure AI Foundry proxy may strip the `thinking` parameter. Recommended follow-up: add `reasoning_content` detection in response to confirm thinking is actually disabled. Monitor `finish_reason="length"` warnings post-deployment.
+
+**Decision written to:** `.squad/decisions/inbox/dallas-kimi-review.md`

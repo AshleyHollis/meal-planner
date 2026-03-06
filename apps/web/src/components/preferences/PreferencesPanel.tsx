@@ -42,6 +42,7 @@ function PreferencesPanel({ memberId }: PreferencesPanelProps) {
   const [dietaryTypes, setDietaryTypes] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   // Form state
   const [selectedType, setSelectedType] = useState<PreferenceType>(
@@ -107,6 +108,7 @@ function PreferencesPanel({ memberId }: PreferencesPanelProps) {
   const handleDelete = async (preferenceId: string) => {
     try {
       await deletePreference(memberId, preferenceId);
+      setConfirmDeleteId(null);
       await loadPreferences();
     } catch {
       setError("Failed to delete preference");
@@ -137,7 +139,13 @@ function PreferencesPanel({ memberId }: PreferencesPanelProps) {
     <div className="space-y-8">
       {error && (
         <div className="rounded-lg bg-red-50 p-4 text-sm text-red-800">
-          {error}
+          <p>{error}</p>
+          <button
+            onClick={() => void loadPreferences()}
+            className="mt-2 text-sm font-medium text-red-800 underline hover:text-red-900"
+          >
+            Try Again
+          </button>
         </div>
       )}
 
@@ -240,7 +248,7 @@ function PreferencesPanel({ memberId }: PreferencesPanelProps) {
                     {items.map((pref) => (
                       <li
                         key={pref.id}
-                        className="flex items-start justify-between rounded-lg border border-gray-200 bg-white p-4"
+                        className="flex items-start justify-between gap-2 rounded-lg border border-gray-200 bg-white p-4"
                       >
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
@@ -257,14 +265,36 @@ function PreferencesPanel({ memberId }: PreferencesPanelProps) {
                             </p>
                           )}
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDelete(pref.id)}
-                          aria-label={`Delete ${pref.value}`}
-                        >
-                          ×
-                        </Button>
+                        <div className="flex shrink-0 items-center gap-1">
+                          {confirmDeleteId === pref.id ? (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => void handleDelete(pref.id)}
+                                className="text-red-600 hover:bg-red-50"
+                              >
+                                Confirm
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setConfirmDeleteId(null)}
+                              >
+                                Cancel
+                              </Button>
+                            </>
+                          ) : (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setConfirmDeleteId(pref.id)}
+                              aria-label={`Delete ${pref.value}`}
+                            >
+                              ×
+                            </Button>
+                          )}
+                        </div>
                       </li>
                     ))}
                   </ul>

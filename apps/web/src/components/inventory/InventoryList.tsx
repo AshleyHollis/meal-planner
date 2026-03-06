@@ -1,17 +1,19 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 
 import type { InventoryItem, StorageLocation } from "@/types";
 import { removeInventoryItem, updateInventoryItem } from "@/services/api";
 import { Button } from "../ui/Button";
 import { Input } from "../ui/Input";
 import { ExpiryBadge } from "./ExpiryBadge";
+import { useToast } from "../ui/Toast";
 
 const LOCATION_LABELS: Record<StorageLocation, string> = {
-  fridge: "Fridge",
-  pantry: "Pantry",
-  freezer: "Freezer",
+  fridge: "🧊 Fridge",
+  pantry: "🗄️ Pantry",
+  freezer: "❄️ Freezer",
 };
 
 const LOCATION_ORDER: StorageLocation[] = ["fridge", "pantry", "freezer"];
@@ -67,6 +69,7 @@ function InventoryList({ items, onChanged }: InventoryListProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editQuantity, setEditQuantity] = useState("");
   const [saving, setSaving] = useState(false);
+  const { showToast } = useToast();
 
   const grouped = groupByLocation(items);
 
@@ -91,7 +94,7 @@ function InventoryList({ items, onChanged }: InventoryListProps) {
       setEditQuantity("");
       onChanged?.();
     } catch {
-      // silently fail for POC
+      showToast("Failed to update item. Please try again.", "error");
     } finally {
       setSaving(false);
     }
@@ -103,7 +106,7 @@ function InventoryList({ items, onChanged }: InventoryListProps) {
       await removeInventoryItem(itemId);
       onChanged?.();
     } catch {
-      // silently fail for POC
+      showToast("Failed to remove item. Please try again.", "error");
     } finally {
       setSaving(false);
     }
@@ -111,9 +114,15 @@ function InventoryList({ items, onChanged }: InventoryListProps) {
 
   if (items.length === 0) {
     return (
-      <p className="py-8 text-center text-gray-500">
-        No items in inventory. Add some above!
-      </p>
+      <div className="flex flex-col items-center justify-center rounded-xl border border-gray-100 bg-white py-12 text-center shadow-sm">
+        <div className="mb-4 text-6xl">🧊</div>
+        <h3 className="mb-2 text-lg font-semibold text-gray-800">
+          Your Pantry is Empty
+        </h3>
+        <p className="text-sm text-gray-600">
+          Add ingredients to get personalized meal plans
+        </p>
+      </div>
     );
   }
 
@@ -125,15 +134,22 @@ function InventoryList({ items, onChanged }: InventoryListProps) {
 
         return (
           <section key={location}>
-            <h3 className="mb-2 text-lg font-semibold text-gray-900">
-              {LOCATION_LABELS[location]}
+            <h3 className="mb-2 text-lg font-semibold text-gray-800">
+              {LOCATION_LABELS[location]} ({locationItems.length} item
+              {locationItems.length !== 1 ? "s" : ""})
             </h3>
-            <ul className="divide-y divide-gray-200 rounded-lg border border-gray-200">
+            <ul className="divide-y divide-gray-200 rounded-xl border border-gray-100 bg-white shadow-sm">
               {locationItems.map((item) => (
                 <li
                   key={item.id}
-                  className="flex items-center justify-between gap-3 px-4 py-3"
+                  className="relative flex items-center justify-between gap-3 px-4 py-3 transition-colors duration-150 hover:bg-gray-50"
                 >
+                  {/* Clickable area — navigates to detail page */}
+                  <Link
+                    href={`/inventory/${item.id}`}
+                    className="absolute inset-0"
+                    aria-label={`View ${item.ingredient.name} details`}
+                  />
                   {/* Left: name + expiry */}
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
@@ -148,7 +164,7 @@ function InventoryList({ items, onChanged }: InventoryListProps) {
                     </div>
                     <div className="mt-1 flex items-center gap-2">
                       {editingId === item.id ? (
-                        <div className="flex items-center gap-2">
+                        <div className="relative z-10 flex items-center gap-2">
                           <Input
                             type="number"
                             min="0"
@@ -196,11 +212,14 @@ function InventoryList({ items, onChanged }: InventoryListProps) {
 
                   {/* Right: actions */}
                   {editingId !== item.id && (
-                    <div className="flex gap-1">
+                    <div className="relative z-10 flex gap-1">
                       <Button
                         size="sm"
                         variant="ghost"
-                        onClick={() => handleEditStart(item)}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handleEditStart(item);
+                        }}
                         className="!min-h-[36px] !px-2 text-xs"
                       >
                         Edit
@@ -209,7 +228,10 @@ function InventoryList({ items, onChanged }: InventoryListProps) {
                         size="sm"
                         variant="danger"
                         loading={saving}
-                        onClick={() => void handleRemove(item.id)}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          void handleRemove(item.id);
+                        }}
                         className="!min-h-[36px] !px-2 text-xs"
                       >
                         Remove

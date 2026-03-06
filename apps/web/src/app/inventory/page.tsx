@@ -7,11 +7,16 @@ import { listInventory, ApiError } from "@/services/api";
 import { Spinner } from "@/components/ui/Spinner";
 import { AddItemForm } from "@/components/inventory/AddItemForm";
 import { InventoryList } from "@/components/inventory/InventoryList";
+import { StapleSuggestions } from "@/components/staples/StapleSuggestions";
 
 export default function InventoryPage() {
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    document.title = "Inventory | Meal Planner";
+  }, []);
 
   const fetchItems = useCallback(async () => {
     try {
@@ -43,8 +48,8 @@ export default function InventoryPage() {
       <h1 className="mb-6 text-2xl font-bold text-gray-900">Inventory</h1>
 
       <div className="lg:grid lg:grid-cols-2 lg:gap-8">
-        <section className="mb-8 rounded-lg border border-gray-200 bg-white p-4 lg:mb-0">
-          <h2 className="mb-4 text-lg font-semibold text-gray-900">Add Item</h2>
+        <section className="mb-8 rounded-xl border border-gray-100 bg-white p-4 shadow-sm lg:mb-0">
+          <h2 className="mb-4 text-lg font-semibold text-gray-800">Add Item</h2>
           <AddItemForm onSuccess={handleChanged} />
         </section>
 
@@ -71,6 +76,10 @@ export default function InventoryPage() {
             <InventoryList items={items} onChanged={handleChanged} />
           )}
         </div>
+      </div>
+
+      <div className="mt-8">
+        <StapleSuggestions onChanged={handleChanged} />
       </div>
     </main>
   );

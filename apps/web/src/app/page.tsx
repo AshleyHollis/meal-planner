@@ -1,49 +1,85 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 
-import type { InventoryItem, MealPlanDetail } from "@/types";
+import type { InventoryItem, MealPlanDetail, MealHistoryItem } from "@/types";
 import {
   listInventory,
+  listMealPlans,
   getActiveMealPlan,
   createMealPlan,
+  updatePlanStatus,
+  getMealHistory,
 } from "@/services/api";
 import { ApiError } from "@/services/api";
 import { Spinner } from "@/components/ui/Spinner";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { getMealImageUrl } from "@/lib/meal-images";
+import {
+  getNextMonday,
+  DAY_LABELS_SHORT,
+  DAY_LABELS_LONG,
+} from "@/lib/date-utils";
 import { CuisineSelector } from "@/components/CuisineSelector";
+import { MealTypeSelector } from "@/components/MealTypeSelector";
+import { useToast } from "@/components/ui/Toast";
 
-function getNextMonday(): string {
-  const today = new Date();
-  const day = today.getDay();
-  const diff = day === 0 ? 1 : 8 - day;
-  const monday = new Date(today);
-  monday.setDate(today.getDate() + diff);
-  return monday.toISOString().split("T")[0];
-}
+const GENERATION_STEPS = [
+  "Creating plan...",
+  "Generating recipes...",
+  "Building grocery list...",
+];
 
 export default function DashboardPage() {
   const router = useRouter();
+  const { showToast } = useToast();
   const [plan, setPlan] = useState<MealPlanDetail | null>(null);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
+  const [history, setHistory] = useState<MealHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
+  const [generationStep, setGenerationStep] = useState(0);
   const [error, setError] = useState<string | null>(null);
-  const [showCuisineSelector, setShowCuisineSelector] = useState(false);
   const [cuisinePreferences, setCuisinePreferences] = useState<string[]>([]);
+  const [mealTypes, setMealTypes] = useState<string[]>([
+    "breakfast",
+    "lunch",
+    "dinner",
+  ]);
+  const stepIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Cycle through generation steps while generating
+  useEffect(() => {
+    document.title = "Dashboard | Meal Planner";
+  }, []);
+
+  useEffect(() => {
+    if (generating) {
+      setGenerationStep(0);
+      stepIntervalRef.current = setInterval(() => {
+        setGenerationStep((prev) =>
+          prev < GENERATION_STEPS.length - 1 ? prev + 1 : prev,
+        );
+      }, 2000);
+    } else {
+      if (stepIntervalRef.current) clearInterval(stepIntervalRef.current);
+      setGenerationStep(0);
+    }
+    return () => {
+      if (stepIntervalRef.current) clearInterval(stepIntervalRef.current);
+    };
+  }, [generating]);
 
   const fetchData = useCallback(async () => {
     try {
       setError(null);
-      const [inventoryData, activePlan] = await Promise.allSettled([
-        listInventory(),
-        getActiveMealPlan(),
-      ]);
+      const [inventoryData, activePlan, historyData] = await Promise.allSettled(
+        [listInventory(), getActiveMealPlan(), getMealHistory(1, 5)],
+      );
 
       if (inventoryData.status === "fulfilled") {
         setInventory(inventoryData.value);
@@ -57,6 +93,10 @@ export default function DashboardPage() {
         if (err instanceof ApiError && err.status === 404) {
           setPlan(null);
         }
+      }
+
+      if (historyData.status === "fulfilled") {
+        setHistory(historyData.value);
       }
     } catch (err) {
       if (err instanceof ApiError && err.isAuthError) {
@@ -77,10 +117,22 @@ export default function DashboardPage() {
     try {
       setGenerating(true);
       setError(null);
+
+      // Auto-complete any existing active or draft plan before creating a new one.
+      // This prevents the API returning 409 Conflict.
+      const allPlans = await listMealPlans();
+      const existing = allPlans.find(
+        (p) => p.status === "active" || p.status === "draft",
+      );
+      if (existing) {
+        await updatePlanStatus(existing.id, { status: "completed" });
+      }
+
       const newPlan = await createMealPlan({
         week_start_date: getNextMonday(),
         cuisine_preferences:
           cuisinePreferences.length > 0 ? cuisinePreferences : undefined,
+        meal_types: mealTypes.length > 0 ? mealTypes : undefined,
       });
       router.push(`/meal-plan/${newPlan.id}`);
     } catch (err) {
@@ -88,7 +140,17 @@ export default function DashboardPage() {
         window.location.href = "/api/auth/login";
         return;
       }
-      setError("Failed to generate meal plan.");
+      let message = "Failed to generate meal plan. Please try again.";
+      if (err && typeof err === "object" && "body" in err) {
+        const detail = (err.body as { detail?: unknown })?.detail;
+        if (typeof detail === "string") {
+          message = detail;
+        } else if (Array.isArray(detail) && detail.length > 0) {
+          message = detail.map((d: { msg?: string }) => d.msg || "").join("; ");
+        }
+      }
+      setError(message);
+      showToast(message, "error");
       setGenerating(false);
     }
   };
@@ -127,7 +189,7 @@ export default function DashboardPage() {
     <main className="mx-auto max-w-2xl px-4 py-8 lg:max-w-7xl">
       <div className="mb-6 hidden lg:block">
         <h1 className="text-3xl font-bold text-gray-900">Welcome back</h1>
-        <p className="mt-1 text-gray-500">
+        <p className="mt-1 text-sm text-gray-600">
           Here&apos;s your meal planning overview
         </p>
       </div>
@@ -137,16 +199,21 @@ export default function DashboardPage() {
 
       {error && (
         <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-          {error}
+          <p>{error}</p>
+          <button
+            onClick={() => void fetchData()}
+            className="mt-2 text-sm font-medium text-red-700 underline hover:text-red-900"
+          >
+            Try Again
+          </button>
         </div>
       )}
 
       {/* Active Plan Summary */}
       {plan ? (
-        <section className="mb-6 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm lg:p-0">
-          {/* Today's meal image accent */}
+        <section className="mb-6 overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm hover:shadow-md transition-shadow duration-200 lg:p-0">
           {todayImageUrl && (
-            <div className="relative h-32 w-full lg:h-40">
+            <div className="relative h-32 w-full lg:h-48">
               <Image
                 src={todayImageUrl}
                 alt={todaySlot?.recipe?.title ?? "Today's meal"}
@@ -154,20 +221,25 @@ export default function DashboardPage() {
                 className="object-cover"
                 placeholder="empty"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
               {todaySlot?.recipe && (
-                <p className="absolute bottom-2 left-4 text-sm font-semibold text-white drop-shadow">
-                  Tonight: {todaySlot.recipe.title}
-                </p>
+                <div className="absolute bottom-4 left-4 right-4">
+                  <p className="text-sm font-medium text-white/90">
+                    Tonight&apos;s Dinner
+                  </p>
+                  <p className="text-lg font-bold text-white drop-shadow-lg">
+                    {todaySlot.recipe.title}
+                  </p>
+                </div>
               )}
             </div>
           )}
           <div className="p-4 lg:p-6">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-gray-900">
+              <h2 className="text-lg font-semibold text-gray-800">
                 Active Plan
               </h2>
-              <Badge variant="success">{plan.status}</Badge>
+              <Badge variant="active">{plan.status}</Badge>
             </div>
             <p className="mt-1 text-sm text-gray-600">
               Week of{" "}
@@ -177,41 +249,48 @@ export default function DashboardPage() {
                 year: "numeric",
               })}
             </p>
-            <p className="mt-1 text-sm text-gray-600">
+            <div className="mt-4 h-2 overflow-hidden rounded-full bg-gray-200">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-green-500 to-green-600"
+                style={{
+                  width: `${totalSlots > 0 ? (cookedCount / totalSlots) * 100 : 0}%`,
+                }}
+              />
+            </div>
+            <p className="mt-2 text-xs text-gray-500">
               {cookedCount} of {totalSlots} meals cooked
             </p>
-            <div className="mt-3">
+            <div className="mt-4">
               <Link
                 href={`/meal-plan/${plan.id}`}
                 className="text-sm font-medium text-blue-600 hover:text-blue-700"
               >
-                View Plan &rarr;
+                View Full Plan &rarr;
               </Link>
             </div>
           </div>
         </section>
       ) : (
-        <section className="mb-6 rounded-lg border border-gray-200 bg-white p-6">
-          <p className="mb-4 text-center text-gray-600">
-            No active meal plan. Generate one to get started.
-          </p>
-          {showCuisineSelector && (
-            <div className="mb-4">
-              <CuisineSelector
-                selected={cuisinePreferences}
-                onChange={setCuisinePreferences}
-              />
+        <section className="mb-6 rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
+          <div className="mb-4 flex items-center gap-3">
+            <div className="text-4xl">🍽️</div>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-800">
+                Plan Your Week
+              </h3>
+              <p className="text-sm text-gray-600">
+                Customize and generate your meal plan
+              </p>
             </div>
-          )}
-          <div className="flex justify-center gap-3">
-            {!showCuisineSelector && (
-              <Button
-                variant="secondary"
-                onClick={() => setShowCuisineSelector(true)}
-              >
-                Customize Cuisine
-              </Button>
-            )}
+          </div>
+          <CuisineSelector
+            selected={cuisinePreferences}
+            onChange={setCuisinePreferences}
+          />
+          <div className="mt-4">
+            <MealTypeSelector selected={mealTypes} onChange={setMealTypes} />
+          </div>
+          <div className="mt-4">
             <Button
               onClick={() => void handleGenerate()}
               loading={generating}
@@ -220,54 +299,305 @@ export default function DashboardPage() {
               Generate Plan
             </Button>
           </div>
+
+          {/* Generation progress indicator */}
+          {generating && (
+            <div className="mt-5 rounded-lg border border-blue-100 bg-blue-50 p-4">
+              <div className="mb-3 flex items-center gap-2">
+                <Spinner size="sm" />
+                <span className="text-sm font-medium text-blue-700">
+                  {GENERATION_STEPS[generationStep]}
+                </span>
+              </div>
+              <div className="flex gap-2">
+                {GENERATION_STEPS.map((step, i) => (
+                  <div
+                    key={step}
+                    className="flex flex-1 flex-col items-center gap-1"
+                  >
+                    <div
+                      className={`h-1.5 w-full rounded-full transition-all duration-500 ${
+                        i <= generationStep ? "bg-blue-500" : "bg-blue-200"
+                      }`}
+                    />
+                    <span
+                      className={`text-xs transition-colors duration-300 ${
+                        i === generationStep
+                          ? "font-medium text-blue-600"
+                          : i < generationStep
+                            ? "text-blue-400"
+                            : "text-gray-400"
+                      }`}
+                    >
+                      {i === 0 ? "Creating" : i === 1 ? "Recipes" : "Grocery"}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </section>
       )}
 
-      {/* Expiring Items */}
+      {/* Stats Row */}
+      <div className="mb-6 grid grid-cols-3 gap-3 lg:gap-6">
+        <Link
+          href={`/meal-plan${plan ? `/${plan.id}` : ""}`}
+          className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm text-center hover:shadow-md hover:border-blue-100 transition-all duration-200"
+        >
+          <p className="text-2xl font-bold text-gray-900">{cookedCount}</p>
+          <p className="mt-1 text-xs text-gray-500">Meals This Week</p>
+        </Link>
+        <Link
+          href="/inventory"
+          className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm text-center hover:shadow-md hover:border-orange-100 transition-all duration-200"
+        >
+          <p
+            className={`text-2xl font-bold ${expiringCount > 0 ? "text-orange-600" : "text-gray-900"}`}
+          >
+            {expiringCount}
+          </p>
+          <p className="mt-1 text-xs text-gray-500">Items Expiring</p>
+        </Link>
+        <Link
+          href="/inventory"
+          className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm text-center hover:shadow-md hover:border-green-100 transition-all duration-200"
+        >
+          <p className="text-2xl font-bold text-gray-900">{inventory.length}</p>
+          <p className="mt-1 text-xs text-gray-500">In Inventory</p>
+        </Link>
+      </div>
+
+      {/* Expiry Warning */}
       {expiringCount > 0 && (
-        <section className="mb-6 rounded-lg border border-yellow-200 bg-yellow-50 p-4">
-          <div className="flex items-center justify-between">
-            <p className="text-sm font-medium text-yellow-800">
-              {expiringCount} item{expiringCount !== 1 ? "s" : ""} expiring soon
-            </p>
+        <section className="mb-6 rounded-xl border-2 border-orange-200 bg-orange-50 p-4">
+          <div className="flex items-start gap-3">
+            <div className="text-2xl">⚠️</div>
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-orange-900">
+                {expiringCount} item{expiringCount !== 1 ? "s" : ""} expiring
+                soon
+              </p>
+              <p className="mt-1 text-xs text-orange-700">
+                Check your inventory to avoid food waste
+              </p>
+            </div>
             <Link
               href="/inventory"
-              className="text-sm font-medium text-yellow-700 hover:text-yellow-800"
+              className="rounded-lg bg-orange-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-orange-700"
             >
-              View &rarr;
+              View
             </Link>
           </div>
         </section>
       )}
 
-      {/* Quick Links */}
-      <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
-        <Link
-          href="/inventory"
-          className="rounded-lg border border-gray-200 bg-white p-4 text-center hover:bg-gray-50 lg:p-6"
-        >
-          <p className="text-sm font-medium text-gray-900">Inventory</p>
-          <p className="mt-1 text-xs text-gray-500">
-            {inventory.length} item{inventory.length !== 1 ? "s" : ""}
-          </p>
-        </Link>
-        <Link
-          href="/meal-plan"
-          className="rounded-lg border border-gray-200 bg-white p-4 text-center hover:bg-gray-50 lg:p-6"
-        >
-          <p className="text-sm font-medium text-gray-900">Meal Plans</p>
-          <p className="mt-1 text-xs text-gray-500">Plan your week</p>
-        </Link>
-        {plan && (
+      {/* Quick Actions */}
+      <section>
+        <h2 className="mb-3 text-lg font-semibold text-gray-800">
+          Quick Actions
+        </h2>
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
           <Link
-            href={`/grocery-list/${plan.id}`}
-            className="rounded-lg border border-gray-200 bg-white p-4 text-center hover:bg-gray-50 lg:p-6"
+            href="/inventory"
+            className="flex flex-col items-center gap-2 rounded-xl border border-gray-100 bg-white p-4 shadow-sm hover:shadow-md transition-shadow duration-200"
           >
-            <p className="text-sm font-medium text-gray-900">Grocery List</p>
-            <p className="mt-1 text-xs text-gray-500">Shopping items</p>
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-100">
+              <svg
+                className="h-6 w-6 text-blue-600"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={1.5}
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z"
+                />
+              </svg>
+            </div>
+            <p className="text-sm font-medium text-gray-900">Inventory</p>
           </Link>
-        )}
+          <Link
+            href="/meal-plan"
+            className="flex flex-col items-center gap-2 rounded-xl border border-gray-100 bg-white p-4 shadow-sm hover:shadow-md transition-shadow duration-200"
+          >
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
+              <svg
+                className="h-6 w-6 text-green-600"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={1.5}
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"
+                />
+              </svg>
+            </div>
+            <p className="text-sm font-medium text-gray-900">Meal Plans</p>
+          </Link>
+          {plan && (
+            <Link
+              href={`/grocery-list/${plan.id}`}
+              className="flex flex-col items-center gap-2 rounded-xl border border-gray-100 bg-white p-4 shadow-sm hover:shadow-md transition-shadow duration-200"
+            >
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-purple-100">
+                <svg
+                  className="h-6 w-6 text-purple-600"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={1.5}
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z"
+                  />
+                </svg>
+              </div>
+              <p className="text-sm font-medium text-gray-900">Grocery</p>
+            </Link>
+          )}
+          <Link
+            href="/quick-suggestions"
+            className="flex flex-col items-center gap-2 rounded-xl border border-gray-100 bg-white p-4 shadow-sm hover:shadow-md transition-shadow duration-200"
+          >
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-orange-100">
+              <svg
+                className="h-6 w-6 text-orange-600"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={1.5}
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z"
+                />
+              </svg>
+            </div>
+            <p className="text-sm font-medium text-gray-900">Quick Cook</p>
+          </Link>
+        </div>
       </section>
+
+      {/* This Week's Meals */}
+      {plan && plan.slots.length > 0 && (
+        <section className="mt-8">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-gray-800">
+              This Week&apos;s Meals
+            </h2>
+            <Link
+              href={`/meal-plan/${plan.id}`}
+              className="text-sm text-blue-600 hover:underline"
+            >
+              View all &rarr;
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {plan.slots
+              .filter((s) => s.recipe)
+              .slice(0, 6)
+              .map((slot) => {
+                return (
+                  <Link
+                    key={slot.id}
+                    href={`/meal-plan/${plan.id}`}
+                    className="group relative overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm hover:shadow-md transition-all duration-200"
+                  >
+                    <div className="relative h-28">
+                      <Image
+                        src={getMealImageUrl(slot.recipe!.title, 400, 200)}
+                        alt={slot.recipe!.title}
+                        fill
+                        className="object-cover group-hover:scale-105 transition-transform duration-300"
+                        placeholder="empty"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+                      <div className="absolute bottom-2 left-3 right-3">
+                        <p className="truncate text-sm font-semibold text-white">
+                          {slot.recipe!.title}
+                        </p>
+                        <p className="text-xs text-white/70">
+                          {DAY_LABELS_SHORT[slot.day]} · {slot.meal_type}
+                        </p>
+                      </div>
+                      {slot.status === "cooked" && (
+                        <div className="absolute right-2 top-2 rounded-full bg-green-500 px-2 py-0.5 text-xs font-medium text-white">
+                          ✓ Cooked
+                        </div>
+                      )}
+                    </div>
+                  </Link>
+                );
+              })}
+          </div>
+        </section>
+      )}
+
+      {/* Recent Activity */}
+      {history.length > 0 && (
+        <section className="mt-8">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-gray-800">
+              Recent Activity
+            </h2>
+            <Link
+              href="/history"
+              className="text-sm text-blue-600 hover:underline"
+            >
+              Full history &rarr;
+            </Link>
+          </div>
+          <div className="rounded-xl border border-gray-100 bg-white shadow-sm divide-y divide-gray-100">
+            {history.map((h) => {
+              return (
+                <Link
+                  key={h.slot_id}
+                  href="/history"
+                  className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-gray-50"
+                >
+                  <div className="relative h-10 w-10 flex-shrink-0 overflow-hidden rounded-lg">
+                    <Image
+                      src={getMealImageUrl(h.recipe_title, 80, 80)}
+                      alt={h.recipe_title}
+                      fill
+                      className="object-cover"
+                      placeholder="empty"
+                    />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-gray-900">
+                      {h.recipe_title}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {DAY_LABELS_LONG[h.day] ?? `Day ${h.day}`} · {h.meal_type}
+                      {h.rating != null && (
+                        <span className="ml-2 text-yellow-500">
+                          {"★".repeat(h.rating)}
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                  <p className="flex-shrink-0 text-xs text-gray-400">
+                    {new Date(h.cooked_at).toLocaleDateString(undefined, {
+                      month: "short",
+                      day: "numeric",
+                    })}
+                  </p>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+      )}
     </main>
   );
 }
