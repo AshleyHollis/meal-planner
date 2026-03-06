@@ -76,6 +76,11 @@ export function clearTripsForList(groceryListId: string): void {
   keysToRemove.forEach((k) => localStorage.removeItem(k));
 }
 
+export function clearTripState(groceryListId: string, shop: string): void {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem(getTripKey(groceryListId, shop));
+}
+
 export function isNewList(groceryListId: string): boolean {
   if (typeof window === "undefined") return true;
   for (let i = 0; i < localStorage.length; i++) {

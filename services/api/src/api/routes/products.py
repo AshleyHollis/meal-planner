@@ -27,6 +27,7 @@ def _to_response(product: Product) -> ProductResponse:
         shop=product.shop,
         notes=product.notes,
         ingredient_name=product.ingredient.name if product.ingredient else "",
+        ingredient_category=product.ingredient.category if product.ingredient else "",
         created_at=product.created_at,
         updated_at=product.updated_at,
     )

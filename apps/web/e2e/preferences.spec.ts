@@ -24,17 +24,19 @@ async function waitForPreferencesLoaded(page: import("@playwright/test").Page) {
     page.getByRole("heading", { name: /Preferences|Food Preferences/i }),
   ).toBeVisible({ timeout: 30_000 });
 
-  // Wait for a preference group heading — proves the API data has loaded.
+  // Wait for either the grouped data or the valid empty state.
   const groupHeading = page.getByRole("heading", {
     name: /(Dietary Restrictions|Allergies|Dislikes|Likes)/i,
   });
+  const emptyState = page.getByText(/No preferences|Add your first/i);
+  const readyIndicator = emptyState.or(groupHeading).first();
 
   try {
-    await expect(groupHeading.first()).toBeVisible({ timeout: 60_000 });
+    await expect(readyIndicator).toBeVisible({ timeout: 60_000 });
   } catch {
     // First load likely failed (API cold start). Reload and try again.
     await page.reload({ waitUntil: "networkidle" });
-    await expect(groupHeading.first()).toBeVisible({ timeout: 60_000 });
+    await expect(readyIndicator).toBeVisible({ timeout: 60_000 });
   }
 }
 

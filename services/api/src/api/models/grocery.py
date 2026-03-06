@@ -24,6 +24,7 @@ class PurchasedItem(BaseModel):
     ingredient_id: UUID
     quantity: float = Field(gt=0)
     unit: str
+    expiry_date: datetime | None = None
 
 
 class CompleteShoppingRequest(BaseModel):

@@ -87,6 +87,7 @@ class TestListProducts:
         assert len(items) == 1
         assert items[0]["brand"] == "Ingham's"
         assert items[0]["ingredient_name"] == "Chicken Breast"
+        assert items[0]["ingredient_category"] == "meat"
 
 
 # ---------------------------------------------------------------------------
@@ -114,6 +115,7 @@ class TestCreateProduct:
         data = resp.json()
         assert data["brand"] == "Ingham's"
         assert data["ingredient_name"] == "Chicken Breast"
+        assert data["ingredient_category"] == "meat"
         assert data["shop"] == "Woolworths"
         assert "id" in data
 

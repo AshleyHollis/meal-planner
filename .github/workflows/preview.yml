@@ -757,7 +757,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           pr-number: ${{ needs.detect-changes.outputs.pr_number }}
           test-outcome: ${{ steps.run-tests.outcome }}
-          preview-url: ${{ needs.get-ingress.outputs.preview_url }}
+          preview-url: ${{ steps.base-url.outputs.base_url }}
           commit-sha: ${{ needs.detect-changes.outputs.pr_head_sha }}
           run-id: ${{ github.run_id }}
           repository: ${{ github.repository }}

@@ -150,7 +150,8 @@ jobs:
                 repo: context.repo.repo,
                 issue_number: parseInt('${{ inputs.pr_number }}'),
                 body: `## E2E Test Results ${status}\n\n` +
-                      `**Environment:** ${{ inputs.environment_url }}\n` +
+                      `**Frontend:** ${{ inputs.environment_url }}\n` +
+                      `**API:** ${{ inputs.api_url }}\n` +
                       `**Status:** ${{ job.status }}\n\n` +
                       `[View Playwright Report](${reportUrl})`
               });

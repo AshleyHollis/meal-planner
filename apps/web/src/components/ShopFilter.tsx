@@ -2,6 +2,13 @@
 
 import type { GroceryItem } from "@/types";
 import { getStoreBrand } from "@/lib/store-branding";
+import {
+  getItemShop,
+  getShopDisplayName,
+  normalizeShopName,
+  OTHER_SHOP_LABEL,
+  OTHER_SHOP_VALUE,
+} from "@/lib/shop-utils";
 
 interface ShopFilterProps {
   items: GroceryItem[];
@@ -9,21 +16,21 @@ interface ShopFilterProps {
   onFilterChange: (shop: string | null) => void;
 }
 
-function normalizeShopName(shop: string): string {
-  return shop.toLowerCase().trim();
-}
-
 function ShopFilter({ items, selectedShop, onFilterChange }: ShopFilterProps) {
-  // Derive distinct shops from product?.shop
-  const shopCounts: Record<string, number> = {};
+  const shopCounts: Record<string, { count: number; label: string }> = {};
   let otherCount = 0;
-  let allCount = items.length;
+  const allCount = items.length;
 
   for (const item of items) {
-    const shop = item.product?.shop;
+    const shop = getItemShop(item);
     if (shop) {
       const key = normalizeShopName(shop);
-      shopCounts[key] = (shopCounts[key] ?? 0) + 1;
+      const existing = shopCounts[key] ?? {
+        count: 0,
+        label: getShopDisplayName(shop),
+      };
+      existing.count += 1;
+      shopCounts[key] = existing;
     } else {
       otherCount++;
     }
@@ -52,6 +59,7 @@ function ShopFilter({ items, selectedShop, onFilterChange }: ShopFilterProps) {
       {/* Per-shop */}
       {shops.map((shopKey) => {
         const brand = getStoreBrand(shopKey);
+        const shop = shopCounts[shopKey];
         const isActive = selectedShop
           ? normalizeShopName(selectedShop) === shopKey
           : false;
@@ -66,9 +74,9 @@ function ShopFilter({ items, selectedShop, onFilterChange }: ShopFilterProps) {
                 : "bg-gray-100 text-gray-600 hover:bg-gray-200"
             }`}
           >
-            {shopKey.charAt(0).toUpperCase() + shopKey.slice(1)}
+            {shop.label}
             <span className="ml-1.5 rounded-full bg-white/20 px-1.5 text-xs">
-              {shopCounts[shopKey]}
+              {shop.count}
             </span>
           </button>
         );
@@ -78,14 +86,14 @@ function ShopFilter({ items, selectedShop, onFilterChange }: ShopFilterProps) {
       {otherCount > 0 && (
         <button
           type="button"
-          onClick={() => onFilterChange("__other__")}
+          onClick={() => onFilterChange(OTHER_SHOP_VALUE)}
           className={`flex-shrink-0 rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
-            selectedShop === "__other__"
+            selectedShop === OTHER_SHOP_VALUE
               ? "bg-gray-600 text-white"
               : "bg-gray-100 text-gray-600 hover:bg-gray-200"
           }`}
         >
-          Other
+          {OTHER_SHOP_LABEL}
           <span className="ml-1.5 rounded-full bg-white/20 px-1.5 text-xs">
             {otherCount}
           </span>

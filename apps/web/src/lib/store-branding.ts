@@ -31,6 +31,11 @@ const STORE_BRANDS: Record<string, StoreBrand> = {
     color: "bg-green-700",
     textColor: "text-white",
   },
+  "other / any store": {
+    abbreviation: "?",
+    color: "bg-gray-500",
+    textColor: "text-white",
+  },
   generic: { abbreviation: "?", color: "bg-gray-500", textColor: "text-white" },
 };
 

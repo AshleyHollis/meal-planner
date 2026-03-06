@@ -13,7 +13,11 @@
  *      (worker generates recipes, meal slots, and grocery list)
  */
 
-import { test as setup, expect } from "@playwright/test";
+import {
+  test as setup,
+  expect,
+  type APIRequestContext,
+} from "@playwright/test";
 
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL ||
@@ -25,6 +29,12 @@ interface SeedIngredient {
   name: string;
   default_unit: string;
   default_storage: string;
+}
+
+interface SeedMealPlan {
+  id: string;
+  status: string;
+  week_start_date: string;
 }
 
 function getNextMonday(): string {
@@ -39,6 +49,135 @@ function getNextMonday(): string {
   const mm = String(monday.getMonth() + 1).padStart(2, "0");
   const dd = String(monday.getDate()).padStart(2, "0");
   return `${yyyy}-${mm}-${dd}`;
+}
+
+async function listMealPlans(
+  request: APIRequestContext,
+  headers: Record<string, string>,
+): Promise<SeedMealPlan[]> {
+  const response = await request.get(
+    `${API_URL}/api/v1/meal-plans?sort=created_at&order=desc`,
+    {
+      headers,
+    },
+  );
+  expect(
+    response.ok(),
+    `Failed to list meal plans before fresh-generation check: ${response.status()}`,
+  ).toBeTruthy();
+  return (await response.json()) as SeedMealPlan[];
+}
+
+async function completeBlockingMealPlans(
+  request: APIRequestContext,
+  headers: Record<string, string>,
+): Promise<void> {
+  const existingPlans = await listMealPlans(request, headers);
+  const blockers = existingPlans.filter(
+    (plan) => plan.status === "draft" || plan.status === "active",
+  );
+
+  if (blockers.length === 0) {
+    console.log(
+      "[seed-data] No existing draft/active meal plans blocking fresh generation",
+    );
+    return;
+  }
+
+  console.log(
+    `[seed-data] Completing ${blockers.length} blocking draft/active meal plan(s) before creating a fresh one...`,
+  );
+
+  const completionResults = await Promise.all(
+    blockers.map(async (plan) => {
+      const response = await request.patch(
+        `${API_URL}/api/v1/meal-plans/${plan.id}/status`,
+        {
+          headers,
+          data: { status: "completed" },
+        },
+      );
+
+      return {
+        id: plan.id,
+        previousStatus: plan.status,
+        ok: response.ok(),
+        status: response.status(),
+      };
+    }),
+  );
+
+  const failures = completionResults.filter((result) => !result.ok);
+  expect(
+    failures,
+    `[seed-data] Failed to clear blocking meal plans: ${failures
+      .map(
+        (result) =>
+          `${result.id} (${result.previousStatus}) -> HTTP ${result.status}`,
+      )
+      .join(", ")}`,
+  ).toHaveLength(0);
+
+  const remainingBlockers = (await listMealPlans(request, headers)).filter(
+    (plan) => plan.status === "draft" || plan.status === "active",
+  );
+  expect(
+    remainingBlockers,
+    `[seed-data] Blocking meal plans remained after cleanup: ${remainingBlockers
+      .map((plan) => `${plan.id} (${plan.status})`)
+      .join(", ")}`,
+  ).toHaveLength(0);
+}
+
+async function createFreshMealPlan(
+  request: APIRequestContext,
+  headers: Record<string, string>,
+  weekStart: string,
+): Promise<{ id: string; status: string }> {
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    await completeBlockingMealPlans(request, headers);
+
+    console.log(
+      `[seed-data] Creating meal plan (attempt ${attempt}/2) for week ${weekStart}...`,
+    );
+    const planResp = await request.post(`${API_URL}/api/v1/meal-plans`, {
+      headers,
+      data: { week_start_date: weekStart },
+    });
+
+    if (planResp.status() === 409) {
+      const blockers = (await listMealPlans(request, headers)).filter(
+        (plan) => plan.status === "draft" || plan.status === "active",
+      );
+
+      if (attempt < 2) {
+        console.warn(
+          `[seed-data] Fresh meal plan attempt ${attempt}/2 hit 409. Retrying after re-checking blockers: ${blockers
+            .map((plan) => `${plan.id} (${plan.status})`)
+            .join(", ") || "none reported"}`,
+        );
+        await new Promise((resolve) => setTimeout(resolve, 1_000));
+        continue;
+      }
+
+      throw new Error(
+        `[seed-data] Fresh meal plan creation still hit 409 after cleanup. Remaining blockers: ${blockers
+          .map((plan) => `${plan.id} (${plan.status})`)
+          .join(", ") || "unknown"}`,
+      );
+    }
+
+    if (!planResp.ok()) {
+      const errText = await planResp.text().catch(() => "");
+      throw new Error(
+        `Failed to create meal plan: ${planResp.status()} ${errText}`,
+      );
+    }
+
+    return (await planResp.json()) as { id: string; status: string };
+  }
+
+  throw new Error("[seed-data] Failed to create a fresh meal plan");
 }
 
 setup("seed test data", async ({ request, baseURL }) => {
@@ -424,31 +563,11 @@ setup("seed test data", async ({ request, baseURL }) => {
     `[seed-data] Preferences warm-up: dietary-types ${dietaryTypesResp.status()}`,
   );
 
-  console.log("[seed-data] Creating meal plan...");
   const weekStart = getNextMonday();
-  const planResp = await request.post(`${API_URL}/api/v1/meal-plans`, {
-    headers,
-    data: { week_start_date: weekStart },
-  });
-
-  if (planResp.status() === 409) {
-    console.log(
-      "[seed-data] Meal plan already exists (409 Conflict) — skipping creation",
-    );
-    return;
-  }
-
-  if (!planResp.ok()) {
-    const errText = await planResp.text().catch(() => "");
-    expect(
-      false,
-      `Failed to create meal plan: ${planResp.status()} ${errText}`,
-    ).toBeTruthy();
-  }
-
-  const plan = (await planResp.json()) as { id: string; status: string };
+  const generationStartedAt = Date.now();
+  const plan = await createFreshMealPlan(request, headers, weekStart);
   console.log(
-    `[seed-data] Created meal plan ${plan.id} (status: ${plan.status})`,
+    `[seed-data] Created fresh meal plan ${plan.id} for week ${weekStart} (status: ${plan.status})`,
   );
 
   // ── Step 5: Wait for worker to process the plan ───────────────────────
@@ -473,31 +592,31 @@ setup("seed test data", async ({ request, baseURL }) => {
       };
 
       if (updated.status !== "draft") {
-        const elapsed = Math.round((Date.now() - startTime) / 1000);
+        const elapsed = Math.round((Date.now() - generationStartedAt) / 1000);
         console.log(
-          `[seed-data] Meal plan ${updated.status} after ${elapsed}s`,
+          `[seed-data] Fresh meal plan ${updated.status} after ${elapsed}s`,
         );
         if (updated.status === "active") {
           console.log(
             `[seed-data]   ${updated.slots?.length || 0} meal slots created`,
           );
+          return;
         } else if (updated.status === "failed") {
-          console.log(
-            "[seed-data]   Plan generation failed (LLM may not be configured)",
+          throw new Error(
+            `[seed-data] Fresh meal plan failed after ${elapsed}s (LLM may not be configured)`,
           );
         }
-        return;
+        throw new Error(
+          `[seed-data] Fresh meal plan reached unexpected status "${updated.status}" after ${elapsed}s`,
+        );
       }
     }
 
     await new Promise((r) => setTimeout(r, pollInterval));
   }
 
-  const elapsed = Math.round((Date.now() - startTime) / 1000);
-  console.warn(
-    `[seed-data] Meal plan still in draft after ${elapsed}s — worker may not be running`,
-  );
-  console.log(
-    "[seed-data] Inventory was seeded — inventory and form tests will pass",
+  const elapsed = Math.round((Date.now() - generationStartedAt) / 1000);
+  throw new Error(
+    `[seed-data] Fresh meal plan still in draft after ${elapsed}s — worker may not be running`,
   );
 });

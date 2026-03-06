@@ -140,7 +140,8 @@ jobs:
           resource-group: ${{ vars.AZURE_RESOURCE_GROUP || 'rg-ytsumm-prd-ci' }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
           dry-run: "false"
-          min-age-hours: "1"
+          # Keep active PR preview URLs alive long enough for review and merge validation.
+          min-age-hours: "24"
           max-prs-to-check: "50"
 
       - name: Report cleanup results

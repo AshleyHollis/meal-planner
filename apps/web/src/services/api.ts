@@ -202,6 +202,8 @@ export interface UpdateGroceryItemBody {
 export interface PurchasedItem {
   ingredient_id: string;
   quantity: number;
+  unit: string;
+  expiry_date?: string;
 }
 
 export interface CompleteShoppingBody {

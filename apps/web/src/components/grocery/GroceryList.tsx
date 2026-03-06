@@ -5,9 +5,20 @@ import { useState } from "react";
 import type { GroceryList as GroceryListType } from "@/types";
 import { GroceryItem } from "./GroceryItem";
 import { getStoreBrand } from "@/lib/store-branding";
+import {
+  getItemShop,
+  normalizeShopName,
+  OTHER_SHOP_LABEL,
+  OTHER_SHOP_VALUE,
+} from "@/lib/shop-utils";
 import { ShopFilter } from "@/components/ShopFilter";
 import { TripTracker } from "@/components/TripTracker";
-import { getTripState } from "@/services/tripStorage";
+import { CompleteShoppingDialog } from "@/components/grocery/CompleteShoppingDialog";
+import {
+  clearTripState,
+  getTripState,
+  setItemChecked,
+} from "@/services/tripStorage";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -19,7 +30,7 @@ function groupByStore(
   const groups: Record<string, GroceryListType["items"]> = {};
 
   for (const item of items) {
-    const store = item.preferred_store ?? "Other";
+    const store = getItemShop(item) ?? OTHER_SHOP_LABEL;
     if (!groups[store]) {
       groups[store] = [];
     }
@@ -34,14 +45,15 @@ function filterByShop(
   selectedShop: string | null,
 ): GroceryListType["items"] {
   if (selectedShop === null) return items;
-  if (selectedShop === "__other__") {
-    return items.filter((item) => !item.product?.shop);
+  if (selectedShop === OTHER_SHOP_VALUE) {
+    return items.filter((item) => !getItemShop(item));
   }
-  return items.filter(
-    (item) =>
-      item.product?.shop?.toLowerCase().trim() ===
-      selectedShop.toLowerCase().trim(),
-  );
+  return items.filter((item) => {
+    const itemShop = getItemShop(item);
+    return itemShop !== null
+      ? normalizeShopName(itemShop) === normalizeShopName(selectedShop)
+      : false;
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -70,8 +82,15 @@ function GroceryList({
     // Restore trip state for selected shop on mount
     return new Set<string>();
   });
+  const [tripCompletionItems, setTripCompletionItems] = useState<
+    GroceryListType["items"]
+  >([]);
+  const [showTripCompleteDialog, setShowTripCompleteDialog] = useState(false);
 
   function handleItemTripCheck(itemId: string, checked: boolean) {
+    if (selectedShop) {
+      setItemChecked(groceryList.id, selectedShop, itemId, checked);
+    }
     setTripCheckedIds((prev) => {
       const next = new Set(prev);
       if (checked) next.add(itemId);
@@ -82,8 +101,7 @@ function GroceryList({
 
   function handleShopChange(shop: string | null) {
     setSelectedShop(shop);
-    // Restore trip state for this shop
-    if (shop && shop !== "__other__") {
+    if (shop) {
       const state = getTripState(groceryList.id, shop);
       setTripCheckedIds(new Set(state?.checkedItemIds ?? []));
     } else {
@@ -91,7 +109,17 @@ function GroceryList({
     }
   }
 
+  function handleTripCompletionRequested(checkedItems: GroceryListType["items"]) {
+    setTripCompletionItems(checkedItems);
+    setShowTripCompleteDialog(true);
+  }
+
   function handleTripComplete() {
+    if (selectedShop) {
+      clearTripState(groceryList.id, selectedShop);
+    }
+    setShowTripCompleteDialog(false);
+    setTripCompletionItems([]);
     setSelectedShop(null);
     setTripCheckedIds(new Set());
     onChanged?.();
@@ -117,13 +145,13 @@ function GroceryList({
         onFilterChange={handleShopChange}
       />
 
-      {selectedShop && selectedShop !== "__other__" && (
+      {selectedShop && (
         <TripTracker
           groceryListId={groceryList.id}
           shop={selectedShop}
           items={filteredItems}
-          onTripComplete={handleTripComplete}
           onItemTripCheck={handleItemTripCheck}
+          onCompleteTripRequest={handleTripCompletionRequested}
         />
       )}
 
@@ -145,17 +173,22 @@ function GroceryList({
                   key={item.id}
                   item={item}
                   onChanged={onProductLinked ?? onChanged}
-                  tripChecked={
-                    selectedShop && selectedShop !== "__other__"
-                      ? tripCheckedIds.has(item.id)
-                      : undefined
-                  }
+                  tripChecked={selectedShop ? tripCheckedIds.has(item.id) : undefined}
+                  onTripCheck={selectedShop ? handleItemTripCheck : undefined}
                 />
               ))}
             </ul>
           </section>
         );
       })}
+
+      <CompleteShoppingDialog
+        open={showTripCompleteDialog}
+        onClose={() => setShowTripCompleteDialog(false)}
+        groceryListId={groceryList.id}
+        checkedItems={tripCompletionItems}
+        onComplete={handleTripComplete}
+      />
     </div>
   );
 }

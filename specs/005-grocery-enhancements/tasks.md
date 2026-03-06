@@ -5,6 +5,12 @@
 
 **Tests**: Included — constitution requires test-first development; project has existing test suites.
 
+## Current Status
+
+- Local implementation for product mappings and shop-trip flows is in place and has passed local frontend/API validation.
+- Preview recovery is partially complete: the frontend is reachable again, but live preview proof is still blocked by auth/E2E issues on the stale PR SHA and by the need to push the current local fixes to PR #5.
+- Phase 6 remains the merge gate: visual smoke and Generate Meal Plan reliability/latency proof still need to pass on the exact deployed SHA that will be merged.
+
 **Organization**: Tasks grouped by user story for independent implementation and testing.
 
 ## Format: `[ID] [P?] [Story] Description`

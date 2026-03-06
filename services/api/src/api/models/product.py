@@ -59,5 +59,6 @@ class ProductResponse(BaseModel):
     shop: str | None
     notes: str | None
     ingredient_name: str
+    ingredient_category: str
     created_at: datetime
     updated_at: datetime

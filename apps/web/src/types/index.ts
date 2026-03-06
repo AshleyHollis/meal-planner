@@ -162,6 +162,7 @@ export interface Product {
   shop: string | null;
   notes: string | null;
   ingredient_name: string;
+  ingredient_category: string;
   created_at: string;
   updated_at: string;
 }

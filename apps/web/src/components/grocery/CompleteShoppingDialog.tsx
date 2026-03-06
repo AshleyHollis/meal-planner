@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { GroceryItem } from "@/types";
 import { Dialog } from "../ui/Dialog";
 import { Button } from "../ui/Button";
@@ -9,6 +9,7 @@ import { completeShopping } from "@/services/api";
 interface ExpiryEntry {
   ingredient_id: string;
   quantity: number;
+  unit: string;
   expiry_date: string;
 }
 
@@ -31,11 +32,24 @@ function CompleteShoppingDialog({
     checkedItems.map((item) => ({
       ingredient_id: item.ingredient_id,
       quantity: item.quantity_needed,
+      unit: item.unit,
       expiry_date: "",
     })),
   );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setEntries(
+      checkedItems.map((item) => ({
+        ingredient_id: item.ingredient_id,
+        quantity: item.quantity_needed,
+        unit: item.unit,
+        expiry_date: "",
+      })),
+    );
+    setError(null);
+  }, [checkedItems, open]);
 
   const updateExpiry = (index: number, expiry_date: string) => {
     setEntries((prev) =>
@@ -52,6 +66,8 @@ function CompleteShoppingDialog({
         purchased_items: entries.map((entry) => ({
           ingredient_id: entry.ingredient_id,
           quantity: entry.quantity,
+          unit: entry.unit,
+          ...(entry.expiry_date ? { expiry_date: entry.expiry_date } : {}),
         })),
       });
 

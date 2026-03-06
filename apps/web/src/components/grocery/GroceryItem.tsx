@@ -12,9 +12,15 @@ interface GroceryItemProps {
   item: GroceryItemType;
   onChanged?: () => void;
   tripChecked?: boolean;
+  onTripCheck?: (itemId: string, checked: boolean) => void;
 }
 
-function GroceryItem({ item, onChanged, tripChecked }: GroceryItemProps) {
+function GroceryItem({
+  item,
+  onChanged,
+  tripChecked,
+  onTripCheck,
+}: GroceryItemProps) {
   const [saving, setSaving] = useState(false);
   const [showLinkForm, setShowLinkForm] = useState(false);
   const [linkedProduct, setLinkedProduct] = useState<NonNullable<
@@ -26,6 +32,11 @@ function GroceryItem({ item, onChanged, tripChecked }: GroceryItemProps) {
   const displayName = item.ingredient_name || item.ingredient_id;
 
   const handleToggle = async () => {
+    if (onTripCheck) {
+      onTripCheck(item.id, !isChecked);
+      return;
+    }
+
     setSaving(true);
     try {
       await checkGroceryItem(item.id, { is_checked: !item.is_checked });

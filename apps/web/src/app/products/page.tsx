@@ -15,6 +15,29 @@ import { ProductMappingForm } from "@/components/ProductMappingForm";
 import { useToast } from "@/components/ui/Toast";
 import { formatCurrency } from "@/lib/format-currency";
 
+interface ProductGroup {
+  key: string;
+  label: string;
+  products: Product[];
+}
+
+function normalizeCategory(category: string | null | undefined): string {
+  return category?.trim().toLowerCase() || "other";
+}
+
+function getCategoryLabel(category: string | null | undefined): string {
+  if (!category?.trim()) {
+    return "Other";
+  }
+
+  return category
+    .trim()
+    .split(/[\s_-]+/)
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}
+
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -73,18 +96,24 @@ export default function ProductsPage() {
 
   const displayedProducts = searchResults ?? products;
 
-  // Group by ingredient category (using ingredient_name as fallback grouping)
-  const grouped = useMemo(() => {
-    const groups: Record<string, Product[]> = {};
-    for (const product of displayedProducts) {
-      const category = product.ingredient_name ?? "Other";
-      if (!groups[category]) groups[category] = [];
-      groups[category].push(product);
-    }
-    return groups;
-  }, [displayedProducts]);
+  const grouped = useMemo<ProductGroup[]>(() => {
+    const groups = new Map<string, ProductGroup>();
 
-  const categoryNames = Object.keys(grouped).sort();
+    for (const product of displayedProducts) {
+      const key = normalizeCategory(product.ingredient_category);
+      const existingGroup = groups.get(key) ?? {
+        key,
+        label: getCategoryLabel(product.ingredient_category),
+        products: [],
+      };
+      existingGroup.products.push(product);
+      groups.set(key, existingGroup);
+    }
+
+    return Array.from(groups.values()).sort((a, b) =>
+      a.label.localeCompare(b.label),
+    );
+  }, [displayedProducts]);
 
   async function handleDelete(productId: string) {
     try {
@@ -190,15 +219,15 @@ export default function ProductsPage() {
         )}
 
       {/* Grouped product list */}
-      {!loading && !error && categoryNames.length > 0 && (
+      {!loading && !error && grouped.length > 0 && (
         <div className="space-y-8">
-          {categoryNames.map((category) => (
-            <section key={category}>
+          {grouped.map((group) => (
+            <section key={group.key}>
               <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500">
-                {category}
+                {group.label}
               </h2>
               <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-                {grouped[category].map((product) => (
+                {group.products.map((product) => (
                   <div
                     key={product.id}
                     className="relative rounded-xl border border-gray-100 bg-white p-4 shadow-sm hover:shadow-md transition-shadow duration-200"
