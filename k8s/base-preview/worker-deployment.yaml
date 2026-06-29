@@ -64,8 +64,6 @@ spec:
                 secretKeyRef:
                   name: llm-credentials
                   key: azure-deployment
-            - name: LLM_PROVIDER
-              value: "openai"
             - name: ENVIRONMENT
               valueFrom:
                 configMapKeyRef:
