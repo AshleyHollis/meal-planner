@@ -269,10 +269,7 @@ Add `cuisine_type: str | None = None` to `GeneratedRecipe` schema so the LLM can
 
 ```typescript
 export type PreferenceType =
-  | "dietary_restriction"
-  | "allergy"
-  | "dislike"
-  | "like";
+  "dietary_restriction" | "allergy" | "dislike" | "like";
 export type CuisineType =
   | "mexican"
   | "italian"
