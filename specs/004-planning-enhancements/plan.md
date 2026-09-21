@@ -64,10 +64,12 @@ class SubstitutionRequest(BaseModel):
     original_ingredient_name: str
     replacement_ingredient_name: str
 
+
 class SubstitutionResponse(BaseModel):
     new_recipe: RecipeResponse
     allergen_warnings: list[str] = []
     grocery_changes: list[GroceryChangeItem] = []
+
 
 class GroceryChangeItem(BaseModel):
     ingredient_name: str
@@ -87,11 +89,13 @@ class QuickSuggestion(BaseModel):
     servings: int = 2
     ingredients: list[SuggestionIngredient]
 
+
 class SuggestionIngredient(BaseModel):
     name: str
     quantity: float
     unit: str
     on_hand: bool  # whether this ingredient is in the user's inventory
+
 
 class QuickSuggestionsResponse(BaseModel):
     suggestions: list[QuickSuggestion]
