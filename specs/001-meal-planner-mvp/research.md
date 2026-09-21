@@ -59,16 +59,16 @@ The yt-summarizer project (`C:\Users\ashle\Source\GitHub\AshleyHollis\yt-summari
 
 **Already deployed and shared (Azure subscription 28aefbe7-e2af-4b4a-9ce1-92d6672c31bd):**
 
-| Resource        | Details                                               |
-| --------------- | ----------------------------------------------------- |
-| AKS Cluster     | Single-node, cost-optimized                           |
+| Resource        | Details                                                 |
+| --------------- | ------------------------------------------------------- |
+| AKS Cluster     | Single-node, cost-optimized                             |
 | ACR             | `acrytsummprdci.azurecr.io` (shared container registry) |
-| Key Vault       | Centralized secrets management                        |
-| Auth0 Tenant    | Already configured with BFF pattern                   |
-| GitHub OIDC     | Federated identity for CI/CD (no long-lived secrets)  |
-| Cloudflare DNS  | `*.apps.ashleyhollis.com` wildcard                    |
-| ArgoCD          | GitOps controller on AKS                              |
-| Terraform State | Azure Blob Storage backend                            |
+| Key Vault       | Centralized secrets management                          |
+| Auth0 Tenant    | Already configured with BFF pattern                     |
+| GitHub OIDC     | Federated identity for CI/CD (no long-lived secrets)    |
+| Cloudflare DNS  | `*.apps.ashleyhollis.com` wildcard                      |
+| ArgoCD          | GitOps controller on AKS                                |
+| Terraform State | Azure Blob Storage backend                              |
 
 ### Tech Stack (Constitutional, NON-NEGOTIABLE)
 
@@ -162,7 +162,9 @@ logger.info("event_name", entity_id=id, status="processing")
 
 ```python
 @router.get("/health/live")
-async def health_check(): return {"status": "ok"}
+async def health_check():
+    return {"status": "ok"}
+
 
 @router.get("/health/ready")
 async def readiness_check(db=Depends(get_db)):

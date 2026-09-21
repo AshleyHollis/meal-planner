@@ -197,6 +197,7 @@ All models follow yt-summarizer patterns: `Base` + `TimestampMixin`, `UNIQUEIDEN
 
 ```python
 """SQLAlchemy Base model and common utilities."""
+
 from datetime import datetime
 from uuid import UUID, uuid4
 
@@ -211,7 +212,9 @@ class Base(DeclarativeBase):
 
 class TimestampMixin:
     created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=func.sysutcdatetime(), nullable=False,
+        DateTime,
+        default=func.sysutcdatetime(),
+        nullable=False,
     )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime,
@@ -229,6 +232,7 @@ def generate_uuid() -> UUID:
 
 ```python
 """Household and HouseholdMember models."""
+
 from uuid import UUID
 
 from sqlalchemy import Index, Integer, String
@@ -241,15 +245,20 @@ class Household(Base, TimestampMixin):
     __tablename__ = "Households"
 
     id: Mapped[UUID] = mapped_column(
-        primary_key=True, default=generate_uuid,
+        primary_key=True,
+        default=generate_uuid,
     )
     name: Mapped[str] = mapped_column(String(200), nullable=False)
     default_servings: Mapped[int] = mapped_column(
-        Integer, default=2, nullable=False,
+        Integer,
+        default=2,
+        nullable=False,
     )
 
     members: Mapped[list["HouseholdMember"]] = relationship(
-        "HouseholdMember", back_populates="household", lazy="selectin",
+        "HouseholdMember",
+        back_populates="household",
+        lazy="selectin",
     )
 
 
@@ -257,23 +266,31 @@ class HouseholdMember(Base, TimestampMixin):
     __tablename__ = "HouseholdMembers"
 
     id: Mapped[UUID] = mapped_column(
-        primary_key=True, default=generate_uuid,
+        primary_key=True,
+        default=generate_uuid,
     )
     household_id: Mapped[UUID] = mapped_column(
-        ForeignKey("Households.id"), nullable=False,
+        ForeignKey("Households.id"),
+        nullable=False,
     )
     auth0_user_id: Mapped[str] = mapped_column(
-        String(100), unique=True, nullable=False,
+        String(100),
+        unique=True,
+        nullable=False,
     )
     display_name: Mapped[str] = mapped_column(
-        String(200), nullable=False,
+        String(200),
+        nullable=False,
     )
     role: Mapped[str] = mapped_column(
-        String(20), default="owner", nullable=False,
+        String(20),
+        default="owner",
+        nullable=False,
     )
 
     household: Mapped["Household"] = relationship(
-        "Household", back_populates="members",
+        "Household",
+        back_populates="members",
     )
 
     __table_args__ = (
@@ -286,6 +303,7 @@ class HouseholdMember(Base, TimestampMixin):
 
 ```python
 """Ingredient reference entity."""
+
 from uuid import UUID
 
 from sqlalchemy import Index, Integer, String
@@ -298,22 +316,29 @@ class Ingredient(Base, TimestampMixin):
     __tablename__ = "Ingredients"
 
     id: Mapped[UUID] = mapped_column(
-        primary_key=True, default=generate_uuid,
+        primary_key=True,
+        default=generate_uuid,
     )
     name: Mapped[str] = mapped_column(
-        String(200), unique=True, nullable=False,
+        String(200),
+        unique=True,
+        nullable=False,
     )
     category: Mapped[str] = mapped_column(
-        String(100), nullable=False,
+        String(100),
+        nullable=False,
     )  # produce, dairy, meat, pantry, etc.
     default_unit: Mapped[str] = mapped_column(
-        String(10), nullable=False,
+        String(10),
+        nullable=False,
     )  # g, ml, units
     default_storage: Mapped[str] = mapped_column(
-        String(20), nullable=False,
+        String(20),
+        nullable=False,
     )  # fridge, pantry
     typical_shelf_life_days: Mapped[int | None] = mapped_column(
-        Integer, nullable=True,
+        Integer,
+        nullable=True,
     )
 
     __table_args__ = (
@@ -326,11 +351,16 @@ class Ingredient(Base, TimestampMixin):
 
 ```python
 """InventoryItem model."""
+
 from datetime import datetime
 from uuid import UUID
 
 from sqlalchemy import (
-    DateTime, Float, ForeignKey, Index, String,
+    DateTime,
+    Float,
+    ForeignKey,
+    Index,
+    String,
     CheckConstraint,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -342,29 +372,37 @@ class InventoryItem(Base, TimestampMixin):
     __tablename__ = "InventoryItems"
 
     id: Mapped[UUID] = mapped_column(
-        primary_key=True, default=generate_uuid,
+        primary_key=True,
+        default=generate_uuid,
     )
     household_id: Mapped[UUID] = mapped_column(
-        ForeignKey("Households.id"), nullable=False,
+        ForeignKey("Households.id"),
+        nullable=False,
     )
     ingredient_id: Mapped[UUID] = mapped_column(
-        ForeignKey("Ingredients.id"), nullable=False,
+        ForeignKey("Ingredients.id"),
+        nullable=False,
     )
     quantity: Mapped[float] = mapped_column(
-        Float, nullable=False,
+        Float,
+        nullable=False,
     )
     unit: Mapped[str] = mapped_column(
-        String(10), nullable=False,
+        String(10),
+        nullable=False,
     )  # g, ml, units
     location: Mapped[str] = mapped_column(
-        String(20), nullable=False,
+        String(20),
+        nullable=False,
     )  # fridge, pantry
     expiry_date: Mapped[datetime | None] = mapped_column(
-        DateTime, nullable=True,
+        DateTime,
+        nullable=True,
     )
 
     ingredient: Mapped["Ingredient"] = relationship(
-        "Ingredient", lazy="selectin",
+        "Ingredient",
+        lazy="selectin",
     )
 
     __table_args__ = (
@@ -379,10 +417,15 @@ class InventoryItem(Base, TimestampMixin):
 
 ```python
 """Equipment and EquipmentMode models."""
+
 from uuid import UUID
 
 from sqlalchemy import (
-    Boolean, Float, ForeignKey, Index, String,
+    Boolean,
+    Float,
+    ForeignKey,
+    Index,
+    String,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -393,68 +436,83 @@ class Equipment(Base, TimestampMixin):
     __tablename__ = "Equipment"
 
     id: Mapped[UUID] = mapped_column(
-        primary_key=True, default=generate_uuid,
+        primary_key=True,
+        default=generate_uuid,
     )
     household_id: Mapped[UUID] = mapped_column(
-        ForeignKey("Households.id"), nullable=False,
+        ForeignKey("Households.id"),
+        nullable=False,
     )
     name: Mapped[str] = mapped_column(
-        String(200), nullable=False,
+        String(200),
+        nullable=False,
     )
     is_active: Mapped[bool] = mapped_column(
-        Boolean, default=True, nullable=False,
+        Boolean,
+        default=True,
+        nullable=False,
     )
 
     modes: Mapped[list["EquipmentMode"]] = relationship(
-        "EquipmentMode", back_populates="equipment",
+        "EquipmentMode",
+        back_populates="equipment",
         lazy="selectin",
     )
 
-    __table_args__ = (
-        Index("ix_equipment_household", "household_id"),
-    )
+    __table_args__ = (Index("ix_equipment_household", "household_id"),)
 
 
 class EquipmentMode(Base):
     __tablename__ = "EquipmentModes"
 
     id: Mapped[UUID] = mapped_column(
-        primary_key=True, default=generate_uuid,
+        primary_key=True,
+        default=generate_uuid,
     )
     equipment_id: Mapped[UUID] = mapped_column(
-        ForeignKey("Equipment.id"), nullable=False,
+        ForeignKey("Equipment.id"),
+        nullable=False,
     )
     name: Mapped[str] = mapped_column(
-        String(100), nullable=False,
+        String(100),
+        nullable=False,
     )
     category: Mapped[str] = mapped_column(
-        String(50), nullable=False,
+        String(50),
+        nullable=False,
     )  # air, combi, slow, steam, etc.
     min_temp: Mapped[float | None] = mapped_column(
-        Float, nullable=True,
+        Float,
+        nullable=True,
     )  # Celsius
     max_temp: Mapped[float | None] = mapped_column(
-        Float, nullable=True,
+        Float,
+        nullable=True,
     )
 
     equipment: Mapped["Equipment"] = relationship(
-        "Equipment", back_populates="modes",
+        "Equipment",
+        back_populates="modes",
     )
 
-    __table_args__ = (
-        Index("ix_modes_equipment", "equipment_id"),
-    )
+    __table_args__ = (Index("ix_modes_equipment", "equipment_id"),)
 ```
 
 ### recipe.py
 
 ```python
 """Recipe, RecipeIngredient, RecipeStep models."""
+
 from uuid import UUID
 
 from sqlalchemy import (
-    Boolean, Float, ForeignKey, Index, Integer,
-    String, Text,
+    Boolean,
+    Float,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -465,75 +523,97 @@ class Recipe(Base, TimestampMixin):
     __tablename__ = "Recipes"
 
     id: Mapped[UUID] = mapped_column(
-        primary_key=True, default=generate_uuid,
+        primary_key=True,
+        default=generate_uuid,
     )
     household_id: Mapped[UUID | None] = mapped_column(
-        ForeignKey("Households.id"), nullable=True,
+        ForeignKey("Households.id"),
+        nullable=True,
     )  # NULL = AI-generated, not yet saved as variation
     title: Mapped[str] = mapped_column(
-        String(300), nullable=False,
+        String(300),
+        nullable=False,
     )
     description: Mapped[str | None] = mapped_column(
-        Text, nullable=True,
+        Text,
+        nullable=True,
     )
     servings: Mapped[int] = mapped_column(
-        Integer, default=2, nullable=False,
+        Integer,
+        default=2,
+        nullable=False,
     )
     prep_time_min: Mapped[int | None] = mapped_column(
-        Integer, nullable=True,
+        Integer,
+        nullable=True,
     )
     cook_time_min: Mapped[int | None] = mapped_column(
-        Integer, nullable=True,
+        Integer,
+        nullable=True,
     )
     is_ai_generated: Mapped[bool] = mapped_column(
-        Boolean, default=True, nullable=False,
+        Boolean,
+        default=True,
+        nullable=False,
     )
     source_recipe_id: Mapped[UUID | None] = mapped_column(
-        ForeignKey("Recipes.id"), nullable=True,
+        ForeignKey("Recipes.id"),
+        nullable=True,
     )  # Self-ref for cook-time variations
 
     ingredients: Mapped[list["RecipeIngredient"]] = relationship(
-        "RecipeIngredient", back_populates="recipe",
-        lazy="selectin", cascade="all, delete-orphan",
+        "RecipeIngredient",
+        back_populates="recipe",
+        lazy="selectin",
+        cascade="all, delete-orphan",
     )
     steps: Mapped[list["RecipeStep"]] = relationship(
-        "RecipeStep", back_populates="recipe",
-        lazy="selectin", cascade="all, delete-orphan",
+        "RecipeStep",
+        back_populates="recipe",
+        lazy="selectin",
+        cascade="all, delete-orphan",
         order_by="RecipeStep.step_order",
     )
 
-    __table_args__ = (
-        Index("ix_recipes_household", "household_id"),
-    )
+    __table_args__ = (Index("ix_recipes_household", "household_id"),)
 
 
 class RecipeIngredient(Base):
     __tablename__ = "RecipeIngredients"
 
     id: Mapped[UUID] = mapped_column(
-        primary_key=True, default=generate_uuid,
+        primary_key=True,
+        default=generate_uuid,
     )
     recipe_id: Mapped[UUID] = mapped_column(
-        ForeignKey("Recipes.id"), nullable=False,
+        ForeignKey("Recipes.id"),
+        nullable=False,
     )
     ingredient_id: Mapped[UUID] = mapped_column(
-        ForeignKey("Ingredients.id"), nullable=False,
+        ForeignKey("Ingredients.id"),
+        nullable=False,
     )
     quantity: Mapped[float] = mapped_column(
-        Float, nullable=False,
+        Float,
+        nullable=False,
     )
     unit: Mapped[str] = mapped_column(
-        String(10), nullable=False,
+        String(10),
+        nullable=False,
     )
     is_optional: Mapped[bool] = mapped_column(
-        Boolean, default=False, nullable=False,
+        Boolean,
+        default=False,
+        nullable=False,
     )
 
     recipe: Mapped["Recipe"] = relationship(
-        "Recipe", back_populates="ingredients",
+        "Recipe",
+        back_populates="ingredients",
     )
     ingredient: Mapped["Ingredient"] = relationship(
-        "Ingredient", lazy="selectin",
+        "Ingredient",
+        lazy="selectin",
     )
 
     __table_args__ = (
@@ -546,48 +626,60 @@ class RecipeStep(Base):
     __tablename__ = "RecipeSteps"
 
     id: Mapped[UUID] = mapped_column(
-        primary_key=True, default=generate_uuid,
+        primary_key=True,
+        default=generate_uuid,
     )
     recipe_id: Mapped[UUID] = mapped_column(
-        ForeignKey("Recipes.id"), nullable=False,
+        ForeignKey("Recipes.id"),
+        nullable=False,
     )
     step_order: Mapped[int] = mapped_column(
-        Integer, nullable=False,
+        Integer,
+        nullable=False,
     )
     instruction: Mapped[str] = mapped_column(
-        Text, nullable=False,
+        Text,
+        nullable=False,
     )
     equipment_mode_id: Mapped[UUID | None] = mapped_column(
-        ForeignKey("EquipmentModes.id"), nullable=True,
+        ForeignKey("EquipmentModes.id"),
+        nullable=True,
     )  # NULL = prep step (no equipment)
     temperature: Mapped[float | None] = mapped_column(
-        Float, nullable=True,
+        Float,
+        nullable=True,
     )  # Celsius
     duration_min: Mapped[int | None] = mapped_column(
-        Integer, nullable=True,
+        Integer,
+        nullable=True,
     )
 
     recipe: Mapped["Recipe"] = relationship(
-        "Recipe", back_populates="steps",
+        "Recipe",
+        back_populates="steps",
     )
     equipment_mode: Mapped["EquipmentMode | None"] = relationship(
-        "EquipmentMode", lazy="selectin",
+        "EquipmentMode",
+        lazy="selectin",
     )
 
-    __table_args__ = (
-        Index("ix_steps_recipe", "recipe_id"),
-    )
+    __table_args__ = (Index("ix_steps_recipe", "recipe_id"),)
 ```
 
 ### meal_plan.py
 
 ```python
 """MealPlan and MealSlot models."""
+
 from datetime import datetime
 from uuid import UUID
 
 from sqlalchemy import (
-    DateTime, ForeignKey, Index, Integer, String,
+    DateTime,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
     UniqueConstraint,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -599,28 +691,38 @@ class MealPlan(Base, TimestampMixin):
     __tablename__ = "MealPlans"
 
     id: Mapped[UUID] = mapped_column(
-        primary_key=True, default=generate_uuid,
+        primary_key=True,
+        default=generate_uuid,
     )
     household_id: Mapped[UUID] = mapped_column(
-        ForeignKey("Households.id"), nullable=False,
+        ForeignKey("Households.id"),
+        nullable=False,
     )
     week_start_date: Mapped[datetime] = mapped_column(
-        DateTime, nullable=False,
+        DateTime,
+        nullable=False,
     )  # Always a Monday
     status: Mapped[str] = mapped_column(
-        String(20), default="draft", nullable=False,
+        String(20),
+        default="draft",
+        nullable=False,
     )  # draft, active, completed
     error_message: Mapped[str | None] = mapped_column(
-        String(1000), nullable=True,
+        String(1000),
+        nullable=True,
     )
 
     slots: Mapped[list["MealSlot"]] = relationship(
-        "MealSlot", back_populates="meal_plan",
-        lazy="selectin", cascade="all, delete-orphan",
+        "MealSlot",
+        back_populates="meal_plan",
+        lazy="selectin",
+        cascade="all, delete-orphan",
     )
     grocery_list: Mapped["GroceryList | None"] = relationship(
-        "GroceryList", back_populates="meal_plan",
-        lazy="selectin", uselist=False,
+        "GroceryList",
+        back_populates="meal_plan",
+        lazy="selectin",
+        uselist=False,
     )
 
     __table_args__ = (
@@ -634,37 +736,49 @@ class MealSlot(Base, TimestampMixin):
     __tablename__ = "MealSlots"
 
     id: Mapped[UUID] = mapped_column(
-        primary_key=True, default=generate_uuid,
+        primary_key=True,
+        default=generate_uuid,
     )
     meal_plan_id: Mapped[UUID] = mapped_column(
-        ForeignKey("MealPlans.id"), nullable=False,
+        ForeignKey("MealPlans.id"),
+        nullable=False,
     )
     recipe_id: Mapped[UUID | None] = mapped_column(
-        ForeignKey("Recipes.id"), nullable=True,
+        ForeignKey("Recipes.id"),
+        nullable=True,
     )
     day: Mapped[int] = mapped_column(
-        Integer, nullable=False,
+        Integer,
+        nullable=False,
     )  # 1=Mon, 7=Sun
     meal_type: Mapped[str] = mapped_column(
-        String(20), nullable=False,
+        String(20),
+        nullable=False,
     )  # breakfast, lunch, dinner
     status: Mapped[str] = mapped_column(
-        String(20), default="planned", nullable=False,
+        String(20),
+        default="planned",
+        nullable=False,
     )  # planned, cooked, skipped
     cooked_at: Mapped[datetime | None] = mapped_column(
-        DateTime, nullable=True,
+        DateTime,
+        nullable=True,
     )
 
     meal_plan: Mapped["MealPlan"] = relationship(
-        "MealPlan", back_populates="slots",
+        "MealPlan",
+        back_populates="slots",
     )
     recipe: Mapped["Recipe | None"] = relationship(
-        "Recipe", lazy="selectin",
+        "Recipe",
+        lazy="selectin",
     )
 
     __table_args__ = (
         UniqueConstraint(
-            "meal_plan_id", "day", "meal_type",
+            "meal_plan_id",
+            "day",
+            "meal_type",
             name="uq_slot_plan_day_type",
         ),
         Index("ix_slots_plan", "meal_plan_id"),
@@ -675,10 +789,15 @@ class MealSlot(Base, TimestampMixin):
 
 ```python
 """GroceryList and GroceryItem models."""
+
 from uuid import UUID
 
 from sqlalchemy import (
-    Boolean, Float, ForeignKey, Index, String,
+    Boolean,
+    Float,
+    ForeignKey,
+    Index,
+    String,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -689,55 +808,69 @@ class GroceryList(Base, TimestampMixin):
     __tablename__ = "GroceryLists"
 
     id: Mapped[UUID] = mapped_column(
-        primary_key=True, default=generate_uuid,
+        primary_key=True,
+        default=generate_uuid,
     )
     meal_plan_id: Mapped[UUID] = mapped_column(
-        ForeignKey("MealPlans.id"), unique=True, nullable=False,
+        ForeignKey("MealPlans.id"),
+        unique=True,
+        nullable=False,
     )
 
     meal_plan: Mapped["MealPlan"] = relationship(
-        "MealPlan", back_populates="grocery_list",
+        "MealPlan",
+        back_populates="grocery_list",
     )
     items: Mapped[list["GroceryItem"]] = relationship(
-        "GroceryItem", back_populates="grocery_list",
-        lazy="selectin", cascade="all, delete-orphan",
+        "GroceryItem",
+        back_populates="grocery_list",
+        lazy="selectin",
+        cascade="all, delete-orphan",
     )
 
-    __table_args__ = (
-        Index("ix_grocery_plan", "meal_plan_id"),
-    )
+    __table_args__ = (Index("ix_grocery_plan", "meal_plan_id"),)
 
 
 class GroceryItem(Base):
     __tablename__ = "GroceryItems"
 
     id: Mapped[UUID] = mapped_column(
-        primary_key=True, default=generate_uuid,
+        primary_key=True,
+        default=generate_uuid,
     )
     grocery_list_id: Mapped[UUID] = mapped_column(
-        ForeignKey("GroceryLists.id"), nullable=False,
+        ForeignKey("GroceryLists.id"),
+        nullable=False,
     )
     ingredient_id: Mapped[UUID] = mapped_column(
-        ForeignKey("Ingredients.id"), nullable=False,
+        ForeignKey("Ingredients.id"),
+        nullable=False,
     )
     quantity_needed: Mapped[float] = mapped_column(
-        Float, nullable=False,
+        Float,
+        nullable=False,
     )
     unit: Mapped[str] = mapped_column(
-        String(10), nullable=False,
+        String(10),
+        nullable=False,
     )
     is_checked: Mapped[bool] = mapped_column(
-        Boolean, default=False, nullable=False,
+        Boolean,
+        default=False,
+        nullable=False,
     )
     preferred_store: Mapped[str | None] = mapped_column(
-        String(100), nullable=True,
+        String(100),
+        nullable=True,
     )
 
     grocery_list: Mapped["GroceryList"] = relationship(
-        "GroceryList", back_populates="items",
+        "GroceryList",
+        back_populates="items",
     )
     ingredient: Mapped["Ingredient"] = relationship(
-        "Ingredient", lazy="selectin",
+        "Ingredient",
+        lazy="selectin",
     )
 
     __table_args__ = (
@@ -750,6 +883,7 @@ class GroceryItem(Base):
 
 ```python
 """SQLAlchemy database models for Meal Planner."""
+
 from .base import Base, TimestampMixin, generate_uuid
 from .household import Household, HouseholdMember
 from .ingredient import Ingredient
@@ -760,14 +894,22 @@ from .meal_plan import MealPlan, MealSlot
 from .grocery import GroceryList, GroceryItem
 
 __all__ = [
-    "Base", "TimestampMixin", "generate_uuid",
-    "Household", "HouseholdMember",
+    "Base",
+    "TimestampMixin",
+    "generate_uuid",
+    "Household",
+    "HouseholdMember",
     "Ingredient",
     "InventoryItem",
-    "Equipment", "EquipmentMode",
-    "Recipe", "RecipeIngredient", "RecipeStep",
-    "MealPlan", "MealSlot",
-    "GroceryList", "GroceryItem",
+    "Equipment",
+    "EquipmentMode",
+    "Recipe",
+    "RecipeIngredient",
+    "RecipeStep",
+    "MealPlan",
+    "MealSlot",
+    "GroceryList",
+    "GroceryItem",
 ]
 ```
 
@@ -811,9 +953,11 @@ class CreateInventoryItem(BaseModel):
     location: Literal["fridge", "pantry"]
     expiry_date: datetime | None = None
 
+
 class UpdateInventoryItem(BaseModel):
     quantity: float | None = Field(default=None, gt=0)
     expiry_date: datetime | None = None
+
 
 class InventoryItemResponse(BaseModel):
     id: UUID
@@ -825,9 +969,11 @@ class InventoryItemResponse(BaseModel):
     expiry_status: Literal["safe", "expiring", "expired"]
     created_at: datetime
 
+
 # --- Meal Plan ---
 class CreateMealPlan(BaseModel):
     week_start_date: datetime  # Must be Monday
+
 
 class MealPlanDetailResponse(BaseModel):
     id: UUID
@@ -837,12 +983,15 @@ class MealPlanDetailResponse(BaseModel):
     grocery_list: GroceryListResponse | None
     created_at: datetime
 
+
 class AdaptRequest(BaseModel):
     effort_level: Literal["quick", "standard", "elaborate"]
+
 
 # --- Grocery ---
 class CompleteShoppingRequest(BaseModel):
     purchased_items: list[PurchasedItem]
+
 
 class PurchasedItem(BaseModel):
     grocery_item_id: UUID
@@ -857,16 +1006,16 @@ from fastapi import Depends, HTTPException, Request
 from jose import jwt, JWTError
 import httpx
 
+
 async def get_current_user(request: Request) -> dict:
     """Extract and validate JWT from Authorization header."""
-    token = request.headers.get("Authorization", "").replace(
-        "Bearer ", ""
-    )
+    token = request.headers.get("Authorization", "").replace("Bearer ", "")
     if not token:
         raise HTTPException(401, "Missing token")
     # Validate against Auth0 JWKS
     payload = validate_jwt(token)
     return payload
+
 
 async def get_current_household_id(
     user: dict = Depends(get_current_user),
@@ -875,9 +1024,7 @@ async def get_current_household_id(
     """Resolve Auth0 user to household_id. Auto-create on first login."""
     auth0_id = user["sub"]
     member = await session.execute(
-        select(HouseholdMember).where(
-            HouseholdMember.auth0_user_id == auth0_id
-        )
+        select(HouseholdMember).where(HouseholdMember.auth0_user_id == auth0_id)
     )
     member = member.scalar_one_or_none()
     if not member:
@@ -900,13 +1047,7 @@ async def get_current_household_id(
 Follows yt-summarizer pattern: structured error JSON with correlation ID.
 
 ```python
-{
-    "error": {
-        "code": 404,
-        "message": "Inventory item not found",
-        "correlation_id": "abc-123"
-    }
-}
+{"error": {"code": 404, "message": "Inventory item not found", "correlation_id": "abc-123"}}
 ```
 
 | Error Scenario         | Status | Message                                    |
@@ -958,6 +1099,7 @@ sequenceDiagram
 ```python
 # services/workers/meal_plan_generator/__main__.py
 """Meal plan generation worker."""
+
 import asyncio
 from shared.config import get_settings
 from shared.queue.client import get_queue_client
@@ -968,6 +1110,7 @@ logger = get_logger(__name__)
 QUEUE_NAME = "meal-plan-jobs"
 POLL_INTERVAL = float(os.environ.get("QUEUE_POLL_INTERVAL", "10.0"))
 
+
 async def main():
     configure_logging(service_name="meal-plan-worker")
     queue_client = get_queue_client()
@@ -976,7 +1119,9 @@ async def main():
 
     while True:
         messages = queue_client.receive_messages(
-            QUEUE_NAME, max_messages=1, visibility_timeout=120,
+            QUEUE_NAME,
+            max_messages=1,
+            visibility_timeout=120,
         )
         for msg in messages:
             try:
@@ -988,6 +1133,7 @@ async def main():
                 # Message becomes visible again after timeout
         await asyncio.sleep(POLL_INTERVAL)
 
+
 if __name__ == "__main__":
     asyncio.run(main())
 ```
@@ -997,11 +1143,14 @@ if __name__ == "__main__":
 ```python
 # services/workers/meal_plan_generator/generator.py
 """LLM-based meal plan generation with constraint validation."""
+
 import json
 from pydantic import BaseModel
 
+
 class GeneratedRecipe(BaseModel):
     """Pydantic model for LLM structured output."""
+
     title: str
     description: str
     prep_time_min: int
@@ -1010,11 +1159,13 @@ class GeneratedRecipe(BaseModel):
     ingredients: list[RecipeIngredientSchema]
     steps: list[RecipeStepSchema]
 
+
 class RecipeIngredientSchema(BaseModel):
     ingredient_name: str  # Matched to Ingredient entity
     quantity: float
     unit: str  # g, ml, units
     is_optional: bool = False
+
 
 class RecipeStepSchema(BaseModel):
     step_order: int
@@ -1024,8 +1175,10 @@ class RecipeStepSchema(BaseModel):
     temperature: float | None = None
     duration_min: int | None = None
 
+
 class GeneratedMealPlan(BaseModel):
     recipes: list[GeneratedRecipe]  # Exactly 7
+
 
 async def generate_meal_plan(message_content: str):
     data = json.loads(message_content)
@@ -1073,29 +1226,22 @@ def validate_constraints(
     equipment: list,
 ) -> list[str]:
     errors = []
-    equipment_modes = {
-        m.name.lower() for e in equipment for m in e.modes
-    }
+    equipment_modes = {m.name.lower() for e in equipment for m in e.modes}
 
     for i, recipe in enumerate(plan.recipes):
         # Check servings
         if recipe.servings != 2:
-            errors.append(
-                f"Recipe {i}: servings={recipe.servings}, expected 2"
-            )
+            errors.append(f"Recipe {i}: servings={recipe.servings}, expected 2")
         # Check equipment modes exist
         for step in recipe.steps:
             if step.equipment_mode:
                 if step.equipment_mode.lower() not in equipment_modes:
                     errors.append(
-                        f"Recipe {i} step {step.step_order}: "
-                        f"unknown mode '{step.equipment_mode}'"
+                        f"Recipe {i} step {step.step_order}: unknown mode '{step.equipment_mode}'"
                     )
         # Check exactly 7 recipes
     if len(plan.recipes) != 7:
-        errors.append(
-            f"Expected 7 recipes, got {len(plan.recipes)}"
-        )
+        errors.append(f"Expected 7 recipes, got {len(plan.recipes)}")
     return errors
 ```
 
@@ -1117,6 +1263,7 @@ RULES:
 OUTPUT SCHEMA:
 {schema_json}
 """
+
 
 def build_prompt(inventory, equipment, expiring):
     schema = GeneratedMealPlan.model_json_schema()
@@ -1758,14 +1905,14 @@ Use environment variable `LLM_PROVIDER` (default: `anthropic`). Support both Ant
 # services/workers/meal_plan_generator/llm_client.py
 import os
 
+
 async def call_llm(prompt: str, timeout: int = 25) -> str:
     provider = os.environ.get("LLM_PROVIDER", "anthropic")
 
     if provider == "anthropic":
         import anthropic
-        client = anthropic.AsyncAnthropic(
-            api_key=os.environ["LLM_API_KEY"]
-        )
+
+        client = anthropic.AsyncAnthropic(api_key=os.environ["LLM_API_KEY"])
         response = await client.messages.create(
             model="claude-sonnet-4-20250514",
             max_tokens=8000,
@@ -1775,9 +1922,8 @@ async def call_llm(prompt: str, timeout: int = 25) -> str:
 
     elif provider == "openai":
         from openai import AsyncOpenAI
-        client = AsyncOpenAI(
-            api_key=os.environ["LLM_API_KEY"]
-        )
+
+        client = AsyncOpenAI(api_key=os.environ["LLM_API_KEY"])
         response = await client.chat.completions.create(
             model="gpt-4o",
             messages=[{"role": "user", "content": prompt}],
@@ -1830,18 +1976,90 @@ NINJA_COMBI_MODES = [
 # In alembic migration 001_initial_schema.py (data portion)
 SEED_INGREDIENTS = [
     # Produce
-    {"name": "Chicken Breast", "category": "meat", "default_unit": "g", "default_storage": "fridge", "typical_shelf_life_days": 3},
-    {"name": "Chicken Thigh", "category": "meat", "default_unit": "g", "default_storage": "fridge", "typical_shelf_life_days": 3},
-    {"name": "Beef Mince", "category": "meat", "default_unit": "g", "default_storage": "fridge", "typical_shelf_life_days": 2},
-    {"name": "Salmon Fillet", "category": "seafood", "default_unit": "g", "default_storage": "fridge", "typical_shelf_life_days": 2},
-    {"name": "Broccoli", "category": "produce", "default_unit": "g", "default_storage": "fridge", "typical_shelf_life_days": 5},
-    {"name": "Carrot", "category": "produce", "default_unit": "g", "default_storage": "fridge", "typical_shelf_life_days": 14},
-    {"name": "Onion", "category": "produce", "default_unit": "units", "default_storage": "pantry", "typical_shelf_life_days": 30},
-    {"name": "Garlic", "category": "produce", "default_unit": "units", "default_storage": "pantry", "typical_shelf_life_days": 21},
-    {"name": "Rice (Jasmine)", "category": "pantry", "default_unit": "g", "default_storage": "pantry", "typical_shelf_life_days": None},
-    {"name": "Pasta (Penne)", "category": "pantry", "default_unit": "g", "default_storage": "pantry", "typical_shelf_life_days": None},
-    {"name": "Olive Oil", "category": "pantry", "default_unit": "ml", "default_storage": "pantry", "typical_shelf_life_days": None},
-    {"name": "Soy Sauce", "category": "pantry", "default_unit": "ml", "default_storage": "pantry", "typical_shelf_life_days": None},
+    {
+        "name": "Chicken Breast",
+        "category": "meat",
+        "default_unit": "g",
+        "default_storage": "fridge",
+        "typical_shelf_life_days": 3,
+    },
+    {
+        "name": "Chicken Thigh",
+        "category": "meat",
+        "default_unit": "g",
+        "default_storage": "fridge",
+        "typical_shelf_life_days": 3,
+    },
+    {
+        "name": "Beef Mince",
+        "category": "meat",
+        "default_unit": "g",
+        "default_storage": "fridge",
+        "typical_shelf_life_days": 2,
+    },
+    {
+        "name": "Salmon Fillet",
+        "category": "seafood",
+        "default_unit": "g",
+        "default_storage": "fridge",
+        "typical_shelf_life_days": 2,
+    },
+    {
+        "name": "Broccoli",
+        "category": "produce",
+        "default_unit": "g",
+        "default_storage": "fridge",
+        "typical_shelf_life_days": 5,
+    },
+    {
+        "name": "Carrot",
+        "category": "produce",
+        "default_unit": "g",
+        "default_storage": "fridge",
+        "typical_shelf_life_days": 14,
+    },
+    {
+        "name": "Onion",
+        "category": "produce",
+        "default_unit": "units",
+        "default_storage": "pantry",
+        "typical_shelf_life_days": 30,
+    },
+    {
+        "name": "Garlic",
+        "category": "produce",
+        "default_unit": "units",
+        "default_storage": "pantry",
+        "typical_shelf_life_days": 21,
+    },
+    {
+        "name": "Rice (Jasmine)",
+        "category": "pantry",
+        "default_unit": "g",
+        "default_storage": "pantry",
+        "typical_shelf_life_days": None,
+    },
+    {
+        "name": "Pasta (Penne)",
+        "category": "pantry",
+        "default_unit": "g",
+        "default_storage": "pantry",
+        "typical_shelf_life_days": None,
+    },
+    {
+        "name": "Olive Oil",
+        "category": "pantry",
+        "default_unit": "ml",
+        "default_storage": "pantry",
+        "typical_shelf_life_days": None,
+    },
+    {
+        "name": "Soy Sauce",
+        "category": "pantry",
+        "default_unit": "ml",
+        "default_storage": "pantry",
+        "typical_shelf_life_days": None,
+    },
     # ... ~290 more items
 ]
 ```
