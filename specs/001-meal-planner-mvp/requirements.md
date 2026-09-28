@@ -261,21 +261,21 @@ RecipeStep (N) >--- EquipmentMode (1, nullable)
 
 ## Dependencies
 
-| Dependency                    | Status       | Notes                                                           |
-| ----------------------------- | ------------ | --------------------------------------------------------------- |
-| Auth0 tenant                  | Deployed     | BFF pattern configured, test users exist                        |
-| AKS cluster                   | Deployed     | Shared with yt-summarizer                                       |
+| Dependency                      | Status       | Notes                                                           |
+| ------------------------------- | ------------ | --------------------------------------------------------------- |
+| Auth0 tenant                    | Deployed     | BFF pattern configured, test users exist                        |
+| AKS cluster                     | Deployed     | Shared with yt-summarizer                                       |
 | ACR (acrytsummprdci.azurecr.io) | Deployed     | Shared container registry                                       |
-| Azure Key Vault               | Deployed     | Shared secrets management                                       |
-| GitHub Actions CI/CD          | Configured   | 9-phase pipeline, OIDC auth                                     |
-| ArgoCD                        | Deployed     | GitOps on AKS                                                   |
-| Cloudflare DNS                | Configured   | \*.apps.ashleyhollis.com wildcard                               |
-| LLM API key                   | Required     | Anthropic Claude or OpenAI key; provision to Key Vault          |
-| Azure SQL (serverless)        | To provision | App-specific Terraform in /infra                                |
-| Azure Queue Storage           | To provision | App-specific Terraform in /infra                                |
-| .NET Aspire orchestration     | To scaffold  | Local dev: SQL Server 2025 + Azurite + FastAPI + Next.js        |
-| Ingredient seed data          | To create    | Common grocery items with defaults (category, shelf life, unit) |
-| Ninja Combi mode seed data    | To create    | 14 modes with temp ranges                                       |
+| Azure Key Vault                 | Deployed     | Shared secrets management                                       |
+| GitHub Actions CI/CD            | Configured   | 9-phase pipeline, OIDC auth                                     |
+| ArgoCD                          | Deployed     | GitOps on AKS                                                   |
+| Cloudflare DNS                  | Configured   | \*.apps.ashleyhollis.com wildcard                               |
+| LLM API key                     | Required     | Anthropic Claude or OpenAI key; provision to Key Vault          |
+| Azure SQL (serverless)          | To provision | App-specific Terraform in /infra                                |
+| Azure Queue Storage             | To provision | App-specific Terraform in /infra                                |
+| .NET Aspire orchestration       | To scaffold  | Local dev: SQL Server 2025 + Azurite + FastAPI + Next.js        |
+| Ingredient seed data            | To create    | Common grocery items with defaults (category, shelf life, unit) |
+| Ninja Combi mode seed data      | To create    | 14 modes with temp ranges                                       |
 
 ---
 
