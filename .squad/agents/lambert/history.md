@@ -123,31 +123,34 @@ All new E2E tests follow the exact patterns established in existing specs:
 ### Complete Skip Map (12 Tests)
 
 **Inventory (5 skipped)** — All blocked by `USE_EXTERNAL_SERVER=false`:
-| Test | Skip Root Cause | To Unblock |
-|------|-----------------|-----------|
-| ingredient search triggers autocomplete | `!process.env.USE_EXTERNAL_SERVER` (line 86) | Need backend API + ingredient lookup working |
-| can add item via search/submit | Suite-level skip, "Add Item Flow" (line 142) | Need backend API for search & create |
-| can click Edit button | Suite-level skip, "Edit and Remove" (line 184) | Need backend API, inventory must have items |
-| can click Remove button | Suite-level skip, "Edit and Remove" (line 184) | Need backend API, inventory must have items |
-| expiry badges display | Suite-level skip, "Expiry Badges" (line 248) | Need backend API + seeded inventory with expiry dates |
+
+| Test                                    | Skip Root Cause                                | To Unblock                                            |
+| --------------------------------------- | ---------------------------------------------- | ----------------------------------------------------- |
+| ingredient search triggers autocomplete | `!process.env.USE_EXTERNAL_SERVER` (line 86)   | Need backend API + ingredient lookup working          |
+| can add item via search/submit          | Suite-level skip, "Add Item Flow" (line 142)   | Need backend API for search & create                  |
+| can click Edit button                   | Suite-level skip, "Edit and Remove" (line 184) | Need backend API, inventory must have items           |
+| can click Remove button                 | Suite-level skip, "Edit and Remove" (line 184) | Need backend API, inventory must have items           |
+| expiry badges display                   | Suite-level skip, "Expiry Badges" (line 248)   | Need backend API + seeded inventory with expiry dates |
 
 **Meal Plan (4 skipped)** — All blocked by `USE_EXTERNAL_SERVER=false`:
-| Test | Skip Root Cause | To Unblock |
-|------|-----------------|-----------|
-| plan list items show status badges | `!process.env.USE_EXTERNAL_SERVER` (line 64) | Need backend API + at least one meal plan |
-| plan detail page shows weekly view | Suite-level skip, "Plan Detail Page" (line 91) | Need completed meal plan (status != draft) |
-| plan detail page has back navigation | Suite-level skip, "Plan Detail Page" (line 91) | Need at least one meal plan |
-| clicking Generate New Plan navigates | Suite-level skip, "Generate Plan" (line 184) | Need worker to complete plan generation (Azure OpenAI) |
+
+| Test                                 | Skip Root Cause                                | To Unblock                                             |
+| ------------------------------------ | ---------------------------------------------- | ------------------------------------------------------ |
+| plan list items show status badges   | `!process.env.USE_EXTERNAL_SERVER` (line 64)   | Need backend API + at least one meal plan              |
+| plan detail page shows weekly view   | Suite-level skip, "Plan Detail Page" (line 91) | Need completed meal plan (status != draft)             |
+| plan detail page has back navigation | Suite-level skip, "Plan Detail Page" (line 91) | Need at least one meal plan                            |
+| clicking Generate New Plan navigates | Suite-level skip, "Generate Plan" (line 184)   | Need worker to complete plan generation (Azure OpenAI) |
 
 **Grocery (6 skipped)** — All blocked by suite-level `USE_EXTERNAL_SERVER=false` (line 22):
-| Test | Skip Root Cause | To Unblock |
-|------|-----------------|-----------|
-| grocery list page loads with heading | Entire suite skipped (line 22) | Need backend API + active meal plan + grocery list |
-| grocery list shows back to meal plan link | Entire suite skipped (line 22) | Need active meal plan |
-| grocery list shows items or empty state | Entire suite skipped (line 22) | Need active meal plan |
-| can check and uncheck a grocery item | Entire suite skipped (line 22) | Need active meal plan with items |
-| complete shopping button appears | Entire suite skipped (line 22) | Need items to be checkable |
-| clicking complete shopping opens dialog | Entire suite skipped (line 22) | Need items to interact with |
+
+| Test                                      | Skip Root Cause                | To Unblock                                         |
+| ----------------------------------------- | ------------------------------ | -------------------------------------------------- |
+| grocery list page loads with heading      | Entire suite skipped (line 22) | Need backend API + active meal plan + grocery list |
+| grocery list shows back to meal plan link | Entire suite skipped (line 22) | Need active meal plan                              |
+| grocery list shows items or empty state   | Entire suite skipped (line 22) | Need active meal plan                              |
+| can check and uncheck a grocery item      | Entire suite skipped (line 22) | Need active meal plan with items                   |
+| complete shopping button appears          | Entire suite skipped (line 22) | Need items to be checkable                         |
+| clicking complete shopping opens dialog   | Entire suite skipped (line 22) | Need items to interact with                        |
 
 **Test Chain Dependency**: auth.setup → seed-data.setup → chromium tests (playwright.config.ts lines 50-74)
 
