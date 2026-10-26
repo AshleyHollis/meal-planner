@@ -153,10 +153,7 @@ export interface MealHistoryItem {
 // --- Preferences ---
 
 export type PreferenceType =
-  | "dietary_restriction"
-  | "allergy"
-  | "dislike"
-  | "like";
+  "dietary_restriction" | "allergy" | "dislike" | "like";
 
 export interface MemberPreference {
   id: string;
